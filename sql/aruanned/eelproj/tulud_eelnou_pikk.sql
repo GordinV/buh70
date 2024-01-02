@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS eelarve.tulud_eelnou_pikk(DATE, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS eelarve.tulud_eelnou_pikk(DATE, INTEGER, INTEGER);
-DROP FUNCTION IF EXISTS eelarve.tulud_eelnou_(DATE, INTEGER, INTEGER, JSONB);
+DROP FUNCTION IF EXISTS eelarve.tulud_eelnou_pikk(DATE, INTEGER, INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION eelarve.tulud_eelnou_pikk(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER,
                                                      l_params JSONB DEFAULT '{}'::JSONB)
@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION eelarve.tulud_eelnou_pikk(l_kpv DATE, l_rekvid INTEGE
         tunnus                          VARCHAR(20),
         proj                            VARCHAR(20),
         uritus                          VARCHAR(20),
+        objekt                          VARCHAR(20),
         aasta_1_tekke_taitmine          NUMERIC(14, 2),
         aasta_2_tekke_taitmine          NUMERIC(14, 2),
         aasta_2_oodatav_taitmine        NUMERIC(14, 2),
@@ -33,7 +34,9 @@ DECLARE
     a_FinanseerimisTegevus         TEXT[]    = ARRAY ['2585'];
     a_LikviidseteVaradeMuutus      TEXT[]    = ARRAY ['100'];
     kas_ainult_aktsepteeritud      BOOLEAN   = coalesce((l_params ->> 'taotlus_statusid')::BOOLEAN, FALSE);
-    taotlus_statusid               INTEGER[] = CASE WHEN kas_ainult_aktsepteeritud THEN array[3] ELSE array[0,1,2,3] END;
+    taotlus_statusid               INTEGER[] = CASE
+                                                   WHEN kas_ainult_aktsepteeritud THEN ARRAY [3]
+                                                   ELSE ARRAY [0,1,2,3] END;
 
 
 BEGIN
@@ -71,7 +74,7 @@ BEGIN
                                        INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                               WHERE t1.tunnus IS NOT NULL
                                 AND NOT empty(t1.tunnus)
-                                AND t.status IN (select unnest(taotlus_statusid))
+                                AND t.status IN (SELECT unnest(taotlus_statusid))
                                 AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                                 AND t.aasta IN (YEAR(l_kpv) - 1, YEAR(l_kpv), YEAR(l_kpv) + 1)
                                 AND t1.kood2 NOT LIKE ('%RF%')
@@ -84,7 +87,7 @@ BEGIN
                                   INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                          WHERE t1.proj IS NOT NULL
                            AND NOT empty(t1.proj)
-                           AND t.status IN (select unnest(taotlus_statusid))
+                           AND t.status IN (SELECT unnest(taotlus_statusid))
                            AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                            AND t.aasta IN (YEAR(l_kpv) - 1, YEAR(l_kpv), YEAR(l_kpv) + 1)
                            AND t1.kood2 NOT LIKE ('%RF%')
@@ -97,12 +100,25 @@ BEGIN
                                     INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                            WHERE t1.kood4 IS NOT NULL
                              AND NOT empty(t1.kood4)
-                             AND t.status IN (select unnest(taotlus_statusid))
+                             AND t.status IN (SELECT unnest(taotlus_statusid))
                              AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                              AND t.aasta IN (YEAR(l_kpv) - 1, YEAR(l_kpv), YEAR(l_kpv) + 1)
                              AND t1.kood2 NOT LIKE ('%RF%')
                            GROUP BY t.rekvid,
                                     t1.kood4
+                           HAVING (count(*) > 0)
+             ),
+             qryObjekt AS (SELECT DISTINCT t.rekvid, t1.objekt AS objekt
+                           FROM eelarve.taotlus t
+                                    INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
+                           WHERE t1.objekt IS NOT NULL
+                             AND NOT empty(t1.objekt)
+                             AND t.status IN (SELECT unnest(taotlus_statusid))
+                             AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
+                             AND t.aasta IN (YEAR(l_kpv) - 1, YEAR(l_kpv), YEAR(l_kpv) + 1)
+                             AND t1.kood2 NOT LIKE ('%RF%')
+                           GROUP BY t.rekvid,
+                                    t1.objekt
                            HAVING (count(*) > 0)
              ),
              tmp_andmik AS (
@@ -115,6 +131,7 @@ BEGIN
                         s.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(tegelik)    AS tegelik,
                         year(l_kpv) - 1 AS aasta,
                         12              AS kuu,
@@ -129,6 +146,7 @@ BEGIN
                                  qry.tunnus,
                                  qry.proj,
                                  qry.uritus,
+                                 qry.objekt,
                                  qry.summa       AS tegelik,
                                  year(l_kpv) - 1 AS aasta,
                                  12              AS kuu,
@@ -157,7 +175,7 @@ BEGIN
                             AND qry.rekv_id <> 9
                       ) s
 
-                 GROUP BY s.tyyp, s.konto, s.tegev, s.allikas, s.rahavoog, s.artikkel, s.tunnus, s.proj, s.uritus,
+                 GROUP BY s.tyyp, s.konto, s.tegev, s.allikas, s.rahavoog, s.artikkel, s.tunnus, s.proj, s.uritus, s.objekt,
                           s.rekv_id
                  UNION ALL
 --  текущий год
@@ -170,6 +188,7 @@ BEGIN
                         qry.tunnus,
                         qry.proj,
                         qry.uritus,
+                        qry.objekt,
                         qry.summa   AS tegelik,
                         year(l_kpv) AS aasta,
                         06          AS kuu,
@@ -204,13 +223,14 @@ BEGIN
                         S.tunnus       AS tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.tegelik) AS summa,
                         1              AS idx
                  FROM tmp_andmik S
                  WHERE aasta = YEAR(l_kpv) - 1
                    AND LEFT(S.konto, 3) NOT IN ('352', '100', '381', '655')
                    AND LEFT(S.artikkel, 4) NOT IN ('3502', '1502', '1032', '1532', '2585')
-                 GROUP BY S.rekv_id, S.artikkel, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.artikkel, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  --3502
 --         get_saldo('KD', '3502', '01', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -223,6 +243,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -232,13 +253,14 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel LIKE '3502%'
                             AND (S.rahavoog IN ('01', '05') OR COALESCE(rahavoog, '') = '')
                             AND S.aasta = date_part('year', l_kpv) - 1
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 100
                  SELECT S.rekv_id    AS rekvid,
@@ -248,6 +270,7 @@ BEGIN
                         s.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(s.summa) AS summa, -- так как у нас К-Д
                         1            AS idx
                  FROM (
@@ -258,6 +281,7 @@ BEGIN
                                  ''            AS tunnus,
                                  ''            AS proj,
                                  ''            AS uritus,
+                                 ''            AS objekt,
                                  (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '100%'
@@ -276,6 +300,7 @@ BEGIN
                                  ''                 AS tunnus,
                                  ''                 AS proj,
                                  ''                 AS uritus,
+                                 ''                 AS objekt,
                                  -1 * (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '100%'
@@ -294,6 +319,7 @@ BEGIN
                                  ''            AS tunnus,
                                  ''            AS proj,
                                  ''            AS uritus,
+                                 ''            AS objekt,
                                  (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '101%'
@@ -312,6 +338,7 @@ BEGIN
                                  ''                 AS tunnus,
                                  ''                 AS proj,
                                  ''                 AS uritus,
+                                 ''                 AS objekt,
                                  -1 * (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '101%'
@@ -330,6 +357,7 @@ BEGIN
                                  ''                 AS tunnus,
                                  ''                 AS proj,
                                  ''                 AS uritus,
+                                 ''                 AS objekt,
                                  -1 * (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '1019%'
@@ -348,6 +376,7 @@ BEGIN
                                  ''            AS tunnus,
                                  ''            AS proj,
                                  ''            AS uritus,
+                                 ''            AS objekt,
                                  (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '1019%'
@@ -366,6 +395,7 @@ BEGIN
                                  ''            AS tunnus,
                                  ''            AS proj,
                                  ''            AS uritus,
+                                 ''            AS objekt,
                                  (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '151%'
@@ -384,6 +414,7 @@ BEGIN
                                  ''                 AS tunnus,
                                  ''                 AS proj,
                                  ''                 AS uritus,
+                                 ''                 AS objekt,
                                  -1 * (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '151%'
@@ -402,6 +433,7 @@ BEGIN
                                  ''                 AS tunnus,
                                  ''                 AS proj,
                                  ''                 AS uritus,
+                                 ''                 AS objekt,
                                  -1 * (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '1519%'
@@ -420,6 +452,7 @@ BEGIN
                                  ''            AS tunnus,
                                  ''            AS proj,
                                  ''            AS uritus,
+                                 ''            AS objekt,
                                  (s.db - s.kr) AS summa
                           FROM eelarve.saldoandmik s
                           WHERE s.konto LIKE '1519%'
@@ -431,7 +464,7 @@ BEGIN
                             AND s.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid, make_date(YEAR(l_kpv) - 2, 12, 31)) r)
                       ) s
-                 GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus, s.proj, s.uritus
+                 GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  --         '1502'
 --         get_saldo('KD','150','02', NULL, S.rekv_id, YEAR (l_kpv) - 1) AS summa
@@ -442,13 +475,14 @@ BEGIN
                         s.tunnus       AS tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(s.tegelik) AS summa,
                         1              AS idx
                  FROM tmp_andmik s
                  WHERE aasta = year(l_kpv) - 1
                    AND s.konto LIKE '150%'
                    AND s.rahavoog = '02'
-                 GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus, s.proj, s.uritus
+                 GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 1512
 -- get_saldo('KD', '151910', '02', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -460,6 +494,7 @@ BEGIN
                         s.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(s.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -469,6 +504,7 @@ BEGIN
                                  s.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (s.tegelik) AS summa
                           FROM tmp_andmik s
                           WHERE s.konto LIKE '151910%'
@@ -481,13 +517,14 @@ BEGIN
                                  s.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (s.tegelik) AS summa
                           FROM tmp_andmik s
                           WHERE s.konto LIKE '101900%'
                             AND s.rahavoog = '02'
                             AND s.aasta = YEAR(l_kpv) - 1
                       ) s
-                 GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus, s.proj, s.uritus
+                 GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 1532
 --         get_saldo('KD', '1032', '02', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -499,6 +536,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -508,6 +546,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel = '1032'
@@ -520,13 +559,14 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel = '1532'
                             AND S.rahavoog = '02'
                             AND S.aasta = YEAR(l_kpv) - 1
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 381
 --         get_saldo('KD', '381', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1) -
@@ -543,6 +583,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -553,6 +594,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.konto LIKE '381%'
@@ -565,6 +607,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  -1 * (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.konto LIKE '3818%'
@@ -581,13 +624,14 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE LEFT(S.konto, 3) IN ('154', '155', '156', '157', '109')
                             AND rahavoog = '02'
                             AND S.aasta = YEAR(l_kpv) - 1
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 3818
 -- get_saldo('KD', '3818', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1)
@@ -598,12 +642,13 @@ BEGIN
                         S.tunnus       AS tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.tegelik) AS summa,
                         1              AS idx
                  FROM tmp_andmik S
                  WHERE aasta = YEAR(l_kpv) - 1
                    AND S.konto LIKE '3818%'
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 2585
 -- get_saldo('KD', '208', '05', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -615,6 +660,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -624,6 +670,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel LIKE '208%'
@@ -636,13 +683,14 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel LIKE '258%'
                             AND S.rahavoog = '05'
                             AND S.aasta = YEAR(l_kpv) - 1
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 655
 --         get_saldo('KD', '652', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1) -
@@ -658,6 +706,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -670,6 +719,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  -1 * (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE LEFT(S.konto, 6) IN ('652000', '652030', '658950')
@@ -684,12 +734,13 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE LEFT(S.konto, 3) IN ('655', '658', '652')
                             AND S.aasta = YEAR(l_kpv) - 1
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
              ),
              qryAasta2 AS (
                  SELECT S.rekv_id      AS rekvid,
@@ -699,13 +750,14 @@ BEGIN
                         S.tunnus       AS tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.tegelik) AS summa,
                         1              AS idx
                  FROM tmp_andmik S
                  WHERE aasta = YEAR(l_kpv)
                    AND LEFT(S.konto, 3) NOT IN ('352', '100', '381', '655')
                    AND LEFT(S.artikkel, 4) NOT IN ('3502', '1502', '1532', '2585', '1032')
-                 GROUP BY S.rekv_id, S.artikkel, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.artikkel, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  --         get_saldo('KD', '3502', '01', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
 --         get_saldo('KD', '3502', '05', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -717,6 +769,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -726,6 +779,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel LIKE '3502%'
@@ -733,7 +787,7 @@ BEGIN
                               OR COALESCE(rahavoog, '') = '')
                             AND S.aasta = YEAR(l_kpv)
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 100
 --         get_saldo('DK', '100', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1)
@@ -753,6 +807,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa, -- так как у нас К-Д
                         1            AS idx
                  FROM (
@@ -763,6 +818,7 @@ BEGIN
                                  ''               AS tunnus,
                                  ''               AS proj,
                                  ''               AS uritus,
+                                 ''               AS objekt,
                                  sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -783,6 +839,7 @@ BEGIN
                                  ''                    AS tunnus,
                                  ''                    AS proj,
                                  ''                    AS uritus,
+                                 ''                    AS objekt,
                                  -1 * sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -803,6 +860,7 @@ BEGIN
                                  ''               AS tunnus,
                                  ''               AS proj,
                                  ''               AS uritus,
+                                 ''               AS objekt,
                                  sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -823,6 +881,7 @@ BEGIN
                                  ''                    AS tunnus,
                                  ''                    AS proj,
                                  ''                    AS uritus,
+                                 ''                    AS objekt,
                                  -1 * sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -843,6 +902,7 @@ BEGIN
                                  ''                    AS tunnus,
                                  ''                    AS proj,
                                  ''                    AS uritus,
+                                 ''                    AS objekt,
                                  -1 * sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -863,6 +923,7 @@ BEGIN
                                  ''               AS tunnus,
                                  ''               AS proj,
                                  ''               AS uritus,
+                                 ''               AS objekt,
                                  sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -883,6 +944,7 @@ BEGIN
                                  ''               AS tunnus,
                                  ''               AS proj,
                                  ''               AS uritus,
+                                 ''               AS objekt,
                                  sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -903,6 +965,7 @@ BEGIN
                                  ''                    AS tunnus,
                                  ''                    AS proj,
                                  ''                    AS uritus,
+                                 ''                    AS objekt,
                                  -1 * sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -923,6 +986,7 @@ BEGIN
                                  ''                    AS tunnus,
                                  ''                    AS proj,
                                  ''                    AS uritus,
+                                 ''                    AS objekt,
                                  -1 * sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -943,6 +1007,7 @@ BEGIN
                                  ''               AS tunnus,
                                  ''               AS proj,
                                  ''               AS uritus,
+                                 ''               AS objekt,
                                  sum(S.db - S.kr) AS summa
                           FROM eelarve.saldoandmik S
                           WHERE S.konto LIKE
@@ -956,7 +1021,7 @@ BEGIN
                                              FROM get_asutuse_struktuur(l_rekvid, make_date(YEAR(l_kpv) - 1, 12, 31)) r)
                           GROUP BY S.rekvid, S.allikas, S.tegev
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  --         '1502'
 --         get_saldo('KD','150','02', NULL, S.rekv_id, YEAR (l_kpv) - 1) AS summa
@@ -967,13 +1032,14 @@ BEGIN
                         S.tunnus       AS tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.tegelik) AS summa,
                         1              AS idx
                  FROM tmp_andmik S
                  WHERE aasta = YEAR(l_kpv)
                    AND S.konto LIKE '150%'
                    AND S.rahavoog = '02'
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 1512
 -- get_saldo('KD', '151910', '02', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -985,6 +1051,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -994,6 +1061,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.konto LIKE '151910%'
@@ -1007,6 +1075,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.konto LIKE
@@ -1015,7 +1084,7 @@ BEGIN
                                 '02'
                             AND S.aasta = YEAR(l_kpv)
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 1532
 --         get_saldo('KD', '1032', '02', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -1027,6 +1096,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -1036,6 +1106,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel = '1032'
@@ -1048,13 +1119,14 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel = '1532'
                             AND S.rahavoog = '02'
                             AND S.aasta = YEAR(l_kpv)
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 381
 --         get_saldo('KD', '381', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1) -
@@ -1071,6 +1143,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -1081,6 +1154,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.konto LIKE '381%'
@@ -1093,6 +1167,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  -1 * (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.konto LIKE
@@ -1110,6 +1185,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE LEFT(S.konto, 3) IN (
@@ -1122,7 +1198,7 @@ BEGIN
                                 '02'
                             AND S.aasta = YEAR(l_kpv)
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 3818
 -- get_saldo('KD', '3818', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1)
@@ -1133,12 +1209,13 @@ BEGIN
                         S.tunnus       AS tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.tegelik) AS summa,
                         1              AS idx
                  FROM tmp_andmik S
                  WHERE aasta = YEAR(l_kpv)
                    AND S.konto LIKE '3818%'
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 2585
 -- get_saldo('KD', '208', '05', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
@@ -1150,6 +1227,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -1159,6 +1237,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel LIKE '208%'
@@ -1172,6 +1251,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE S.artikkel LIKE
@@ -1180,7 +1260,7 @@ BEGIN
                                 '05'
                             AND S.aasta = YEAR(l_kpv)
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
                  UNION ALL
                  -- 655
 --         get_saldo('KD', '652', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1) -
@@ -1196,6 +1276,7 @@ BEGIN
                         S.tunnus,
                         s.proj,
                         s.uritus,
+                        s.objekt,
                         sum(S.summa) AS summa,
                         1            AS idx
                  FROM (
@@ -1208,6 +1289,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  -1 * (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE LEFT(S.konto, 6) IN ('652000',
@@ -1224,6 +1306,7 @@ BEGIN
                                  S.tunnus,
                                  s.proj,
                                  s.uritus,
+                                 s.objekt,
                                  (S.tegelik) AS summa
                           FROM tmp_andmik S
                           WHERE LEFT(S.konto, 3) IN (
@@ -1232,7 +1315,7 @@ BEGIN
                                                      '652')
                             AND S.aasta = YEAR(l_kpv)
                       ) S
-                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus, s.proj, s.uritus, s.objekt
              ),
              -- пока не нужен
              -- текущего года
@@ -1246,14 +1329,15 @@ BEGIN
                         t1.tunnus,
                         t1.proj,
                         t1.kood4   AS uritus,
+                        t1.objekt,
                         sum(summa) AS summa,
                         NULL::TEXT AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1
                                      ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status IN (select unnest(taotlus_statusid))           -- акцептированные
-                   AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
+                   AND t.status IN (SELECT unnest(taotlus_statusid)) -- акцептированные
+                   AND coalesce(t.tunnus, 0) = 0                     -- только утвержденные
                    AND rekvid = (CASE
                                      WHEN $3 = 1
                                          THEN rekvid
@@ -1264,7 +1348,7 @@ BEGIN
                      SELECT kood
                      FROM qryArtikkel
                  )
-                 GROUP BY t1.kood5, t1.kood1, t1.kood2, t1.tunnus, t1.proj, t1.kood4, t.rekvid
+                 GROUP BY t1.kood5, t1.kood1, t1.kood2, t1.tunnus, t1.proj, t1.kood4, t1.objekt, t.rekvid
              ),
              qryAasta5 AS (
                  -- Сумма всех строк с данным Art Kassa põhine в проекте бюджета
@@ -1278,13 +1362,14 @@ BEGIN
                         t1.tunnus,
                         t1.proj,
                         t1.kood4                                                                  AS uritus,
+                        t1.objekt,
                         sum(summa_kassa)                                                          AS summa,
                         string_agg(ltrim(rtrim(replace(t1.selg, E'\n', ''), E'\r\n')), ','::TEXT) AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1
                                      ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status IN (select unnest(taotlus_statusid))
+                   AND t.status IN (SELECT unnest(taotlus_statusid))
                    AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
                    AND rekvid = (CASE
                                      WHEN $3 = 1
@@ -1296,7 +1381,7 @@ BEGIN
                      SELECT kood
                      FROM qryArtikkel
                  )
-                 GROUP BY t1.kood5, t1.kood1, t1.kood2, t1.tunnus, t1.proj, t1.kood4, t.rekvid
+                 GROUP BY t1.kood5, t1.kood1, t1.kood2, t1.tunnus, t1.proj, t1.kood4, t1.objekt, t.rekvid
              ),
              qryAasta6 AS (
                  -- Сумма всех строк с данным Art  в блоке Eelarve Tekkepõhine kinnitatud
@@ -1308,6 +1393,7 @@ BEGIN
                         e.tunnus     AS tunnus,
                         t1.proj      AS proj,
                         t1.kood4     AS uritus,
+                        t1.objekt,
                         sum(e.summa) AS summa
                  FROM eelarve.eelarve e
                           INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id
@@ -1321,7 +1407,7 @@ BEGIN
                    AND e.kpv IS NULL
                    AND e.status <> 3
                    AND e.kood5 IN (SELECT kood FROM qryArtikkel)
-                 GROUP BY e.rekvid, e.kood5, e.kood1, e.kood2, e.tunnus, t1.kood4, t1.proj
+                 GROUP BY e.rekvid, e.kood5, e.kood1, e.kood2, e.tunnus, t1.kood4, t1.objekt, t1.proj
              ),
              qryAasta7 AS (
                  -- Сумма всех строк с данным Art  в блоке Eelarve Tekkepõhine täpsustatud
@@ -1334,6 +1420,7 @@ BEGIN
                         e.tunnus     AS tunnus,
                         t1.proj,
                         t1.kood4     AS uritus,
+                        t1.objekt,
                         sum(e.summa) AS summa
                  FROM eelarve.eelarve e
                           INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id
@@ -1347,7 +1434,7 @@ BEGIN
                    AND (e.kpv IS NULL OR e.kpv <= make_date(YEAR($1), 06, 30))
                    AND e.status <> 3
                    AND e.kood5 IN (SELECT kood FROM qryArtikkel)
-                 GROUP BY e.rekvid, e.kood5, e.kood1, e.kood2, e.tunnus, t1.proj, t1.kood4
+                 GROUP BY e.rekvid, e.kood5, e.kood1, e.kood2, e.tunnus, t1.proj, t1.kood4, t1.objekt
              ),
              qryAasta8 AS (
                  -- oodatav taitine
@@ -1358,12 +1445,13 @@ BEGIN
                         CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
                         t1.proj,
                         t1.kood4                                                                            AS uritus,
+                        t1.objekt,
                         sum(oodatav_taitmine)                                                               AS summa,
                         string_agg(replace(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status IN (select unnest(taotlus_statusid))
+                   AND t.status IN (SELECT unnest(taotlus_statusid))
                    AND rekvid = (CASE
                                      WHEN $3 = 1
                                          THEN rekvid
@@ -1382,6 +1470,7 @@ BEGIN
                           t1.tunnus,
                           t1.proj,
                           t1.kood4,
+                          t1.objekt,
                           t.rekvid
              ),
              preReport AS (
@@ -1413,6 +1502,15 @@ BEGIN
                                       AND rekvid = qry.rekvid)
                                 THEN qry.uritus
                             ELSE '' END                       AS uritus,
+                        CASE
+                            WHEN EXISTS(
+                                    SELECT 1
+                                    FROM qryObjekt t
+                                    WHERE t.objekt = qry.objekt
+                                      AND rekvid = qry.rekvid)
+                                THEN qry.objekt
+                            ELSE '' END                       AS objekt,
+
                         (qry.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
                         (qry.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
                         (qry.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
@@ -1430,6 +1528,7 @@ BEGIN
                                  q.tunnus,
                                  q.proj,
                                  q.uritus,
+                                 q.objekt,
                                  q.summa            AS aasta_1_tekke_taitmine,
                                  0                  AS aasta_2_tekke_taitmine,
                                  0                  AS aasta_2_oodatav_taitmine,
@@ -1448,6 +1547,7 @@ BEGIN
                                  q.tunnus,
                                  q.proj,
                                  q.uritus,
+                                 q.objekt,
                                  0                  AS aasta_1_tekke_taitmine,
                                  q.summa            AS aasta_2_tekke_taitmine,
                                  0                  AS aasta_2_oodatav_taitmine,
@@ -1466,6 +1566,7 @@ BEGIN
                                  q.tunnus,
                                  q.proj,
                                  q.uritus,
+                                 q.objekt,
                                  0::NUMERIC(14, 2)     AS aasta_1_tekke_taitmine,
                                  0::NUMERIC(14, 2)     AS aasta_2_tekke_taitmine,
                                  0::NUMERIC(14, 2)     AS aasta_2_oodatav_taitmine,
@@ -1484,6 +1585,7 @@ BEGIN
                                  q.tunnus,
                                  q.proj,
                                  q.uritus,
+                                 q.objekt,
                                  0::NUMERIC(14, 2)     AS aasta_1_tekke_taitmine,
                                  0::NUMERIC(14, 2)     AS aasta_2_tekke_taitmine,
                                  0::NUMERIC(14, 2)     AS aasta_2_oodatav_taitmine,
@@ -1502,6 +1604,7 @@ BEGIN
                                  q.tunnus,
                                  q.proj,
                                  q.uritus,
+                                 q.objekt,
                                  0::NUMERIC(14, 2)      AS aasta_1_tekke_taitmine,
                                  0::NUMERIC(14, 2)      AS aasta_2_tekke_taitmine,
                                  0::NUMERIC(14, 2)      AS aasta_2_oodatav_taitmine,
@@ -1520,6 +1623,7 @@ BEGIN
                                  q.tunnus,
                                  q.proj,
                                  q.uritus,
+                                 q.objekt,
                                  0::NUMERIC(14, 2)  AS aasta_1_tekke_taitmine,
                                  0::NUMERIC(14, 2)  AS aasta_2_tekke_taitmine,
                                  0::NUMERIC(14, 2)  AS aasta_2_oodatav_taitmine,
@@ -1538,6 +1642,7 @@ BEGIN
                                  q.tunnus,
                                  q.proj,
                                  q.uritus,
+                                 q.objekt,
                                  0                  AS aasta_1_tekke_taitmine,
                                  0                  AS aasta_2_tekke_taitmine,
                                  q.summa            AS aasta_2_oodatav_taitmine,
@@ -1571,6 +1676,7 @@ BEGIN
                                  ''):: VARCHAR(20)                             AS proj,
                         COALESCE(S.uritus,
                                  ''):: VARCHAR(20)                             AS uritus,
+                        coalesce(s.objekt, '')::VARCHAR(20)                    AS objekt,
                         sum(S.aasta_1_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_1_tekke_taitmine,
                         sum(S.aasta_2_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_2_tekke_taitmine,
                         sum(S.aasta_2_oodatav_taitmine):: NUMERIC(14, 2)       AS aasta_2_oodatav_taitmine,
@@ -1582,7 +1688,8 @@ BEGIN
                  FROM preReport S
                           INNER JOIN ou.rekv r
                                      ON r.id = S.rekvid
-                 GROUP BY S.rekvid, r.parentid, S.artikkel, S.tegev, S.allikas, S.allikas, S.tunnus, s.proj, s.uritus
+                 GROUP BY S.rekvid, r.parentid, S.artikkel, S.tegev, S.allikas, S.allikas, S.tunnus, s.proj, s.uritus,
+                          s.objekt
              ),
              -- kond
              qryKond AS (
@@ -1591,6 +1698,7 @@ BEGIN
                         COALESCE(S.tunnus, ''):: VARCHAR(20)                   AS tunnus,
                         S.proj:: VARCHAR(20)                                   AS proj,
                         s.uritus::VARCHAR(20)                                  AS uritus,
+                        s.objekt:: VARCHAR(20)                                 AS objekt,
                         COALESCE(S.tegev,
                                  '')::VARCHAR(20)                              AS tegev,
                         COALESCE(S.allikas,
@@ -1607,7 +1715,7 @@ BEGIN
                  FROM qryReport S
                  WHERE l_rekvid = 63
                    AND l_kond = 1 -- только для фин. департамента
-                 GROUP BY S.artikkel, S.idx, S.tunnus, S.tegev, S.allikas, s.proj, s.uritus
+                 GROUP BY S.artikkel, S.idx, S.tunnus, S.tegev, S.allikas, s.proj, s.uritus, s.objekt
              ),
              report AS (
                  SELECT qryReport.idx,
@@ -1615,6 +1723,7 @@ BEGIN
                         qryReport.tunnus,
                         qryReport.proj,
                         qryReport.uritus,
+                        qryReport.objekt,
                         qryReport.tegev,
                         qryReport.allikas,
                         qryReport.artikkel,
@@ -1630,13 +1739,14 @@ BEGIN
                  WHERE qryReport.artikkel NOT IN ('100')
                  GROUP BY qryReport.idx, qryReport.rekvid,
                           qryReport.tunnus, qryReport.tegev, qryReport.allikas, qryReport.artikkel, qryReport.proj,
-                          qryReport.uritus
+                          qryReport.uritus, qryReport.objekt
                  UNION ALL
                  SELECT qryReport.idx,
                         qryReport.rekvId                               AS rekv_id,
                         qryReport.tunnus,
                         qryReport.proj,
                         qryReport.uritus,
+                        qryReport.objekt,
                         qryReport.tegev,
                         qryReport.allikas,
                         qryReport.artikkel,
@@ -1652,13 +1762,14 @@ BEGIN
                  WHERE qryReport.artikkel = '100'
                  GROUP BY qryReport.idx, qryReport.rekvid,
                           qryReport.tunnus, qryReport.tegev, qryReport.allikas, qryReport.artikkel, qryReport.proj,
-                          qryReport.uritus
+                          qryReport.uritus, qryReport.objekt
                  UNION ALL
                  SELECT 0                                              AS idx,
                         qryReport.rekvId                               AS rekv_id,
                         ''                                             AS tunnus,
                         ''                                             AS proj,
-                        ''                                             AS tunnus,
+                        ''                                             AS uritus,
+                        ''                                             AS objekt,
                         LEFT(qryReport.tegev, 2)::VARCHAR(20)          AS tegev,
                         ''                                             AS allikas,
                         ''                                             AS artikkel,
@@ -1681,6 +1792,7 @@ BEGIN
                         ''                                           AS tunnus,
                         ''                                           AS proj,
                         ''                                           AS uritus,
+                        ''                                           AS objekt,
                         LEFT(qryKond.tegev, 2)::VARCHAR(20)          AS tegev,
                         ''                                           AS allikas,
                         ''                                           AS artikkel,
@@ -1702,6 +1814,7 @@ BEGIN
                         qryKond.tunnus,
                         qryKond.proj,
                         qryKond.uritus,
+                        qryKond.objekt,
                         qryKond.tegev,
                         qryKond.allikas,
                         qryKond.artikkel,
@@ -1723,6 +1836,7 @@ BEGIN
                rep.tunnus:: VARCHAR(20),
                rep.proj,
                rep.uritus,
+               rep.objekt,
                rep.aasta_1_tekke_taitmine:: NUMERIC(14, 2),
                rep.aasta_2_tekke_taitmine:: NUMERIC(14, 2),
                rep.aasta_2_oodatav_taitmine:: NUMERIC(14, 2),

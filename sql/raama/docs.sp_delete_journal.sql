@@ -201,6 +201,21 @@ BEGIN
         PERFORM docs.kustuta_ebatoenaolised(doc_id, user_id);
     END IF;
 
+    -- удаление оплат маловероятных
+    IF exists(SELECT id
+              FROM docs.arvtasu
+              WHERE properties ->> 'ebatoenaolised_tagastamine_id' IS NOT NULL
+                AND (properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER = doc_id)
+    THEN
+        -- снимаем ссылку
+        UPDATE docs.arvtasu
+        SET properties = properties || jsonb_build_object('ebatoenaolised_tagastamine_id', NULL)
+        WHERE properties ->> 'ebatoenaolised_tagastamine_id' IS NOT NULL
+          AND (properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER = doc_id;
+
+    END IF;
+
+
     -- удаление связей
     UPDATE docs.doc
     SET docs_ids = array_remove(docs_ids, doc_id)

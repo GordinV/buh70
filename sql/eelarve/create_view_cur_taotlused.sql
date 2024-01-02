@@ -19,6 +19,7 @@ SELECT d.id,
        coalesce(t1.kood5, '')::VARCHAR(20)  AS kood5,
        coalesce(t1.tunnus, '')::VARCHAR(20) AS tunnus,
        coalesce(t1.proj, '')::VARCHAR(20)   AS proj,
+       coalesce(t1.objekt, '')::VARCHAR(20) AS objekt,
        t1.summa,
        t1.summa_kassa,
        t1.oodatav_taitmine,
@@ -28,7 +29,7 @@ SELECT d.id,
        Userid.ametnik,
        t1.selg                              AS rea_selg,
        t.muud                               AS dok_mark,
-       t1.eelarveid as eelarveid
+       t1.eelarveid                         AS eelarveid
 FROM docs.doc d
          INNER JOIN eelarve.taotlus t ON d.id = t.parentid
          INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid

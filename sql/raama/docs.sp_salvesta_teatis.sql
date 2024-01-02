@@ -17,7 +17,7 @@ DECLARE
     doc_muud     TEXT    = doc_data ->> 'muud';
     doc_kpv      DATE    = coalesce((doc_data ->> 'kpv')::DATE, current_date);
     json_props   JSONB;
-    json_ajalugu JSONB;
+    json_ajalugu JSONB = '[]'::jsonb;
     new_rights   JSONB;
     ids          INTEGER[];
     doc_type_id  INTEGER = (SELECT id
@@ -66,7 +66,7 @@ BEGIN
 
         -- логгирование
 
-        json_ajalugu = to_jsonb(row)
+        json_ajalugu = json_ajalugu || to_jsonb(row)
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
@@ -98,7 +98,7 @@ BEGIN
 
         -- логгирование
 
-        json_ajalugu = to_jsonb(row)
+        json_ajalugu = json_ajalugu || to_jsonb(row)
                        FROM (SELECT now()    AS updated,
                                     userName AS user
                             ) row;

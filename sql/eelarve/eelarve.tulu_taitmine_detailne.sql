@@ -12,6 +12,7 @@ CREATE OR REPLACE FUNCTION eelarve.tulu_taitmine_detailne(l_kpv1 DATE, l_kpv2 DA
         tunnus   VARCHAR(20),
         proj     VARCHAR(20),
         uritus   VARCHAR(20),
+        objekt   VARCHAR(20),
         docs_ids INTEGER[],
         kuu      INTEGER,
         aasta    INTEGER
@@ -62,6 +63,7 @@ SELECT qry.rekvid              AS rekv_id,
        qry.tunnus,
        qry.proj,
        qry.uritus,
+       qry.objekt,
        array_agg(qry.docs_ids) AS docs_ids,
        qry.kuu,
        qry.aasta
@@ -75,6 +77,7 @@ FROM (
                 j.tunnus::TEXT,
                 j.proj::TEXT,
                 j.uritus::TEXT,
+                j.objekt::TEXT,
                 j.rekvid,
                 FALSE         AS kas_kulud,
                 j.id          AS docs_ids,
@@ -89,6 +92,7 @@ FROM (
                       j1.tunnus,
                       j1.proj,
                       j1.kood4               AS uritus,
+                      j1.objekt,
                       d.rekvid,
                       d.id,
                       coalesce(a.kpv, j.kpv) AS kpv,
@@ -119,6 +123,7 @@ FROM (
                 j.tunnus::TEXT,
                 j.proj::TEXT,
                 j.uritus::TEXT,
+                j.objekt::TEXT,
                 j.rekvid,
                 FALSE         AS kas_kulud,
                 j.id          AS docs_ids,
@@ -133,6 +138,7 @@ FROM (
                       j1.tunnus,
                       j1.proj,
                       j1.kood4               AS uritus,
+                      j1.objekt,
                       j1.deebet,
                       coalesce(a.kpv, j.kpv) AS kpv,
                       d.rekvid,
@@ -157,7 +163,8 @@ FROM (
 WHERE NOT empty(qry.artikkel)
   AND qry.summa <> 0
   AND qry.artikkel NOT IN ('2586')
-GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.proj, qry.uritus, qry.rahavoog, qry.kuu,
+GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.proj, qry.uritus, qry.objekt, qry.rahavoog,
+         qry.kuu,
          qry.aasta
 HAVING sum(qry.summa) <> 0;
 
@@ -174,8 +181,8 @@ GRANT EXECUTE ON FUNCTION eelarve.tulu_taitmine_detailne( DATE,DATE, INTEGER, IN
 /*
 
 SELECT sum(summa) over(),*
-FROM eelarve.tulu_taitmine_detailne('2023-01-01', '2023-12-31', 63, 1)
-where artikkel like '3823%'
+FROM eelarve.tulu_taitmine_detailne('2023-01-01', '2023-12-31', 132, 1)
+where artikkel like '3224%'
 and allikas = '80'
 and tegev = '01112'
 and empty(rahavoog)

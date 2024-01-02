@@ -166,10 +166,6 @@ const PalkOper = {
         {
             name: 'libid',
             type: 'I',
-        },
-        {
-            name: 'summa',
-            type: 'N',
         }
 
     ],

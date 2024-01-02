@@ -1,21 +1,26 @@
 DROP FUNCTION IF EXISTS eelarve.lisa1_lisa5_kontrol_(DATE, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION eelarve.lisa1_lisa5_kontrol_(IN l_kpv DATE,
-                                                       IN l_rekvid INTEGER,
-                                                       IN l_kond INTEGER)
+CREATE OR REPLACE FUNCTION eelarve.lisa1_lisa5_kontrol(l_kpv DATE,
+                                                       l_rekvid INTEGER,
+                                                       l_kond INTEGER)
     RETURNS TABLE (
-        nimetus            VARCHAR(254),
-        eelarve            NUMERIC(14, 2),
-        eelarve_kassa      NUMERIC(14, 2),
-        eelarve_taps       NUMERIC(14, 2),
-        eelarve_kassa_taps NUMERIC(14, 2),
-        kassa              NUMERIC(14, 2),
-        saldoandmik        NUMERIC(14, 2),
-        idx                INTEGER,
-        rekv_id integer
+        nimetus            CHARACTER VARYING,
+        eelarve            NUMERIC,
+        eelarve_kassa      NUMERIC,
+        eelarve_taps       NUMERIC,
+        eelarve_kassa_taps NUMERIC,
+        kassa              NUMERIC,
+        saldoandmik        NUMERIC,
+        idx                INTEGER
     )
+    LANGUAGE 'sql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
+
 AS
 $BODY$
+
     -- ВЫЗОВ ОТЧЕТА
 WITH qryLisa1Lisa5 AS (
     SELECT *
@@ -44,11 +49,9 @@ WITH qryLisa1Lisa5 AS (
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(tegelik)            AS tegelik,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM qryLisa1Lisa5
          WHERE artikkel IN ('3000', '3030', '3044', '3045', '3047')
-         group by rekvid
      ),
      qry_art35 AS (
          SELECT '35'                    AS artikkel,
@@ -58,12 +61,10 @@ WITH qryLisa1Lisa5 AS (
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(tegelik)            AS tegelik,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM qryLisa1Lisa5
          WHERE artikkel LIKE '35%'
            AND artikkel <> '3502'
-         group by rekvid
      ),
      qry_art38 AS (
          SELECT '38'                    AS artikkel,
@@ -73,11 +74,9 @@ WITH qryLisa1Lisa5 AS (
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(tegelik)            AS tegelik,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM qryLisa1Lisa5
          WHERE (artikkel IN ('3818') OR Left(artikkel, 3) IN ('388', '382'))
-         group by rekvid
      ),
      qry_Pohitulud AS (
          SELECT '3'                     AS artikkel,
@@ -87,8 +86,7 @@ WITH qryLisa1Lisa5 AS (
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(tegelik)            AS tegelik,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT artikkel,
                          eelarve,
@@ -97,8 +95,7 @@ WITH qryLisa1Lisa5 AS (
                          eelarve_kassa_taps,
                          tegelik,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_art30
                   UNION ALL
                   SELECT artikkel,
@@ -108,8 +105,7 @@ WITH qryLisa1Lisa5 AS (
                          eelarve_kassa_taps,
                          tegelik,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '32'
                   UNION ALL
@@ -120,8 +116,7 @@ WITH qryLisa1Lisa5 AS (
                          eelarve_kassa_taps,
                          tegelik,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_art35
                   UNION ALL
                   SELECT artikkel,
@@ -131,12 +126,9 @@ WITH qryLisa1Lisa5 AS (
                          eelarve_kassa_taps,
                          tegelik,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_art38
-              ) qryTulud
-         group by rekvid
-         ),
+              ) qryTulud),
      qry_PohiKulud AS (
          SELECT 'Pohikulud'             AS artikkel,
                 sum(eelarve)            AS eelarve,
@@ -145,11 +137,9 @@ WITH qryLisa1Lisa5 AS (
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(tegelik)            AS tegelik,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM qryLisa1Lisa5
          WHERE (NOT empty(tegev) OR idx = '3.1.099')
-         group by rekvid
      ),
      qry_4 AS (
          SELECT '4'                     AS artikkel,
@@ -159,11 +149,9 @@ WITH qryLisa1Lisa5 AS (
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(tegelik)            AS tegelik,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM qryLisa1Lisa5
          WHERE (artikkel LIKE '40%' OR artikkel LIKE '413%' OR artikkel LIKE '4500%' OR artikkel LIKE '452%')
-         group by rekvid
      ),
 -- 	where (artikkel Like '40%' Or artikkel Like '413%' Or artikkel Like '4500%'  Or artikkel Like '452%');
      qryTuludTaitmine AS (
@@ -173,8 +161,7 @@ WITH qryLisa1Lisa5 AS (
                 qry.eelarve_kassa_parandatud AS eelarve_kassa_taps,
                 qry.tegelik                  AS saldoandmik,
                 qry.kassa                    AS kassa,
-                qry.artikkel,
-                qry.rekv_id as rekvid
+                qry.artikkel
          FROM eelarve.tulude_taitmine_allikas_artikkel(year(l_kpv)::INTEGER, make_date(year(l_kpv), 01, 01)::DATE,
                                                        l_kpv::DATE,
                                                        l_rekvid, l_kond) qry
@@ -186,8 +173,7 @@ WITH qryLisa1Lisa5 AS (
                 qry.eelarve_kassa_parandatud AS eelarve_kassa_taps,
                 qry.tegelik                  AS saldoandmik,
                 qry.kassa                    AS kassa,
-                qry.artikkel,
-                qry.rekv_id as rekvid
+                qry.artikkel
          FROM eelarve.eelarve_taitmine_allikas_artikkel(year(l_kpv)::INTEGER, make_date(year(l_kpv), 01, 01)::DATE,
                                                         l_kpv::DATE, l_rekvid::INTEGER,
                                                         l_kond::INTEGER) qry
@@ -197,8 +183,7 @@ WITH qryLisa1Lisa5 AS (
          SELECT j.deebet,
                 j.kreedit,
                 sum(j.summa) AS kassa,
-                j.kood5      AS artikkel,
-                j.rekvid
+                j.kood5      AS artikkel
          FROM cur_journal j
          WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
            AND kpv <= l_kpv
@@ -207,8 +192,21 @@ WITH qryLisa1Lisa5 AS (
            AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
            AND left(deebet, 6) IN ('710001')
            AND left(kreedit, 6) IN ('100100')
-         GROUP BY deebet, kreedit, kood5, rekvid
+         GROUP BY deebet, kreedit, kood5
      )
+/*     qryJournal39 AS (SELECT j.deebet,
+                             j.kreedit,
+                             sum(j.summa) AS kassa,
+                             j.kood5      AS artikkel
+                      FROM cur_journal j
+                      WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                        AND kpv <= l_kpv
+                        AND j.rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur(l_rekvid))
+                        AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                        AND j.rekvid = 9
+                      GROUP BY deebet, kreedit, kood5)
+*/
 -- l_result_eelarve_kassa_taps =  get_kontrol ('','1000','',l_field) +
 -- get_kontrol ('','100','',l_field) - get_kontrol ('','1001','',l_field)
 SELECT nimetus::VARCHAR(254)                                AS nimetus,
@@ -218,8 +216,7 @@ SELECT nimetus::VARCHAR(254)                                AS nimetus,
        sum(coalesce(eelarve_kassa_taps, 0))::NUMERIC(14, 2) AS eelarve_kassa_taps,
        sum(coalesce(kassa, 0))::NUMERIC(14, 2)              AS kassa,
        sum(coalesce(saldoandmik, 0))::NUMERIC(14, 2)        AS saldoandmik,
-       idx::INTEGER,
-       rekvid
+       idx::INTEGER
 FROM (
          -- Строка PÕHITEGEVUSE TULUD KOKKU   Kassa täitmine в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
          -- Сумма всех строк с бюджетом 3* Kassa täitmine в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art)  -
@@ -236,8 +233,7 @@ FROM (
                 sum(eelarve_kassa)         AS eelarve_kassa,
                 sum(eelarve_kassa_taps)    AS eelarve_kassa_taps,
                 sum(kassa)                 AS kassa,
-                sum(saldoandmik)           AS saldoandmik,
-                rekvid
+                sum(saldoandmik)           AS saldoandmik
          FROM (
                   SELECT artikkel,
                          eelarve,
@@ -245,8 +241,7 @@ FROM (
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_Pohitulud
                   UNION ALL
                   SELECT '3',
@@ -255,8 +250,7 @@ FROM (
                          -1 * sum(eelarve_kassa),
                          -1 * sum(eelarve_kassa_taps),
                          - 1 * sum(kassa),
-                         -1 * sum(saldoandmik),
-                         rekvid
+                         -1 * sum(saldoandmik)
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3%'
                   UNION ALL
@@ -266,11 +260,9 @@ FROM (
                          -1 * sum(eelarve_kassa),
                          -1 * sum(eelarve_kassa_taps),
                          - 1 * sum(CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END),
-                         -1 * sum(saldoandmik),
-                         rekvid
+                         -1 * sum(saldoandmik)
                   FROM qryLisa1Lisa5
                   WHERE artikkel LIKE '3501%'
-                  GROUP BY rekvid
                   UNION ALL
                   SELECT '3',
                          eelarve,
@@ -278,12 +270,10 @@ FROM (
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '381%'
                     AND artikkel <> '3818'
-                  group by rekvid
                   UNION ALL
                   SELECT '3',
                          eelarve,
@@ -291,8 +281,7 @@ FROM (
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel = '3502'
                   UNION ALL
@@ -302,11 +291,9 @@ FROM (
                          0,
                          0,
                          sum(CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END) AS kassa,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE left(artikkel, 1) = '3'
-                  group by rekvid
                   UNION ALL
                   SELECT '3',
                          0,
@@ -314,13 +301,11 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE -1 END * sum(kassa) AS kassa,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE (artikkel IN ('3501', '3502')
                       OR artikkel = '381'
                             )
-                  group by rekvid
                   UNION ALL
                   --                  Строка PÕHITEGEVUSE TULUD KOKKU   Kassa täitmine в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
                   --                  Сумма всех строк с бюджетом 3* Kassa täitmine в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art)  -
@@ -334,16 +319,13 @@ FROM (
                          0,
                          0,
                          0,
-                         sum(kr - db) AS saldoandmik,
-                         63 as rekvid
+                         sum(kr - db) AS saldoandmik
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3%'
                     AND tp LIKE '185101%'
                     AND l_kond = 1
                     AND l_rekvid = 63
-
               ) qryPohiTulud
-              group by rekvid
 -- Строка PÕHITEGEVUSE TULUD KOKKU   Kassa täitmine в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
 -- Сумма всех строк с бюджетом 3* Kassa täitmine в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art)  -
 -- строка 3501 Kassa täitmine в отчете EELARVEARUANNE (Lisa 1, Lisa 5)  +
@@ -362,16 +344,14 @@ FROM (
                 sum(eelarve_kassa)                                                                      AS eelarve_kassa,
                 sum(eelarve_kassa_taps)                                                                 AS eelarve_kassa_taps,
                 sum(kassa)                                                                              AS kassa,
-                sum(saldoandmik)                                                                        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)                                                                        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_Pohikulud
                   UNION ALL
                   SELECT -1 * eelarve,
@@ -379,8 +359,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryEelarveTaitmine
                   WHERE artikkel = '15,2586,4,5,6'
                   UNION ALL
@@ -389,8 +368,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '2586'
                   UNION ALL
@@ -403,8 +381,7 @@ FROM (
                          0,
                          0,
                          -1 * kassa,
-                         0,
-                         rekvid
+                         0
                   FROM qryEelarveTaitmine
                   WHERE artikkel = '2586(A80)'
                   UNION ALL
@@ -415,8 +392,7 @@ FROM (
                          0,
                          0,
                          0,
-                         CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN db - kr ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN db - kr ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE left(konto, 1) IN ('4', '5', '6')
                     AND tp LIKE '185101%'
@@ -432,7 +408,6 @@ FROM (
                   WHERE artikkel LIKE '55%'
 */
               ) qryKulud
-         group by rekvid
          UNION ALL
 
          -- Строка 30 Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
@@ -444,16 +419,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_art30
                   UNION ALL
                   SELECT -1 * eelarve,
@@ -461,8 +434,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '30%'
                   UNION ALL
@@ -474,14 +446,11 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE
                         '30%'
-             GROUP BY rekvid
               ) qry30
-         group by rekvid
          UNION ALL
          -- Строка 3000 Tekke eelarve täps в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
          -- Сумма всех строк с бюджетом 3000 в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke eelarve täps=0
@@ -492,8 +461,7 @@ FROM (
                 sum(COALESCE(eelarve_kassa, 0))      AS eelarve_kassa,
                 sum(COALESCE(eelarve_kassa_taps, 0)) AS eelarve_kassa_taps,
                 sum(COALESCE(kassa, 0))              AS kassa,
-                sum(COALESCE(saldoandmik, 0))        AS saldoandmik,
-                rekvid
+                sum(COALESCE(saldoandmik, 0))        AS saldoandmik
          FROM (
                   SELECT '3000'::VARCHAR(254) AS nimetus,
                          eelarve,
@@ -501,8 +469,7 @@ FROM (
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3000'
                   UNION ALL
@@ -512,8 +479,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel = '3000'
                   UNION ALL
@@ -523,12 +489,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel = '3000'
               ) qry3000
-         group by rekvid
          UNION ALL
          SELECT 1010                                 AS idx,
                 '3030'                               AS nimetus,
@@ -537,16 +501,14 @@ FROM (
                 sum(coalesce(eelarve_kassa, 0))      AS eelarve_kassa,
                 sum(coalesce(eelarve_kassa_taps, 0)) AS eelarve_kassa_taps,
                 sum(coalesce(kassa, 0))              AS kassa,
-                sum(coalesce(saldoandmik, 0))        AS saldoandmik,
-                rekvid
+                sum(coalesce(saldoandmik, 0))        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3030'
                   UNION ALL
@@ -555,8 +517,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel = '3030'
                   UNION ALL
@@ -565,12 +526,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel = '3030'
               ) qry3030
-         group by rekvid
          UNION ALL
          SELECT 1010                                 AS idx,
                 '3044'                               AS nimetus,
@@ -579,16 +538,14 @@ FROM (
                 sum(coalesce(eelarve_kassa, 0))      AS eelarve_kassa,
                 sum(coalesce(eelarve_kassa_taps, 0)) AS eelarve_kassa_taps,
                 sum(coalesce(kassa, 0))              AS kassa,
-                sum(coalesce(saldoandmik, 0))        AS saldoandmik,
-                rekvid
+                sum(coalesce(saldoandmik, 0))        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3044'
                   UNION ALL
@@ -597,8 +554,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel = '3044'
                   UNION ALL
@@ -607,12 +563,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel = '3044'
               ) qry3044
-         group by rekvid
          UNION ALL
          SELECT 1010                                 AS idx,
                 '3045'                               AS nimetus,
@@ -621,16 +575,14 @@ FROM (
                 sum(coalesce(eelarve_kassa, 0))      AS eelarve_kassa,
                 sum(coalesce(eelarve_kassa_taps, 0)) AS eelarve_kassa_taps,
                 sum(coalesce(kassa, 0))              AS kassa,
-                sum(coalesce(saldoandmik, 0))        AS saldoandmik,
-                rekvid
+                sum(coalesce(saldoandmik, 0))        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3045'
                   UNION ALL
@@ -639,8 +591,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel = '3045'
                   UNION ALL
@@ -649,12 +600,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel = '3045'
               ) qry3045
-         group by rekvid
          UNION ALL
          SELECT 1010                                 AS idx,
                 '3047'                               AS nimetus,
@@ -663,16 +612,14 @@ FROM (
                 sum(coalesce(eelarve_kassa, 0))      AS eelarve_kassa,
                 sum(coalesce(eelarve_kassa_taps, 0)) AS eelarve_kassa_taps,
                 sum(coalesce(kassa, 0))              AS kassa,
-                sum(coalesce(saldoandmik, 0))        AS saldoandmik,
-                rekvid
+                sum(coalesce(saldoandmik, 0))        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3047'
                   UNION ALL
@@ -681,8 +628,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel = '3047'
                   UNION ALL
@@ -691,12 +637,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel = '3047'
               ) qry3047
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '32'                    AS nimetus,
@@ -705,16 +649,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '32'
                   UNION ALL
@@ -723,8 +665,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '32%'
                   UNION ALL
@@ -738,8 +679,7 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '32%'
                         -- Строка 32 Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
@@ -764,13 +704,11 @@ FROM (
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '32%'
                     AND tp LIKE '185101%'
               ) qry32
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '320'                   AS nimetus,
@@ -779,16 +717,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '320'
                   UNION ALL
@@ -797,8 +733,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '320%'
                   UNION ALL
@@ -807,12 +742,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '320%'
               ) qry320
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3220'                  AS nimetus,
@@ -821,16 +754,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3220'
                   UNION ALL
@@ -839,8 +770,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3220%'
                   UNION ALL
@@ -849,8 +779,7 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3220%'
                   UNION ALL
@@ -859,13 +788,11 @@ FROM (
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3220%'
                     AND tp LIKE '185101%'
               ) qry3220
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3221'                  AS nimetus,
@@ -874,16 +801,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3221'
                   UNION ALL
@@ -892,8 +817,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3221%'
                   UNION ALL
@@ -902,8 +826,7 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3221%'
                   UNION ALL
@@ -912,13 +835,34 @@ FROM (
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END AS saldoandmik,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END AS saldoandmik
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3221%'
                     AND tp LIKE '185101%'
-              ) qry3221
-         group by rekvid
+--                      Строка 3221 Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) - Сумма всех строк с бюджетом 3221* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine+
+                    --                      Jooksva per saldoandmikust (без элиминирования) конто 3221* TP 185101=0
+                    --                      + сумма строк с бюджетом 3221 в Päevaraamat TP18510139 соответствующего периода
+/*                  UNION ALL
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_kond = 1 THEN -1 * summa ELSE 0 END AS saldoandmik
+
+                  FROM (SELECT sum(j.summa) AS summa
+                        FROM cur_journal j
+                        WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                          AND kpv <= l_kpv
+                          AND j.rekvid IN (SELECT rekv_id
+                                           FROM get_asutuse_struktuur(l_rekvid))
+                          AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                          AND kood5 LIKE '3221%'
+                          AND lisa_k = '18510139'
+                          AND kreedit LIKE '3221%'
+                       ) j
+                  WHERE l_kond = 1
+*/              ) qry3221
          UNION ALL
          SELECT 1010                    AS idx,
                 '3222'                  AS nimetus,
@@ -927,16 +871,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3222'
                   UNION ALL
@@ -945,8 +887,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3222%'
                   UNION ALL
@@ -955,23 +896,31 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3222%'
                   UNION ALL
+/*                  -- убираем элиминирование отд. культуры
                   SELECT 0,
                          0,
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3222%'
+                  UNION ALL
+*/
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3222%'
                     AND tp LIKE '185101%'
               ) qry3222
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3224'                  AS nimetus,
@@ -980,16 +929,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3224'
                   UNION ALL
@@ -998,8 +945,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3224%'
                   UNION ALL
@@ -1008,23 +954,32 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3224%'
+/*                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3224%'
+
+*/
                   UNION ALL
                   SELECT 0,
                          0,
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3224%'
                     AND tp LIKE '185101%'
               ) qry3224
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3229'                  AS nimetus,
@@ -1033,16 +988,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3229'
                   UNION ALL
@@ -1051,8 +1004,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3229%'
                   UNION ALL
@@ -1064,19 +1016,28 @@ FROM (
                          0
                   FROM qryJournal
                   WHERE artikkel LIKE '3229%'
+/*                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3229%'
+*/
                   UNION ALL
                   SELECT 0,
                          0,
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3229%'
                     AND tp LIKE '185101%'
               ) qry3229
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3232'                  AS nimetus,
@@ -1085,16 +1046,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3232'
                   UNION ALL
@@ -1103,8 +1062,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3232%'
                   UNION ALL
@@ -1113,23 +1071,31 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3232%'
+/*                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3232%'
+*/
                   UNION ALL
                   SELECT 0,
                          0,
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3232%'
                     AND tp LIKE '185101%'
               ) qry3232
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3233'                  AS nimetus,
@@ -1138,16 +1104,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3233'
                   UNION ALL
@@ -1156,8 +1120,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3233%'
                   UNION ALL
@@ -1166,23 +1129,31 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3233%'
+/*                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa  ELSE 0  END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3233%'
+*/
                   UNION ALL
                   SELECT 0,
                          0,
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3233%'
                     AND tp LIKE '185101%'
               ) qry3232
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3237'                  AS nimetus,
@@ -1191,16 +1162,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3237'
                   UNION ALL
@@ -1209,8 +1178,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3237%'
                   UNION ALL
@@ -1219,23 +1187,31 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3237%'
+/*                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3237%'
+*/
                   UNION ALL
                   SELECT 0,
                          0,
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3237%'
                     AND tp LIKE '185101%'
               ) qry3237
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3238'                  AS nimetus,
@@ -1244,16 +1220,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3238'
                   UNION ALL
@@ -1262,8 +1236,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3238%'
                   UNION ALL
@@ -1272,23 +1245,31 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3238%'
+/*                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3238%'
+*/
                   UNION ALL
                   SELECT 0,
                          0,
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END,
-                         rekvid
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3238%'
                     AND tp LIKE '185101%'
               ) qry3237
-         group by rekvid
          UNION ALL
          --         Строка 35 Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
          --         Сумма всех строк с бюджетом 35* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke eelarve kinn -
@@ -1300,16 +1281,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_art35
                   UNION ALL
                   SELECT -1 * eelarve,
@@ -1317,8 +1296,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '35%'
                   UNION ALL
@@ -1327,8 +1305,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE saldoandmik END,
-                         rekvid
+                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE saldoandmik END
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3501'
                   UNION ALL
@@ -1337,8 +1314,7 @@ FROM (
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3502'
 -- Строка 35 Kassa täitmine (Lisa 5) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
@@ -1353,8 +1329,7 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '35%'
                   UNION ALL
@@ -1363,12 +1338,10 @@ FROM (
                          0,
                          0,
                          -1 * CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE (artikkel LIKE '3501%' OR artikkel LIKE '3502%')
               ) qry35
-         group by rekvid
          UNION ALL
          -- Строка 3500 Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
          -- Сумма всех строк с бюджетом 3500* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke eelarve kinn=0
@@ -1379,16 +1352,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '3500'
                   UNION ALL
@@ -1397,8 +1368,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '3500%'
                   UNION ALL
@@ -1408,12 +1378,10 @@ FROM (
                          0,
                          CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN 0 ELSE kassa END,
 --                         kassa,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '3500%'
               ) qry3500
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '352'                   AS nimetus,
@@ -1422,16 +1390,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel LIKE '352%'
                   UNION ALL
@@ -1440,8 +1406,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '352%'
                   UNION ALL
@@ -1453,12 +1418,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '352%'
               ) qry352
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '35200'                 AS nimetus,
@@ -1467,16 +1430,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel LIKE '35200%'
                   UNION ALL
@@ -1485,8 +1446,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '35200%'
                   UNION ALL
@@ -1498,12 +1458,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '35200%'
               ) qry352
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '35201'                 AS nimetus,
@@ -1512,16 +1470,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryLisa1Lisa5
                   WHERE artikkel LIKE '35201%'
                   UNION ALL
@@ -1530,8 +1486,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '35201%'
                   UNION ALL
@@ -1543,12 +1498,10 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '35201%'
               ) qry352
-         group by rekvid
          UNION ALL
          -- Строка 38 Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
          -- Сумма всех строк с бюджетом 38* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke eelarve kinn +
@@ -1565,16 +1518,14 @@ FROM (
                 sum(eelarve_kassa)      AS eelarve_kassa,
                 sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
                 sum(kassa)              AS kassa,
-                sum(saldoandmik)        AS saldoandmik,
-                rekvid
+                sum(saldoandmik)        AS saldoandmik
          FROM (
                   SELECT eelarve,
                          eelarve_taps,
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          kassa,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qry_art38
                   UNION ALL
                   SELECT -1 * eelarve,
@@ -1582,8 +1533,7 @@ FROM (
                          -1 * eelarve_kassa,
                          -1 * eelarve_kassa_taps,
                          -1 * kassa,
-                         -1 * saldoandmik,
-                         rekvid
+                         -1 * saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel LIKE '38%'
                   UNION ALL
@@ -1592,8 +1542,7 @@ FROM (
                          eelarve_kassa,
                          eelarve_kassa_taps,
                          CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN 0 ELSE kassa END,
-                         saldoandmik,
-                         rekvid
+                         saldoandmik
                   FROM qryTuludTaitmine
                   WHERE artikkel = '381'
                   UNION ALL
@@ -1610,8 +1559,7 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel LIKE '38%'
                   UNION ALL
@@ -1620,8 +1568,7 @@ FROM (
                          0,
                          0,
                          -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
-                         0,
-                         rekvid
+                         0
                   FROM qryJournal
                   WHERE artikkel = '381'
                   UNION ALL
@@ -1630,8 +1577,7 @@ FROM (
                          0,
                          0,
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END,
-                         0,
-                         rekvid
+                         0
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '381'
                   UNION ALL
@@ -1640,14 +1586,11 @@ FROM (
                          0,
                          0,
                          0,
-                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN db - kr ELSE 0 END,
-                         rekvid
+                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN db - kr ELSE 0 END
                   FROM qrySaldoandmik
                   WHERE left(konto, 2) = '38'
                     AND left(tp, 6) = '185101'
-
               ) qry38
-         group by rekvid
          UNION ALL
          SELECT 1010                    AS idx,
                 '3818'                  AS nimetus,
@@ -1700,7 +1643,6 @@ FROM (
                   FROM qrySaldoandmik
                   WHERE left(konto, 4) = '3818'
                     AND left(tp, 6) = '185101'
-
               ) qry3818
          UNION ALL
          -- Строка 382 Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
@@ -2857,22 +2799,30 @@ GROUP BY idx, nimetus
 ORDER BY idx, CASE WHEN nimetus = 'PÕHITEGEVUSE TULUD KOKKU' THEN '1' ELSE nimetus END ;
 
 
-$BODY$
-    LANGUAGE SQL
-    VOLATILE
-    COST 100;
+$BODY$;
+
+ALTER FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER)
+    OWNER TO vlad;
+
+GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO PUBLIC;
+
+GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO dbkasutaja;
+
+GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO dbpeakasutaja;
+
+GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO dbvaatleja;
+
+GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO eelaktsepterja;
+
+GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO vlad;
 
 
-GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol_(DATE, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol_(DATE, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol_(DATE, INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol_(DATE, INTEGER, INTEGER) TO dbvaatleja;
 
-
-SELECT *
-FROM eelarve.lisa1_lisa5_kontrol_('2023-06-30'::DATE, 63, 1)
-WHERE  nimetus like '38%'
+/*
+SELECT sum(saldoandmik) OVER (PARTITION BY nimetus) AS sa_kokku, *
+FROM eelarve.lisa1_lisa5_kontrol('2023-09-30'::DATE, 63, 1)
+--WHERE  nimetus like '3221%'
 ORDER BY idx, nimetus
-
+*/
 
 /**/

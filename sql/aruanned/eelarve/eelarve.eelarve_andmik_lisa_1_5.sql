@@ -1,5 +1,23 @@
 DROP FUNCTION IF EXISTS eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER);
 
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik (
+    idx         TEXT,
+    tyyp        INTEGER,
+    tegev       VARCHAR(20),
+    artikkel    VARCHAR(20),
+    rahavoog    VARCHAR(20),
+    nimetus     VARCHAR(254),
+    eelarve     NUMERIC(14, 2),
+    tegelik     NUMERIC(14, 2),
+    kassa       NUMERIC(14, 2),
+    saldoandmik NUMERIC(14, 2),
+    db          NUMERIC(14, 2),
+    kr          NUMERIC(14, 2),
+    aasta       INTEGER,
+    kuu         INTEGER,
+    rekv_id     INTEGER,
+    rekvid      INTEGER
+);
 
 
 CREATE OR REPLACE FUNCTION eelarve.eelarve_andmik_lisa_1_5(IN l_kpv DATE,
@@ -49,6 +67,7 @@ BEGIN
     -- ,'9100','9101'
 
     -- will fill temp table with row data
+    raise notice 'start lisa 1 - 5';
     PERFORM eelarve.eelarve_andmik_lisa_1_5_query(l_kpv, l_rekvid, l_kond);
 
 
@@ -1464,8 +1483,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2023,12, 31),63, 1) qry
---         where artikkel like '382%'
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2023,06, 30),66, 1) qry
+         where artikkel like '55%'
         where tegev is not null and tegev = '01114'
      ) qry
 --test

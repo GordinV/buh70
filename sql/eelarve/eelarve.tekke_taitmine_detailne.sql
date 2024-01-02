@@ -11,7 +11,8 @@ CREATE OR REPLACE FUNCTION eelarve.tekke_taitmine_detailne(l_kpv1 DATE, l_kpv2 D
         rahavoog VARCHAR(20),
         tunnus   VARCHAR(20),
         proj     VARCHAR(20),
-        uritus   VARCHAR(20)
+        uritus   VARCHAR(20),
+        objekt VARCHAR(20)
     )
 AS
 $BODY$
@@ -37,7 +38,8 @@ WITH qryKontodKulud AS (
                 coalesce((l_params ->> 'tunnus')::TEXT, '') || '%'   AS tunnus,
                 coalesce((l_params ->> 'proj')::TEXT, '') || '%'     AS proj,
                 coalesce((l_params ->> 'uritus')::TEXT, '') || '%'   AS uritus,
-                coalesce((l_params ->> 'rahavoog')::TEXT, '') || '%' AS rahavoog
+                coalesce((l_params ->> 'rahavoog')::TEXT, '') || '%' AS rahavoog,
+                coalesce((l_params ->> 'objekt')::TEXT, '') || '%'   AS objekt
      ),
      rekv_ids AS (
          SELECT a.rekv_id
@@ -66,7 +68,8 @@ SELECT qry.rekvid     AS rekv_id,
        qry.rahavoog,
        qry.tunnus,
        qry.proj,
-       qry.uritus
+       qry.uritus,
+       qry.objekt
 FROM (
          -- расходы
          SELECT 1                          AS kulud,
@@ -81,6 +84,7 @@ FROM (
                 j1.tunnus,
                 j1.proj                    AS proj,
                 j1.kood4                   AS uritus,
+                j1.objekt,
                 j.rekvid
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
@@ -97,7 +101,7 @@ FROM (
            AND d.doc_type_id IN (SELECT id FROM docs_types)
            AND j1.kood5 IN (SELECT kood FROM qryArt)
            AND NOT empty(j1.kood5)
-         GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid, j1.proj, j1.kood4
+         GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid, j1.proj, j1.kood4, j1.objekt
          UNION ALL
          -- востановление расходов
          SELECT 2                                 AS tulud,
@@ -111,6 +115,7 @@ FROM (
                 j1.tunnus,
                 j1.proj,
                 j1.kood4                          AS uritus,
+                j1.objekt,
                 j.rekvid
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
@@ -126,7 +131,7 @@ FROM (
            AND d.doc_type_id IN (SELECT id FROM docs_types)
            AND j1.kood5 IN (SELECT kood FROM qryArt)
            AND NOT empty(j1.kood5)
-         GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid, j1.proj, j1.kood4
+         GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid, j1.proj, j1.kood4, j1.objekt
      ) qry,
      params
 WHERE NOT empty(qry.artikkel)
@@ -137,9 +142,10 @@ WHERE NOT empty(qry.artikkel)
   AND coalesce(qry.proj,'') LIKE params.proj
   AND coalesce(qry.uritus,'') LIKE params.uritus
   AND coalesce(qry.rahavoog,'') LIKE params.rahavoog
+  AND coalesce(qry.objekt,'') LIKE params.objekt
   AND qry.summa <> 0
 
-GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus;
+GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus, qry.objekt;
 
 $BODY$
     LANGUAGE SQL
@@ -155,7 +161,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tekke_taitmine_detailne( DATE,DATE, INTEGER, I
 
 select * from (
 SELECT *
-FROM eelarve.tekke_taitmine_detailne('2023-01-01', '2023-03-31', 119, 1, '{"allikas":"60","artikkel":"5525", "proj":"23016","tunnus":"09510"}'::jsonb)
+FROM eelarve.tekke_taitmine_detailne('2023-01-01', '2023-12-31', 132, 1, '{"allikas":"","artikkel":"", "proj":"","tunnus":""}'::jsonb)
 ) qry
 where artikkel like '4502%'
 */

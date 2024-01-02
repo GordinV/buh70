@@ -66,6 +66,12 @@ BEGIN
         RETURN 0;
     END IF;
 
+    IF NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
+    THEN
+        RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
+    END IF;
+    
+
     IF doc_muud = 'Oppetasu algsaldo 2023' AND doc_kpv = '2022-12-31' AND user_id NOT IN (
         SELECT id
         FROM ou.userid

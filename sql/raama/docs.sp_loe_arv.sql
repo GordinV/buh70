@@ -54,6 +54,8 @@ BEGIN
               AND mk.jaak > 0
             ORDER BY MK.kpv ASC
             LOOP
+                
+                raise notice 'v_mk.jaak %',v_mk.jaak;
                 -- списываем в оплату сальдо счета (только остаток счета)
                 IF l_arv_jaak >= v_mk.jaak
                 THEN
@@ -63,10 +65,14 @@ BEGIN
                     --в оплату пошел сальдо счета
                     l_tasu = l_arv_jaak;
                 END IF;
+                raise notice 'l_tasu %',l_tasu;
 
                 -- вызывает оплату
                 -- l_tasu_id integer, l_arv_id integer,
                 result = docs.sp_tasu_arv(v_mk.id, v_arve.id, l_user_id, l_tasu);
+
+                raise notice 'result %',result;
+
 
                 IF result IS NOT NULL AND result > 0
                 THEN

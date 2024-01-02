@@ -12,6 +12,7 @@ CREATE OR REPLACE FUNCTION eelarve.uus_kassa_tulu_taitmine_detailne(l_kpv1 DATE,
         tunnus   VARCHAR(20),
         proj     VARCHAR(20),
         uritus   VARCHAR(20),
+        objekt   VARCHAR(20),
         docs_ids INTEGER[],
         kuu      INTEGER,
         aasta    INTEGER
@@ -70,6 +71,7 @@ SELECT qry.rekvid              AS rekv_id,
        qry.tunnus,
        qry.proj,
        qry.uritus,
+       qry.objekt,
        array_agg(qry.docs_ids) AS docs_ids,
        qry.kuu,
        qry.aasta
@@ -83,6 +85,7 @@ FROM (
                 j1.tunnus::TEXT,
                 j1.proj::TEXT                 AS proj,
                 j1.kood4::TEXT                AS uritus,
+                j1.objekt::TEXT,
                 j.rekvid,
                 FALSE                         AS kas_kulud,
                 d.id                          AS docs_ids,
@@ -110,6 +113,7 @@ FROM (
                 j1.tunnus::TEXT,
                 j1.proj::TEXT                 AS proj,
                 j1.kood4::TEXT                AS uritus,
+                j1.objekt::TEXT,
                 j.rekvid,
                 FALSE                         AS kas_kulud,
                 d.id                          AS docs_ids,
@@ -133,7 +137,8 @@ FROM (
 WHERE NOT empty(qry.artikkel)
   AND qry.summa <> 0
   AND qry.artikkel NOT IN ('2586')
-GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.proj, qry.uritus, qry.rahavoog, qry.kuu,
+GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.proj, qry.uritus, qry.objekt, qry.rahavoog,
+         qry.kuu,
          qry.aasta
 HAVING sum(qry.summa) <> 0;
 
@@ -150,8 +155,8 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine_detailne( DATE,DATE, I
 /*
 
 SELECT sum(summa) over(), *
-FROM eelarve.uus_kassa_tulu_taitmine_detailne('2023-01-01', '2023-12-31', 63, 0)
-where artikkel = '3501'
+FROM eelarve.uus_kassa_tulu_taitmine_detailne('2023-01-01', '2023-12-31', 132, 0)
+where artikkel = '3224'
 
 44761121.71
 

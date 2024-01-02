@@ -167,8 +167,14 @@ GRANT EXECUTE ON FUNCTION docs.sp_loe_tasu(INTEGER, INTEGER) TO arvestaja;
 
 COMMENT ON FUNCTION docs.sp_loe_tasu(INTEGER, INTEGER) IS 'производит поиск неоплаченных счетов и вызывает процедуру их оплаты';
 
-/*SELECT *
-FROM docs.sp_loe_tasu(2354874, 3)
+/*
+SELECT *
+FROM docs.sp_loe_tasu(5390079, 5392)
+
+select * from docs.arvtasu where doc_tasu_id = 5390079
+
+delete from docs.arvtasu where doc_tasu_id = 5390079
+
 */
 
 /*

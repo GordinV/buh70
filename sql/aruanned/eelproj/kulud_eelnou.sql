@@ -324,7 +324,7 @@ BEGIN
                         CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
                         sum(summa_kassa)                                                                    AS summa,
                         sum(oodatav_taitmine)                                                               AS oodatav_taitmine,
-                        string_agg(REPLACE(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
+                        string_agg(DISTINCT REPLACE(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
@@ -360,7 +360,7 @@ BEGIN
                    AND (l_allikas IS NULL OR e.kood2 ILIKE '%' || l_allikas || '%')
                    AND e.kpv IS NULL
                    AND e.status <> 3
-                   AND kood5 IN (SELECT kood FROM qryArtikkel)
+                   AND e.kood5 IN (SELECT kood FROM qryArtikkel)
                  GROUP BY e.rekvid,
                           e.kood5,
                           e.kood1,
@@ -385,7 +385,7 @@ BEGIN
                    AND e.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR e.kood2 ILIKE '%' || l_allikas || '%')
                    AND e.status <> 3
-                   AND kood5 IN (SELECT kood FROM qryArtikkel)
+                   AND e.kood5 IN (SELECT kood FROM qryArtikkel)
                  GROUP BY e.rekvid,
                           e.kood5,
                           e.kood1,
@@ -400,7 +400,7 @@ BEGIN
                         t1.kood2                                                                            AS allikas,
                         CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
                         sum(oodatav_taitmine)                                                               AS summa,
-                        string_agg(REPLACE(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
+                        string_agg(DISTINCT REPLACE(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
@@ -578,7 +578,7 @@ BEGIN
                         sum(S.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
                         sum(S.eelarve_tekkepohine_kinnitatud)::NUMERIC(14, 2)  AS eelarve_tekkepohine_kinnitatud,
                         sum(S.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
-                        string_agg(S.selg, ',')                                AS selg
+                        string_agg(DISTINCT S.selg, ',')                                AS selg
                  FROM preReport S
                           INNER JOIN qryArtikkel l ON l.kood = S.artikkel
                           INNER JOIN ou.rekv r ON r.id = S.rekvid
@@ -624,7 +624,7 @@ BEGIN
                             sum(qryReport.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
                             sum(qryReport.aasta_3_eelnou)                  AS aasta_3_eelnou,
                             sum(qryReport.aasta_3_prognoos)                AS aasta_3_prognoos,
-                            string_agg(qryReport.selg, ',')                AS selg
+                            string_agg(DISTINCT qryReport.selg, ',')                AS selg
                      FROM qryReport
                      GROUP BY qryReport.idx,
                               qryreport.rekvid,
@@ -647,7 +647,7 @@ BEGIN
                         sum(qryReport.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
                         sum(qryReport.aasta_3_eelnou)                  AS aasta_3_eelnou,
                         sum(qryReport.aasta_3_prognoos)                AS aasta_3_prognoos,
-                        string_agg(qryReport.selg, ',')                AS selg
+                        string_agg(DISTINCT qryReport.selg, ',')                AS selg
                  FROM pre_report qryReport
                  GROUP BY qryReport.idx,
                           qryreport.rekv_id,
@@ -736,15 +736,13 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO dbvaatleja;
 
 /*
-SELECT  sum(aasta_3_eelnou) over() as kinni, sum(aasta_3_prognoos) over() as taps, *
-FROM eelarve.kulud_eelnou('2022-06-30'::DATE, 64:: INTEGER, 0, jsonb_build_object('taotlus_statusid', 1))
-where artikkel = '506'
+SELECT  *
+FROM eelarve.kulud_eelnou('2023-12-31'::DATE, 28:: INTEGER, 0, null::jsonb)
+where artikkel = '4500'
 and tegev = '07600'
 ORDER BY rekv_id, ARTIKKEL, tegev, TUNNUS
 
 */--where idx = 100
-kinni;taps
-267326;317607
 
 
 

@@ -30,3 +30,6 @@ CREATE INDEX taotlus1_eelarveid
 
 ALTER TABLE eelarve.taotlus1
     ADD COLUMN IF NOT EXISTS oodatav_taitmine NUMERIC(14, 2) DEFAULT 0;
+
+ALTER TABLE eelarve.taotlus1
+    ADD COLUMN IF NOT EXISTS objekt varchar(20);

@@ -11,14 +11,18 @@ DECLARE
     l_jaak            NUMERIC(12, 4);
     l_status          INTEGER;
     l_kpv             DATE;
+    l_rekv_id         INTEGER ;
+    l_alus_arve_id integer; -- основание кредитового счета
     DOC_STATUS_CLOSED INTEGER = 2; -- документ закрыт
     DOC_STATUS_ACTIVE INTEGER = 1; -- документ подлежит редактированию
 BEGIN
 
     SELECT coalesce(arv.summa, 0) :: NUMERIC,
            arv.jaak,
-           d.status
-    INTO l_arv_summa, l_jaak, l_status
+           d.status,
+           d.rekvid,
+           arv.properties->>'alus_arve_id' as alus_arve_id
+    INTO l_arv_summa, l_jaak, l_status, l_rekv_id, l_alus_arve_id
     FROM docs.arv arv
              INNER JOIN docs.doc d ON d.id = arv.parentid
     WHERE d.id = l_arv_Id;
@@ -44,17 +48,27 @@ BEGIN
         l_jaak := l_arv_summa - l_tasu_summa;
     END IF;
 
+    if l_arv_summa < 0 and l_alus_arve_id is not null then
+        -- это кредитовый счет
+        l_jaak = 0;
+    END IF;
+
     UPDATE docs.arv
     SET tasud = l_kpv,
         jaak  = coalesce(l_jaak, 0)
     WHERE parentid = l_arv_Id;
 
-    UPDATE docs.doc
-    SET status = CASE
-                     WHEN l_jaak = 0
-                         THEN DOC_STATUS_CLOSED
-                     ELSE DOC_STATUS_ACTIVE END
-    WHERE id = l_arv_Id;
+
+    IF docs.is_period_opened(l_arv_Id) 
+    THEN
+        UPDATE docs.doc
+        SET status = CASE
+                         WHEN l_jaak = 0
+                             THEN DOC_STATUS_CLOSED
+                         ELSE DOC_STATUS_ACTIVE END
+        WHERE id = l_arv_Id;
+
+    END IF;
 
     RETURN l_jaak;
 END;
@@ -68,7 +82,9 @@ GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbpeakasutaja;
 /*
 
-SELECT docs.sp_update_arv_jaak(4495326)
+SELECT docs.sp_update_arv_jaak(5600984)
 FROM docs.arv
+
+select
 
 */

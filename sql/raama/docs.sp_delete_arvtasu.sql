@@ -24,36 +24,13 @@ BEGIN
     IF v_doc IS NULL
     THEN
         error_code = 6;
-        error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
+        error_message = 'Viga, Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
+        raise notice 'error_message %', error_message;
         result = 0;
         RETURN;
 
     END IF;
 
-    -- 0 = открыт
-    -- 1 закрыт
-    IF NOT docs.is_period_opened(v_doc.doc_tasu_id)
-    THEN
-        error_code = 1;
-        error_message = 'Period on suletatud';
-        result = 0;
-    END IF;
-
-
-    IF NOT exists(SELECT id
-                  FROM ou.userid u
-                  WHERE id = userid
-                    AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
-        )
-    THEN
-
-        error_code = 5;
-        error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
-                        coalesce(userid, 0) :: TEXT;
-        result = 0;
-        RETURN;
-
-    END IF;
 
     UPDATE docs.arvtasu
     SET status = 3

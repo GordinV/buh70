@@ -56,3 +56,7 @@ CREATE INDEX arv1_parentid
 
 ALTER TABLE docs.arv1
     ALTER COLUMN kogus TYPE numeric(18, 4);
+
+alter table docs.arv1
+    add column if not exists objekt character varying(20) null;
+

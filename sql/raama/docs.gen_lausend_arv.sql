@@ -255,6 +255,7 @@ BEGIN
                        arv1.kood4,
                        arv1.kood5,
                        arv1.tunnus,
+                       arv1.objekt,
                        arv1.konto,
                        sum(arv1.summa)                                                      AS summa,
                        sum(arv1.kbmta)                                                      AS kbmta,
@@ -275,6 +276,7 @@ BEGIN
                          arv1.kood4,
                          arv1.kood5,
                          arv1.tunnus,
+                         arv1.objekt,
                          arv1.proj,
                          arv1.konto
                 LOOP
@@ -306,6 +308,7 @@ BEGIN
                            '800699'                        AS lisa_k,
                            coalesce(v_arv1.tunnus, '')     AS tunnus,
                            coalesce(v_arv1.proj, '')       AS proj,
+                           v_arv1.objekt                   AS objekt,
                            coalesce(v_arv1.kood1, '')      AS kood1,
                            coalesce(v_arv1.kood2, '')      AS kood2,
                            coalesce(v_arv1.kood3, '')      AS kood3,
@@ -334,6 +337,7 @@ BEGIN
                                '800699'                        AS lisa_d,
                                '800699'                        AS lisa_k,
                                coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               v_arv1.objekt                   AS objekt,
                                coalesce(v_arv1.proj, '')       AS proj,
                                coalesce(v_arv1.kood1, '')      AS kood1,
                                coalesce(v_arv1.kood2, '')      AS kood2,
@@ -358,6 +362,7 @@ BEGIN
                                '800699'                        AS lisa_d,
                                '800699'                        AS lisa_k,
                                coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               v_arv1.objekt                   AS objekt,
                                coalesce(v_arv1.proj, '')       AS proj,
                                coalesce(v_arv1.kood1, '')      AS kood1,
                                coalesce(v_arv1.kood2, '')      AS kood2,
@@ -377,6 +382,7 @@ BEGIN
                                '800699'                        AS lisa_d,
                                '800699'                        AS lisa_k,
                                coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               v_arv1.objekt                   AS objekt,
                                coalesce(v_arv1.proj, '')       AS proj,
                                coalesce(v_arv1.kood1, '')      AS kood1,
                                coalesce(v_arv1.kood2, '')      AS kood2,
@@ -404,6 +410,7 @@ BEGIN
                                '800699'                        AS lisa_k,
                                coalesce(v_arv1.tunnus, '')     AS tunnus,
                                coalesce(v_arv1.proj, '')       AS proj,
+                               v_arv1.objekt                   AS objekt,
                                coalesce(v_arv1.kood1, '')      AS kood1,
                                coalesce(v_arv1.kood2, '')      AS kood2,
                                coalesce(v_arv1.kood3, '')      AS kood3,
@@ -422,6 +429,7 @@ BEGIN
                                '800699'                        AS lisa_d,
                                '800699'                        AS lisa_k,
                                coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               v_arv1.objekt                   AS objekt,
                                coalesce(v_arv1.proj, '')       AS proj,
                                coalesce(v_arv1.kood1, '')      AS kood1,
                                coalesce(v_arv1.kood2, '')      AS kood2,
@@ -448,6 +456,7 @@ BEGIN
                                '800699'                        AS lisa_d,
                                '800699'                        AS lisa_k,
                                v_arv1.tunnus                   AS tunnus,
+                               v_arv1.objekt                   AS objekt,
                                coalesce(v_arv1.proj, '')       AS proj,
                                coalesce(v_arv1.kood1, '')      AS kood1,
                                coalesce(v_arv1.kood2, '')      AS kood2,
@@ -531,6 +540,7 @@ BEGIN
                                coalesce(lcDbTp, '800599')      AS lisa_d,
                                coalesce(lcKrTp, '800599')      AS lisa_k,
                                coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               v_arv1.objekt                   AS objekt,
                                coalesce(v_arv1.proj, '')       AS proj,
                                coalesce(v_arv1.kood1, '')      AS kood1,
                                coalesce(v_arv1.kood2, '')      AS kood2,
@@ -578,6 +588,7 @@ BEGIN
                                    coalesce(lcDbTp, '800699')       AS lisa_d,
                                    coalesce(lcKrTp, '800699')       AS lisa_k,
                                    coalesce(v_arv1.tunnus, '')      AS tunnus,
+                                   v_arv1.objekt                    AS objekt,
                                    coalesce(v_arv1.proj, '')        AS proj,
                                    coalesce(v_arv1.kood1, '')       AS kood1,
                                    coalesce(v_arv1.kood2, '')       AS kood2,
@@ -635,6 +646,7 @@ BEGIN
                                    coalesce(v_dokprop.kbmkonto, '203010')           AS kreedit,
                                    '014001'                                         AS lisa_k,
                                    coalesce(v_arv1.tunnus, '')                      AS tunnus,
+                                   v_arv1.objekt                                    AS objekt,
                                    coalesce(v_arv1.proj, '')                        AS proj,
                                    coalesce(v_arv1.kood1, '')                       AS kood1,
                                    coalesce(v_arv1.kood2, '')                       AS kood2,
@@ -670,6 +682,7 @@ BEGIN
                                coalesce(v_dokprop.konto, '203010') AS kreedit,
                                coalesce(lcKrTp, '014001')          AS lisa_k,
                                coalesce(v_arv1.tunnus, '')         AS tunnus,
+                               v_arv1.objekt                       AS objekt,
                                coalesce(v_arv1.proj, '')           AS proj,
                                coalesce(v_arv1.kood1, '')          AS kood1,
                                coalesce(v_arv1.kood2, '')          AS kood2,
@@ -697,6 +710,7 @@ BEGIN
                                    coalesce(v_dokprop.konto, '203010')    AS kreedit,
                                    coalesce(lcKrTp, '014001')             AS lisa_k,
                                    coalesce(v_arv1.tunnus, '')            AS tunnus,
+                                   v_arv1.objekt                          AS objekt,
                                    coalesce(v_arv1.proj, '')              AS proj,
                                    coalesce(v_arv1.kood1, '')             AS kood1,
                                    coalesce(v_arv1.kood2, '')             AS kood2,
@@ -885,8 +899,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 
 /*
 
-
-SELECT  docs.gen_lausend_arv(5134869, 5420)
+SELECT  docs.gen_lausend_arv(5386332, 4461)
 
 */
 

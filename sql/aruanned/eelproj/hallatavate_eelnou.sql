@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION eelarve.hallatavate_eelnou(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER)
+CREATE OR REPLACE FUNCTION eelarve.hallatavate_eelnou(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER, l_aktsepteeritud_status integer default 1)
     RETURNS TABLE (
         rekv_id   INTEGER,
         parent_id INTEGER,
@@ -18,7 +19,8 @@ $BODY$
 WITH params AS (
     SELECT l_rekvid AS rekvid,
            l_kpv    AS kpv,
-           l_kond   AS kond
+           l_kond   AS kond,
+           case when coalesce(l_aktsepteeritud_status,1) = 1 then array[3] else array[0,1,2,3] end as taotluste_statused
 ),
      qryEelarve AS (
          -- 2022 põhieelarve
@@ -60,7 +62,7 @@ WITH params AS (
                   INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
               params
          WHERE t.aasta = YEAR(params.kpv) + 1
-           AND t.status IN (3)
+           AND t.status IN (select unnest(params.taotluste_statused))
            AND t.rekvid = (CASE
                                WHEN $3 = 1
                                    THEN t.rekvid
@@ -113,7 +115,7 @@ WITH params AS (
                   INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
               params
          WHERE t.aasta = YEAR(params.kpv) + 1
-           AND t.status IN (3)
+           AND t.status IN (select unnest(params.taotluste_statused))
            AND t.rekvid = (CASE
                                WHEN $3 = 1
                                    THEN t.rekvid
@@ -219,20 +221,22 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER, INTEGER) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.hallatavate_eelnou(DATE, INTEGER, INTEGER, INTEGER) TO dbvaatleja;
 
 
-SELECT CASE
+SELECT sum(summa_4) OVER ()                                                                         AS kokku,
+
+       CASE
            WHEN r.parentid IN (119, 3, 64) THEN ltrim(rtrim(coalesce(p.nimetus, '')))
            ELSE r.nimetus END ::VARCHAR(254)                                                        AS asutus,
        CASE WHEN r.parentid IN (119, 3, 64) THEN ltrim(rtrim(r.nimetus)) ELSE '' END ::VARCHAR(254) AS hallava_asutus,
        l.nimetus                                                                                    AS nimetus,
        t.nimetus                                                                                    AS tegev_nimetus,
        qry.*
-FROM eelarve.hallatavate_eelnou('2022-12-31', 119, 1) qry
+FROM eelarve.hallatavate_eelnou('2022-12-31', 119, 1, 0) qry
          LEFT OUTER JOIN ou.rekv r ON r.id = qry.rekv_id
          LEFT OUTER JOIN ou.rekv p ON p.id = qry.parent_id
          LEFT OUTER JOIN (SELECT kood, nimetus
@@ -262,13 +266,16 @@ ORDER BY CASE
              WHEN r.parentid = 119 THEN 300
              ELSE 900 END * 1000, r.nimetus,
          qry.kas_tulud,
-         CASE WHEN artikkel = 'KULUD' THEN '0' WHEN artikkel = 'TULUD' THEN '00'  ELSE qry.artikkel END,
+         CASE WHEN artikkel = 'KULUD' THEN '0' WHEN artikkel = 'TULUD' THEN '00' ELSE qry.artikkel END,
          CASE WHEN qry.tegev IS NULL THEN '000000' ELSE qry.tegev END
 
 /*
 
+51196444
+51193468
+
 SELECT *
-FROM eelarve.hallatavate_eelnou('2022-07-31', 63, 1)
+FROM eelarve.hallatavate_eelnou('2022-07-31', 63, 0)
 
 select * from libs.library
 where library.library = 'DOK'

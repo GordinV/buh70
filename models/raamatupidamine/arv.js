@@ -6,7 +6,7 @@ const start = require('./../BP/start'),
     endProcess = require('./../BP/endProcess');
 
 const Arv = {
-    selectAsLibs: `SELECT *, $2 AS rekvid
+    selectAsLibs: `SELECT id, arv_id, number, kpv, summa, liik, asutus::varchar(254) as asutus, asutusid, arvid, rekvid, jaak, tasudok, tasud , $2 AS rekvid
                    FROM com_arved a
                    WHERE (a.rekvId = $1::INTEGER)`, //$1 - rekvid, $2 userid
     select: [
@@ -53,8 +53,16 @@ const Arv = {
                          coalesce((a.properties ->> 'aa')::TEXT, qry_aa.arve)::VARCHAR(20) AS aa,
                          coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120)    AS viitenr,
                          coalesce((a.properties ->> 'tyyp')::TEXT, '')::VARCHAR(20)        AS tyyp,
-                         coalesce((a.properties ->> 'taskuraha_kov')::NUMERIC, 0)          AS taskuraha_kov
-
+                         coalesce((a.properties ->> 'taskuraha_kov')::NUMERIC, 0)          AS taskuraha_kov,
+                         (select arv.number
+                          from docs.arvtasu at
+                                   INNER JOIN docs.arv arv on arv.parentid = at.doc_arv_id
+                          where at.pankkassa = 4 -- kreeditarve
+                            and at.doc_tasu_id = a.parentid
+                            and at.status < 3
+                          limit 1
+                         )                                                      AS kr_number,       
+                         (a.properties->> 'alus_arve_id')::integer as alus_arve_id
                   FROM docs.doc d
                            INNER JOIN libs.library l ON l.id = d.doc_type_id
                            INNER JOIN docs.arv a ON a.parentId = d.id
@@ -118,7 +126,8 @@ const Arv = {
                               NULL :: VARCHAR(120)                                                   AS koostaja,
                               0 ::INTEGER                                                            AS is_show_journal,
                               ''::VARCHAR(120)                                                       AS viitenr,
-                              0::numeric as taskuraha_kov
+                              0::numeric                                                             AS taskuraha_kov,
+                              NULL::INTEGER                                                          AS  alus_arve_id
                        FROM libs.library l,
                             libs.library s,
                             ou.userid u
@@ -151,6 +160,7 @@ const Arv = {
                          a1.kood5,
                          a1.tunnus,
                          a1.proj,
+                         a1.objekt,
                          a1.konto,
                          a1.tp,
                          NULL :: TEXT                                                                  AS vastisik,
@@ -425,46 +435,118 @@ const Arv = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Staatus", width: "100px"},
         ],
-        sqlString: `SELECT id,
-                           arv_id,
-                           number :: VARCHAR(20),
-                           rekvid,
-                           kpv,
-                           summa,
-                           tahtaeg,
-                           jaak,
-                           lisa,
-                           tasud,
-                           tasudok,
-                           userid,
-                           asutus :: VARCHAR(254),
-                           regkood::VARCHAR(20),
-                           omvorm::VARCHAR(20),
-                           aadress::TEXT,
-                           email::VARCHAR(254),
-                           asutusid,
-                           journalid,
-                           liik,
-                           ametnik,
-                           objektid,
-                           objekt :: VARCHAR(254),
-                           markused,
-                           lausnr,
-                           docs_ids,
-                           coalesce(a.arve, qry_aa.arve)::VARCHAR(20) AS aa,
-                           a.viitenr::VARCHAR(120)                    AS viitenr,
-                           ebatoenaolised,
-                           korr_konto
-                    FROM cur_arved a,
-                         (SELECT arve
-                          FROM ou.aa aa
-                          WHERE aa.parentid = $1
-                            AND NOT empty(default_::INTEGER)
-                            AND NOT empty(kassa::INTEGER)
-                            AND kassa = 1
-                          LIMIT 1) qry_aa
-                    WHERE a.rekvId = $1::INTEGER
-                      AND docs.usersRigths(a.id, 'select', $2::INTEGER)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `WITH params AS (
+                        SELECT $1::INTEGER AS rekv_id,
+                               $2::INTEGER AS user_id
+                    ),
+                         arved AS (
+                             SELECT id,
+                                    arv_id,
+                                    number :: VARCHAR(20),
+                                    rekvid,
+                                    kpv,
+                                    summa,
+                                    tahtaeg,
+                                    jaak,
+                                    lisa,
+                                    tasud,
+                                    tasudok,
+                                    userid,
+                                    asutus :: VARCHAR(254),
+                                    regkood::VARCHAR(20),
+                                    omvorm::VARCHAR(20),
+                                    aadress::TEXT,
+                                    email::VARCHAR(254),
+                                    asutusid,
+                                    journalid,
+                                    liik,
+                                    ametnik,
+                                    objektid,
+                                    objekt :: VARCHAR(254),
+                                    markused,
+                                    lausnr,
+                                    docs_ids,
+                                    coalesce(a.arve, qry_aa.arve)::VARCHAR(20) AS aa,
+                                    a.viitenr::VARCHAR(120)                    AS viitenr,
+                                    ebatoenaolised,
+                                    korr_konto
+                             FROM cur_arved a,
+                                  params,
+                                  (SELECT arve
+                                   FROM ou.aa aa,
+                                        params
+                                   WHERE aa.parentid = params.rekv_id
+                                     AND NOT empty(default_::INTEGER)
+                                     AND NOT empty(kassa::INTEGER)
+                                     AND kassa = 1
+                                   LIMIT 1) qry_aa
+                             WHERE a.rekvId = params.rekv_id::INTEGER
+                         ),
+                         ebatoenaolised_tagastamine AS (
+                             SELECT DISTINCT doc_arv_id AS arv_id
+                             FROM docs.arvtasu,
+                                  params
+                             WHERE rekvid = params.rekv_id::INTEGER
+                               AND status < 3
+                               AND pankkassa <> 4 
+                               AND (properties ->> 'ebatoenaolised_tagastamine_id' IS NOT NULL AND
+                                    (properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER > 0)
+                         ),
+                         ebatoenaolised_mahakandmine AS (
+                             SELECT doc_arv_id    AS arv_id,
+                                    sum(at.summa) AS summa
+                             FROM docs.arvtasu at
+                                      INNER JOIN docs.journal j ON at.doc_tasu_id = j.parentid
+                                      INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
+                                  params
+                             WHERE at.rekvid = params.rekv_id::INTEGER
+                               AND at.status < 3
+                               AND j1.deebet = '103009'
+                               AND status < 3
+                             GROUP BY at.doc_arv_id
+                         ),
+                         ebatoenaolised_kreedit_arve AS (
+                             SELECT doc_arv_id    AS arv_id,
+                                    sum(at.summa) AS summa
+                             FROM docs.arvtasu at
+                                      INNER JOIN docs.arv a ON at.doc_tasu_id = a.parentid,
+                                  params
+                             WHERE at.rekvid = params.rekv_id::INTEGER
+                               AND at.status < 3
+                               AND at.pankkassa = 4 
+                               AND status < 3
+                             GROUP BY at.doc_arv_id
+                         ),
+                         kreedit_arved AS (
+                             SELECT at.doc_arv_id, at.doc_tasu_id
+                             FROM docs.arvtasu at
+                                      INNER JOIN docs.arv a ON a.parentid = at.doc_arv_id,
+                                  params
+                             WHERE at.pankkassa = 4 
+                               AND at.rekvid = params.rekv_id::INTEGER
+                               AND at.doc_arv_id IS NOT NULL
+                               AND at.doc_tasu_id IS NOT NULL
+                               AND at.status < 3
+                         )
+                    SELECT a.*,
+                           CASE
+                               WHEN em.arv_id IS NOT NULL THEN 'Maha kantud'
+                               WHEN et.arv_id IS NOT NULL AND a.jaak = 0 THEN 'Tasutud'
+                               WHEN et.arv_id IS NOT NULL AND a.jaak > 0 THEN 'Tasutud osaliselt'
+                               WHEN eka.arv_id IS NOT NULL THEN 'Kreeditarve'
+                               WHEN a.jaak = 0 AND coalesce(ebatoenaolised, '') <> '0' THEN 'Vigane'
+                               WHEN a.ebatoenaolised IS NOT NULL AND a.ebatoenaolised <> '0' AND a.jaak > 0 THEN 'Sulgemata'
+                               ELSE ''
+                               END::varchar(100)         AS ebatoenaolised_status,
+                           CASE
+                               WHEN exists(SELECT 1 FROM kreedit_arved WHERE doc_arv_id = a.id) THEN 'DB'
+                               WHEN exists(SELECT 1 FROM kreedit_arved WHERE doc_tasu_id = a.id) THEN 'KR'
+                               ELSE '' END::varchar(20) AS kr_tyyp
+                    FROM arved a
+                             LEFT OUTER JOIN ebatoenaolised_mahakandmine em ON em.arv_id = a.id
+                             LEFT JOIN ebatoenaolised_tagastamine et ON et.arv_id = a.id
+                             LEFT JOIN ebatoenaolised_kreedit_arve eka ON eka.arv_id = a.id
+                    `,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curArved'
     },
@@ -563,7 +645,6 @@ const Arv = {
     },
     endProcess: {command: "UPDATE docs.doc SET status = 2 WHERE id = $1", type: "sql"},
     executeTask: function (task, docId, userId) {
-        console.log('executeTask', task, docId, userId);
         // выполнит задачу, переданную в параметре
 
         let executeTask = task;

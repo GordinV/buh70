@@ -20,6 +20,7 @@ DECLARE
     TYPE_DOK_MK      INTEGER = 1;
     TYPE_DOK_KORDER  INTEGER = 2;
     TYPE_DOK_JOURNAL INTEGER = 3;
+    TYPE_DOK_ARVE    INTEGER = 4;
     v_arv            RECORD;
     v_tulu_arved     RECORD;
     l_tasu_summa     NUMERIC = 0;
@@ -50,6 +51,7 @@ BEGIN
                WHEN m.maksepaev IS NOT NULL THEN m.maksepaev
                WHEN k.kpv IS NOT NULL THEN k.kpv
                WHEN j.kpv IS NOT NULL THEN j.kpv
+               WHEN a.kpv IS NOT NULL THEN a.kpv
                ELSE d.created::DATE
                END     AS maksepaev,
            l.kood      AS doc_type,
@@ -65,7 +67,9 @@ BEGIN
                              ON k.parentid = D.id
              LEFT OUTER JOIN docs.journal j
                              ON j.parentid = d.id
+             LEFT OUTER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_tasu_id;
+
 
     IF l_tasu_id IS NULL
     THEN
@@ -87,6 +91,8 @@ BEGIN
                            THEN TYPE_DOK_MK
                        WHEN v_tasu.doc_type ILIKE '%ORDER%'
                            THEN TYPE_DOK_KORDER
+                       WHEN v_tasu.doc_type ILIKE '%ARV%'
+                           THEN TYPE_DOK_ARVE
                        ELSE TYPE_DOK_JOURNAL END);
 
     -- рассчитываем сумму оплаты, если платеж не задан
@@ -109,6 +115,10 @@ BEGIN
                                FROM docs.korder1 k
                                WHERE k.parentid = l_tasu_id
                                UNION ALL
+                               SELECT -1 * summa
+                               FROM docs.arv a
+                               WHERE a.parentid = l_tasu_id
+                               UNION ALL
                                SELECT j1.summa
                                FROM docs.journal j
                                         INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
@@ -128,19 +138,6 @@ BEGIN
         LIMIT 1
     );
 
-
-
-/*    IF (l_doc_tasu_id IS NOT NULL AND v_arv.jaak > 0 AND v_tasu.jaak > 0 AND NOT empty(tasu_summa))
-    THEN
-        -- есть сальдо счета и не распределенное сальдо платежа. Увеличиваем сумма списание на сумму платежа
-        RAISE NOTICE 'v_arv.jaak %, v_tasu.jaak %, l_summa %', v_arv.jaak, v_tasu.jaak, l_summa;
-        SELECT *
-        INTO v_arvtasu
-        FROM docs.arvtasu
-        WHERE id = l_doc_tasu_id;
-        l_summa = v_arvtasu.summa + tasu_summa;
-    END IF;
-*/
     SELECT coalesce(l_doc_tasu_id, 0)                         AS id,
            v_tasu.rekvid                                      AS rekvid,
            l_arv_id                                           AS doc_arv_id,
@@ -218,17 +215,13 @@ BEGIN
     END IF;
     -- сальдо платежа
     -- оплата маловероятных
-
-    IF NOT exists(SELECT 1
-                  FROM docs.journal j
-                           INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-                  WHERE j.parentid = l_tasu_id
-                    AND left(deebet, 6) = '103009')
-        AND ((v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND
-             coalesce(v_arv.tyyp, '') <> 'ETTEMAKS')
+    --только при положительной сумме оплат
+    IF ((v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND
+        coalesce(v_arv.tyyp, '') <> 'ETTEMAKS' AND v_params.summa > 0)
     THEN
         PERFORM docs.tasumine_ebatoenaolised(l_tasu_id, l_arv_id, l_user_id);
     END IF;
+
 
     RETURN l_doc_id;
 
@@ -244,5 +237,5 @@ GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER, NUMERIC) T
 
 /*
 SELECT *
-FROM docs.sp_tasu_arv(2289602::INTEGER, 2275674::INTEGER, 4941::INTEGER);
+FROM docs.sp_tasu_arv(4626983::INTEGER, 4576324::INTEGER, 5399::INTEGER);
 */

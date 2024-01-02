@@ -15,10 +15,9 @@ DECLARE
     l_rekv_id INTEGER = CASE WHEN l_rekvid = 63 AND coalesce(l_kond, 0) = 1 THEN 999 ELSE l_rekvid END;
 BEGIN
 
+--    DROP TABLE IF EXISTS tmp_andmik;
 
-    DROP TABLE IF EXISTS tmp_andmik;
-
-    CREATE TEMPORARY TABLE tmp_andmik (
+    CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik (
         idx                TEXT,
         tyyp               INTEGER,
         rekvid             INTEGER,
@@ -42,25 +41,8 @@ BEGIN
         rekv_id            INTEGER NULL
     );
 
-/*
-  CREATE INDEX tyyp_tmp_andmik
-    ON tmp_andmik
-      USING btree
-      (tyyp);
+    TRUNCATE TABLE tmp_andmik;
 
-
-  CREATE INDEX artikkel_tmp_andmik
-    ON tmp_andmik
-      USING btree
-      (artikkel);
-
-
-  CREATE INDEX rahavoog_tmp_andmik
-    ON tmp_andmik
-      USING btree
-      (rahavoog);
-
-*/
     INSERT INTO tmp_andmik (idx, tyyp, rekvid, tegev, allikas, artikkel, nimetus, eelarve, eelarve_kassa,
                             eelarve_taps, eelarve_kassa_taps,
                             tegelik,
@@ -461,7 +443,6 @@ BEGIN
             , konto
             , rahavoo
             , nimetus;
-
 
 
     RETURN TRUE;

@@ -47,6 +47,7 @@ DECLARE
     doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
     doc_asendus_id        INTEGER        = doc_data ->> 'asendus_id'; -- на основании импортированного табеля из замещения
     doc_taskuraha_kov     NUMERIC        = doc_data ->> 'taskuraha_kov'; -- сумма карманных денег, по алгоритму замещения
+    doc_alus_arve_id      INTEGER        = doc_data ->> 'alus_arve_id'; -- ссылка на базовый счет (кредиоовые счета)
 
 -- Hooldekodu
     doc_isik_id           INTEGER        = doc_data ->> 'isik_id'; -- kui arve salvestatud hooldekodu modulist
@@ -105,6 +106,13 @@ BEGIN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
     END IF;
+
+    IF NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
+    THEN
+        RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
+    END IF;
+
+
 
 -- установим срок оплаты, если не задан
     IF doc_tahtaeg IS NULL OR doc_tahtaeg < doc_kpv
@@ -211,7 +219,7 @@ BEGIN
                                             allikas_vara NUMERIC(12, 2), allikas_muud NUMERIC(12, 2),
                                             allikas_taskuraha NUMERIC(12, 2),
                                             umardamine NUMERIC(12, 2), sugulane_osa NUMERIC(12, 2),
-                                            omavalitsuse_osa NUMERIC(12, 2));
+                                            omavalitsuse_osa NUMERIC(12, 2), objekt TEXT);
 
 
             SELECT row_to_json(row)
@@ -247,7 +255,7 @@ BEGIN
 
                 INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4,
                                        kood5,
-                                       konto, tunnus, tp, proj, muud, kbm_maar, properties, soodus)
+                                       konto, tunnus, objekt, tp, proj, muud, kbm_maar, properties, soodus)
                 VALUES (arv_id, json_record.nomid,
                         coalesce(json_record.kogus, 1),
                         coalesce(json_record.hind, 0),
@@ -262,6 +270,7 @@ BEGIN
                         coalesce(json_record.kood5, ''),
                         coalesce(json_record.konto, ''),
                         coalesce(json_record.tunnus, ''),
+                        json_record.objekt,
                         coalesce(json_record.tp, ''),
                         coalesce(json_record.proj, ''),
                         coalesce(json_record.muud, ''),
@@ -302,6 +311,7 @@ BEGIN
                     kood5      = coalesce(json_record.kood5, ''),
                     konto      = coalesce(json_record.konto, ''),
                     tunnus     = coalesce(json_record.tunnus, ''),
+                    objekt     = json_record.objekt,
                     tp         = coalesce(json_record.tp, ''),
                     proj       = coalesce(json_record.proj, ''),
                     kbm_maar   = coalesce(json_record.km, ''),
@@ -418,6 +428,12 @@ BEGIN
         -- проверить на наличие предоплат
 --        PERFORM docs.check_ettemaks(doc_id, user_id);
         PERFORM docs.sp_loe_arv(doc_id, user_id);
+    END IF;
+
+    -- если счет отрицательный, то возможно это кредитоввый счет
+    IF doc_id IS NOT NULL AND doc_id > 0 AND doc_summa < 0
+    THEN
+        PERFORM docs.kas_kreedit_arve(doc_id, user_id, doc_alus_arve_id);
     END IF;
 
     -- если это доходный счет, созданный на основе предоплатного

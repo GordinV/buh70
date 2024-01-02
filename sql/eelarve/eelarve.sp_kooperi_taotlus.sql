@@ -49,6 +49,7 @@ BEGIN
       t1.kood3,
       t1.kood4,
       t1.kood5,
+      t1.objekt,             
       t1.selg,
       t1.muud
     FROM eelarve.taotlus1 AS t1

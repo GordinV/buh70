@@ -12,6 +12,7 @@ CREATE OR REPLACE FUNCTION eelarve.tulu_taitmine_pikk(l_kpv1 DATE, l_kpv2 DATE, 
         tunnus   VARCHAR(20),
         proj     VARCHAR(20),
         uritus   VARCHAR(20),
+        objekt   VARCHAR(20),
         docs_ids INTEGER[],
         kuu      INTEGER,
         aasta    INTEGER
@@ -48,6 +49,7 @@ SELECT rekvid              AS rekv_id,
        tunnus,
        proj,
        uritus,
+       objekt,
        array_agg(docs_ids) AS docs_ids,
        kuu,
        aasta
@@ -55,7 +57,8 @@ FROM (
          WITH docs AS (
              SELECT id
              FROM libs.library
-             WHERE library = 'DOK' AND kood = 'JOURNAL'
+             WHERE library = 'DOK'
+               AND kood = 'JOURNAL'
          )
               -- доход
          SELECT summa          AS summa,
@@ -66,6 +69,7 @@ FROM (
                 j.tunnus::TEXT,
                 j.proj::TEXT,
                 j.uritus::TEXT AS uritus,
+                j.objekt::text as objekt,
                 j.rekvid,
                 FALSE          AS kas_kulud,
                 j.id           AS docs_ids,
@@ -80,6 +84,7 @@ FROM (
                       j1.tunnus,
                       j1.proj,
                       j1.kood4               AS uritus,
+                      j1.objekt,
                       d.rekvid,
                       d.id,
                       coalesce(a.kpv, j.kpv) AS kpv,
@@ -114,8 +119,9 @@ FROM (
                 j.kood3::TEXT AS rahavoog,
                 j.kood5::TEXT AS artikkel,
                 j.tunnus::TEXT,
-                j.proj::text,
-                j.uritus::text,
+                j.proj::TEXT,
+                j.uritus::TEXT,
+                j.objekt::text,
                 j.rekvid,
                 FALSE         AS kas_kulud,
                 j.id          AS docs_ids,
@@ -130,6 +136,7 @@ FROM (
                       j1.tunnus,
                       j1.proj,
                       j1.kood4               AS uritus,
+                      j1.objekt,
                       j1.deebet,
                       coalesce(a.kpv, j.kpv) AS kpv,
                       d.rekvid,
@@ -157,7 +164,7 @@ FROM (
 WHERE NOT empty(artikkel)
   AND summa <> 0
   AND artikkel NOT IN ('2586')
-GROUP BY rekvid, tegev, allikas, artikkel, tunnus, proj, uritus, rahavoog, kuu, aasta
+GROUP BY rekvid, tegev, allikas, artikkel, tunnus, proj, uritus, objekt, rahavoog, kuu, aasta
 HAVING sum(summa) <> 0;
 
 $BODY$
@@ -173,7 +180,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulu_taitmine_pikk( DATE,DATE, INTEGER, INTEGE
 /*
 
 SELECT sum(summa) over(),*
-FROM eelarve.tulu_taitmine_pikk('2023-01-01', '2023-12-31', 63, 1)
+FROM eelarve.tulu_taitmine_pikk('2023-01-01', '2023-12-31', 132, 1)
 where artikkel like '3823%'
 and allikas = '80'
 and tegev = '01112'

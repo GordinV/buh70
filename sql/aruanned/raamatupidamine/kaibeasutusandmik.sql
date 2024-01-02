@@ -198,7 +198,7 @@ GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INT
 /*
 select * from (
 SELECT  a.nimetus, a.id, a.staatus, a.properties->>'kehtivus' as kehtivus, a.tp, rep.*
-FROM docs.kaibeasutusandmik('%',0,'2023-01-01','2023-01-01', 119,'%',1) rep
+FROM docs.kaibeasutusandmik('103555%',0,'2023-01-01','2023-01-01', 28,'%',1,null::jsob) rep
 left outer join libs.asutus a on a.id = rep.asutus_id
 where kreedit = 37.90
 

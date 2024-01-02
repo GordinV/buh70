@@ -145,5 +145,8 @@ GRANT EXECUTE ON FUNCTION rekl.gen_lausend_reklmaks(INTEGER, JSON) TO dbpeakasut
 /*
 SELECT rekl.gen_lausend_reklmaks(1, '{"id": 294174}' :: JSON)
 
-select * from rekl.toiming where dokpropid is not null order by id desc limit 10
+select * from rekl.toiming where dokpropid is not null order by id desc limit 100
+
+
+select * from libs.asutus where id = 32121
 */

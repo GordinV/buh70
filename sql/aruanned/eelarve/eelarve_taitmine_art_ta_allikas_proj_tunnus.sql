@@ -21,6 +21,7 @@ CREATE OR REPLACE FUNCTION eelarve.eelarve_taitmine_art_ta_allikas_proj_tunnus(l
         tunnus                   VARCHAR(20),
         proj                     VARCHAR(20),
         uritus                   VARCHAR(20),
+        objekt                   VARCHAR(20),
         idx                      INTEGER
     )
 AS
@@ -36,6 +37,7 @@ WITH params AS (
            coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%' AS rahavoog,
            coalesce((l_params ->> 'proj')::TEXT, '') + '%'     AS proj,
            coalesce((l_params ->> 'uritus')::TEXT, '') + '%'   AS uritus,
+           coalesce((l_params ->> 'objekt')::TEXT, '') + '%'   AS objekt,
            l_aasta                                             AS aasta
 ),
      rekv_ids AS (
@@ -78,7 +80,8 @@ WITH params AS (
                 qry.rahavoog,
                 qry.tunnus,
                 qry.proj,
-                qry.uritus
+                qry.uritus,
+                qry.objekt
          FROM (
                   -- расход
                   SELECT (summa)        AS summa,
@@ -89,6 +92,7 @@ WITH params AS (
                          j1.tunnus::TEXT,
                          j1.proj::TEXT  AS proj,
                          j1.kood4       AS uritus,
+                         j1.objekt,
                          j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = D.id
@@ -113,6 +117,7 @@ WITH params AS (
                                   j1.tunnus::TEXT,
                                   j1.proj::TEXT   AS proj,
                                   j1.kood4        AS uritus,
+                                  j1.objekt,
                                   j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
@@ -141,7 +146,9 @@ WITH params AS (
            AND coalesce(qry.rahavoog, '') ILIKE params.rahavoog
            AND coalesce(qry.proj, '') ILIKE params.proj
            AND coalesce(qry.uritus, '') ILIKE params.uritus
-         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus
+           AND coalesce(qry.objekt, '') ILIKE params.objekt
+         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus,
+                  qry.objekt
          HAVING sum(qry.summa) <> 0),
 
      cur_kulude_taitmine AS (
@@ -167,7 +174,8 @@ WITH params AS (
                 qry.rahavoog,
                 qry.tunnus,
                 qry.proj,
-                qry.uritus
+                qry.uritus,
+                qry.objekt
          FROM (
                   -- расходы
                   SELECT 1                          AS kulud,
@@ -182,6 +190,7 @@ WITH params AS (
                          j1.tunnus,
                          j1.proj::TEXT              AS proj,
                          j1.kood4                   AS uritus,
+                         j1.objekt,
                          j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
@@ -198,7 +207,7 @@ WITH params AS (
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND j1.kood5 IN (SELECT kood FROM qryArt)
                     AND NOT empty(j1.kood5)
-                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j.rekvid
+                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j1.objekt, j.rekvid
                   UNION ALL
                   -- востановление расходов
                   SELECT 2                                 AS tulud,
@@ -213,6 +222,7 @@ WITH params AS (
                          j1.tunnus,
                          j1.proj::TEXT                     AS proj,
                          j1.kood4                          AS uritus,
+                         j1.objekt,
                          j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
@@ -228,7 +238,7 @@ WITH params AS (
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND j1.kood5 IN (SELECT kood FROM qryArt)
                     AND NOT empty(j1.kood5)
-                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j.rekvid
+                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j1.objekt, j.rekvid
               ) qry,
               params
          WHERE NOT empty(qry.artikkel)
@@ -240,7 +250,9 @@ WITH params AS (
            AND coalesce(qry.rahavoog, '') ILIKE params.rahavoog
            AND coalesce(qry.proj, '') ILIKE params.proj
            AND coalesce(qry.uritus, '') ILIKE params.uritus
-         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus
+           AND coalesce(qry.objekt, '') ILIKE params.objekt
+         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus,
+                  qry.objekt
      ),
      qryReport AS (
          SELECT rekvid,
@@ -257,6 +269,7 @@ WITH params AS (
                 tunnus,
                 proj,
                 uritus,
+                objekt,
                 idx
          FROM (
                   -- выберем, где используются проекты
@@ -312,7 +325,23 @@ WITH params AS (
                              AND e.kood5 NOT LIKE '3%'
                              AND e.status <> 3
                              AND coalesce(t1.kood4, '') ILIKE params.uritus
+                       ),
+                       -- выберем, где используются  objektid
+                       used_objekt AS (
+                           SELECT DISTINCT t1.objekt AS objekt,
+                                           t.rekvid
+                           FROM eelarve.taotlus t
+                                    INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
+                                --eelarve.kulud e  INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
+                                params
+                           WHERE t.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                             AND t1.objekt IS NOT NULL
+                             AND NOT empty(t1.objekt)
+                             AND t1.kood5 NOT LIKE '3%'
+--                             AND .status <> 3
+                             AND coalesce(t1.objekt, '') ILIKE params.objekt
                        )
+
 
                   SELECT e.rekvid,
                          e.summa                           AS eelarve_kinni,
@@ -331,6 +360,7 @@ WITH params AS (
                          COALESCE(e.tunnus, '')            AS tunnus,
                          t1.proj                           AS proj,
                          t1.kood4                          AS uritus,
+                         t1.objekt,
                          210                               AS idx
                   FROM eelarve.kulud e
                            INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
@@ -346,6 +376,7 @@ WITH params AS (
                     AND COALESCE(e.kood2, '') ILIKE params.allikas
                     AND coalesce(t1.proj, '') ILIKE params.proj
                     AND coalesce(t1.kood4, '') ILIKE params.uritus
+                    AND coalesce(t1.objekt, '') ILIKE params.objekt
                     AND COALESCE((CASE
                                       WHEN e.kood5 = '2586'
                                           AND e.kood2 LIKE 'LE%' THEN '06'
@@ -368,6 +399,7 @@ WITH params AS (
                          COALESCE(e.tunnus, '')            AS tunnus,
                          t1.proj                           AS proj,
                          t1.kood4                          AS uritus,
+                         t1.objekt,
                          210                               AS idx
                   FROM eelarve.kulud e
                            LEFT OUTER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
@@ -383,6 +415,7 @@ WITH params AS (
                     AND COALESCE(e.kood2, '') ILIKE params.allikas
                     AND coalesce(t1.proj, '') ILIKE params.proj
                     AND coalesce(t1.kood4, '') ILIKE params.uritus
+                    AND coalesce(t1.objekt, '') ILIKE params.objekt
                     AND COALESCE((CASE
                                       WHEN e.kood5 = '2586'
                                           AND e.kood2 LIKE 'LE%' THEN '06'
@@ -424,6 +457,13 @@ WITH params AS (
                                   WHERE up.uritus = ft.uritus
                                     AND up.rekvid = ft.rekv_id) THEN uritus
                              ELSE '' END        AS uritus,
+                         CASE
+                             WHEN objekt IS NOT NULL AND NOT empty(objekt) AND exists
+                                 (SELECT 1
+                                  FROM used_objekt up
+                                  WHERE up.objekt = ft.objekt
+                                    AND up.rekvid = ft.rekv_id) THEN objekt
+                             ELSE '' END        AS objekt,
                          CASE
                              WHEN (artikkel LIKE '3%' OR artikkel LIKE '655%') THEN 110
                              WHEN artikkel LIKE '4%' OR artikkel LIKE '5%' OR
@@ -471,6 +511,13 @@ WITH params AS (
                                   WHERE up.uritus = kt.uritus
                                     AND up.rekvid = kt.rekv_id) THEN uritus
                              ELSE '' END  AS uritus,
+                         CASE
+                             WHEN objekt IS NOT NULL AND NOT empty(objekt) AND exists
+                                 (SELECT 1
+                                  FROM used_objekt up
+                                  WHERE up.objekt = kt.objekt
+                                    AND up.rekvid = kt.rekv_id) THEN objekt
+                             ELSE '' END  AS objekt,
                          CASE
                              WHEN (artikkel LIKE '3%' OR artikkel LIKE '655%' OR ltrim(rtrim(artikkel)) = '2585')
                                  THEN 110
@@ -520,6 +567,13 @@ WITH params AS (
                                     AND up.rekvid = kt.rekv_id) THEN uritus
                              ELSE '' END  AS uritus,
                          CASE
+                             WHEN objekt IS NOT NULL AND NOT empty(objekt) AND exists
+                                 (SELECT 1
+                                  FROM used_objekt up
+                                  WHERE up.objekt = kt.objekt
+                                    AND up.rekvid = kt.rekv_id) THEN objekt
+                             ELSE '' END  AS objekt,
+                         CASE
                              WHEN (artikkel LIKE '3%' OR artikkel LIKE '655%' OR ltrim(rtrim(artikkel)) = '2585')
                                  THEN 110
                              WHEN artikkel LIKE '4%' OR artikkel LIKE '5%' OR
@@ -567,6 +621,13 @@ WITH params AS (
                                   WHERE up.uritus = kt.uritus
                                     AND up.rekvid = kt.rekv_id) THEN uritus
                              ELSE '' END AS uritus,
+                         CASE
+                             WHEN objekt IS NOT NULL AND NOT empty(objekt) AND exists
+                                 (SELECT 1
+                                  FROM used_objekt up
+                                  WHERE up.objekt = kt.objekt
+                                    AND up.rekvid = kt.rekv_id) THEN objekt
+                             ELSE '' END AS objekt,
                          100             AS idx
                   FROM cur_kulude_kassa_taitmine kt
                   WHERE kt.artikkel IS NOT NULL
@@ -610,6 +671,13 @@ WITH params AS (
                                   WHERE up.uritus = j1.kood4
                                     AND up.rekvid = j.rekvid) THEN j1.kood4
                              ELSE '' END        AS uritus,
+                         CASE
+                             WHEN j1.objekt IS NOT NULL AND NOT empty(j1.objekt) AND exists
+                                 (SELECT 1
+                                  FROM used_objekt up
+                                  WHERE up.objekt = j1.objekt
+                                    AND up.rekvid = j.rekvid) THEN j1.objekt
+                             ELSE '' END        AS objekt,
                          210                    AS idx
                   FROM docs.doc D
                            INNER JOIN docs.journal j ON D.id = j.parentid
@@ -631,6 +699,7 @@ WITH params AS (
                     AND COALESCE(j1.kood5, '') ILIKE params.artikkel
                     AND COALESCE(j1.kood2, '') ILIKE params.allikas
                     AND COALESCE(j1.kood3, '') ILIKE params.rahavoog
+                    AND COALESCE(j1.objekt, '') ILIKE params.objekt
               ) qry
          GROUP BY rekvid,
                   tegev,
@@ -640,6 +709,7 @@ WITH params AS (
                   tunnus,
                   proj,
                   uritus,
+                  objekt,
                   idx
      ),
      preReport AS (SELECT rekvid,
@@ -656,6 +726,7 @@ WITH params AS (
                           tunnus,
                           proj,
                           uritus,
+                          coalesce(objekt, '')::VARCHAR(20)                 AS objekt,
                           CASE WHEN artikkel = '1532' THEN 110 ELSE idx END AS idx
                    FROM qryReport
                    GROUP BY rekvid,
@@ -666,6 +737,7 @@ WITH params AS (
                             tunnus,
                             proj,
                             uritus,
+                            objekt,
                             idx
                    UNION ALL
 -- 2586 свод
@@ -683,6 +755,7 @@ WITH params AS (
                           ''                            AS tunnus,
                           ''                            AS proj,
                           ''                            AS uritus,
+                          ''                            AS objekt,
                           095                           AS idx
                    FROM qryReport
                    WHERE artikkel = '2586'
@@ -704,6 +777,7 @@ WITH params AS (
                           ''                            AS tunnus,
                           ''                            AS proj,
                           ''                            AS uritus,
+                          ''                            AS objekt,
                           200                           AS idx
                    FROM qryReport
                    WHERE idx >= 200
@@ -724,6 +798,7 @@ WITH params AS (
                           ''           AS tunnus,
                           ''           AS proj,
                           ''           AS uritus,
+                          ''           AS objekt,
                           110          AS idx
                    FROM qryReport kt
                    WHERE kt.artikkel IS NOT NULL
@@ -753,6 +828,7 @@ FROM (
                 tunnus,
                 proj,
                 uritus,
+                objekt,
                 idx
          FROM preReport
          WHERE l_kond > 0
@@ -763,6 +839,7 @@ FROM (
                   tunnus,
                   proj,
                   uritus,
+                  objekt,
                   idx
      ) qry
 WHERE (eelarve_kinni <> 0 OR eelarve_parandatud <> 0 OR eelarve_kassa_kinni <> 0 OR
@@ -782,8 +859,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_art_ta_allikas_proj_tunnus(IN
 /*
 --artikkel like
          SELECT *
-         FROM eelarve.eelarve_taitmine_art_ta_allikas_proj_tunnus(2023::INTEGER,'2023-01-01'::date, '2023-05-31'::DATE, 130, 0,'{"tunnus":null,"allikas":"LE-LAOF", "artikkel":"155"}')
-
+         FROM eelarve.eelarve_taitmine_art_ta_allikas_proj_tunnus(2023::INTEGER,'2023-01-01'::date, '2023-12-31'::DATE, 132, 0,'{"tunnus":null,"allikas":null, "artikkel":null}')
+where objekt is not null and not empty(objekt)
 
 
 */

@@ -1,13 +1,13 @@
 -- Function: docs.sp_delete_mk(integer, integer)
 
-DROP FUNCTION IF EXISTS docs.koosta_teatis(INTEGER, DATE);
+DROP FUNCTION IF EXISTS docs.koosta_teatis_(INTEGER, DATE);
 
-CREATE OR REPLACE FUNCTION docs.koosta_teatis(IN user_id INTEGER,
-                                              IN l_kpv DATE DEFAULT current_date,
-                                              OUT error_code INTEGER,
-                                              OUT result INTEGER,
-                                              OUT doc_type_id TEXT,
-                                              OUT error_message TEXT)
+CREATE OR REPLACE FUNCTION docs.koosta_teatis_(IN user_id INTEGER,
+                                               IN l_kpv DATE DEFAULT current_date,
+                                               OUT error_code INTEGER,
+                                               OUT result INTEGER,
+                                               OUT doc_type_id TEXT,
+                                               OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -50,6 +50,7 @@ BEGIN
                                  WHERE dd.rekvid = l_rekvid
                                    AND dd.status <> 3
                                    AND t.kpv = l_kpv)
+        and a.asutusid = 168
         GROUP BY a.asutusid
         LOOP
             -- ищем требование. если есть и датировано сегодня - то осключаем (не нужны повторы)
@@ -70,10 +71,7 @@ BEGIN
             THEN
 
                 -- продолжаем расчет
-                l_sisu = 'Teavitame Teid arve(te)st, mis on jäänud maksetähtajaks tasumata: ' ||
-                         array_to_string(v_arv.selg, ','):: TEXT || '.'
-                             'Palume tasuda summa ' || v_arv.volg::TEXT;
-
+                l_sisu = array_to_string(v_arv.selg, ','):: TEXT;
 
                 SELECT v_arv.asutusid AS asutusid,
                        v_arv.docs     AS docs,
@@ -87,6 +85,8 @@ BEGIN
 
                 SELECT docs.sp_salvesta_teatis(json_object :: JSONB, user_id, l_rekvid) INTO l_teatis_id;
 
+
+                raise notice 'l_teatis_id %', l_teatis_id;
                 IF l_teatis_id > 0
                 THEN
                     l_count = l_count + 1;
@@ -123,12 +123,12 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO arvestaja;
+GRANT EXECUTE ON FUNCTION docs.koosta_teatis_(INTEGER, DATE) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.koosta_teatis_(INTEGER, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.koosta_teatis_(INTEGER, DATE) TO arvestaja;
 
 
 /*
-select docs.koosta_teatis(70,'2019-12-15')
+select docs.koosta_teatis_(5391,'2023-11-20')
 
  */

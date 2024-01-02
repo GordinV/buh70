@@ -1,8 +1,8 @@
 DROP FUNCTION IF EXISTS docs.sp_salvesta_arvtasu(JSON, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.sp_salvesta_arvtasu(data JSON,
-                                                    userid INTEGER,
-                                                    user_rekvid INTEGER)
+                                                     userid INTEGER,
+                                                     user_rekvid INTEGER)
     RETURNS INTEGER AS
 $BODY$
 
@@ -46,6 +46,8 @@ BEGIN
 
     -- 3 delete old payment
 
+    RAISE NOTICE 'sp_salvesta_arvtasu_ doc_doc_arv_id %, doc_summa %', doc_doc_arv_id, doc_summa;
+
     IF doc_doc_arv_id IS NOT NULL
     THEN
         DELETE
@@ -63,9 +65,7 @@ BEGIN
     -- проверяем на сумму оплат. Если счет уже оплачен , то доп. платежи не цепляем
     l_arv_tasud = coalesce((SELECT sum(summa) FROM docs.arvtasu WHERE doc_arv_id = doc_doc_arv_id AND status <> 3), 0);
 
-    l_arv_summa = coalesce((SELECT summa FROM docs.arv WHERE parentid = doc_doc_arv_id), 0);
-
-    IF l_arv_summa - l_arv_tasud <= 0 AND coalesce(doc_summa, 0) > 0
+    IF l_arv_summa - l_arv_tasud <= 0 AND coalesce(doc_summa, 0) > 0 and doc_pankkassa <> 4
     THEN
         --  счет оплачен, новых платежей не надо
 

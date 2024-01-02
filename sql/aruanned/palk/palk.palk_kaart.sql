@@ -133,6 +133,18 @@ CREATE OR REPLACE FUNCTION palk.palk_kaart(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
         puhk6_10      INTEGER,
         puhk6_11      INTEGER,
         puhk6_12      INTEGER,
+        puhk7_1       INTEGER,
+        puhk7_2       INTEGER,
+        puhk7_3       INTEGER,
+        puhk7_4       INTEGER,
+        puhk7_5       INTEGER,
+        puhk7_6       INTEGER,
+        puhk7_7       INTEGER,
+        puhk7_8       INTEGER,
+        puhk7_9       INTEGER,
+        puhk7_10      INTEGER,
+        puhk7_11      INTEGER,
+        puhk7_12      INTEGER,
         kom_1         INTEGER,
         kom_2         INTEGER,
         kom_3         INTEGER,
@@ -384,6 +396,18 @@ SELECT a.regkood :: VARCHAR(20)                  AS isikukood,
        coalesce(qryPuudu.puhk6_10, 0) :: INTEGER AS Puhk6_10,
        coalesce(qryPuudu.puhk6_11, 0) :: INTEGER AS Puhk6_11,
        coalesce(qryPuudu.puhk6_12, 0) :: INTEGER AS Puhk6_12,
+       coalesce(qryPuudu.puhk7_1, 0) :: INTEGER  AS Puhk7_1,
+       coalesce(qryPuudu.puhk7_2, 0) :: INTEGER  AS Puhk7_2,
+       coalesce(qryPuudu.puhk7_3, 0) :: INTEGER  AS Puhk7_3,
+       coalesce(qryPuudu.puhk7_4, 0) :: INTEGER  AS Puhk7_4,
+       coalesce(qryPuudu.puhk7_5, 0) :: INTEGER  AS Puhk7_5,
+       coalesce(qryPuudu.puhk7_6, 0) :: INTEGER  AS Puhk7_6,
+       coalesce(qryPuudu.puhk7_7, 0) :: INTEGER  AS Puhk7_7,
+       coalesce(qryPuudu.puhk7_8, 0) :: INTEGER  AS Puhk7_8,
+       coalesce(qryPuudu.puhk7_9, 0) :: INTEGER  AS Puhk7_9,
+       coalesce(qryPuudu.puhk7_10, 0) :: INTEGER AS Puhk7_10,
+       coalesce(qryPuudu.puhk7_11, 0) :: INTEGER AS Puhk7_11,
+       coalesce(qryPuudu.puhk7_12, 0) :: INTEGER AS Puhk7_12,
        coalesce(qryPuudu.kom_1, 0) :: INTEGER    AS kom_1,
        coalesce(qryPuudu.kom_2, 0) :: INTEGER    AS kom_2,
        coalesce(qryPuudu.kom_3, 0) :: INTEGER    AS kom_3,
@@ -612,30 +636,6 @@ FROM (
                                                         '{500007, 500107, 500127, 500147, 500157, 500207, 500217, 500247, 500257, 500267, 500277, 500287, 500297}' :: TEXT[]))
                AND po.liik = 1
              GROUP BY lepingid, po.liik
-/*             UNION ALL
-             SELECT po.lepingid,
-                    sum(summa1)                 AS summa1,
-                    sum(summa2)                 AS summa2,
-                    sum(summa3)                 AS summa3,
-                    sum(summa4)                 AS summa4,
-                    sum(summa5)                 AS summa5,
-                    sum(summa6)                 AS summa6,
-                    sum(summa7)                 AS summa7,
-                    sum(summa8)                 AS summa8,
-                    sum(summa9)                 AS summa9,
-                    sum(summa10)                AS summa10,
-                    sum(summa11)                AS summa11,
-                    sum(summa12)                AS summa12,
-                    'Hüvitised' :: VARCHAR(254) AS NIMETUS,
-                    65                          AS idx,
-                    po.liik
-
-             FROM qryPalkOper po
-             WHERE po.konto IN (SELECT unnest(
-                                               '{500007,50029701,50000701,500107,500147,500157,500217,500247,500257,500287, 500267, 500207}' :: TEXT[]))
-               AND po.liik = 1
-             GROUP BY lepingid, po.liik
-*/
              UNION ALL
              SELECT po.lepingid,
                     sum(summa1)                               AS summa1,
@@ -1190,6 +1190,32 @@ FROM (
            sum(paevad12)
            FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_12,
 
+           -- ema puhkus
+           sum(paevad1)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_1,
+           sum(paevad2)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_2,
+           sum(paevad3)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_3,
+           sum(paevad4)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_4,
+           sum(paevad5)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_5,
+           sum(paevad6)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_6,
+           sum(paevad7)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_7,
+           sum(paevad8)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_8,
+           sum(paevad9)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_9,
+           sum(paevad10)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_10,
+           sum(paevad11)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_11,
+           sum(paevad12)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 7) AS puhk7_12,
+
 -- oppe puhkus
            sum(paevad1)
            FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_1,
@@ -1287,10 +1313,10 @@ GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbk
 /*
 
 SELECT *
-FROM palk.palk_kaart('2021-01-01', '2021-12-31',73, 0 :: INTEGER)
-where isikukood = '36712052220'
+FROM palk.palk_kaart('2023-01-01', '2024-12-31',101, 0 :: INTEGER)
+where
 
 
 
-select * from ou.rekv where nimetus like '%0951006%'
+select * from ou.rekv where nimetus like '%0911038%'
 */

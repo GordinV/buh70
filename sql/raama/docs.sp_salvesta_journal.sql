@@ -68,10 +68,17 @@ BEGIN
     INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
-      AND u.id = userId;
+      AND u.id = userId
+      AND (coalesce((u.roles ->> 'is_kasutaja')::BOOLEAN, FALSE)
+        OR
+           coalesce((u.roles ->> 'is_peakasutaja')::BOOLEAN, FALSE)
+        OR
+           coalesce((u.roles ->> 'is_rekl_maksuhaldur')::BOOLEAN, FALSE)
+        )::boolean
+    ;
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE EXCEPTION 'Viga, Kasutaja ei leidnud või puuduvad õigused %', user;
+        RAISE EXCEPTION 'Viga, Kasutaja ei leidnud või puuduvad õigused %, userId %, user_rekvid %', user, userId, user_rekvid;
     END IF;
 
     IF (doc_id IS NULL)
@@ -80,8 +87,6 @@ BEGIN
     END IF;
 
     -- проверка на период
-    RAISE NOTICE 'save journal doc_kpv %',doc_kpv;
-
     IF doc_kpv IS NULL
     THEN
         RAISE NOTICE 'Viga, Null kpv';
@@ -90,7 +95,7 @@ BEGIN
 
     IF is_import IS NULL AND NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
-        RAISE EXCEPTION 'Viga, Period on kinni';
+        RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
     END IF;
 
     -- проверка на символы
@@ -177,7 +182,7 @@ BEGIN
                          json_object) AS x (id TEXT, summa NUMERIC(14, 4), deebet TEXT, kreedit TEXT,
                                             tunnus TEXT, proj TEXT,
                                             kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, lisa_d TEXT,
-                                            lisa_k TEXT,
+                                            lisa_k TEXT, objekt TEXT,
                                             valuuta TEXT, kuurs NUMERIC(14, 8));
 
 
@@ -229,7 +234,7 @@ BEGIN
                 THEN
 
                     INSERT INTO docs.journal1 (parentid, deebet, kreedit, summa, tunnus, proj, kood1, kood2, kood3,
-                                               kood4, kood5,
+                                               kood4, kood5, objekt,
                                                lisa_d, lisa_k, valuuta, kuurs, valsumma)
                     VALUES (journal_id, json_record.deebet, json_record.kreedit, json_record.summa, json_record.tunnus,
                             json_record.proj,
@@ -239,6 +244,7 @@ BEGIN
                                          ELSE json_record.kood3 END, ''),
                             json_record.kood4,
                             json_record.kood5,
+                            json_record.objekt,
                             l_db_tp, l_kr_tp,
                             coalesce(json_record.valuuta, 'EUR'), coalesce(json_record.kuurs, 1),
                             coalesce(json_record.kuurs, 1) * json_record.summa);
@@ -264,6 +270,7 @@ BEGIN
                                                 ELSE json_record.kood3 END, ''),
                         kood4    = json_record.kood4,
                         kood5    = json_record.kood5,
+                        objekt   = json_record.objekt,
                         lisa_d   = l_db_tp,
                         lisa_k   = l_kr_tp,
                         kuurs    = 1,

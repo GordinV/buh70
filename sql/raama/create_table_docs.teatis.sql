@@ -4,6 +4,7 @@ CREATE TABLE docs.teatis (
     id         SERIAL,
     parentid   INTEGER REFERENCES docs.doc,
     asutusid   INTEGER REFERENCES libs.asutus,
+    doc_arv_id INTEGER REFERENCES docs.doc,
     docs       INTEGER[],
     number     TEXT,
     kpv        DATE             DEFAULT current_date,
@@ -41,4 +42,9 @@ DROP INDEX IF EXISTS docs.teatised_staatus_idx;
 DROP INDEX IF EXISTS docs.teatis_staatus_idx;
 CREATE INDEX IF NOT EXISTS teatis_staatus_idx ON docs.teatis (staatus) WHERE staatus <> 3;
 
+ALTER TABLE docs.teatis
+    ADD COLUMN if not exists doc_arv_id INTEGER;
+
+DROP INDEX IF EXISTS docs.teatis_doc_arv_id_idx;
+CREATE INDEX IF NOT EXISTS teatis_doc_arv_id_idx ON docs.teatis (doc_arv_id);
 

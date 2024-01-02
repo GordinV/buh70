@@ -2,7 +2,7 @@ DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_jaak(l_kpv DATE, l_rekvid INTEG
 DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_jaak(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION eelarve.eelarve_taitmine_jaak(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                                          l_params JSONB DEFAULT NULL)
+                                                         l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id        INTEGER,
         tegev          VARCHAR(20),
@@ -11,6 +11,7 @@ CREATE OR REPLACE FUNCTION eelarve.eelarve_taitmine_jaak(l_kpv DATE, l_rekvid IN
         tunnus         VARCHAR(20),
         proj           VARCHAR(20),
         uritus         VARCHAR(20),
+        objekt         VARCHAR(20),
         eelarve        NUMERIC(14, 2),
         eelarve_kassa  NUMERIC(14, 2),
         taitmine       NUMERIC(14, 2),
@@ -31,7 +32,11 @@ WITH params AS (
            coalesce((l_params ->> 'allikas')::TEXT, '') + '%'  AS allikas,
            coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%' AS rahavoog,
            coalesce((l_params ->> 'proj')::TEXT, '') + '%'     AS proj,
-           coalesce((l_params ->> 'uritus')::TEXT, '') + '%'   AS uritus
+           coalesce((l_params ->> 'uritus')::TEXT, '') + '%'   AS uritus,
+           coalesce((l_params ->> 'objekt')::TEXT, '') + '%'   AS objekt,
+           CASE
+               WHEN coalesce((l_params ->> 'taotlus_statusid')::INTEGER, 0) = 1 THEN ARRAY [3]
+               ELSE ARRAY [0,1,2,3] END                        AS taotluste_statused
 ),
      rekv_ids AS (
          SELECT rekv_id
@@ -53,7 +58,7 @@ WITH params AS (
                           params
                      WHERE t1.tunnus IS NOT NULL
                        AND NOT empty(t1.tunnus)
-                       AND t.status IN (3)
+                       AND t.status IN (SELECT unnest(params.taotluste_statused))
                        AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                        AND t.aasta = YEAR(params.kpv)
      ),
@@ -63,7 +68,7 @@ WITH params AS (
                       params
                  WHERE t1.proj IS NOT NULL
                    AND NOT empty(t1.proj)
-                   AND t.status IN (3)
+                   AND t.status IN (SELECT unnest(params.taotluste_statused))
                    AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t.aasta = YEAR(params.kpv)
      ),
@@ -74,7 +79,17 @@ WITH params AS (
                         params
                    WHERE t1.kood4 IS NOT NULL
                      AND NOT empty(t1.kood4)
-                     AND t.status IN (3)
+                     AND t.status IN (SELECT unnest(params.taotluste_statused))
+                     AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
+                     AND t.aasta = YEAR(params.kpv)
+     ),
+     qryObjekt AS (SELECT DISTINCT t.rekvid, t1.objekt AS objekt
+                   FROM eelarve.taotlus t
+                            INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
+                        params
+                   WHERE t1.objekt IS NOT NULL
+                     AND NOT empty(t1.objekt)
+                     AND t.status IN (SELECT unnest(params.taotluste_statused))
                      AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                      AND t.aasta = YEAR(params.kpv)
      ),
@@ -89,7 +104,8 @@ WITH params AS (
                 e.artikkel           AS artikkel,
                 e.tunnus             AS tunnus,
                 e.proj,
-                e.uritus
+                e.uritus,
+                e.objekt
          FROM (SELECT e.rekvid        AS rekv_id,
                       e.summa         AS eelarve,
                       e.summa_kassa   AS eelarve_kassa,
@@ -110,7 +126,13 @@ WITH params AS (
                           WHEN EXISTS(
                                   SELECT 1 FROM qryUritus u WHERE u.uritus = t1.kood4 AND u.rekvid = e.rekvid)
                               THEN t1.kood4
-                          ELSE '' END AS uritus
+                          ELSE '' END AS uritus,
+                      CASE
+                          WHEN EXISTS(
+                                  SELECT 1 FROM qryObjekt o WHERE o.objekt = t1.objekt AND o.rekvid = e.rekvid)
+                              THEN t1.objekt
+                          ELSE '' END AS objekt
+
                FROM eelarve.eelarve e
                         INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
                     params p
@@ -128,6 +150,7 @@ WITH params AS (
                  , e.tunnus
                  , e.proj
                  , e.uritus
+                 , e.objekt
      ),
      qry_kulude_kassa_taitmine AS (
          -- kontod
@@ -156,10 +179,11 @@ WITH params AS (
                 qry.rahavoog,
                 qry.tunnus,
                 qry.proj,
-                qry.uritus
+                qry.uritus,
+                qry.objekt
          FROM (
                   -- расход
-                  SELECT (summa)        AS summa,
+                  SELECT sum(j1.summa)  AS summa,
                          j1.kood1::TEXT AS tegev,
                          j1.kood2::TEXT AS allikas,
                          j1.kood3::TEXT AS rahavoog,
@@ -167,6 +191,7 @@ WITH params AS (
                          j1.tunnus::TEXT,
                          j1.proj::TEXT  AS proj,
                          j1.kood4       AS uritus,
+                         j1.objekt      AS objekt,
                          j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = D.id
@@ -178,35 +203,42 @@ WITH params AS (
                        params
                   WHERE coalesce(a.kpv, j.kpv) >= params.kpv1
                     AND coalesce(a.kpv, j.kpv) <= params.kpv2
+                    AND d.status < 3
                     AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
-
+                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j1.proj, j1.kood4, j.rekvid, j1.objekt
                   UNION ALL
                   -- востановление расходов
-                  SELECT  (-1 * j1.summa) AS summa,
-                                  j1.kood1::TEXT  AS tegev,
-                                  j1.kood2::TEXT  AS allikas,
-                                  j1.kood3::TEXT  AS rahavoog,
-                                  j1.kood5::TEXT  AS artikkel,
-                                  j1.tunnus::TEXT,
-                                  j1.proj::TEXT   AS proj,
-                                  j1.kood4        AS uritus,
-                                  j.rekvid
+                  SELECT sum(-1 * j1.summa) AS summa,
+                         j1.kood1::TEXT     AS tegev,
+                         j1.kood2::TEXT     AS allikas,
+                         j1.kood3::TEXT     AS rahavoog,
+                         j1.kood5::TEXT     AS artikkel,
+                         j1.tunnus::TEXT,
+                         j1.proj::TEXT      AS proj,
+                         j1.kood4           AS uritus,
+                         j1.objekt,
+                         j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
                            INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                            INNER JOIN qryKontodKulud k ON k.kood = j1.kreedit
                            INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
-                           INNER JOIN libs.library l
-                                      ON l.kood = j1.kood5 AND l.tun5 = 2 AND library = 'TULUDEALLIKAD' --kulud
                       -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                            LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id,
                        params
 
                   WHERE coalesce(a.kpv, j.kpv) >= params.kpv1
                     AND coalesce(a.kpv, j.kpv) <= params.kpv2
+                    AND d.status < 3
                     AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
+                    AND j1.kood5 IN (SELECT l.kood
+                                     FROM libs.library l
+                                     WHERE l.tun5 = 2
+                                       AND l.library = 'TULUDEALLIKAD'
+                                       AND l.status < 3)
+                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j1.proj, j1.kood4, j.rekvid, j1.objekt
               ) qry,
               params
          WHERE NOT empty(qry.artikkel)
@@ -223,22 +255,11 @@ WITH params AS (
            AND coalesce(qry.rahavoog, '') ILIKE params.rahavoog
            AND coalesce(qry.proj, '') ILIKE params.proj
            AND coalesce(qry.uritus, '') ILIKE params.uritus
-         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus
+           AND coalesce(qry.objekt, '') ILIKE params.objekt
+         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus,
+                  qry.objekt
          HAVING sum(qry.summa) <> 0
-
-/*         -- кассовое исполнение расходы
-         SELECT *
-         FROM eelarve.uus_kassa_taitmine(make_date(YEAR(l_kpv)
-                                             , 01
-                                             , 01)
-                  , l_kpv
-                  , l_rekvid
-                  , l_kond) e
-         WHERE CASE WHEN artikkel IN ('2585', '2586') AND allikas = '80' THEN FALSE ELSE TRUE END
-           AND artikkel IN (SELECT kood
-                            FROM com_artikkel
-                            WHERE is_kulud)
-*/ ),
+     ),
      -- tekke taotmine расходы
      qry_kulude_taitmine AS (
          WITH qryKontodKassaKulud AS (
@@ -263,7 +284,8 @@ WITH params AS (
                 qry.rahavoog,
                 qry.tunnus,
                 qry.proj,
-                qry.uritus
+                qry.uritus,
+                qry.objekt
          FROM (
                   -- расходы
                   SELECT 1                          AS kulud,
@@ -278,6 +300,7 @@ WITH params AS (
                          j1.tunnus,
                          j1.proj::TEXT              AS proj,
                          j1.kood4                   AS uritus,
+                         j1.objekt,
                          j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
@@ -294,7 +317,7 @@ WITH params AS (
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND j1.kood5 IN (SELECT kood FROM qryArt)
                     AND NOT empty(j1.kood5)
-                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j.rekvid
+                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j.rekvid, j1.objekt
                   UNION ALL
                   -- востановление расходов
                   SELECT 2                                 AS tulud,
@@ -309,6 +332,7 @@ WITH params AS (
                          j1.tunnus,
                          j1.proj::TEXT                     AS proj,
                          j1.kood4                          AS uritus,
+                         j1.objekt,
                          j.rekvid
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
@@ -324,7 +348,7 @@ WITH params AS (
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND j1.kood5 IN (SELECT kood FROM qryArt)
                     AND NOT empty(j1.kood5)
-                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j.rekvid
+                  GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood4, j1.kood5, j1.tunnus, j1.proj, j1.objekt, j.rekvid
               ) qry,
               params
          WHERE NOT empty(qry.artikkel)
@@ -340,19 +364,9 @@ WITH params AS (
            AND coalesce(qry.rahavoog, '') ILIKE params.rahavoog
            AND coalesce(qry.proj, '') ILIKE params.proj
            AND coalesce(qry.uritus, '') ILIKE params.uritus
-         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus
-
-         /*SELECT *
-                             FROM eelarve.tekke_taitmine(make_date(YEAR(l_kpv)
-                                                             , 01
-                                                             , 01)
-                                      , l_kpv
-                                      , l_rekvid
-                                      , l_kond)
-                             WHERE CASE WHEN artikkel IN ('2585', '2586') AND allikas = '80' THEN FALSE ELSE TRUE END
-                               AND artikkel IN (SELECT kood
-                                                FROM com_artikkel
-                                                WHERE is_kulud)*/
+           AND coalesce(qry.objekt, '') ILIKE params.objekt
+         GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.rahavoog, qry.proj, qry.uritus,
+                  qry.objekt
      )
         ,
      pre_report AS (
@@ -361,8 +375,9 @@ WITH params AS (
                 allikas,
                 artikkel,
                 tunnus,
-                proj,
-                uritus,
+                coalesce(proj, '')::VARCHAR(20)     AS proj,
+                coalesce(uritus, '')::VARCHAR(20)   AS uritus,
+                coalesce(objekt, '')::VARCHAR(20)   AS objekt,
                 sum(eelarve)::NUMERIC(14, 2)        AS eelarve,
                 sum(eelarve_kassa)::NUMERIC(14, 2)  AS eelarve_kassa,
                 sum(taitmine)::NUMERIC(14, 2)       AS taitmine,
@@ -375,6 +390,7 @@ WITH params AS (
                          tunnus,
                          proj,
                          uritus,
+                         objekt,
                          eelarve,
                          eelarve_kassa,
                          0::NUMERIC(14, 2) AS taitmine,
@@ -388,6 +404,7 @@ WITH params AS (
                          t.tunnus,
                          t.proj,
                          t.uritus,
+                         t.objekt,
                          0::NUMERIC(14, 2) AS eelarve,
                          0::NUMERIC(14, 2) AS eelarve_kassa,
                          0::NUMERIC(14, 2) AS taitmine,
@@ -401,6 +418,7 @@ WITH params AS (
                          t.tunnus,
                          t.proj,
                          t.uritus,
+                         t.objekt,
                          0::NUMERIC(14, 2)       AS eelarve,
                          0::NUMERIC(14, 2)       AS eelarve_kassa,
                          t.summa::NUMERIC(14, 2) AS taitmine,
@@ -413,7 +431,8 @@ WITH params AS (
                   artikkel,
                   tunnus,
                   proj,
-                  uritus
+                  uritus,
+                  objekt
      )
 SELECT *
 FROM pre_report
@@ -426,6 +445,7 @@ SELECT 999999,
        tunnus,
        ''                                  AS proj,
        ''                                  AS uritus,
+       ''                                  AS objekt,
        sum(eelarve)::NUMERIC(14, 2)        AS eelarve,
        sum(eelarve_kassa)::NUMERIC(14, 2)  AS eelarve_kassa,
        sum(taitmine)::NUMERIC(14, 2)       AS taitmine,
@@ -448,18 +468,14 @@ sum(eelarve_kassa) over() as eelarve_kassa_kokku,
 sum(taitmine) over() as taitmine_kokku,
 sum(taitmine_kassa) over() as taitmine_kassa_kokku,
 *
-from eelarve.eelarve_taitmine_jaak('2023-07-31', 125, 1)
+from eelarve.eelarve_taitmine_jaak('2023-12-31', 63, 1)
 where rekv_id < 999
+
 and artikkel in (select kood from com_artikkel)
 and artikkel = '5511'
 
 eelarve_kokku;eelarve_kassa_kokku;taitmine_kokku;taitmine_kassa_kokku
-177563172;170506730;52687539.89;56723908.68
-                                56775703.48
-103391275.27
-
-eelarve_kokku;eelarve_kassa_kokku;taitmine_kokku;taitmine_kassa_kokku
-355126344;341013460;105375079.78;113445275.32
+187589873;175552329;107818401.93;112732989.1
 
 --  6024 rows retrieved starting from 1 in 25 s 941 ms (execution: 25 s 543 ms, fetching: 398 ms)
 

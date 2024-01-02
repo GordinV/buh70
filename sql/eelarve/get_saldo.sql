@@ -4,8 +4,8 @@ DROP FUNCTION IF EXISTS get_saldo(formula TEXT, konto TEXT, rv TEXT, tegev TEXT)
 DROP FUNCTION IF EXISTS get_saldo(formula TEXT, konto TEXT, rv TEXT, tegev TEXT, INTEGER);
 DROP FUNCTION IF EXISTS get_saldo(formula TEXT, konto TEXT, rv TEXT, tegev TEXT, INTEGER, INTEGER);
 
-DROP TABLE IF EXISTS tmp_andmik;
-CREATE TEMPORARY TABLE tmp_andmik (
+--DROP TABLE IF EXISTS tmp_andmik;
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik (
     idx         TEXT,
     tyyp        INTEGER,
     tegev       VARCHAR(20),
@@ -20,7 +20,8 @@ CREATE TEMPORARY TABLE tmp_andmik (
     kr          NUMERIC(14, 2),
     aasta       INTEGER,
     kuu         INTEGER,
-    rekv_id     INTEGER
+    rekv_id     INTEGER,
+    rekvid      INTEGER
 );
 
 CREATE OR REPLACE FUNCTION get_saldo(formula TEXT, konto TEXT, rv TEXT DEFAULT NULL, tegevus TEXT DEFAULT NULL,
@@ -41,11 +42,11 @@ SELECT coalesce((SELECT sum(CASE
                                      WHEN left($1, 1) = 'M' THEN coalesce($6 - 1, aasta.eelmine_aasta)
                                      ELSE coalesce($6, aasta.aasta) END
 --			and s.kuu = case when left($1,1) = 'M' then aasta.eelmine_kuu else  aasta.kuu end
-    AND ($2 IS NULL OR s.artikkel LIKE trim($2::TEXT || '%'))
-    AND ($3 IS NULL OR trim(s.rahavoog) = $3)
-    AND ($5 IS NULL OR s.rekv_id = $5)
-    AND ($4 IS NULL OR trim(s.tegev) = $4)),
-       0);
+                   AND ($2 IS NULL OR s.artikkel LIKE trim($2::TEXT || '%'))
+                   AND ($3 IS NULL OR trim(s.rahavoog) = $3)
+                   AND ($5 IS NULL OR s.rekvid = $5)
+                   AND ($4 IS NULL OR trim(s.tegev) = $4)),
+                0);
 $$
     LANGUAGE SQL
     VOLATILE

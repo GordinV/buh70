@@ -155,6 +155,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_tuhista(INTEGER, JSON) TO eelallkirjastaja;
 GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_tuhista(INTEGER, JSON) TO eelesitaja;
+GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_tuhista(INTEGER, JSON) TO eelaktsepterja;
 
 
 /*

@@ -27,7 +27,7 @@ DECLARE
     l_aa_id       INTEGER;
     l_tunnus      TEXT;
     l_nom_id      INTEGER;
-    v_new_nom record;
+    v_new_nom     RECORD;
 BEGIN
     doc_type_id = 'SMK';
 
@@ -186,15 +186,16 @@ BEGIN
     v_mk.viitenr = l_viitenumber;
     v_mk.aaid = l_aa_id;
 
-    SELECT id, properties->>'tegev' as tegev, properties->>'artikkel' as artikkel, properties->>'tunnus' as tunnus
-    into v_new_nom
-                FROM libs.nomenklatuur n
-                WHERE kood IN (SELECT kood FROM libs.nomenklatuur n WHERE id = v_mk1.nomid)
-                  AND rekvid = l_rekvId
-                  AND n.status < 3
-                LIMIT 1;
+    SELECT id, properties ->> 'tegev' AS tegev, properties ->> 'artikkel' AS artikkel, properties ->> 'tunnus' AS tunnus
+    INTO v_new_nom
+    FROM libs.nomenklatuur n
+    WHERE kood IN (SELECT kood FROM libs.nomenklatuur n WHERE id = v_mk1.nomid)
+      AND rekvid = l_rekvId
+      AND n.status < 3
+    LIMIT 1;
 
-    if v_new_nom.id  is not null then
+    IF v_new_nom.id IS NOT NULL
+    THEN
         v_mk1.nomid = v_new_nom.id;
         v_mk1.kood1 = coalesce(v_new_nom.tegev, v_mk1.kood1);
         v_mk1.kood5 = coalesce(v_new_nom.artikkel, v_mk1.kood5);
@@ -237,6 +238,8 @@ BEGIN
         result = mk_id;
         -- register
         PERFORM docs.gen_lausend_smk(mk_id, l_user_id);
+        -- поиск неоплаченных счетов и их оплата
+        PERFORM docs.sp_loe_tasu(mk_id, l_user_id);
     ELSE
         result = 0;
         error_message = 'Ülekannemakse koostamise viga, ' + mk_id::TEXT;

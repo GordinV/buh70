@@ -146,7 +146,7 @@ BEGIN
             FROM json_to_record(
                          json_object) AS x(id TEXT, summa NUMERIC(14, 4), summa_kassa NUMERIC(14, 4),
                                            oodatav_taitmine NUMERIC(14, 2), tunnus TEXT, proj TEXT,
-                                           kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, muud TEXT,
+                                           kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, objekt text,  muud TEXT,
                                            selg TEXT, eelarveid INTEGER, eelprojid INTEGER);
 
             -- проверка на символы
@@ -159,10 +159,10 @@ BEGIN
                            WHERE id = json_record.id :: INTEGER))
             THEN
                 INSERT INTO eelarve.taotlus1 (parentid, summa, summa_kassa, oodatav_taitmine, tunnus, proj, kood1,
-                                              kood2, kood3, kood4, kood5, muud, selg, eelarveid, eelprojid)
+                                              kood2, kood3, kood4, kood5, objekt, muud, selg, eelarveid, eelprojid)
                 VALUES (taotlus_id, json_record.summa, json_record.summa_kassa,
                         COALESCE(json_record.oodatav_taitmine, 0), json_record.tunnus, json_record.proj,
-                        json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
+                        json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5, json_record.objekt,
                         json_record.muud, replace(json_record.selg, ';', ','), json_record.eelarveid,
                         json_record.eelprojid) RETURNING id
                            INTO taotlus1_id;
@@ -183,6 +183,7 @@ BEGIN
                     kood3            = json_record.kood3,
                     kood4            = json_record.kood4,
                     kood5            = json_record.kood5,
+                    objekt            = json_record.objekt,
                     muud             = json_record.muud,
                     selg             = replace(json_record.selg, ';', ',')
                 WHERE id = json_record.id :: INTEGER

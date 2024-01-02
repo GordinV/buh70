@@ -46,6 +46,7 @@ FROM (
                   FROM hooldekodu.hooleping
                   WHERE rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND (loppkpv IS NULL OR loppkpv >= l_kpv1)
+                    AND status < 3
               ),
               algsaldo AS (
                   SELECT isik_id,
@@ -107,22 +108,22 @@ FROM (
                          sum(vara)          AS vara,
                          sum(muud)          AS muud,
                          sum(taskuraha_kov) AS taskuraha_kov
-                  FROM (SELECT isikid                                                                      AS isik_id,
+                  FROM (SELECT isikid                                                                 AS isik_id,
                                -1 *
-                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'PENSION85' THEN summa ELSE 0 END      AS pension_85,
+                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'PENSION85' THEN summa ELSE 0 END AS pension_85,
                                -1 *
-                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'PENSION15' THEN summa ELSE 0 END      AS pension_15,
+                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'PENSION15' THEN summa ELSE 0 END AS pension_15,
                                -1 *
-                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'TOETUS' THEN summa ELSE 0 END         AS toetus,
-                               -1 * CASE WHEN ltrim(rtrim(ht.allikas)) = 'VARA' THEN summa ELSE 0 END      AS vara,
+                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'TOETUS' THEN summa ELSE 0 END    AS toetus,
+                               -1 * CASE WHEN ltrim(rtrim(ht.allikas)) = 'VARA' THEN summa ELSE 0 END AS vara,
                                -1 *
-                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'TASKURAHA' THEN summa ELSE 0 END      AS taskuraha_kov,
+                               CASE WHEN ltrim(rtrim(ht.allikas)) = 'TASKURAHA' THEN summa ELSE 0 END AS taskuraha_kov,
 
                                -1 * CASE
                                         WHEN ltrim(rtrim(ht.allikas)) NOT IN
                                              ('VARA', 'TOETUS', 'PENSION15', 'PENSION85', 'TASKURAHA')
                                             THEN summa
-                                        ELSE 0 END                                                         AS muud
+                                        ELSE 0 END                                                    AS muud
 
                         FROM hooldekodu.hootehingud ht
                         WHERE rekvid IN (SELECT rekv_id FROM rekv_ids)

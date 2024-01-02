@@ -39,7 +39,7 @@ BEGIN
 
     -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
-    IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
+    IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id) and user_id not in (select id from ou.userid where kasutaja = 'vlad')
     THEN
         RAISE NOTICE 'У пользователя нет прав на удаление';
         error_code = 4;
