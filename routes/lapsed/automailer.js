@@ -51,7 +51,7 @@ const automailer = async () => {
         let sql = `WITH doc AS (
     WITH params AS (
         SELECT make_date(year(current_date), month(current_date), 1)              AS kpv2,
-               gomonth(make_date(year(current_date), month(current_date), 1), -1) AS kpv1
+                      case when month(current_date) = 1 then make_date(year(current_date)-1, 12,01)  else gomonth(make_date(year(current_date), month(current_date), 1),-1) end AS kpv1
     ),
          kas_lubatud AS (
              SELECT rekvid, kas_alusta, a.alg_kpv
