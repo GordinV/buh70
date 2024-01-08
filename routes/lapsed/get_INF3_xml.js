@@ -2,6 +2,7 @@ const builder = require('xmlbuilder');
 
 module.exports = async (data, user) => {
     // data - sql data got from model
+    console.log('data',JSON.stringify(data));
 let aasta = data[0].aasta;
     const obj = {
         deklaratsioon: {
