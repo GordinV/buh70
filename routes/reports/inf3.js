@@ -17,6 +17,8 @@ exports.get = async (req, res) => {
         const doc = new Doc('inf3', null, user.userId, user.asutusId, 'lapsed');
         const data =  await doc.selectDocs('', sqlWhere, 100000);
 
+        console.log('inf3 data',JSON.stringify(data) );
+
         // get xml
         const xml = await getINF3(data.data, user);
         if (xml) {
