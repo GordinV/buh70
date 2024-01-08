@@ -1,8 +1,10 @@
 'use strict';
 const getINF3 = require('./../lapsed/get_INF3_xml');
+const getParameterFromFilter = require('./../../libs/getParameterFromFilter');
 
 exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
+    const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user =await require('../../middleware/userData')(req, uuid); // данные пользователя
 
@@ -12,12 +14,29 @@ exports.get = async (req, res) => {
     }
 
     try {
+        let filterData;
+        if (filter && filter.length) {
+            filterData = JSON.parse(filter);
+            filterData = filterData.filter(row => {
+                if (row.value) {
+                    return row;
+                }
+            });
+        }
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
         const doc = new Doc('inf3', null, user.userId, user.asutusId, 'lapsed');
-        const data =  await doc.selectDocs('', sqlWhere, 100000);
 
-        console.log('inf3 data',JSON.stringify(data) );
+        let gridParams;
+        if (doc.config.grid.params && typeof doc.config.grid.params !== 'string' && filterData) {
+            gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
+        }
+
+        const data =  await doc.selectDocs('', sqlWhere, 100000, gridParams);
+
+        if (data && !data.data.length) {
+          return res.status(500).send('Puuduvad andmed, võib olla aasta ei ole märgistatus');
+        }
 
         // get xml
         const xml = await getINF3(data.data, user);
