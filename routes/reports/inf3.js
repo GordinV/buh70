@@ -34,8 +34,6 @@ exports.get = async (req, res) => {
 
         const data =  await doc.selectDocs('', sqlWhere, 100000, gridParams);
 
-        console.log('data, filterData, sqlWhere', JSON.stringify(data), JSON.stringify(gridParams),sqlWhere );
-
         if (data && !data.data.length) {
           return res.status(500).send('Puuduvad andmed, võib olla aasta ei ole märgistatud');
         }
