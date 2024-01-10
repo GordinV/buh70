@@ -190,7 +190,7 @@ block content
                             span #{`${Number(data[0].summa).toFixed(2)}`}
                     div.row_wrapper
                         div.div_column.div_column_left
-                            span Seisuga #{`${data[0].period_alg_print.trim()}`} #{`${Number(data[0].alg_jaak) > 0 ? 'Teil on võlgnevus:' : Number(data[0].alg_jaak) == 0 ? 'Teie jääk on:' : 'Teil on ettemaks:' }`}
+                            span Seisuga #{`${data[0].period_alg_print.trim()}`} #{`${Number(data[0].alg_jaak) > 0 ? 'Teil oli võlgnevus:' : Number(data[0].alg_jaak) == 0 ? 'Teie jääk oli:' : 'Teil oli ettemaks:' }`}
                         div.div_column.div_column_right
                             span #{`${Math.abs(Number(data[0].alg_jaak)).toFixed(2)}`}
                     div.row_wrapper
