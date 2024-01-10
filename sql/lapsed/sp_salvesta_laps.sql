@@ -42,6 +42,12 @@ BEGIN
         RETURN 0;
     END IF;
 
+    -- проверка на признак
+    IF (doc_eritunnus IS NOT NULL AND (doc_eritunnus = '0' OR doc_eritunnus = ''))
+    THEN
+        doc_eritunnus = NULL;
+    END IF;
+
     json_props = to_jsonb(row)
                  FROM (SELECT doc_viitenr   AS viitenumber,
                               doc_eritunnus AS eritunnus
@@ -130,7 +136,7 @@ EXCEPTION
             RETURN 0;
 
 
-END;
+END ;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE

@@ -66,6 +66,8 @@ BEGIN
                     l_tasu = -1 * v_mk.ettemaks;
                 END IF;
 
+                raise notice 'l_tasu_id %,  v_mk.id %.l_tasu %',l_tasu_id,  v_mk.id, l_tasu;
+
                 -- вызывает оплату
                 result = docs.sp_ulekanne_ettemaks(l_tasu_id, v_mk.id, l_user_id, l_tasu);
                 IF result IS NOT NULL AND result > 0
@@ -158,12 +160,15 @@ COMMENT ON FUNCTION docs.sp_loe_tagasimakse(INTEGER, INTEGER) IS 'произво
 
 /*
 SELECT *
-FROM docs.sp_loe_tagasimakse_(5525088, 5410)
+FROM docs.sp_loe_tagasimakse(5284464, 5397)
 
 
 DELETE
 select *
-from docs.arvtasu where doc_tasu_id = 5525088
+from docs.arvtasu where doc_tasu_id = 5284464
+
+
+
 
 select * from ou.userid where id = 70
 

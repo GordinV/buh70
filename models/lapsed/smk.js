@@ -394,10 +394,31 @@ const Smk = {
             actualStep: false,
 
         },
+        {
+            id: 2,
+            name: 'Makse ümber jaotada',
+            task: 'MakseUmberJaotada',
+            action: 'MakseUmberJaotada',
+            type: 'manual',
+            showDate: false,
+            titleDate: 'Seisuga:',
+            showViitenumber: false,
+            titleViitenumber: 'Viitenumber:',
+            showKogus: false,
+            titleKogus: 'Summa:',
+            actualStep: false,
+
+        },
 
 
     ],
 
+    MakseUmberJaotada: {
+        command: `SELECT error_code, result, error_message, doc_type_id,$3::date 
+                  FROM docs.makse_umber_jaotada( $2::INTEGER, $1::INTEGER)`, //$2 - docs.doc.id, $1 - userId, $3 - maksepaev
+        type: "sql",
+        alias: 'MakseUmberJaotada'
+    },
     KoostaTagasimakse: {
         command: `SELECT error_code, result, error_message, doc_type_id
                   FROM docs.create_return_mk($2::INTEGER, (SELECT to_jsonb(row.*)

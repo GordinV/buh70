@@ -71,7 +71,7 @@ BEGIN
             LIMIT 1
         )
     THEN
-        RAISE EXCEPTION 'Viga, koolituse tüüp puudub ';
+        RAISE NOTICE 'Viga, koolituse tüüp puudub ';
     END IF;
 
     l_tyyp_kood = (SELECT ltrim(rtrim(kood))
