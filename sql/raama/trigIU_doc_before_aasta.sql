@@ -13,8 +13,8 @@ DECLARE
 BEGIN
     -- проверка на тип документа
 
-
-    IF exists(SELECT doc_type_id FROM docs.doc WHERE id = new.id AND doc_type_id IN (46, 39, 17, 23, 213988))
+-- 39,  - taotlus, убрал В.Б. 08.01.2024
+    IF exists(SELECT doc_type_id FROM docs.doc WHERE id = new.id AND doc_type_id IN (46, 17, 23, 213988))
     THEN
         -- 0 = открыт
         -- 1 закрыт

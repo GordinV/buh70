@@ -395,10 +395,25 @@ const Smk = {
 
         },
         {
-            id: 2,
+            id: 3,
             name: 'Makse ümber jaotada',
             task: 'MakseUmberJaotada',
             action: 'MakseUmberJaotada',
+            type: 'manual',
+            showDate: false,
+            titleDate: 'Seisuga:',
+            showViitenumber: false,
+            titleViitenumber: 'Viitenumber:',
+            showKogus: false,
+            titleKogus: 'Summa:',
+            actualStep: false,
+
+        },
+        {
+            id: 4,
+            name: 'Tühista makse jaotamine',
+            task: 'TuhistaMakseJaotamine',
+            action: 'TuhistaMakseJaotamine',
             type: 'manual',
             showDate: false,
             titleDate: 'Seisuga:',
@@ -415,9 +430,15 @@ const Smk = {
 
     MakseUmberJaotada: {
         command: `SELECT error_code, result, error_message, doc_type_id,$3::date 
-                  FROM docs.makse_umber_jaotada( $2::INTEGER, $1::INTEGER)`, //$2 - docs.doc.id, $1 - userId, $3 - maksepaev
+                  FROM docs.makse_umber_jaotada( $2::INTEGER, $1::INTEGER, 0)`, //$2 - docs.doc.id, $1 - userId, $3 - liik (0 - default, 1-delete arvtasu)
         type: "sql",
         alias: 'MakseUmberJaotada'
+    },
+    TuhistaMakseJaotamine: {
+        command: `SELECT error_code, result, error_message, doc_type_id,$3::date
+                  FROM docs.makse_umber_jaotada( $2::INTEGER, $1::INTEGER, 1)`, //$2 - docs.doc.id, $1 - userId, $3 - maksepaev
+        type: "sql",
+        alias: 'TuhistaMakseJaotamine'
     },
     KoostaTagasimakse: {
         command: `SELECT error_code, result, error_message, doc_type_id

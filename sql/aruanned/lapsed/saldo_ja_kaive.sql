@@ -93,7 +93,7 @@ FROM (
                              l.id                                                     AS laps_id,
                              CASE
                                  WHEN mk.properties ->> 'yksus' IS NULL THEN ''
-                                 ELSE 'EM' END                                        AS yksus,
+                                 ELSE '' END                                          AS yksus,
                              D.rekvid                                                 AS rekv_id
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
@@ -290,6 +290,8 @@ FROM (
                                        WHEN mk.opt = 1 THEN -1 * mk.jaak
                                        ELSE 0 END)::NUMERIC(14, 4)                                                 AS tagastused,
                                   CASE
+                                      WHEN mk.properties ->> 'yksus' IS NOT NULL AND mk.properties ->> 'yksus' <> ''
+                                          THEN mk.properties ->> 'yksus'
                                       WHEN mk.properties ->> 'yksus' IS NULL THEN ''
                                       ELSE 'EM' END                                                                AS yksus,
                                   l.parentid                                                                       AS laps_id,
@@ -418,9 +420,10 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 
 select
 *
-FROM lapsed.saldo_ja_kaive(89, '2023-03-01', '2023-04-30') qry
+FROM lapsed.saldo_ja_kaive(72, '2023-01-01', '2024-01-08') qry
 where 1=1
-and      viitenumber = '0890086108'
+and      viitenumber = '0720119378'
+
 and   (kulastatavus = 'Jah'  or (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR
            jaak <> 0
               )

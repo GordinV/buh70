@@ -50,7 +50,7 @@ FROM docs.doc d
          LEFT OUTER JOIN (SELECT a1.parentid                AS arv_id,
                                  string_agg(a1.objekt, ',') AS objektid
                           FROM docs.arv1 a1
-                          WHERE a1.objekt IS NOT NULL
+                          WHERE (a1.objekt IS NOT NULL and a1.objekt <> '')
                           GROUP BY a1.parentid) a1 ON a1.arv_id = a.id
          INNER JOIN libs.library s ON s.kood = d.status :: TEXT AND s.library = 'STATUS'
          LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid

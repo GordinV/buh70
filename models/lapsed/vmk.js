@@ -134,7 +134,11 @@ const Vmk = {
             data: []
         },
         {
-            sql: ` SELECT t.id,
+            sql: `WITH params AS (
+                               SELECT $1::integer AS doc_id,
+                                      $2::integer    AS user_id
+                           )
+                        SELECT t.id,
                           t.kpv,
                           to_char(a.kpv, 'DD.MM.YYYY') AS print_kpv,
                           t.summa                      AS tasu_summa,
@@ -145,15 +149,36 @@ const Vmk = {
                           asutus.nimetus               AS asutus,
                           a.properties ->> 'tyyp'      AS tyyp,
                           a.jaak,
-                          $2                           AS user_id
-                   FROM docs.arvtasu t
-                            INNER JOIN docs.doc d ON d.id = t.doc_arv_id
-                            INNER JOIN docs.arv a ON a.parentid = d.id
-                            INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
-                   WHERE t.doc_tasu_id = $1
-                     AND t.status <> 3
-                       ORDER BY t.kpv
-                       , t.id`,
+                          params.user_id               AS user_id
+                           FROM docs.arvtasu t
+                                    INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                                    INNER JOIN docs.arv a ON a.parentid = d.id
+                                    INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid,
+                                    params
+                           WHERE t.doc_tasu_id = params.doc_id
+                             AND t.status <> 3
+                       UNION ALL
+                    SELECT t.id,
+                           t.kpv,
+                           to_char(mk.kpv, 'DD.MM.YYYY') AS print_kpv,
+                           t.summa                       AS tasu_summa,
+                           mk1.summa                     AS arv_summa,
+                           0                             AS inf3_summa,
+                           mk.number,
+                           asutus.nimetus                AS asutus,
+                           'ETTEMAKS'                    AS tyyp,
+                           mk.jaak,
+                           params.user_id                AS user_id
+                    FROM docs.arvtasu t
+                             INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                             INNER JOIN docs.mk mk ON mk.parentid = d.id
+                             INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
+                             INNER JOIN libs.asutus asutus ON asutus.id = mk1.asutusid,
+                         params
+                    WHERE t.doc_tasu_id = params.doc_id
+                      AND t.pankkassa = 4 -- ettemaksu ulekanne
+                      AND t.status <> 3
+                       `,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',
@@ -258,13 +283,58 @@ const Vmk = {
         type: "sql",
         alias: 'generateJournal'
     },
+    MakseUmberJaotada: {
+        command: `SELECT error_code, result, error_message, doc_type_id 
+                  FROM docs.makse_umber_jaotada( $2::INTEGER, $1::INTEGER, 0)`, //$2 - docs.doc.id, $1 - userId, $3 - liik (0 - default, 1-delete arvtasu)
+        type: "sql",
+        alias: 'MakseUmberJaotada'
+    },
+    TuhistaMakseJaotamine: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM docs.makse_umber_jaotada( $2::INTEGER, $1::INTEGER, 1)`, //$2 - docs.doc.id, $1 - userId, $3 - maksepaev
+        type: "sql",
+        alias: 'TuhistaMakseJaotamine'
+    },
+
     bpm: [
         {
+            id:0,
             name: 'Контировка',
             action: 'generateJournal',
             type: 'automat',
             actualStep: false
-        }
+        },
+        {
+            id: 3,
+            name: 'Makse ümber jaotada',
+            task: 'MakseUmberJaotada',
+            action: 'MakseUmberJaotada',
+            type: 'manual',
+            showDate: false,
+            titleDate: 'Seisuga:',
+            showViitenumber: false,
+            titleViitenumber: 'Viitenumber:',
+            showKogus: false,
+            titleKogus: 'Summa:',
+            actualStep: false,
+
+        },
+        {
+            id: 4,
+            name: 'Tühista makse jaotamine',
+            task: 'TuhistaMakseJaotamine',
+            action: 'TuhistaMakseJaotamine',
+            type: 'manual',
+            showDate: false,
+            titleDate: 'Seisuga:',
+            showViitenumber: false,
+            titleViitenumber: 'Viitenumber:',
+            showKogus: false,
+            titleKogus: 'Summa:',
+            actualStep: false,
+
+        },
+
     ],
 
     print: [

@@ -1,17 +1,20 @@
-DROP FUNCTION IF EXISTS docs.makse_umber_jaotada(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.makse_umber_jaotada(INTEGER, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.makse_umber_jaotada_(INTEGER, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.makse_umber_jaotada(IN user_id INTEGER,
-                                                    IN doc_id INTEGER,
-                                                    OUT error_code INTEGER,
-                                                    OUT result INTEGER,
-                                                    OUT doc_type_id TEXT,
-                                                    OUT error_message TEXT)
+                                                     IN doc_id INTEGER,
+                                                     IN liik INTEGER DEFAULT 0,
+                                                     OUT error_code INTEGER,
+                                                     OUT result INTEGER,
+                                                     OUT doc_type_id TEXT,
+                                                     OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 DECLARE
     v_tulemus RECORD;
     v_tasud   RECORD;
     l_summa   NUMERIC = 0;
+    l_opt     INTEGER;
 BEGIN
     doc_type_id = 'SMK';
 
@@ -27,26 +30,41 @@ BEGIN
             END IF;
         END LOOP;
 
-    SELECT sum(mk1.summa) AS summa
-    INTO l_summa
-        FROM docs.mk mk
-        INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
-        WHERE mk.parentid = doc_id;
-
-    -- ищем счета
-
-    IF coalesce(l_summa, 0) < 0
+    IF empty(liik)
     THEN
-        SELECT *
-        INTO v_tulemus
-            FROM docs.sp_loe_tagasimakse(doc_id, user_id);
-    ELSE
-        SELECT *
-        INTO v_tulemus
-            FROM docs.sp_loe_tasu(doc_id, user_id) t;
-    END IF;
+        SELECT sum(mk1.summa) AS summa, mk.opt
+        INTO l_summa, l_opt
+        FROM docs.mk mk
+                 INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
+        WHERE mk.parentid = doc_id
+        GROUP BY opt;
 
-    result = coalesce(v_tulemus.result, doc_id);
+        -- ищем счета
+
+        IF coalesce(l_summa, 0) < 0 AND l_opt <> 1
+        THEN
+            -- перенос платежа
+
+            SELECT *
+            INTO v_tulemus
+            FROM docs.sp_loe_tagasimakse(doc_id, user_id);
+        ELSIF l_opt = 1 AND coalesce(l_summa, 0) > 0
+        THEN
+            -- возврат
+            SELECT *
+            INTO v_tulemus
+            FROM docs.sp_loe_tagasimakse(doc_id, user_id);
+        ELSE
+            SELECT *
+            INTO v_tulemus
+            FROM docs.sp_loe_tasu(doc_id, user_id) t;
+
+        END IF;
+
+        result = coalesce(v_tulemus.result, doc_id);
+    ELSE
+        result = 1;
+    END IF;
     RAISE NOTICE 'error_code %, result %, error_message %',error_code,result, error_message;
 
     RETURN;
@@ -56,18 +74,18 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.makse_umber_jaotada(INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.makse_umber_jaotada(INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.makse_umber_jaotada(INTEGER, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.makse_umber_jaotada(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
 
 
 /*
-SELECT * from docs.makse_umber_jaotada(5410, 5213784)
+SELECT * from docs.makse_umber_jaotada_(5397, 5426570)
 
-select * FROM docs.arvtasu WHERE doc_tasu_id in( 5157151, 5213784)
+select * FROM docs.arvtasu WHERE doc_tasu_id in( 5426570)
 or doc_arv_id in ( 5157151, 5213784)
 ;
 
-delete from docs.arvtasu where doc_tasu_id = 5213784
+delete from docs.arvtasu where doc_tasu_id = 5426570
 
 id
 296313

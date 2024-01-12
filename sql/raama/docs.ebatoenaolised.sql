@@ -49,10 +49,10 @@ BEGIN
     END IF;
 
     IF l_kpv NOT IN
-       (make_date(year(l_seisuga), 01, 05), make_date(year(l_seisuga), 04, 05), make_date(year(l_seisuga), 07, 05),
-        make_date(year(l_seisuga), 10, 05))
+       (make_date(year(l_kpv), 01, 05), make_date(year(l_kpv), 04, 05), make_date(year(l_kpv), 07, 05),
+        make_date(year(l_kpv), 10, 05))
     THEN
-        RAISE EXCEPTION 'Viga, vale kuupaev %',l_kpv;
+        RAISE EXCEPTION 'Viga, vale kuupaev %, l_seisuga %',l_kpv, l_seisuga;
     END IF;
 
 raise notice 'l_seisuga %', l_seisuga;

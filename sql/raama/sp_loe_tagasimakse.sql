@@ -66,7 +66,7 @@ BEGIN
                     l_tasu = -1 * v_mk.ettemaks;
                 END IF;
 
-                raise notice 'l_tasu_id %,  v_mk.id %.l_tasu %',l_tasu_id,  v_mk.id, l_tasu;
+                RAISE NOTICE 'l_tasu_id %,  v_mk.id %.l_tasu %',l_tasu_id, v_mk.id, l_tasu;
 
                 -- вызывает оплату
                 result = docs.sp_ulekanne_ettemaks(l_tasu_id, v_mk.id, l_user_id, l_tasu);
@@ -76,7 +76,14 @@ BEGIN
                     PERFORM docs.sp_update_mk_jaak(v_mk.id);
 
                     -- минусуем сумму оплаты
-                    l_tasu_jaak = l_tasu_jaak - l_tasu;
+                    IF (l_tasu > 0)
+                    THEN
+                        l_tasu_jaak = l_tasu_jaak - l_tasu;
+                    ELSE
+                        l_tasu_jaak = l_tasu_jaak + l_tasu;
+                    END IF;
+                    RAISE NOTICE 'l_tasu_jaak %, l_tasu %',l_tasu_jaak, l_tasu;
+
                 END IF;
 
                 IF l_tasu_jaak = 0
