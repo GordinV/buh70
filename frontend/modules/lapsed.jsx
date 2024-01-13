@@ -91,6 +91,7 @@ const StatistikaReport = require('./../docs/statistika/index.jsx');
 const EbatoenaolisedReport = require('./../docs/ebatoenaolised/index.jsx');
 const KondArveReport = require('./../docs/kondarve/index.jsx');
 const AastaNaitajadReport = require('./../docs/aasta_naitajad/index.jsx');
+const AastaNaitajadTyypReport = require('./../docs/aasta_naitajad_tyyp/index.jsx');
 const KuuTaabel = require('./../docs/kuu_taabel/index.jsx');
 const YksuseTaabel = require('./../docs/yksuse_taabel/index.jsx');
 const KohalolekuAruanne = require('./../docs/kohaloleku_aruanne/index.jsx');
@@ -383,6 +384,11 @@ class App extends React.Component {
                            initData={props.initData}/>}/>
                 <Route exact path="/lapsed/kondarve"
                        render={(props) => <KondArveReport
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+                <Route exact path="/lapsed/aasta_naitajad_tyyp"
+                       render={(props) => <AastaNaitajadTyypReport
                            module={MODULE}
                            history={props.history}
                            initData={props.initData}/>}/>

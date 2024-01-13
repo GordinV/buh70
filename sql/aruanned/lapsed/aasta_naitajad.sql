@@ -1,14 +1,16 @@
-DROP FUNCTION IF EXISTS lapsed.aasta_naitajad(INTEGER, DATE);
+DROP FUNCTION IF EXISTS lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT);
 DROP FUNCTION IF EXISTS lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION lapsed.aasta_naitajad(l_rekvid INTEGER,
-                                                 l_kpv DATE DEFAULT current_date,
-                                                 l_liik TEXT DEFAULT '',
-                                                 l_tyyp TEXT DEFAULT '')
+                                                  l_kpv DATE DEFAULT current_date,
+                                                  l_liik TEXT DEFAULT '',
+                                                  l_tyyp TEXT DEFAULT '')
     RETURNS TABLE (
         period       DATE,
         rekvid       INTEGER,
         liik         TEXT,
+        tyyp         TEXT,
+        tyyp_nimi    TEXT,
         yksused      TEXT,
         lapsed_kokku INTEGER,
         jaanuar      INTEGER,
@@ -23,83 +25,116 @@ CREATE OR REPLACE FUNCTION lapsed.aasta_naitajad(l_rekvid INTEGER,
         oktoober     INTEGER,
         november     INTEGER,
         detsember    INTEGER
-    ) AS
+    )
+AS
 $BODY$
+WITH params AS (
+    SELECT l_rekvid                                  AS rekv_id,
+           ltrim(rtrim(coalesce(l_liik, ''))) || '%' AS liik,
+           ltrim(rtrim(coalesce(l_tyyp, ''))) || '%' AS tyyp,
+           CASE
+               WHEN l_kpv IS NULL OR empty(l_kpv::TEXT) THEN date(year(current_date), 12, 31)
+               ELSE l_kpv END::DATE                  AS kpv
+)
 
-SELECT l_kpv                                                   AS period,
-       rekvid,
-       liik::TEXT,
-       array_to_string(array_agg(DISTINCT yksused), ',')::TEXT AS yksused,
-       count(*)::INTEGER                                       AS lapsed_kokku,
-       count(laps_id) FILTER ( WHERE kuu = 1 )::INTEGER        AS jaanuar,
-       count(laps_id) FILTER ( WHERE kuu = 2 )::INTEGER        AS veebruar,
-       count(laps_id) FILTER ( WHERE kuu = 3 )::INTEGER        AS marts,
-       count(laps_id) FILTER ( WHERE kuu = 4 )::INTEGER        AS apriil,
-       count(laps_id) FILTER ( WHERE kuu = 5 )::INTEGER        AS mai,
-       count(laps_id) FILTER ( WHERE kuu = 6 )::INTEGER        AS juuni,
-       count(laps_id) FILTER ( WHERE kuu = 7 )::INTEGER        AS juuli,
-       count(laps_id) FILTER ( WHERE kuu = 8 )::INTEGER        AS august,
-       count(laps_id) FILTER ( WHERE kuu = 9 )::INTEGER        AS september,
-       count(laps_id) FILTER ( WHERE kuu = 10 )::INTEGER       AS oktoober,
-       count(laps_id) FILTER ( WHERE kuu = 11 )::INTEGER       AS november,
-       count(laps_id) FILTER ( WHERE kuu = 12 )::INTEGER       AS detsember
+SELECT params.kpv::DATE     AS period,
+       qry.rekvid::INTEGER,
+       qry.liik::TEXT,
+       qry.tyyp::TEXT,
+       qry.tyyp_nimi::TEXT,
+       NULL::TEXT           AS yksused,
+       (jaanuar + veebruar + marts + apriil + mai + juuni + juuli + august + september + oktoober + november +
+        detsember)::INTEGER AS lapsed_kokku,
+       jaanuar::INTEGER,
+       veebruar::INTEGER,
+       marts::INTEGER,
+       apriil::INTEGER,
+       mai::INTEGER,
+       juuni::INTEGER,
+       juuli::INTEGER,
+       august::INTEGER,
+       september::INTEGER,
+       oktoober::INTEGER,
+       november::INTEGER,
+       detsember::INTEGER
 FROM (
-         WITH qryPeriod AS (
-             SELECT CASE
-                        WHEN l_kpv IS NULL OR empty(l_kpv::TEXT) THEN date(year(current_date), 12, 31)
-                        ELSE l_kpv END::DATE AS kpv
+         WITH rekv_ids AS (
+             SELECT r.rekv_id
+             FROM params p,
+                  get_asutuse_struktuur(p.rekv_id) r
          ),
               qry_liik AS (
                   SELECT DISTINCT coalesce((n.properties ->> 'oppe_tyyp')::TEXT, 'Põhiõpe')::TEXT AS liik,
                                   d.id,
+                                  d.rekvid,
+                                  date_part('month', a.kpv)                                       AS kuu,
+                                  l.parentid                                                      AS laps_id,
                                   array_agg(DISTINCT
                                             lg.kood::TEXT || '-' || coalesce(r.properties ->> 'liik', '') || '-' ||
-                                            lg.tyyp)                                              AS yksused
-                  FROM qryPeriod,
-                       docs.doc d
+                                            lg.tyyp)                                              AS yksused,
+                                  lg.tyyp                                                         AS tyyp
+                  FROM docs.doc d
                            INNER JOIN docs.arv a ON d.id = a.parentid
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                            INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                            INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                           INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.parentid AND lk.nomid = a1.nomid
                            INNER JOIN (SELECT l.rekvid,
                                               l.kood,
                                               t.kood AS tyyp
                                        FROM libs.library l
                                                 LEFT OUTER JOIN libs.library t ON (l.properties::JSONB ->> 'tyyp')::INTEGER = t.id
                                        WHERE l.library = 'LAPSE_GRUPP'
-                       ) lg ON lg.rekvid = d.rekvid AND lg.kood::TEXT = lk.properties ->> 'yksus'
-                           INNER JOIN ou.rekv r ON r.id = a.rekvid
-                  WHERE year(a.kpv) = year(qryPeriod.kpv)
-                    AND a.kpv <= qryPeriod.kpv
-                    AND (l_liik IS NULL OR coalesce(r.properties ->> 'liik', '') ILIKE l_liik || '%')
-                    AND (l_tyyp IS NULL OR lg.tyyp ILIKE l_tyyp || '%')
-                    AND r.id IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur(l_rekvid))
+                  ) lg ON lg.rekvid = d.rekvid
+                      AND lg.kood::TEXT = a1.properties ->> 'yksus'
+                           INNER JOIN ou.rekv r ON r.id = a.rekvid,
+                       params p
+                  WHERE year(a.kpv) = year(p.kpv)
+                    AND a.liik = 0
+                    AND a.kpv <= p.kpv
+                    AND d.rekvid IN (SELECT rekv_id
+                                     FROM rekv_ids)
+                    AND d.doc_type_id IN
+                        (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('ARV')
+                        )
+                    AND coalesce(r.properties ->> 'liik', '') ILIKE p.liik
+                    AND lg.tyyp ILIKE p.tyyp
 
-                  GROUP BY (n.properties ->> 'oppe_tyyp')
-                         , d.id
-              )
-         SELECT DISTINCT l.parentid                             AS laps_id,
-                         d.rekvid,
-                         qry_liik.liik,
-                         date_part('month', a.kpv)              AS kuu,
-                         array_to_string(qry_liik.yksused, ',') AS yksused
-         FROM qryPeriod,
-              docs.doc d
-                  INNER JOIN docs.arv a ON a.parentid = d.id
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                  INNER JOIN qry_liik ON qry_liik.id = d.id
-         WHERE year(a.kpv) = year(qryPeriod.kpv)
-           AND a.kpv <= qryPeriod.kpv
-           AND a.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-     ) qry
-WHERE qry.rekvid IN (SELECT rekv_id
-                     FROM get_asutuse_struktuur(l_rekvid))
-GROUP BY liik
-       , rekvid
-
+                  GROUP BY (n.properties ->> 'oppe_tyyp'),
+                           d.id,
+                           a.kpv,
+                           l.parentid,
+                           lg.tyyp
+              ),
+              report AS (SELECT DISTINCT d.laps_id                                      AS laps_id,
+                                         d.rekvid,
+                                         d.liik,
+                                         d.kuu                                          AS kuu,
+                                         string_agg(d.tyyp, ',')::TEXT                  AS tyyp,
+                                         string_agg(ltrim(rtrim(l.nimetus)), ',')::TEXT AS tyyp_nimi
+                         FROM qry_liik d
+                                  LEFT OUTER JOIN libs.library l ON l.kood = d.tyyp AND l.rekvid = d.rekvid AND
+                                                                    l.library = 'KOOLITUSE_TYYP' AND status <> 3
+                         GROUP BY laps_id, d.rekvid, liik, kuu)
+         SELECT rekvid,
+                liik::TEXT,
+                tyyp::TEXT,
+                tyyp_nimi::TEXT,
+                sum(CASE WHEN kuu = 1 THEN 1 ELSE 0 END)  AS jaanuar,
+                sum(CASE WHEN kuu = 2 THEN 1 ELSE 0 END)  AS veebruar,
+                sum(CASE WHEN kuu = 3 THEN 1 ELSE 0 END)  AS marts,
+                sum(CASE WHEN kuu = 4 THEN 1 ELSE 0 END)  AS apriil,
+                sum(CASE WHEN kuu = 5 THEN 1 ELSE 0 END)  AS mai,
+                sum(CASE WHEN kuu = 6 THEN 1 ELSE 0 END)  AS juuni,
+                sum(CASE WHEN kuu = 7 THEN 1 ELSE 0 END)  AS juuli,
+                sum(CASE WHEN kuu = 8 THEN 1 ELSE 0 END)  AS august,
+                sum(CASE WHEN kuu = 9 THEN 1 ELSE 0 END)  AS september,
+                sum(CASE WHEN kuu = 10 THEN 1 ELSE 0 END) AS oktoober,
+                sum(CASE WHEN kuu = 11 THEN 1 ELSE 0 END) AS november,
+                sum(CASE WHEN kuu = 12 THEN 1 ELSE 0 END) AS detsember
+         FROM report
+         GROUP BY rekvid, liik::TEXT, tyyp::TEXT, tyyp_nimi
+     ) qry,
+     params
 $BODY$
     LANGUAGE SQL
     VOLATILE
@@ -113,7 +148,29 @@ GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT) TO db
 
 
 /*
-SELECT *
-FROM lapsed.aasta_naitajad(119, '2023-04-30')
+SELECT sum(jaanuar) over() as jaan_kokku,  a.*, l.nimetus
+FROM lapsed.aasta_naitajad_(72, '2023-12-31'::date) a
+left outer join libs.library l on l.kood = a.tyyp and l.rekvid = a.rekvid and l.library = 'KOOLITUSE_TYYP' and status <> 3
+order by tyyp, liik
+
+SELECT period::       DATE,
+        rekvid::       INTEGER,
+        liik::         TEXT,
+        sum(lapsed_kokku):: INTEGER as lapsed_kokku,
+        sum(jaanuar)::      INTEGER as jaanuar,
+        sum(veebruar)::     INTEGER as veebruar,
+        sum(marts)::       INTEGER as marts,
+        sum(apriil)::       INTEGER as apriil,
+        sum(mai)::          INTEGER as mai,
+        sum(juuni)::        INTEGER as juuni,
+        sum(juuli)::        INTEGER as juuli,
+        sum(august)::       INTEGER as august,
+        sum(september)::    INTEGER as september,
+        sum(oktoober)::     INTEGER as oktoober,
+        sum(november)::     INTEGER as november,
+        sum(detsember)::    INTEGER as detsember
+FROM lapsed.aasta_naitajad_(72, '2023-12-31'::date) a
+group by liik, rekvid, period
+order by rekvid,liik
 
 */

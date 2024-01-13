@@ -1,15 +1,29 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "period", name: "Seisuga", width: "0%", type: "date", interval: false, show: false, filterValidation: true},
-            {id: "grupp_liik", name: "Grupi liik", width: "0%", show: false, toolTip: 'LASTEAED,HUVIKOOL,KOOL'},
-            {id: "koolituse_tyyp",
-                name: "Koolituse tüüp",
+            {
+                id: "period",
+                name: "Seisuga",
                 width: "0%",
+                type: "date",
+                interval: false,
                 show: false,
-                toolTip: 'LASTEAJARÜHM,AED,SPORT,HUVIRING'
+                filterValidation: true
             },
-            {id: "liik", name: "Liik", width: "10%"},
+            {id: "grupp_liik", name: "Grupi liik", width: "0%", show: false, toolTip: 'LASTEAED,HUVIKOOL,KOOL'},
+            {
+                id: "tyyp_nimi",
+                name: "Koolituse nimetus",
+                width: "15%",
+                show: true
+            },
+            {
+                id: "tyyp",
+                name: "Koolituse tüüp",
+                width: "5%",
+                show: true
+            },
+            {id: "liik", name: "Liik", width: "5%"},
             {id: "asutus", name: "Asutus", width: "15%"},
             {id: "jaanuar", name: "Jaanuar", width: "5%", type: "integer", filter: "not"},
             {id: "veebruar", name: "Veebruar", width: "5%", type: "integer", filter: "not"},
@@ -42,6 +56,8 @@ module.exports = {
                            d.rekvid,
                            d.period,
                            d.liik,
+                           d.tyyp,
+                           d.tyyp_nimi,
                            d.lapsed_kokku,
                            d.jaanuar,
                            d.veebruar,
@@ -59,16 +75,16 @@ module.exports = {
                            $2                                          AS user_id
                     FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT) d
                              INNER JOIN ou.rekv r ON r.id = d.rekvid
-                    ORDER BY r.nimetus, d.liik
+                    ORDER BY r.nimetus, d.liik, d.tyyp
         `,     // $1 - rekvid, $2 - user_id, $3 - seisuga, $4 - grupp_liik, $5 - koolituse_tyyp
-        params: ['rekvid', 'userid', 'period', 'grupp_liik','koolituse_tyyp'],
+        params: ['rekvid', 'userid', 'period', 'grupp_liik', 'tyyp'],
         min_params: 3,
         alias: 'aasta_naitajad_report',
         notReloadWithoutParameters: true
     },
     print: [
         {
-            view: 'aasta_naitajad_register',
+            view: 'aasta_naitajad_tyyp_register',
             params: 'sqlWhere',
             group: 'asutus'
         },

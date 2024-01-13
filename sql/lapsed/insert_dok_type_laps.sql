@@ -161,7 +161,6 @@ SELECT 1::INTEGER,
        '{"type":"aruanne", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'KONDARVED');
 
-
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
        'AASTA_NAITAJAD'                          AS kood,
@@ -307,24 +306,33 @@ WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'P
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'SALDOD_ASUTUSTES'                              AS kood,
-       'Laste saldod asutustes'               AS nimetus,
-       'DOK'                                     AS library,
+       'SALDOD_ASUTUSTES'                                          AS kood,
+       'Laste saldod asutustes'                                    AS nimetus,
+       'DOK'                                                       AS library,
        '{"type":"aruanne", "module":["Lapsed"], "rekv_ids":[119]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'SALDOD_ASUTUSTES');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'ASENDUS_TAABEL'                            AS kood,
-       'Asendus taabel lastele'                 AS nimetus,
+       'ASENDUS_TAABEL'                          AS kood,
+       'Asendus taabel lastele'                  AS nimetus,
        'DOK'                                     AS library,
        '{"type":"library", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'ASENDUS_TAABEL');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'INF3_ANALUUS'                                                         AS kood,
-       'INF3 ANALÜÜS' AS nimetus,
-       'DOK'                                                          AS library,
-       '{"type":"aruanne", "module":["Lapsed"]}'                      AS properties
+       'INF3_ANALUUS'                            AS kood,
+       'INF3 ANALÜÜS'                            AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'INF3_ANALUUS');
+
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'AASTA_NAITAJAD_TYYP'                     AS kood,
+       'Aasta näitajad (koolituse tüüp)'         AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'AASTA_NAITAJAD_TYYP');

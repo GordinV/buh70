@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 AASTA NÄITAJAD ( Koolituse tüüp)
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each asutus in data
+            p #{Object.keys(asutus)[0]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Liik
+                        th Tüüp
+                        th Koolituse nimetus
+                        th Jaanuar
+                        th Veebruar
+                        th Märts
+                        th Apriil
+                        th Mai
+                        th Juuni
+                        th Juuli
+                        th August
+                        th September
+                        th Oktoober
+                        th November
+                        th desember
+
+                tbody
+                    each rea in asutus[Object.keys(asutus)[0]]
+                        tr
+                            td=rea.liik
+                            td=rea.tyyp
+                            td=rea.tyyp_nimi
+                            td=rea.jaanuar
+                            td=rea.veebruar
+                            td=rea.marts
+                            td=rea.apriil
+                            td=rea.mai
+                            td=rea.juuni
+                            td=rea.juuli
+                            td=rea.august
+                            td=rea.september
+                            td=rea.oktoober
+                            td=rea.november
+                            td=rea.detsember
+                tr.group
+                    td
+                    td
+                    td.group='Kokku:'
+                    td.group=asutus[Object.keys(asutus)[0]][0].jaanuar_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].veebruar_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].marts_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].apriil_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].mai_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].juuni_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].juuli_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].august_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].september_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].oktoober_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].november_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].detsember_group
+            p Read kokku #{data.length}

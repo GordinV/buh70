@@ -48,6 +48,7 @@ module.exports = {
     ebatoenaolised: '/aruanned/lapsed/ebatoenaolised',
     kondarve: '/aruanned/lapsed/kondarve',
     aasta_naitajad: '/aruanned/lapsed/aasta_naitajad',
+    aasta_naitajad_tyyp: '/aruanned/lapsed/aasta_naitajad_tyyp',
     kuu_taabel: '/aruanned/lapsed/kuu_taabel',
     yksuse_taabel: '/aruanned/lapsed/yksuse_taabel',
     kohaloleku_aruanne: '/aruanned/lapsed/kohaloleku_aruanne',

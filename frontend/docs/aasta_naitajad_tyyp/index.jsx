@@ -7,7 +7,7 @@ const getSum = require('./../../../libs/getSum');
 
 const styles = require('./styles');
 
-const DOC_TYPE_ID = 'AASTA_NAITAJAD';
+const DOC_TYPE_ID = 'AASTA_NAITAJAD_TYYP';
 const TOOLBAR_PROPS = {
     add: false,
     edit: false,
@@ -172,10 +172,7 @@ class Documents extends React.PureComponent {
         return null;
     }
 
-
-
 }
-
 
 module.exports = (Documents);
 
