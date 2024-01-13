@@ -1,9 +1,18 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "period", name: "Seisuga", width: "0%", type: "date", interval: false, show: false, filterValidation: true},
+            {
+                id: "period",
+                name: "Seisuga",
+                width: "0%",
+                type: "date",
+                interval: false,
+                show: false,
+                filterValidation: true
+            },
             {id: "grupp_liik", name: "Grupi liik", width: "0%", show: false, toolTip: 'LASTEAED,HUVIKOOL,KOOL'},
-            {id: "koolituse_tyyp",
+            {
+                id: "koolituse_tyyp",
                 name: "Koolituse tüüp",
                 width: "0%",
                 show: false,
@@ -24,7 +33,31 @@ module.exports = {
             {id: "november", name: "November", width: "5%", type: "integer", filter: "not"},
             {id: "detsember", name: "Detsember", width: "5%", type: "integer", filter: "not"},
         ],
-        sqlString: `SELECT row_number() OVER ()                        AS row_id,
+        sqlString: `with report as (
+                        select 
+                           d.rekvid,
+                           d.period,
+                           d.liik,
+                           sum(d.lapsed_kokku)                         AS lapsed_kokku,
+                           sum(d.jaanuar)                              AS jaanuar,
+                           sum(d.veebruar)                             AS veebruar,
+                           sum(d.marts)                                AS marts,
+                           sum(d.apriil)                               AS apriil,
+                           sum(d.mai)                                  AS mai,
+                           sum(d.juuni)                                AS juuni,
+                           sum(d.juuli)                                AS juuli,
+                           sum(d.august)                               AS august,
+                           sum(d.september)                            AS september,
+                           sum(d.oktoober)                             AS oktoober,
+                           sum(d.november)                             AS november,
+                           sum(d.detsember)                            AS detsember,
+                           r.nimetus::TEXT                             AS asutus
+                    FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT) d
+                             INNER JOIN ou.rekv r ON r.id = d.rekvid
+                    GROUP BY d.rekvid, d.period, d.liik, r.nimetus                        
+                        )
+                        
+                    SELECT row_number() OVER ()                        AS row_id,
                            sum(d.jaanuar) OVER (PARTITION BY rekvid)   AS jaanuar_group,
                            sum(d.veebruar) OVER (PARTITION BY rekvid)  AS veebruar_group,
                            sum(d.marts) OVER (PARTITION BY rekvid)     AS marts_group,
@@ -42,26 +75,25 @@ module.exports = {
                            d.rekvid,
                            d.period,
                            d.liik,
-                           d.lapsed_kokku,
-                           d.jaanuar,
-                           d.veebruar,
-                           d.marts,
-                           d.apriil,
-                           d.mai,
-                           d.juuni,
-                           d.juuli,
-                           d.august,
-                           d.september,
-                           d.oktoober,
-                           d.november,
-                           d.detsember,
-                           r.nimetus::TEXT                             AS asutus,
-                           $2                                          AS user_id
-                    FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT) d
-                             INNER JOIN ou.rekv r ON r.id = d.rekvid
-                    ORDER BY r.nimetus, d.liik
+                           (d.lapsed_kokku)                         AS lapsed_kokku,
+                           (d.jaanuar)                              AS jaanuar,
+                           (d.veebruar)                             AS veebruar,
+                           (d.marts)                                AS marts,
+                           (d.apriil)                               AS apriil,
+                           (d.mai)                                  AS mai,
+                           (d.juuni)                                AS juuni,
+                           (d.juuli)                                AS juuli,
+                           (d.august)                               AS august,
+                           (d.september)                            AS september,
+                           (d.oktoober)                             AS oktoober,
+                           (d.november)                             AS november,
+                           (d.detsember)                            AS detsember,
+                           d.asutus::TEXT                           AS asutus,
+                           $2                                       AS user_id
+                    FROM report d
+                    ORDER BY d.asutus, d.liik
         `,     // $1 - rekvid, $2 - user_id, $3 - seisuga, $4 - grupp_liik, $5 - koolituse_tyyp
-        params: ['rekvid', 'userid', 'period', 'grupp_liik','koolituse_tyyp'],
+        params: ['rekvid', 'userid', 'period', 'grupp_liik', 'koolituse_tyyp'],
         min_params: 3,
         alias: 'aasta_naitajad_report',
         notReloadWithoutParameters: true

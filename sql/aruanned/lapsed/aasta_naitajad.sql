@@ -69,10 +69,10 @@ FROM (
                                   d.rekvid,
                                   date_part('month', a.kpv)                                       AS kuu,
                                   l.parentid                                                      AS laps_id,
-                                  array_agg(DISTINCT
+/*                                  array_agg(DISTINCT
                                             lg.kood::TEXT || '-' || coalesce(r.properties ->> 'liik', '') || '-' ||
                                             lg.tyyp)                                              AS yksused,
-                                  lg.tyyp                                                         AS tyyp
+*/                                  lg.tyyp                                                         AS tyyp
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON d.id = a.parentid
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
