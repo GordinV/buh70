@@ -52,7 +52,7 @@ module.exports = {
                            sum(d.november)                             AS november,
                            sum(d.detsember)                            AS detsember,
                            r.nimetus::TEXT                             AS asutus
-                    FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT) d
+                    FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT, 1) d
                              INNER JOIN ou.rekv r ON r.id = d.rekvid
                     GROUP BY d.rekvid, d.period, d.liik, r.nimetus                        
                         )

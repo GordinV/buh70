@@ -1,10 +1,11 @@
 DROP FUNCTION IF EXISTS lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT);
-DROP FUNCTION IF EXISTS lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT);
+DROP FUNCTION IF EXISTS lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.aasta_naitajad(l_rekvid INTEGER,
-                                                  l_kpv DATE DEFAULT current_date,
-                                                  l_liik TEXT DEFAULT '',
-                                                  l_tyyp TEXT DEFAULT '')
+                                                 l_kpv DATE DEFAULT current_date,
+                                                 l_liik TEXT DEFAULT '',
+                                                 l_tyyp TEXT DEFAULT '',
+                                                 l_kond INTEGER DEFAULT 1)
     RETURNS TABLE (
         period       DATE,
         rekvid       INTEGER,
@@ -72,7 +73,8 @@ FROM (
 /*                                  array_agg(DISTINCT
                                             lg.kood::TEXT || '-' || coalesce(r.properties ->> 'liik', '') || '-' ||
                                             lg.tyyp)                                              AS yksused,
-*/                                  lg.tyyp                                                         AS tyyp
+*/
+                                  CASE WHEN (l_kond <> 1) THEN lg.tyyp ELSE NULL::TEXT END         AS tyyp
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON d.id = a.parentid
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
@@ -105,16 +107,16 @@ FROM (
                            l.parentid,
                            lg.tyyp
               ),
-              report AS (SELECT DISTINCT d.laps_id                                      AS laps_id,
+              report AS (SELECT DISTINCT d.laps_id                     AS laps_id,
                                          d.rekvid,
                                          d.liik,
-                                         d.kuu                                          AS kuu,
-                                         string_agg(d.tyyp, ',')::TEXT                  AS tyyp,
-                                         string_agg(ltrim(rtrim(l.nimetus)), ',')::TEXT AS tyyp_nimi
+                                         d.kuu                         AS kuu,
+                                         d.tyyp::TEXT                  AS tyyp,
+                                         ltrim(rtrim(l.nimetus))::TEXT AS tyyp_nimi
                          FROM qry_liik d
                                   LEFT OUTER JOIN libs.library l ON l.kood = d.tyyp AND l.rekvid = d.rekvid AND
                                                                     l.library = 'KOOLITUSE_TYYP' AND status <> 3
-                         GROUP BY laps_id, d.rekvid, liik, kuu)
+                         GROUP BY laps_id, d.rekvid, liik, kuu, tyyp, ltrim(rtrim(l.nimetus)))
          SELECT rekvid,
                 liik::TEXT,
                 tyyp::TEXT,
@@ -141,15 +143,15 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT) TO arvestaja;
-GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT, INTEGER) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT, INTEGER) TO dbvaatleja;
 
 
 /*
 SELECT sum(jaanuar) over() as jaan_kokku,  a.*, l.nimetus
-FROM lapsed.aasta_naitajad_(72, '2023-12-31'::date) a
+FROM lapsed.aasta_naitajad(72, '2023-12-31'::date, '', '',0) a
 left outer join libs.library l on l.kood = a.tyyp and l.rekvid = a.rekvid and l.library = 'KOOLITUSE_TYYP' and status <> 3
 order by tyyp, liik
 

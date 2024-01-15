@@ -73,7 +73,7 @@ module.exports = {
                            d.detsember,
                            r.nimetus::TEXT                             AS asutus,
                            $2                                          AS user_id
-                    FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT) d
+                    FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT, 0) d
                              INNER JOIN ou.rekv r ON r.id = d.rekvid
                     ORDER BY r.nimetus, d.liik, d.tyyp
         `,     // $1 - rekvid, $2 - user_id, $3 - seisuga, $4 - grupp_liik, $5 - koolituse_tyyp
