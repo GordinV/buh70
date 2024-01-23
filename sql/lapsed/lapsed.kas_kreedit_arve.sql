@@ -6,9 +6,11 @@ CREATE OR REPLACE FUNCTION docs.kas_kreedit_arve(l_arv_id INTEGER, l_user_id INT
 $BODY$
 
 DECLARE
-    l_doc_id       INTEGER;
-    v_kreedit_arve RECORD;
-    v_alus_arve    RECORD;
+    l_doc_id            INTEGER;
+    v_kreedit_arve      RECORD;
+    v_alus_arve         RECORD;
+    l_kreedit_arve_jaak NUMERIC;
+    l_summa numeric;
 BEGIN
     IF NOT exists(SELECT 1 FROM docs.arv WHERE parentid = l_arv_id)
     THEN
@@ -43,7 +45,21 @@ BEGIN
 
     RAISE NOTICE 'v_alus_arve %, v_kreedit_arve %', v_alus_arve.id, v_kreedit_arve;
 
-    IF v_alus_arve.id IS NOT NULL
+    -- считаем сумму остатка кретового счета
+    SELECT sum(summa)
+    INTO l_kreedit_arve_jaak
+    FROM docs.arvtasu at
+    WHERE doc_tasu_id = l_arv_id
+      AND at.status < 3;
+
+    l_summa = case
+        when  (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak,0)) = 0 then 0
+        when  (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak,0)) >= v_alus_arve.jaak then v_alus_arve.jaak
+        else  (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak,0)) end;
+
+    raise notice 'l_summa %,  v_kreedit_arve.summa %, l_kreedit_arve_jaak %', l_summa,  v_kreedit_arve.summa, l_kreedit_arve_jaak;
+
+    IF v_alus_arve.id IS NOT NULL and l_summa > 0
     THEN
         -- есть счет, формируем связи
         UPDATE docs.arv
@@ -56,7 +72,7 @@ BEGIN
         WHERE parentid = l_arv_id;
 
         -- оплата основного счета
-        l_doc_id = docs.sp_tasu_arv(l_arv_id::INTEGER, v_alus_arve.id::INTEGER, l_user_id::INTEGER);
+        l_doc_id = docs.sp_tasu_arv(l_arv_id::INTEGER, v_alus_arve.id::INTEGER, l_user_id::INTEGER, l_summa);
 
     END IF;
 
@@ -74,5 +90,5 @@ GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER) TO db
 GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER) TO arvestaja;
 
 /*
-SELECT docs.kas_kreedit_arve(5476765, 5394 )
+SELECT docs.kas_kreedit_arve(4713833, 5396, 4597388 )
 */
