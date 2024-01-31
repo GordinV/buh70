@@ -10,7 +10,7 @@ let aasta = data[0].aasta;
             '@tyyp': "inf3",
             '@xsi:schemaLocation': "http://www.emta.ee/inf3 inf3.xsd",
             saatja_regkood: user.regkood,
-            period: {
+            periood: {
                 aasta: aasta
             },
         }
