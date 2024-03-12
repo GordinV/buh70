@@ -142,7 +142,7 @@ exports.post = async (req, res) => {
 
             let renderForm = 'arve_kaart';
             let doc = {
-                0:arve,
+                0: arve,
                 details: arve.details
             };
             switch (params.docTypeId) {
@@ -179,6 +179,7 @@ exports.post = async (req, res) => {
             return new Promise((resolve, reject) => {
                 transporter.sendMail({
                         from: `"${user.userName}" <${UserConfig['email'].email}>`, //`${user.userName} <${config['email'].email}>`, // sender address
+                        replyTo: `${user.email}`,
                         to: `${receiverEmail}`, // (, baz@example.com) list of receivers
                         subject: `Saadan dokument nr. ${arve.number}`, // Subject line
                         text: 'Automaat e-mail', // plain text body
@@ -432,7 +433,7 @@ exports.sendTeatis = async (req, res) => {
                                 params = [doc.id, user.userId];
 
                             if (sql) {
-                              await db.queryDb(sql, params);
+                                await db.queryDb(sql, params);
                             }
                         }
                         //логгирование ответа почты
