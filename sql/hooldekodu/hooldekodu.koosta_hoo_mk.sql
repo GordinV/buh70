@@ -167,7 +167,8 @@ BEGIN
                '20356001'             AS konto,
                '10200'                AS kood1,
                'LE-P'                 AS kood2,
-               '4138'                 AS kood5,
+               '4131'                 AS kood5, -- Поправлено 29.01.24 В.Б
+               'Taskuraha'            AS kood4,
                '800699'               AS tp,
                l_tunnus               AS tunnus -- VB 25.07.2023
         INTO v_mk1;

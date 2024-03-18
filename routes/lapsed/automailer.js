@@ -81,7 +81,9 @@ const automailer = async () => {
                AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'ARV')
                AND va.kas_email
                AND (va.properties ->> 'email_alates' is null or (va.properties ->> 'email_alates')::date <= current_date)
-               and d.history::text not ilike '%email%'
+               and d.history::text not ilike '%"email"%'
+               and d.history::text not ilike '%"email_error"%'               
+               and d.history::text not ilike '%"email_error_3"%'               
                AND a.rekvid IN (SELECT id FROM ou.rekv WHERE parentid = 119)
                AND kas_lubatud.kas_alusta
              LIMIT ${l_limit}
@@ -363,6 +365,7 @@ FROM doc`;
                 transporter.sendMail({
                         from: `"${l_user_name}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                         to: `${arve.email}`, // (, baz@example.com) list of receivers (arve.email)
+    //                    replyTo: email,
                         subject: `Saadan dokument nr. ${arve.number}, ${arve.viitenr}`, // Subject line
                         text: 'Automaat e-mail', // plain text body
                         html: emailHtml, // html body

@@ -380,14 +380,9 @@ BEGIN
                                                                AND libid = l_libId));
 
 
-            -- если пенсионер, то не уменьшаем его необлагаемый миниум
-            RAISE NOTICE 'l_alus_summa %, l_lepingid %, l_libId %, l_isik_id %, l_tululiik %',l_alus_summa, l_lepingid, l_libId, l_isik_id, l_tululiik;
-            RAISE NOTICE 'l_isiku_mvt %, l_kasutatud_mvt %, l_tulud_kokku %',l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku;
-
-            IF palk.kas_soodustus_mvt(l_isikukood, l_kpv)
+            -- если пенсионер, то не уменьшаем его необлагаемый миниум (применяем повышенную льготу)
+            IF palk.kas_soodustus_mvt(l_isikukood, l_kpv, true)
             THEN
-                --                l_kasutatud_mvt = 0;
---                l_used_mvt = NULL;
                 kas_pensionar = TRUE;
             END IF;
 

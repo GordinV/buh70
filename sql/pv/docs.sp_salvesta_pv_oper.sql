@@ -59,6 +59,17 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
+    -- проврека на контировку с 2024 года
+    IF doc_kpv >= '2024-01-01' AND (coalesce(doc_doklausid, 0) = 0 OR
+                                    NOT exists(SELECT 1
+                                               FROM libs.dokprop dokprop
+                                               WHERE dokprop.id = doc_doklausid
+                                                 AND registr = 1))
+
+    THEN
+        RAISE EXCEPTION 'Viga, Alates 01.01.2024 konteerimine on kohuslik';
+    END IF;
+
     -- вставка или апдейт docs.doc
 
     IF doc_id IS NULL OR doc_id = 0

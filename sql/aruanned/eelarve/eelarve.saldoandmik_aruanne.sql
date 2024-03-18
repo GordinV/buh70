@@ -1,12 +1,8 @@
-DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER);
-DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER);
---DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, TEXT);
 DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, JSONB);
-DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, JSONB);
 
 
 CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                                       l_params JSONB DEFAULT NULL)
+                                                        l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id  INTEGER,
         konto    VARCHAR(20),
@@ -94,7 +90,7 @@ FROM (
                     AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
                     AND coalesce(a.kpv, j.kpv) < qryParams.alg_kpv::DATE
                     AND (j1.deebet = '155920' AND j1.kreedit <> '888888' AND d.rekvid IN (130, 28) OR
-                         year(qryParams.kpv) < 2023 OR j1.deebet <> '155920')
+                         year(qryParams.kpv) < year(qryParams.kpv) OR j1.deebet <> '155920')
                   GROUP BY qryParams.alg_kpv, j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2, j1.tunnus,
                            j1.proj
                   UNION ALL
@@ -121,10 +117,11 @@ FROM (
                                      FROM rekv_ids)
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND d.status <> 3
-                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
+--                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
+                    AND j.kpv <= qryParams.kpv::DATE
                     AND coalesce(a.kpv, j.kpv) >= qryParams.alg_kpv::DATE
                     AND (j1.deebet = '155920' AND j1.kreedit <> '888888' AND d.rekvid IN (130, 28) OR
-                         year(qryParams.kpv) < 2023 OR j1.deebet <> '155920')
+                         year(qryParams.kpv) < year(qryParams.kpv) OR j1.deebet <> '155920')
                   GROUP BY qryParams.kpv, j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2, j1.kood3, j1.tunnus,
                            j1.proj
 
@@ -158,7 +155,7 @@ FROM (
                     AND coalesce(a.kpv, j.kpv) < qryParams.alg_kpv::DATE
                     AND d.status <> 3
                     AND (j1.kreedit = '155920' AND j1.deebet <> '888888' AND d.rekvid IN (130, 28) OR
-                         year(qryParams.kpv) < 2023 OR j1.kreedit <> '155920')
+                         year(qryParams.kpv) < year(qryParams.kpv) OR j1.kreedit <> '155920')
                   GROUP BY qryParams.alg_kpv, j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, j1.tunnus,
                            j1.proj
                   UNION ALL
@@ -186,21 +183,21 @@ FROM (
                   WHERE d.rekvid IN (SELECT rekv_id
                                      FROM rekv_ids)
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
---                    AND j.kpv <= qryParams.kpv::DATE
-                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
+                    AND j.kpv <= qryParams.kpv::DATE
+--                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
                     AND coalesce(a.kpv, j.kpv) >= qryParams.alg_kpv::DATE
                     AND d.status <> 3
                     AND (j1.kreedit = '155920' AND j1.deebet <> '888888' AND d.rekvid IN (130, 28) OR
-                         year(qryParams.kpv) < 2023 OR j1.kreedit <> '155920')
+                         year(qryParams.kpv) < year(qryParams.kpv) OR j1.kreedit <> '155920')
                   GROUP BY qryParams.kpv, j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, j1.kood3, j1.tunnus,
                            j1.proj
               )
          SELECT rekv_id,
-                konto :: VARCHAR(20),
-                tp:: CHAR(20),
-                tegev :: VARCHAR(20),
-                allikas :: VARCHAR(20),
-                rahavoog :: VARCHAR(20),
+                trim(konto) :: VARCHAR(20)              AS konto,
+                trim(tp):: VARCHAR(20)                  AS TP,
+                trim(tegev) :: VARCHAR(20)              AS tegev,
+                trim(allikas) :: VARCHAR(20)            AS allikas,
+                trim(rahavoog) :: VARCHAR(20)           AS rahavoog,
                 sum(CASE
                         WHEN EMPTY(qry.tyyp) OR qry.tyyp = 1 OR qry.tyyp = 3 THEN deebet - kreedit
                         ELSE 0 END)::NUMERIC(14, 2)     AS deebet,
@@ -217,7 +214,7 @@ FROM (
                                   AND qry.kpv < '2022-10-01'
                                   AND (qry.rahavoog = '00' OR qry.kpv <
                                                               make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1))
-                                  AND year(qryParams.kpv) < 2023
+                                  AND year(qryParams.kpv) < year(qryParams.kpv)
                                   THEN ''
 /*                              WHEN l.is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
                                    ltrim(rtrim(coalesce(rahavoog, ''))) IN ('01', '00', '17', '21','18')
@@ -231,7 +228,7 @@ FROM (
                          (CASE
                               WHEN left(konto, 6) IN ('155920') AND (qry.rahavoog = '00' OR qry.kpv <
                                                                                             make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1))
-                                  AND qry.kpv < '2022-10-01' AND year(qryParams.kpv) < 2023
+                                  AND qry.kpv < '2022-10-01' AND year(qryParams.kpv) < year(qryParams.kpv)
                                   THEN ''
                               WHEN l.is_tegev AND (l.tt_req <> '*' OR
                                                    ltrim(rtrim(qry.rahavoog)) = '01')
@@ -324,11 +321,11 @@ FROM (
          WHERE deebet <> 0
             OR kreedit <> 0
          GROUP BY rekv_id
-                 , konto
-                 , tp
-                 , tegev
-                 , allikas
-                 , rahavoog
+                 , trim(konto)
+                 , trim(tp)
+                 , trim(tegev)
+                 , trim(allikas)
+                 , trim(rahavoog)
                  , tyyp
      ) tmp
 WHERE deebet <> 0
@@ -360,8 +357,23 @@ execution: 5 s 606 ms , 124, 137795039.74,137795039.74
 explain
 
 SELECT sum(deebet) over(), sum(kreedit) over(), *
-FROM eelarve.saldoandmik_aruanne_('2022-12-31' :: DATE, 130 :: INTEGER, 1 ::integer)
+FROM eelarve.saldoandmik_aruanne_('2023-12-31' :: DATE, 131 :: INTEGER, 1 ::integer)
 WHERE konto like '150020%'
 --and rahavoog = '01'
 --GROUP BY konto, tp
+
+
+konto;tp;tegev;allikas;rahavoog;deebet;kreedit;tyyp
+103799;014001;"";"";"";2654.62;0;1
+155400;"";"";"";00;34500;0;1
+155410;"";"";"";00;-2300;0;1
+155410;"";"";"";11;-6900;0;1
+201000;800599;"";"";"";0;49.95;2
+202010;800699;"";"";"";0;8285.32;2
+203010;014001;"";"";"";0;4165.12;2
+203020;014001;"";"";"";0;2447.67;2
+203030;014001;"";"";"";0;262.91;2
+203035;014001;"";"";"";0;45.02;2
+
+
 */

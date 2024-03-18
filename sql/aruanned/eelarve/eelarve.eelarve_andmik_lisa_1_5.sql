@@ -158,7 +158,7 @@ BEGIN
                           -- Сумма 320+3220+3221+3222+3224+3229+3232+3233+3237+3238
                      WHERE (
                                  q.artikkel IN
-                                 ('3220', '3221', '3222', '3224', '3229', '3232', '3233', '3237', '3238')
+                                 ('3220', '3221', '3222', '3223','3224', '3229', '3232', '3233', '3237', '3238')
                              OR q.artikkel LIKE '320%'
                          )
                        AND tyyp = 1
@@ -560,10 +560,8 @@ BEGIN
                      FROM tmp_andmik q
                      WHERE q.artikkel = '3818'
                        AND tyyp = 1
-                     GROUP BY q.idx
-                             ,
-                              q.artikkel
-                             ,
+                     GROUP BY q.idx,
+                              q.artikkel,
                               q.nimetus
                      UNION ALL
                      SELECT '2.4.1'::VARCHAR(20)
@@ -1263,7 +1261,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                 AND qry.artikkel
                                   NOT IN ('2586')
                                 AND LEFT(qry.artikkel, 3) NOT IN ('610', '611', '613', '655')
-                                AND qry.tegev NOT IN ('07230', '07240', '07320')
+                                AND qry.tegev NOT IN ('07230',  '07320') -- '07240' исключен 09.02.2024 В.Б
                               GROUP BY qry.tegev, l.nimetus
                               UNION ALL
                               -- TV 01112   +DK6012+DK6015+DK608000+DK101900RV01+DK1032RV01+DK1532RV01+DK1RV24
@@ -1483,8 +1481,9 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2023,06, 30),66, 1) qry
-         where artikkel like '55%'
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2023,12, 31),64, 1) qry
+         where artikkel = '2585'
+tegev like '07%'
         where tegev is not null and tegev = '01114'
      ) qry
 --test

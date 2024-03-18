@@ -59,6 +59,7 @@ module.exports = {
     selgemata_maksed:'/aruanned/lapsed/selgemata_maksed',
     pank_earve:'/aruanned/lapsed/pank_earve',
     arvete_saatmine:'/ou/arvete_saatmine',
+    arved_emailiga:'/aruanned/lapsed/arved_emailiga',
     saldod_asutustes:'/aruanned/lapsed/saldod_asutustes',
     asendus_taabel:'/lapsed/asendus_taabel',
 

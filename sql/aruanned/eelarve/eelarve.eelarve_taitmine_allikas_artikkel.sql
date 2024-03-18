@@ -529,6 +529,12 @@ FROM (
      ) qry
 WHERE (eelarve_kinni <> 0 OR eelarve_parandatud <> 0 OR eelarve_kassa_kinni <> 0 OR
        eelarve_kassa_parandatud <> 0 OR tegelik <> 0 OR kassa <> 0)
+  AND (CASE
+           WHEN artikkel = '2586' AND allikas = '80' THEN TRUE
+           WHEN artikkel = '2586' AND empty(rahavoog) THEN TRUE
+           WHEN artikkel = '2586' AND rahavoog <> '06' THEN FALSE
+           ELSE TRUE END) -- V.B. 13.02.2024
+
 
 $BODY$
     LANGUAGE SQL
@@ -547,7 +553,8 @@ SELECT *
 FROM (
          SELECT sum(kassa) over() as kassa_kokku,
 *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2023::INTEGER,'2023-01-01'::date, '2023-06-30'::DATE, 63, 1)
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2023::INTEGER,'2023-01-01'::date, '2023-12-31'::DATE, 64, 1)
+where artikkel = '2586'
 where rekv_id < 999
 and artikkel in (select kood from com_artikkel where is_kulud)
 

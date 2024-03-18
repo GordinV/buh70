@@ -78,41 +78,41 @@ SELECT c_1300,
        sum(c_1480) OVER () AS c_1550
 
 FROM (
-         SELECT isikukood::VARCHAR(20)                           AS c_1300,
-                isik::VARCHAR(254)                               AS c_1310,
-                tululiik                                         AS c_1320,
-                sum(abs(summa))                                  AS c_1330,
-                year(period)                                     AS c_1340,
-                month(period)                                    AS c_1350,
-                pohjus                                           AS c_1360,
-                string_agg(LTRIM(rtrim(pohjus_selg)), ','::TEXT) AS pohjus_selg,
-                sum(qry.c_1370)                                  AS c_1370,
-                sum(qry.c_1380)                                  AS c_1380, -- Koodil 1380 näidatakse väljamakse tegemise kuul Ia osas koodidel 1070 või 1080 näidatud mahaarvamised või nende osa, mis vastab maksustamisperioodil tagastatud või tasaarvestatud väljamaksele
-                sum(qry.c_1390)                                  AS c_1390, -- Koodil 1390 näidatakse koodidel 1340 ja 1350 näidatud maksustamisperioodil (väljamakse tegemise kuu) Ia osas koodil 1090 näidatud sotsiaalmaksuga maksustatud väljamakse suurendus või selle osa, mis vastab maksustamisperioodil tagastatud või tasaarvestatud väljamaksele
+         SELECT isikukood::VARCHAR(20)                                    AS c_1300,
+                isik::VARCHAR(254)                                        AS c_1310,
+                tululiik                                                  AS c_1320,
+                sum(abs(summa))                                           AS c_1330,
+                year(period)                                              AS c_1340,
+                month(period)                                             AS c_1350,
+                pohjus                                                    AS c_1360,
+                string_agg(DISTINCT LTRIM(rtrim(pohjus_selg)), ','::TEXT) AS pohjus_selg,
+                sum(qry.c_1370)                                           AS c_1370,
+                sum(qry.c_1380)                                           AS c_1380, -- Koodil 1380 näidatakse väljamakse tegemise kuul Ia osas koodidel 1070 või 1080 näidatud mahaarvamised või nende osa, mis vastab maksustamisperioodil tagastatud või tasaarvestatud väljamaksele
+                sum(qry.c_1390)                                           AS c_1390, -- Koodil 1390 näidatakse koodidel 1340 ja 1350 näidatud maksustamisperioodil (väljamakse tegemise kuu) Ia osas koodil 1090 näidatud sotsiaalmaksuga maksustatud väljamakse suurendus või selle osa, mis vastab maksustamisperioodil tagastatud või tasaarvestatud väljamaksele
                 -- 38. Koodil 1400 näidatakse tagastatud sotsiaalmaksuga maksustatud väljamakse vähendus.
                 -- Kood 1400 täidetakse juhul, kui koodidel 1340 ja 1350 näidatud maksustamisperioodil (väljamakse tegemise kuu)
                 -- säilib tööandjal sotsiaalmaksu miinimumkohustus, mistõttu tal ei ole tagastatavalt väljamakselt arvutatud sotsiaalmaksu või selle osa tagasisaamise õigust.
-                sum(qry.c_1400)                                  AS c_1400,
+                sum(qry.c_1400)                                           AS c_1400,
 -- 39. Koodil 1410 näidatakse tagastatud väljamakselt arvutatud sotsiaalmaksu summa järgmise valemi
 -- alusel: Kood 1410 = (kood 1370 – kood 1380 + kood 1390 – kood 1400) x sotsiaalmaksu määr.
-                sum(abs(qry.sotsmaks))                           AS c_1410,
+                sum(abs(qry.sotsmaks))                                    AS c_1410,
 -- 40. Koodil 1420 näidatakse koodil 1370 näidatud tagastatud või tasaarvestatud väljamakselt kinnipeetud
 -- kogumispensioni makse.
-                sum(abs(qry.pensmaks))                           AS c_1420,
+                sum(abs(qry.pensmaks))                                    AS c_1420,
 -- 41. Koodil 1430 näidatakse töötuskindlustusmaksega maksustatavad väljamaksed, mis vastavad koodil 1330 deklareeritud tagastatud või tasaarvestatud väljamakse summale koodil 1320 näidatud väljamakse liikidele 10, 11, 14, 17, 18, 19, 25, 26, 52.
-                sum(ABS(qry.summa) * qry.tka_arv)                AS c_1430,
+                sum(ABS(qry.summa) * qry.tka_arv)                         AS c_1430,
 -- 42. Koodil 1440 näidatakse tagastatud töötuskindlustusmaksega maksustatavalt väljamakselt kinnipeetud kindlustatu töötuskindlustusmakse järgmise valemiga:
-                sum(abs(qry.tootumaks))                          AS c_1440,
+                sum(abs(qry.tootumaks))                                   AS c_1440,
 -- Koodil 1450 näidatakse tagastatud töötuskindlustusmaksega maksustatavalt väljamakselt arvutatud tööandja töötuskindlustusmakse järgmise valemi alusel:
-                sum(abs(qry.tka))                                AS c_1450,
+                sum(abs(qry.tka))                                         AS c_1450,
 -- Koodidel 1460 ja 1470 näidatakse tulumaksu kinnipidamisel maha arvatud maksuvaba tulu liik ja
 -- summa
                 CASE
                     WHEN (abs(qry.tulubaas) > 0 OR qry.kas_taotlus_mvt) AND coalesce(kas_pensionar, 0) = 1 THEN '650'
                     WHEN abs(qry.tulubaas) > 0 OR qry.kas_taotlus_mvt AND coalesce(kas_pensionar, 0) = 0 THEN '610'
-                    ELSE '' END::VARCHAR(10)                     AS c_1460,
-                sum(abs(qry.tulubaas))                           AS c_1470,
-                sum(abs(qry.tulumaks))                           AS c_1480
+                    ELSE '' END::VARCHAR(10)                              AS c_1460,
+                sum(abs(qry.tulubaas))                                    AS c_1470,
+                sum(abs(qry.tulumaks))                                    AS c_1480
          FROM (
                   SELECT a.regkood                                                                              AS isikukood,
                          a.nimetus                                                                              AS isik,
@@ -192,7 +192,7 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1b( DATE, DATE, INTEGER, INTEGER ) TO db
 SELECT *
 FROM (
          SELECT *
-         FROM palk.tsd_lisa_1b('2023-01-01'::date, '2023-01-31'::date, 119, 1 :: INTEGER)
+         FROM palk.tsd_lisa_1b('2024-01-01'::date, '2024-01-31'::date, 106, 1 :: INTEGER)
      ) qry
 WHERE c_1300 = '44701313718'
 

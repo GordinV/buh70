@@ -22,6 +22,7 @@ DECLARE
     doc_tulumaar   INTEGER        = doc_data ->> 'tulumaar';
     doc_alimentid  INTEGER        = doc_data ->> 'alimentid';
     doc_tunnus     TEXT           = doc_data ->> 'tunnus';
+    doc_objekt     TEXT           = doc_data ->> 'objekt';
     doc_minsots    INTEGER        = doc_data ->> 'minsots';
     doc_muud       TEXT           = doc_data ->> 'muud';
     doc_status     INTEGER        = doc_data ->> 'status';
@@ -30,6 +31,7 @@ DECLARE
     new_history    JSONB;
     v_palk_kaart   RECORD;
     is_import      BOOLEAN        = data ->> 'import';
+    l_props        JSONB;
 BEGIN
 
     SELECT kasutaja
@@ -69,6 +71,10 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
+    l_props = (SELECT row_to_json(row)
+               FROM (SELECT doc_objekt AS objekt) row);
+
+
     -- вставка или апдейт docs.doc
 
     IF doc_id IS NULL OR doc_id = 0
@@ -82,13 +88,13 @@ BEGIN
 
 
         INSERT INTO palk.palk_kaart (parentid, libid, lepingid, summa, percent_, tulumaks, tulumaar,
-                                     alimentid, tunnus, minsots, status, ajalugu, muud)
+                                     alimentid, tunnus, minsots, status, ajalugu, muud, properties)
         VALUES (doc_parentid, doc_libid, doc_lepingid, doc_summa, doc_percent_, doc_tulumaks, doc_tulumaar,
                 doc_alimentid, doc_tunnus, doc_minsots, CASE
                                                             WHEN is_import IS NOT NULL
                                                                 THEN doc_status
                                                             ELSE 1 END,
-                new_history, doc_muud) RETURNING id
+                new_history, doc_muud, l_props) RETURNING id
                    INTO kaart_id;
 
 
@@ -106,19 +112,20 @@ BEGIN
                      v_palk_kaart AS palk_kaart) row;
 
         UPDATE palk.palk_kaart
-        SET libid     = doc_libid,
-            lepingid  = doc_lepingid,
-            summa     = doc_summa,
-            percent_  = doc_percent_,
-            tulumaks  = doc_tulumaks,
-            tulumaar  = doc_tulumaar,
-            alimentid = doc_alimentid,
-            tunnus    = doc_tunnus,
-            minsots   = doc_minsots,
-            ajalugu   = coalesce(ajalugu, '[]'::JSONB) || new_history::JSONB,
-            muud      = doc_muud,
-            timestamp = now(),
-            status    = doc_status
+        SET libid      = doc_libid,
+            lepingid   = doc_lepingid,
+            summa      = doc_summa,
+            percent_   = doc_percent_,
+            tulumaks   = doc_tulumaks,
+            tulumaar   = doc_tulumaar,
+            alimentid  = doc_alimentid,
+            tunnus     = doc_tunnus,
+            minsots    = doc_minsots,
+            ajalugu    = coalesce(ajalugu, '[]'::JSONB) || new_history::JSONB,
+            muud       = doc_muud,
+            properties = coalesce(properties, '{}'::JSONB) || l_props,
+            timestamp  = now(),
+            status     = doc_status
         WHERE id = doc_id RETURNING id
             INTO kaart_id;
 
@@ -130,7 +137,7 @@ EXCEPTION
         THEN
             RAISE NOTICE 'error %', SQLERRM;
             RETURN 0;
-END;
+END ;
 $BODY$;
 
 

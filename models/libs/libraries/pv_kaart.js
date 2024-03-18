@@ -102,7 +102,8 @@ module.exports = {
         alias: 'row',
         data: []
     }, {
-        sql: `SELECT $2 :: INTEGER AS userid, $1 AS pv_id, po.*
+        sql: `SELECT $2 :: INTEGER AS userid, $1 AS pv_id, 
+                po.*
               FROM cur_pv_oper po
               WHERE po.pv_kaart_id = $1`, //$1 doc_id, $2 userId
         multiple: true,

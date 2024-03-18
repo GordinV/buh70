@@ -483,7 +483,7 @@ FROM (
                     po.liik
              FROM qryPalkOper po
              WHERE (ltrim(rtrim(po.konto)) IN (SELECT unnest(
-                                                              '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT[]))
+                                                              '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,500260,5002601,5002901}' :: TEXT[]))
                  OR left(po.konto, 7) IN (SELECT unnest(
                                                          '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT[])
                  ))
@@ -1313,10 +1313,13 @@ GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbk
 /*
 
 SELECT *
-FROM palk.palk_kaart('2023-01-01', '2024-12-31',101, 0 :: INTEGER)
-where
+FROM palk.palk_kaart('2023-01-01', '2023-12-31',113, 0 :: INTEGER)
+where isik ilike '%Sepp Christi%'
+
+select qry.*
+                    FROM palk.palk_kaart('2023-01-01', '2023-12-31',113, 0 :: INTEGER) qry
+where isik ilike '%Sepp Christi%'
 
 
-
-select * from ou.rekv where nimetus like '%0911038%'
+select * from ou.rekv where nimetus like '%0921214 %'
 */

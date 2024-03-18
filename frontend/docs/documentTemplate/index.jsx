@@ -244,7 +244,7 @@ class DocumentTemplate extends React.Component {
                     let errorMessage = response.error_message ? response.error_message : '';
                     this.setState({
                         reloadData: false,
-                        warning: `Tekkis viga ${errorMessage}`,
+                        warning: `Tekkis viga ${JSON.stringify(errorMessage)}`,
                         warningType: 'error',
                     });
                 }

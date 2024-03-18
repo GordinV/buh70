@@ -39,7 +39,8 @@ FROM (
                         THEN '99'
                     ELSE (l.properties :: JSONB ->> 'tululiik') END      AS tululiik,
                 pk.minsots,
-                t.rekvid
+                t.rekvid,
+                coalesce(pk.properties ->> 'objekt', '')::VARCHAR(20)    AS objekt
          FROM libs.library l
                   INNER JOIN palk.palk_kaart pk ON pk.libId = l.id
                   LEFT OUTER JOIN palk.tooleping t ON pk.lepingId = t.id

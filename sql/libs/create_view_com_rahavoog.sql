@@ -7,13 +7,15 @@ FROM (SELECT 0                AS id,
              '':: VARCHAR(20) AS kood,
              '':: VARCHAR(20) AS nimetus,
              NULL :: INTEGER  AS rekvId,
-             NULL::DATE       AS valid
+             NULL::DATE       AS valid,
+             ''::VARCHAR(20)  AS liik
       UNION
       SELECT l.id,
              l.kood,
              l.nimetus,
              l.rekvId,
-             (l.properties::JSONB ->> 'valid')::DATE
+             (l.properties::JSONB ->> 'valid')::DATE,
+             coalesce((l.properties::JSONB ->> 'liik')::VARCHAR(20), '')::VARCHAR(20) AS liik
       FROM libs.library l
       WHERE l.library = 'RAHA'
         AND l.status <> 3

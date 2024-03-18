@@ -31,12 +31,34 @@ WITH rekv_ids AS (
      docs_types AS (
          SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('SMK', 'VMK', 'ARV')
      ),
+     range_parameters AS (
+         SELECT ('[' || format_date(coalesce(kpv_start::TEXT, make_date(year(current_date), 01, 01)::TEXT))::TEXT ||
+                 ',' ||
+                 (format_date((kpv_end::DATE + CASE
+                                                   WHEN kpv_start::DATE = kpv_end::DATE
+                                                       THEN INTERVAL '1 day'
+                                                   ELSE INTERVAL '0 day' END)::TEXT)::TEXT) ||
+                 ')') ::DATERANGE AS range,
+                kpv_start::DATE   AS period_start,
+                kpv_end::DATE     AS period_finish
+--           case when $5::text is not null and $5::text = '' then null::date else $5::DATE end::date as kehtiv_kpv
+     ),
+
      kulastavus AS (
          SELECT parentid,
                 rekvid,
                 yksus,
                 min(alg_kpv)            AS alg_kpv,
                 max(lopp_kpv)           AS lopp_kpv,
+                CASE
+                    WHEN
+                            (('[' || format_date(min(qry.alg_kpv)::TEXT)::TEXT || ',' ||
+                              format_date((max(qry.lopp_kpv)::DATE +
+                                           CASE
+                                               WHEN min(qry.alg_kpv) = max(qry.lopp_kpv) THEN INTERVAL '1 day'
+                                               ELSE INTERVAL '0 day' END)::TEXT)::TEXT ||
+                              ')'))::DATERANGE @> range_parameters.range THEN 'Jah'
+                    ELSE 'Ei' END::TEXT AS kulastavus_,
                 CASE
                     WHEN max(lopp_kpv) >= kpv_end OR min(alg_kpv) < kpv_start THEN 'Jah'
                     ELSE 'Ei' END::TEXT AS kulastavus
@@ -49,15 +71,26 @@ WITH rekv_ids AS (
                                  make_date(date_part('year', current_date)::INTEGER, 1, 1))::DATE   AS alg_kpv,
                          coalesce(
                                  (lk.properties ->> 'lopp_kpv')::DATE,
-                                 make_date(date_part('year', current_date)::INTEGER, 12, 31))::DATE AS lopp_kpv
+                                 make_date(date_part('year', current_date)::INTEGER, 12, 31))::DATE AS lopp_kpv,
+                         ('[' || format_date(coalesce((lk.properties ->> 'alg_kpv')::TEXT,
+                                                      make_date(year(current_date), 01, 01)::TEXT))::TEXT || ',' ||
+                          (format_date(((lk.properties ->> 'lopp_kpv')::DATE::DATE + CASE
+                                                                                         WHEN (lk.properties ->> 'alg_kpv')::DATE =
+                                                                                              (lk.properties ->> 'lopp_kpv')::DATE
+                                                                                             THEN INTERVAL '1 day'
+                                                                                         ELSE INTERVAL '0 day' END)::TEXT)::TEXT) ||
+                          ')') ::DATERANGE                                                          AS lk_range
+
                   FROM lapsed.lapse_kaart lk
                   WHERE lk.staatus <> 3
                     AND lk.rekvid IN (SELECT rekv_id FROM rekv_ids)
-              ) qry
+              ) qry,
+              range_parameters
 
          GROUP BY parentid,
                   rekvid,
-                  yksus
+                  yksus,
+                  range_parameters.range
      )
 
 SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
@@ -93,7 +126,7 @@ FROM (
                              l.id                                                     AS laps_id,
                              CASE
                                  WHEN mk.properties ->> 'yksus' IS NULL THEN ''
-                                 ELSE '' END                                          AS yksus,
+                                 ELSE mk.properties ->> 'yksus' END                   AS yksus,
                              D.rekvid                                                 AS rekv_id
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
@@ -104,6 +137,22 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.jaak <> 0
+                      UNION ALL
+                      -- возвраты
+                      SELECT sum(-1 * at.summa)                      AS summa,
+                             l.parentid                              AS laps_id,
+                             coalesce(mk.properties ->> 'yksus', '') AS yksus,
+                             at.rekvid
+                      FROM docs.arvtasu at
+                               INNER JOIN lapsed.liidestamine l ON l.docid = at.doc_arv_id
+                               INNER JOIN docs.mk mk ON mk.parentid = at.doc_arv_id
+                      WHERE mk.maksepaev < kpv_start
+                        AND at.status <> 3
+                        AND at.pankkassa = 4 -- только возвраты
+                        AND at.summa > 0     -- выплаты
+                        AND at.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                      GROUP BY l.parentid, at.rekvid, coalesce(mk.properties ->> 'yksus', '')
+
                       UNION ALL
                       -- laekumised
                       -- распределенные авансовые платежи
@@ -175,7 +224,7 @@ FROM (
                         WHERE kpv >= kpv_start::DATE
                           AND kpv <= kpv_end::DATE
                           AND status <> 3
-                          AND pankkassa <> 3 -- только платежные документы
+                          AND pankkassa < 3 -- только платежные документы
                           AND rekvid IN (SELECT rekv_id FROM rekv_ids)
                         GROUP BY doc_arv_id
                        ) AT
@@ -190,6 +239,40 @@ FROM (
                       OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
                     AND a.liik = 0 -- только счета исходящие
                   GROUP BY AT.doc_arv_id, (a1.properties ->> 'yksus'), l.parentid, a.rekvid
+                  UNION ALL
+                  -- возвраты
+                  SELECT at.rekvid,
+                         coalesce(mk.properties ->> 'yksus', '') AS yksus,
+                         sum(-1 * at.summa)                      AS tagastus,
+                         0                                       AS laekumised,
+                         l.parentid                              AS laps_id
+                  FROM docs.arvtasu at
+                           INNER JOIN lapsed.liidestamine l ON l.docid = at.doc_tasu_id
+                           INNER JOIN docs.mk mk ON mk.parentid = at.doc_arv_id
+                  WHERE at.kpv >= kpv_start::DATE
+                    AND at.kpv <= kpv_end::DATE
+                    AND status <> 3
+                    AND pankkassa = 4 -- только возвраты
+                    AND at.summa > 0  -- выплаты
+                    AND at.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                  GROUP BY l.parentid, at.rekvid, coalesce(mk.properties ->> 'yksus', '')
+                  UNION ALL
+                  -- поступления , компенсированные возвратами
+                  SELECT at.rekvid,
+                         coalesce(mk.properties ->> 'yksus', '') AS yksus,
+                         0                                       AS tagastus,
+                         sum(at.summa)                           AS laekumised,
+                         l.parentid                              AS laps_id
+                  FROM docs.arvtasu at
+                           INNER JOIN lapsed.liidestamine l ON l.docid = at.doc_tasu_id
+                           INNER JOIN docs.mk mk ON mk.parentid = at.doc_arv_id
+                  WHERE mk.maksepaev >= kpv_start::DATE
+                    AND mk.maksepaev <= kpv_end::DATE
+                    AND status <> 3
+                    AND pankkassa = 4 -- только возвраты
+                    AND at.summa > 0  -- выплаты
+                    AND at.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                  GROUP BY l.parentid, at.rekvid, coalesce(mk.properties ->> 'yksus', '')
               ),
               mahandmine AS (
                   SELECT a.rekvid,
@@ -419,10 +502,18 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 /*
 
 select
-*
-FROM lapsed.saldo_ja_kaive(72, '2023-01-01', '2024-01-08') qry
+1, *
+FROM lapsed.saldo_ja_kaive_(72, '2023-01-01', '2023-12-31') qry
 where 1=1
-and      viitenumber = '0720119378'
+and      viitenumber = '0720075001'
+union all
+select
+2, *
+FROM lapsed.saldo_ja_kaive(72, '2023-01-01', '2023-12-31') qry
+where 1=1
+and      viitenumber = '0720075001'
+
+
 
 and   (kulastatavus = 'Jah'  or (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR
            jaak <> 0
@@ -438,5 +529,10 @@ and   (kulastatavus = 'Jah'  or (alg_saldo <> 0 OR arvestatud <> 0 OR umberarves
                            AND lk.properties ->> 'yksus' = qry.yksus
                            AND (lk.properties ->> 'lopp_kpv')::date >= qry.period::date
         )
+unuon all
+select *
+FROM lapsed.kaive_aruanne(72, '2023-01-31', '2023-12-31') qry
+where viitenumber= '0720075001'
+
 
 */

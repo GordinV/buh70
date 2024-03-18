@@ -135,6 +135,11 @@ FROM (
 WHERE NOT empty(artikkel)
   AND summa <> 0
   AND artikkel NOT IN ('2586')
+  AND (CASE
+           WHEN artikkel = '2585' AND ltrim(rtrim(allikas)) = '80' THEN TRUE
+           WHEN artikkel = '2585' AND empty(rahavoog) THEN TRUE
+           WHEN artikkel = '2585' AND rahavoog <> '05' THEN FALSE
+           ELSE TRUE END)
 GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog, kuu, aasta
 HAVING sum(summa) <> 0;
 
@@ -151,8 +156,8 @@ GRANT EXECUTE ON FUNCTION eelarve.tulu_taitmine( DATE,DATE, INTEGER, INTEGER ) T
 /*
 
 SELECT sum(summa) over(),*
-FROM eelarve.tulu_taitmine('2022-01-01', '2022-12-31', 63, 1)
-where artikkel like '3823%'
+FROM eelarve.tulu_taitmine('2024-01-01', '2024-12-31', 64, 1)
+where artikkel like '2585%'
 and allikas = '80'
 and tegev = '01112'
 and empty(rahavoog)

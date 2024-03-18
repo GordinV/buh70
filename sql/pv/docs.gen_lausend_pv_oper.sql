@@ -49,12 +49,23 @@ BEGIN
     WHERE d.id = tnId;
 
     -- если карточка в инвестициях, то конто износа 154010
-    IF v_pv_oper.pv_kaart_konto = '154000'
+    IF v_pv_oper.pv_kaart_konto = '154000' and v_pv_oper.konto <> '154000'
     THEN
         v_pv_oper.kulum_konto = '154010';
-        v_pv_oper.kood3 = '11';
+        IF empty(v_pv_oper.kood3)
+        THEN
+            v_pv_oper.kood3 = '11';
+        END IF;
+
     END IF;
 
+    --  Можно еще убрать код партнёра у группы 154? Veronika Nikitina, 31.01.24
+/*    IF left(v_pv_oper.pv_kaart_konto,3) = '154'
+    THEN
+        v_pv_oper.tp = '';
+    END IF;
+
+*/
     IF v_pv_oper.id IS NULL
     THEN
         error_code = 4; -- No documents found
@@ -128,7 +139,7 @@ BEGIN
     END IF;
 
     CASE
-        WHEN v_pv_oper.liik = array_position(a_pv_opers, 'paigutus')
+        WHEN v_pv_oper.liik = 1 -- array_position(a_pv_opers, 'paigutus')
             THEN
                 SELECT 0                                AS id,
                        coalesce(v_pv_oper.summa, 0)     AS summa,
@@ -146,7 +157,7 @@ BEGIN
                 INTO v_journal1;
                 l_json_details = row_to_json(v_journal1);
 
-        WHEN v_pv_oper.liik = array_position(a_pv_opers, 'kulum')
+        WHEN v_pv_oper.liik = 2 -- array_position(a_pv_opers, 'kulum')
             THEN
                 SELECT 0                              AS id,
                        coalesce(v_pv_oper.summa, 0)   AS summa,
@@ -164,7 +175,7 @@ BEGIN
                 INTO v_journal1;
                 l_json_details = row_to_json(v_journal1);
 
-        WHEN v_pv_oper.liik = array_position(a_pv_opers, 'parandus')
+        WHEN v_pv_oper.liik = 3 -- array_position(a_pv_opers, 'parandus')
             THEN
                 SELECT 0                                AS id,
                        coalesce(v_pv_oper.summa, 0)     AS summa,
@@ -182,14 +193,14 @@ BEGIN
                 INTO v_journal1;
                 l_json_details = row_to_json(v_journal1);
 
-        WHEN v_pv_oper.liik = array_position(a_pv_opers, 'mahakandmine')
+        WHEN v_pv_oper.liik = 4 -- array_position(a_pv_opers, 'mahakandmine')
             THEN
                 SELECT 0                                AS id,
                        coalesce(v_pv_oper.summa, 0)     AS summa,
                        v_pv_oper.konto                  AS deebet,
                        coalesce(v_pv_oper.tp, '800599') AS lisa_d,
                        v_pv_oper.korrkonto              AS kreedit,
-                       coalesce(v_pv_oper.tp, '800599') AS lisa_k,
+                       ''                               AS lisa_k,
                        coalesce(v_pv_oper.tunnus, '')   AS tunnus,
                        coalesce(v_pv_oper.proj, '')     AS proj,
                        coalesce(v_pv_oper.kood1, '')    AS kood1,
@@ -200,7 +211,63 @@ BEGIN
                 INTO v_journal1;
                 l_json_details = row_to_json(v_journal1);
 
-        WHEN v_pv_oper.liik = array_position(a_pv_opers, 'umberhindamine')
+                IF ltrim(rtrim(coalesce(v_pv_oper.kood3, ''))) = '02'
+                THEN
+                    -- продажа
+                    -- D154010 K381010 TP kood TA04900 RV02
+                    SELECT 0                                  AS id,
+                           coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
+                           v_pv_oper.kulum_konto              AS deebet,
+                           ''                                 AS lisa_d,
+                           v_pv_oper.konto                    AS kreedit,
+                           coalesce(v_pv_oper.tp, '800599')   AS lisa_k,
+                           coalesce(v_pv_oper.tunnus, '')     AS tunnus,
+                           coalesce(v_pv_oper.proj, '')       AS proj,
+                           coalesce(v_pv_oper.kood1, '')      AS kood1,
+                           coalesce(v_pv_oper.kood2, '')      AS kood2,
+                           coalesce(v_pv_oper.kood3, '')      AS kood3,
+                           coalesce(v_pv_oper.kood4, '')      AS kood4,
+                           coalesce(v_pv_oper.kood5, '')      AS kood5
+                    INTO v_journal1;
+                    l_json_details = l_json_details || ',' || row_to_json(v_journal1);
+
+                END IF;
+
+                IF ltrim(rtrim(coalesce(v_pv_oper.kood3, ''))) = '15'
+                THEN
+                    -- передача
+                    --Запись следующая:
+                    --    D710010 TP18510130               K155109                       RV15
+                    --    D155119                                  K710010 TP18510130   RV15    Veronika Nikitina, 21.02.2024
+
+                    v_journal1.deebet = '710010';
+                    v_journal1.lisa_d = v_pv_oper.tp;
+                    v_journal1.kreedit = v_pv_oper.korrkonto;
+                    v_journal1.lisa_k = '';
+                    l_json_details = row_to_json(v_journal1);
+
+                    -- 2 строка
+
+                    SELECT 0                                  AS id,
+                           coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
+                           v_pv_oper.kulum_konto              AS deebet,
+                           ''                                 AS lisa_d,
+                           '710010'                           AS kreedit,
+                           coalesce(v_pv_oper.tp, '800599')   AS lisa_k,
+                           coalesce(v_pv_oper.tunnus, '')     AS tunnus,
+                           coalesce(v_pv_oper.proj, '')       AS proj,
+                           coalesce(v_pv_oper.kood1, '')      AS kood1,
+                           coalesce(v_pv_oper.kood2, '')      AS kood2,
+                           coalesce(v_pv_oper.kood3, '')      AS kood3,
+                           coalesce(v_pv_oper.kood4, '')      AS kood4,
+                           coalesce(v_pv_oper.kood5, '')      AS kood5
+                    INTO v_journal1;
+                    l_json_details = l_json_details || ',' || row_to_json(v_journal1);
+
+                END IF;
+
+
+        WHEN v_pv_oper.liik = 5 -- array_position(a_pv_opers, 'umberhindamine')
             THEN
                 error_code = 1; -- Konteerimine pole vajalik
                 error_message = 'Umberhindamine konteerimine ei ole realiseeritud';
@@ -211,15 +278,15 @@ BEGIN
                 -- umberklassifitseerimine
                 -- PV->investeeringud
 
-                RAISE NOTICE 'v_pv_oper.konto %, v_pv_oper.korr_konto %', v_pv_oper.konto, v_pv_oper.korr_konto;
+--                raise notice 'v_pv_oper.konto %, v_pv_oper.korr_konto %, kulum_konto %', v_pv_oper.konto, v_pv_oper.korr_konto, v_pv_oper.kulum_konto;
                 IF v_pv_oper.konto = '154000'
                 THEN
-
-                    RAISE NOTICE 'investeeringud deebet %, kreedit %', v_pv_oper.konto, v_pv_oper.korr_konto;
                     SELECT 0                              AS id,
                            coalesce(v_pv_oper.summa, 0)   AS summa,
                            v_pv_oper.konto                AS deebet,
                            v_pv_oper.korr_konto           AS kreedit,
+                           ''                             AS lisa_d,
+                           ''                             AS lisa_k,
                            coalesce(v_pv_oper.tunnus, '') AS tunnus,
                            coalesce(v_pv_oper.proj, '')   AS proj,
                            coalesce(v_pv_oper.kood1, '')  AS kood1,
@@ -233,6 +300,8 @@ BEGIN
                     IF v_pv_oper.korr_konto <> '155000' AND
                        coalesce(v_pv_oper.kulum_kokku, 0) > 0 AND NOT empty(v_pv_oper.kulum_konto)
                     THEN
+                        raise notice 'kulum osa v_pv_oper.kulum_konto %', v_pv_oper.kulum_konto;
+
                         -- maa,
                         -- kulum
                         SELECT 0                                  AS id,
@@ -240,6 +309,8 @@ BEGIN
                                v_pv_oper.kulum_konto              AS deebet,
                                '154010'                           AS kreedit,
                                coalesce(v_pv_oper.tunnus, '')     AS tunnus,
+                               ''                             AS lisa_d,
+                               ''                             AS lisa_k,
                                coalesce(v_pv_oper.proj, '')       AS proj,
                                coalesce(v_pv_oper.kood1, '')      AS kood1,
                                coalesce(v_pv_oper.kood2, '')      AS kood2,
@@ -257,6 +328,8 @@ BEGIN
                            coalesce(v_pv_oper.summa, 0)   AS summa,
                            v_pv_oper.korr_konto           AS deebet,
                            '154000'                       AS kreedit,
+                           ''                             AS lisa_d,
+                           ''                             AS lisa_k,
                            coalesce(v_pv_oper.tunnus, '') AS tunnus,
                            coalesce(v_pv_oper.proj, '')   AS proj,
                            coalesce(v_pv_oper.kood1, '')  AS kood1,
@@ -276,6 +349,8 @@ BEGIN
                                coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
                                v_pv_oper.kulum_konto              AS kreedit,
                                '154010'                           AS deebet,
+                               ''                             AS lisa_d,
+                               ''                             AS lisa_k,
                                coalesce(v_pv_oper.tunnus, '')     AS tunnus,
                                coalesce(v_pv_oper.proj, '')       AS proj,
                                coalesce(v_pv_oper.kood1, '')      AS kood1,
@@ -353,6 +428,8 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_pv_oper(INTEGER, INTEGER) TO dbkasuta
 GRANT EXECUTE ON FUNCTION docs.gen_lausend_pv_oper(INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-select error_code, result, error_message from docs.gen_lausend_pv_oper(2362132, 2477)
+select error_code, result, error_message from docs.gen_lausend_pv_oper_(5883561, 956)
+
+
 
 */

@@ -137,6 +137,12 @@ FROM (
 WHERE NOT empty(qry.artikkel)
   AND qry.summa <> 0
   AND qry.artikkel NOT IN ('2586')
+  AND (CASE
+           WHEN artikkel = '2585' AND allikas = '80' THEN TRUE
+           WHEN artikkel = '2585' AND empty(rahavoog) THEN TRUE
+           WHEN artikkel = '2585' AND rahavoog <> '05' THEN FALSE
+           ELSE TRUE END)
+
 GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.proj, qry.uritus, qry.objekt, qry.rahavoog,
          qry.kuu,
          qry.aasta
@@ -155,8 +161,8 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine_detailne( DATE,DATE, I
 /*
 
 SELECT sum(summa) over(), *
-FROM eelarve.uus_kassa_tulu_taitmine_detailne('2023-01-01', '2023-12-31', 132, 0)
-where artikkel = '3224'
+FROM eelarve.uus_kassa_tulu_taitmine_detailne('2023-01-01', '2023-12-31', 64, 1)
+where artikkel = '2585'
 
 44761121.71
 

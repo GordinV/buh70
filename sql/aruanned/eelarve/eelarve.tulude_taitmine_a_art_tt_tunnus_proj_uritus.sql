@@ -62,60 +62,6 @@ WITH params AS (
            AND l.status <> 3
            AND l.library = 'TULUDEALLIKAD'
      ),
--- признаки, которые используются в планах
-     used_tunnused AS (SELECT DISTINCT t.rekvid, t1.tunnus
-                       FROM eelarve.taotlus t
-                                INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
-                            params
-                       WHERE t1.tunnus IS NOT NULL
-                         AND NOT empty(t1.tunnus)
-                         AND t.status = 3
-                         AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
-                         AND t.aasta = params.aasta
-                         AND t1.kood2 NOT LIKE ('%RF%')
-                       GROUP BY t.rekvid,
-                                t1.tunnus
-                       HAVING (count(*) > 0)
-     ),
-     -- выберем, где используются проекты
-     used_projects AS (
-         SELECT DISTINCT t1.proj AS proj,
-                         e.rekvid
-         FROM eelarve.kulud e
-                  LEFT OUTER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
-              params
-         WHERE e.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
-           AND t1.proj IS NOT NULL
-           AND NOT empty(t1.proj)
-           AND e.status <> 3
-           AND e.aasta = params.aasta
-     ),
-     -- выберем, где используются проекты
-     used_uritused AS (
-         SELECT DISTINCT t1.kood4 AS uritus,
-                         e.rekvid
-         FROM eelarve.kulud e
-                  INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
-              params
-         WHERE e.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
-           AND t1.kood4 IS NOT NULL
-           AND NOT empty(t1.kood4)
-           AND e.status <> 3
-           AND e.aasta = params.aasta
-     ),
-     -- выберем, где используются объекты
-     used_objektid AS (
-         SELECT DISTINCT t1.objekt AS objekt,
-                         e.rekvid
-         FROM eelarve.kulud e
-                  INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
-              params
-         WHERE e.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
-           AND t1.objekt IS NOT NULL
-           AND NOT empty(t1.objekt)
-           AND e.status <> 3
-           AND e.aasta = params.aasta
-     ),
 
      cur_tulude_kassa_taitmine AS (
          SELECT qry.*
@@ -229,27 +175,10 @@ WITH params AS (
                 qry.allikas,
                 qry.artikkel,
                 qry.rahavoog,
-                CASE
-                    WHEN EXISTS(
-                            SELECT 1 FROM used_tunnused t WHERE t.tunnus = qry.tunnus AND rekvid = qry.rekvid)
-                        THEN qry.tunnus
-                    ELSE '' END                   AS tunnus,
-                CASE
-                    WHEN EXISTS(
-                            SELECT 1 FROM used_projects p WHERE p.proj = qry.proj AND rekvid = qry.rekvid)
-                        THEN qry.proj
-                    ELSE '' END                   AS proj,
-                CASE
-                    WHEN EXISTS(
-                            SELECT 1 FROM used_uritused u WHERE u.uritus = qry.uritus AND u.rekvid = qry.rekvid)
-                        THEN qry.uritus
-                    ELSE '' END                   AS uritus,
-                CASE
-                    WHEN EXISTS(
-                            SELECT 1 FROM used_objektid u WHERE u.objekt = qry.objekt AND u.rekvid = qry.rekvid)
-                        THEN qry.objekt
-                    ELSE '' END                   AS objekt,
-
+                qry.tunnus                   AS tunnus,
+                qry.proj AS proj,
+                qry.uritus                   AS uritus,
+                qry.objekt                   AS objekt,
                 qry.idx
          FROM (
                   SELECT e.rekvid,
@@ -658,8 +587,8 @@ sum;sum;sum;sum;sum;sum
 SELECT *
 FROM (
          SELECT sum(tegelik) over(), sum(kassa) over(), sum(eelarve_kinni) over(), sum(eelarve_parandatud) over(), sum(eelarve_kassa_kinni) over(), sum(eelarve_kassa_parandatud) over(), *
-         FROM eelarve.tulude_taitmine_a_art_tt_tunnus_proj_uritus(2023::INTEGER, '2023-01-01'::DATE, '2023-12-30', 132, 1,'{"tunnus":null}')
-where artikkel = '3500'
+         FROM eelarve.tulude_taitmine_a_art_tt_tunnus_proj_uritus(2024::INTEGER, '2024-01-01'::DATE, '2024-12-30', 28, 1,'{"tunnus":null}')
+where artikkel = '3818'
 
 allikas = '80'
 and artikkel = '3044'

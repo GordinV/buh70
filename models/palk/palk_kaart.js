@@ -26,7 +26,8 @@ module.exports = {
                      (l.properties :: JSONB ->> 'asutusest') :: INTEGER    AS asutusest,
                      (l.properties :: JSONB ->> 'tululiik') :: VARCHAR(20) AS tululiik,
                      'EUR' :: VARCHAR                                      AS valuuta,
-                     1 :: NUMERIC                                          AS kuurs
+                     1 :: NUMERIC                                          AS kuurs,
+                     (pk.properties ->> 'objekt')::VARCHAR(20)               AS objekt
               FROM libs.library l
                        INNER JOIN palk.palk_kaart pk ON pk.libId = l.id
                        INNER JOIN palk.tooleping t ON pk.lepingId = t.id
@@ -50,7 +51,8 @@ module.exports = {
                       NULL :: VARCHAR(20) AS tunnus,
                       0 :: INTEGER        AS minsots,
                       'EUR' :: VARCHAR    AS valuuta,
-                      1 :: NUMERIC        AS kuurs`,
+                      1 :: NUMERIC        AS kuurs,
+                      null::varchar(20) as objekt`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -93,21 +95,21 @@ module.exports = {
     },
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
-                         (qry.ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
-                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         (qry.ajalugu ->> 'user')::VARCHAR(20)                                                       AS kasutaja,
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS koostatud,
-                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS muudatud,
-                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS prinditud,
-                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'), '')::VARCHAR(20) AS
+                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'), '')::VARCHAR(20) AS
                                                                                                                         email,
-                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS earve,
-                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS kustutatud
                   FROM (
-                           SELECT jsonb_array_elements('[]'::jsonb || d.ajalugu) AS ajalugu, d.id
+                           SELECT jsonb_array_elements('[]'::JSONB || d.ajalugu) AS ajalugu, d.id
                            FROM palk.palk_kaart d,
                                 ou.userid u
                            WHERE d.id = $1

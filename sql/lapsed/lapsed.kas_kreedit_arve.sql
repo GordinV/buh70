@@ -87,7 +87,7 @@ $BODY$
 
 GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER ) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER) TO arvestaja;
+--GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER) TO arvestaja;
 
 /*
 SELECT docs.kas_kreedit_arve(4713833, 5396, 4597388 )

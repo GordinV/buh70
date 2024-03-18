@@ -65,7 +65,6 @@ BEGIN
                   (CASE WHEN n.hind::TEXT = '' THEN '0' ELSE n.hind::TEXT END)::NUMERIC
         )
         LOOP
-            raise notice 'grupp_id %', v_groups.id;
 
             -- salvestame grupp
             SELECT row_to_json(row)
@@ -119,7 +118,6 @@ BEGIN
 
         LOOP
 
-            raise notice 'v_kaart %', v_kaart.id;
             -- salvestame kaart
             SELECT row_to_json(row)
             INTO json_object

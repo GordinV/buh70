@@ -943,13 +943,7 @@ const Arv = {
                                                    $3                                                   AS aadress,
                                                    (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
                        WHERE id = $1`,
-            register_error: `UPDATE docs.doc
-                             SET history = history ||
-                                           (SELECT row_to_json(row)
-                                            FROM (SELECT now()                                                AS email_viga,
-                                                         $3::TEXT                                             AS info,
-                                                         (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
-                             WHERE id = $1`,
+            register_error: `Select docs.register_email_error($1::INTEGER,$3::TEXT, $2::INTEGER)`,
             log: `INSERT INTO ou.logs (rekvid, user_id, doc_id, timestamp, propertis)
                   SELECT (SELECT rekvid FROM ou.userid WHERE id = $2 LIMIT 1) AS rekv_id,
                          $2                                                   AS user_id,

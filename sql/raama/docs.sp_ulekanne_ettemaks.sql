@@ -24,6 +24,7 @@ BEGIN
     -- расчет сальдо платежа
     l_tasu_jaak = docs.sp_update_mk_jaak(l_tasu_id);
 
+    raise notice 'start docs.sp_ulekanne_ettemaks l_tasu_jaak %',l_tasu_jaak;
 
     SELECT d.id,
            d.docs_ids,
@@ -77,6 +78,7 @@ BEGIN
 
     SELECT docs.sp_salvesta_arvtasu(json_object :: JSON, l_user_id, v_tasu.rekvid) INTO l_doc_id;
 
+    raise notice 'sp_ulekanne_ettemaks saved l_doc_id %',l_doc_id;
 
     RETURN l_doc_id;
 

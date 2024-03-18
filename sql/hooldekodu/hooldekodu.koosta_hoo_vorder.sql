@@ -29,7 +29,7 @@ DECLARE
     l_nom_id      INTEGER;
     json_korder   JSONB       = '[]'::JSONB;
     DOC_TYPE_CODE VARCHAR(20) = 'VORDER';
-    l_tunnus       TEXT    = case when l_rekvid = 64 then '4023' else '2101' end;
+    l_tunnus      TEXT        = CASE WHEN l_rekvid = 64 THEN '4023' ELSE '2101' END;
 BEGIN
 
     IF l_isik_id IS NULL
@@ -125,9 +125,10 @@ BEGIN
                '20356001'             AS konto,
                '10200'                AS kood1,
                'LE-P'                 AS kood2,
-               '4138'                 AS kood5,
+               '4131'                 AS kood5, --  Gjghfdktyj 29/01/24 V.B 4138
+               'Taskuraha'            AS kood4,
                '800699'               AS tp,
-               l_tunnus                 AS tunnus
+               l_tunnus               AS tunnus
         INTO v_korder1;
 
         json_korder = json_korder::JSONB || array_to_json((SELECT array_agg(row_to_json(v_korder1))))::JSONB;
@@ -153,10 +154,10 @@ BEGIN
                v_leping.pension15 AS summa,
                '20363002'         AS konto,
                '10200'            AS kood1,
-               '80'             AS kood2,
+               '80'               AS kood2,
                '2586'             AS kood5,
                '800699'           AS tp,
-               l_tunnus             AS tunnus
+               l_tunnus           AS tunnus
         INTO v_korder1;
 
         json_korder = json_korder::JSONB || array_to_json((SELECT array_agg(row_to_json(v_korder1))))::JSONB;

@@ -7,13 +7,16 @@ CREATE FUNCTION eelarve.sp_taotlus_aktsepteeri(user_id INTEGER, params JSON, OUT
 AS
 $$
 DECLARE
-    doc_id      INTEGER = coalesce((params ->> 'doc_id') :: INTEGER, 0);
-    ttMuud      TEXT    = params ->> 'muud';
+    doc_id      INTEGER ;
+    ttMuud      TEXT;
     new_history JSON;
     tmpTaotlus  RECORD;
     tmpEelProj  RECORD;
     lnEelProjId INTEGER;
 BEGIN
+    doc_id = coalesce((params ->> 'doc_id') :: INTEGER, 0);
+    ttMuud = params ->> 'muud';
+
     IF doc_id IS NULL
     THEN
         error_code = 6;
@@ -22,7 +25,9 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT t.* INTO tmpTaotlus
+
+    SELECT t.*
+    INTO tmpTaotlus
     FROM eelarve.taotlus t,
          ou.userid u
     WHERE t.parentid = doc_id
@@ -42,7 +47,7 @@ BEGIN
 --* eelarve projektide side
     SELECT e.id,
            e.status
-           INTO tmpEelProj
+    INTO tmpEelProj
     FROM eelarve.eelproj e
     WHERE e.aasta = tmptaotlus.aasta
       AND e.rekvid = tmpTaotlus.rekvid
@@ -53,13 +58,15 @@ BEGIN
     THEN
         lnEelProjId = tmpEelProj.id;
     ELSE
+        SELECT p.result
+        INTO lnEelProjId
+        FROM eelarve.koosta_eelproj(user_id,
+                                    json_build_object('rekvid', tmpTaotlus.rekvid, 'aasta', tmpTaotlus.aasta,
+                                                      'muud', tmpTaotlus.muud)) p;
 
-        lnEelProjId = eelarve.koosta_eelproj(user_id,
-                                             json_build_object('rekvid', tmpTaotlus.rekvid, 'aasta', tmpTaotlus.aasta,
-                                                               'muud', tmpTaotlus.muud));
         UPDATE eelarve.taotlus1
         SET eelprojid = lnEelProjId
-        WHERE parentid = doc_id;
+        WHERE parentid in (select id from eelarve.taotlus where taotlus.parentid = doc_id);
     END IF;
 
     IF tmpTaotlus.status = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'esitatud')
@@ -73,7 +80,8 @@ BEGIN
 
 
         -- ajalugu
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()             AS updated,
                      (SELECT kasutaja
                       FROM ou.userid
@@ -97,7 +105,8 @@ BEGIN
     END IF;
 
 
-    SELECT * INTO error_code, result, error_message
+    SELECT *
+    INTO error_code, result, error_message
     FROM eelarve.sp_eelproj_kinnitamine(user_id, ('{"taotlus_id":' || doc_id :: TEXT || '}') :: JSON);
 
     RETURN;
@@ -108,5 +117,7 @@ $$;
 GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_aktsepteeri(INTEGER, JSON) TO eelaktsepterja;
 
 /*
-
+select * from  eelarve.sp_taotlus_aktsepteeri(2477, '{"doc_id":2487197, "muud":"test 2 akts"}'::json)
+select * from eelarve.taotlus ORDER BY id desc limit 10
  */
+

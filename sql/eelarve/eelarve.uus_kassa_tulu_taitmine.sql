@@ -115,6 +115,11 @@ FROM (
 WHERE NOT empty(artikkel)
   AND summa <> 0
   AND artikkel NOT IN ('2586')
+  AND (CASE
+           WHEN artikkel = '2585' AND allikas = '80' THEN TRUE
+           WHEN artikkel = '2585' AND rahavoog <> '05' THEN FALSE
+           ELSE TRUE END) -- V.B. 13.02.2024
+
 GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog, kuu, aasta
 HAVING sum(summa) <> 0;
 

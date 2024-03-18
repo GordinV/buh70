@@ -160,6 +160,7 @@ BEGIN
                                                 doc_alg_kpv
 --                AND lt.nomid = doc_nomid
                                             AND lt.staatus < 3
+                                            and lt.aasta > 2022 -- выкинем пробным период
 --                AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                                           LIMIT 1
         )
@@ -205,6 +206,20 @@ BEGIN
         )
     THEN
         RAISE NOTICE 'See teenus juba olemas, korduv, %', doc_row.isikukood;
+    END IF;
+
+    -- на смену группы, если есть табеля
+    IF coalesce(doc_id, 0) > 0 AND exists(SELECT lt.id
+                                          FROM lapsed.lapse_taabel lt
+                                          WHERE lt.parentid = doc_parentid
+                                            AND lt.rekvid = user_rekvid
+                                            AND lt.nomid = doc_nomid
+                                            and lt.lapse_kaart_id = doc_id
+                                            AND lt.staatus < 3
+                                            AND coalesce(doc_row.properties ->> 'yksus', '') <> coalesce(doc_yksus, '')
+        )
+    THEN
+        RAISE EXCEPTION 'Viga: Üksuse vahetus keelatud';
     END IF;
 
 

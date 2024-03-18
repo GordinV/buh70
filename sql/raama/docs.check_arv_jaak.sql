@@ -48,3 +48,4 @@ GRANT EXECUTE ON FUNCTION docs.check_arv_jaak(INTEGER, INTEGER) TO dbvaatleja;
 
 
 SELECT docs.check_arv_jaak(null, 4711);
+

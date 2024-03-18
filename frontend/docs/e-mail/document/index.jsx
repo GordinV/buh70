@@ -159,7 +159,8 @@ class Email extends React.Component {
         };
         this.setState({
             warning: 'Email saadetakse ...',
-            warningType: 'notValid'});
+            warningType: 'notValid'
+        });
 
         this.fetchData('Post', '/email/sendPrintForm', params).then((response) => {
             if (response.status === 200) {
@@ -172,12 +173,16 @@ class Email extends React.Component {
                     }, 10000);
                 });
             } else {
-                console.error('Error', response.data);
+                if (response.error_message) {
+                    errorMessage = response.error_message;
+                } else {
+                    errorMessage = response.data.result.error_message ? response.data.result.error_message : '';
+                }
 
                 this.setState({
-                    warning: 'Tekkis viga, ' + response.data.result.error_message  ? response.data.result.error_message : '',
+                    warning: 'Tekkis viga, ' + errorMessage,
                     warningType: 'error',
-                },()=> setTimeout(() => {
+                }, () => setTimeout(() => {
                 }, 10000));
             }
 

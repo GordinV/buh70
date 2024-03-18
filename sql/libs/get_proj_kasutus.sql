@@ -11,6 +11,10 @@ DECLARE
     l_lib_kood TEXT  = (SELECT ltrim(rtrim(kood))
                         FROM libs.library
                         WHERE id = l_lib_id);
+    l_rekv_id  INTEGER = (SELECT rekvid
+                          FROM libs.library
+                          WHERE id = l_lib_id);
+    
 BEGIN
 
     IF l_lib_id IS NOT NULL
@@ -21,6 +25,7 @@ BEGIN
             FROM libs.nomenklatuur n
                      INNER JOIN ou.rekv r ON n.rekvid = r.id
             WHERE ((n.properties ->> 'valid')::DATE IS NULL OR (n.properties ->> 'valid')::DATE > l_kpv)
+              and n.rekvid = l_rekv_id
               AND n.properties ->> 'proj' IS NOT NULL
               AND ltrim(rtrim(n.properties ->> 'proj')) = l_lib_kood
             UNION
@@ -30,6 +35,7 @@ BEGIN
                      INNER JOIN docs.mk1 m1 ON m.id = m1.parentid
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
+              and m.rekvid = l_rekv_id
               AND ltrim(rtrim(m1.proj)) = l_lib_kood
             UNION
             SELECT DISTINCT 'Dok. kassa order nr.:' || ltrim(rtrim(m.number)) || ' (' || ltrim(rtrim(r.nimetus)) ||
@@ -38,6 +44,7 @@ BEGIN
                      INNER JOIN docs.korder2 m1 ON m.id = m1.parentid
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
+              and m.rekvid = l_rekv_id              
               AND ltrim(rtrim(m1.proj)) = l_lib_kood
             UNION
             SELECT DISTINCT
@@ -46,6 +53,7 @@ BEGIN
                      INNER JOIN docs.avans2 m1 ON m.id = m1.parentid
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
+              and m.rekvid = l_rekv_id              
               AND ltrim(rtrim(m1.proj)) = l_lib_kood
             UNION
             SELECT DISTINCT 'Dok PV operatsioon inv.nr.:' || ltrim(rtrim(p.kood)) || ' (' || ltrim(rtrim(r.nimetus)) ||
@@ -54,6 +62,7 @@ BEGIN
                      INNER JOIN cur_pohivara p ON o.parentid = p.id
                      INNER JOIN ou.rekv r ON p.rekvid = r.id
             WHERE o.kpv > l_kpv
+              and p.rekvid = l_rekv_id              
               AND ltrim(rtrim(o.proj)) = l_lib_kood
             UNION ALL
             SELECT DISTINCT 'Dok lausend nr.:' || ltrim(rtrim(m.number::TEXT)) || ' (' || ltrim(rtrim(r.nimetus)) ||
@@ -62,6 +71,7 @@ BEGIN
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
               AND ltrim(rtrim(m.proj)) = l_lib_kood
+              and m.rekvid = l_rekv_id
 
             LOOP
                 tulemus = tulemus || to_jsonb(row)

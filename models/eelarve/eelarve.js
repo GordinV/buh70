@@ -147,7 +147,8 @@ const Eelarve = {
         sqlString: `SELECT
                           d.*
                         FROM cur_eelarve d
-                        WHERE d.rekvId = $1)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                        WHERE d.rekvId = $1
+                        and (d.summa <> 0 or d.summa_kassa <> 0)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curEelarve'
     },

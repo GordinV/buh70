@@ -840,8 +840,8 @@ FROM (
                   WHERE konto LIKE '3221%'
                     AND tp LIKE '185101%'
 --                      Строка 3221 Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) - Сумма всех строк с бюджетом 3221* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine+
-                    --                      Jooksva per saldoandmikust (без элиминирования) конто 3221* TP 185101=0
-                    --                      + сумма строк с бюджетом 3221 в Päevaraamat TP18510139 соответствующего периода
+                  --                      Jooksva per saldoandmikust (без элиминирования) конто 3221* TP 185101=0
+                  --                      + сумма строк с бюджетом 3221 в Päevaraamat TP18510139 соответствующего периода
 /*                  UNION ALL
                   SELECT 0,
                          0,
@@ -862,7 +862,7 @@ FROM (
                           AND kreedit LIKE '3221%'
                        ) j
                   WHERE l_kond = 1
-*/              ) qry3221
+*/ ) qry3221
          UNION ALL
          SELECT 1010                    AS idx,
                 '3222'                  AS nimetus,
@@ -921,6 +921,54 @@ FROM (
                   WHERE konto LIKE '3222%'
                     AND tp LIKE '185101%'
               ) qry3222
+         UNION ALL
+-- 3223
+         SELECT 1010                    AS idx,
+                '3223'                  AS nimetus,
+                sum(eelarve)            AS eelarve,
+                sum(eelarve_taps)       AS eelarve_taps,
+                sum(eelarve_kassa)      AS eelarve_kassa,
+                sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
+                sum(kassa)              AS kassa,
+                sum(saldoandmik)        AS saldoandmik
+         FROM (
+                  SELECT eelarve,
+                         eelarve_taps,
+                         eelarve_kassa,
+                         eelarve_kassa_taps,
+                         kassa,
+                         saldoandmik
+                  FROM qryLisa1Lisa5
+                  WHERE artikkel = '3223'
+                  UNION ALL
+                  SELECT -1 * eelarve,
+                         -1 * eelarve_taps,
+                         -1 * eelarve_kassa,
+                         -1 * eelarve_kassa_taps,
+                         -1 * kassa,
+                         -1 * saldoandmik
+                  FROM qryTuludTaitmine
+                  WHERE artikkel LIKE '3223%'
+                  UNION ALL
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
+                         0
+                  FROM qryJournal
+                  WHERE artikkel LIKE '3223%'
+                  UNION ALL
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
+                  FROM qrySaldoandmik
+                  WHERE konto LIKE '3223%'
+                    AND tp LIKE '185101%'
+              ) qry3223
          UNION ALL
          SELECT 1010                    AS idx,
                 '3224'                  AS nimetus,

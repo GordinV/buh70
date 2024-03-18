@@ -47,6 +47,7 @@ BEGIN
                j1.kood3,
                j1.kood4,
                j1.kood5,
+               j1.objekt,
                j1.summa,
                j1.tunnus,
                j1.proj,

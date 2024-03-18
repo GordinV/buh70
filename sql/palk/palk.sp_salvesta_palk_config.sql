@@ -60,9 +60,9 @@ BEGIN
                      userName AS user) row;
 
         INSERT INTO palk.palk_config (rekvid, minpalk, tulubaas, round, jaak, genlausend, suurasu, tm,
-                                      pm, tka, tki, sm, muud1, muud2, ajalugu, properties)
+                                      pm, tka, tki, sm, muud1, muud2, ajalugu, properties, pensionari_tulubaas)
         VALUES (user_rekvid, doc_minpalk, doc_tulubaas, doc_round, doc_jaak, doc_genlausend, doc_suurasu, doc_tm,
-                doc_pm, doc_tka, doc_tki, doc_sm, doc_muud1, doc_muud2, new_history, l_jsonb) RETURNING id
+                doc_pm, doc_tka, doc_tki, doc_sm, doc_muud1, doc_muud2, new_history, l_jsonb, doc_pensionari_tulubaas) RETURNING id
                    INTO config_id;
 
     ELSE
@@ -87,6 +87,7 @@ BEGIN
             muud1      = doc_muud1,
             muud2      = doc_muud2,
             ajalugu    = new_history,
+            pensionari_tulubaas = doc_pensionari_tulubaas,
             properties = l_jsonb
         WHERE id = doc_id RETURNING id
             INTO config_id;

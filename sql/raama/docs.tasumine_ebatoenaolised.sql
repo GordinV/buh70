@@ -10,21 +10,22 @@ CREATE OR REPLACE FUNCTION docs.tasumine_ebatoenaolised(IN l_mk_id INTEGER,
 AS
 $BODY$
 DECLARE
-    v_arv                      RECORD;
-    v_mk                       RECORD;
-    v_params                   RECORD;
-    l_json                     JSONB;
-    l_json_details             JSONB          = '[]'::JSONB;
-    userName                   TEXT           = (SELECT kasutaja
-                                                 FROM ou.userid
-                                                 WHERE id = user_id);
-    l_summa                    NUMERIC(14, 2);
-    l_control_summa            NUMERIC(14, 2) = 0;
-    kas_kreedit_arve           BOOL           = FALSE;
-    l_journal_id               INTEGER;
-    v_aasta                    RECORD;
-    v_arvtasu                  RECORD;
-    l_tasulised_ebatoenaolised NUMERIC;
+    v_arv                       RECORD;
+    v_mk                        RECORD;
+    v_params                    RECORD;
+    l_json                      JSONB;
+    l_json_details              JSONB          = '[]'::JSONB;
+    userName                    TEXT           = (SELECT kasutaja
+                                                  FROM ou.userid
+                                                  WHERE id = user_id);
+    l_summa                     NUMERIC(14, 2);
+    l_control_summa             NUMERIC(14, 2) = 0;
+    kas_kreedit_arve            BOOL           = FALSE;
+    l_journal_id                INTEGER;
+    v_aasta                     RECORD;
+    v_arvtasu                   RECORD;
+    l_tasulised_ebatoenaolised  NUMERIC;
+    l_arvestatud_ebatoenaolised NUMERIC;
 BEGIN
 
     -- ищем документ и его сумму
@@ -102,21 +103,49 @@ BEGIN
     l_summa = CASE WHEN v_arvtasu.summa >= v_arv.summa THEN v_arv.summa ELSE v_arvtasu.summa END;
     -- если списано сумма равная или меньшая платежу , то сумма возврата равна сумме списания, иначе считаем сумму платежа
 
+    --считаем сумма начисленных и оплаченных маловероятных
+    l_arvestatud_ebatoenaolised = coalesce((SELECT sum(summa)
+                                            FROM cur_journal
+                                            WHERE rekvid = v_arv.rekv_id
+                                              AND id IN (
+                                                SELECT coalesce((properties ->> 'ebatoenaolised_1_id')::INTEGER, 0)
+                                                FROM docs.arv
+                                                WHERE parentid = l_arv_id
+                                                UNION ALL
+                                                SELECT coalesce((properties ->> 'ebatoenaolised_2_id')::INTEGER, 0)
+                                                FROM docs.arv
+                                                WHERE parentid = l_arv_id)), 0);
 
     --считаем сумма начисленных и оплаченных маловероятных
-    l_tasulised_ebatoenaolised = (SELECT sum(summa)
-                                  FROM cur_journal
-                                  WHERE rekvid = v_arv.rekv_id
-                                    AND id IN (
-                                      SELECT (at.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER AS id
-                                      FROM docs.arvtasu at
-                                      WHERE doc_arv_id = l_arv_id
-                                        AND at.properties ->> 'ebatoenaolised_tagastamine_id' IS NOT NULL
-                                        AND (at.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER > 0
-                                        AND at.status < 3));
+    l_tasulised_ebatoenaolised = coalesce((SELECT sum(summa)
+                                           FROM cur_journal
+                                           WHERE rekvid = v_arv.rekv_id
+                                             AND id IN (
+                                               SELECT (at.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER AS id
+                                               FROM docs.arvtasu at
+                                               WHERE doc_arv_id = l_arv_id
+                                                 AND at.properties ->> 'ebatoenaolised_tagastamine_id' IS NOT NULL
+                                                 AND (at.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER > 0
+                                                 AND at.status < 3)), 0);
 
     -- если сумма начисленных маловероятныз меньше чем платеж, списываем только то что начисленно
-    l_summa = l_summa + coalesce(l_tasulised_ebatoenaolised, 0);
+    IF (l_arvestatud_ebatoenaolised + l_tasulised_ebatoenaolised) > 0 AND
+       l_summa <= (l_arvestatud_ebatoenaolised + l_tasulised_ebatoenaolised)
+    THEN
+        -- берем остаток начисленных маловероятных
+        l_summa = (l_arvestatud_ebatoenaolised + l_tasulised_ebatoenaolised);
+    ELSE
+        l_summa = 0;
+    END IF;
+
+    IF l_summa <= 0
+    THEN
+        RAISE NOTICE 'vale summa l_summa %, l_tasulised_ebatoenaolised %, v_arvtasu.summa %', l_summa, l_tasulised_ebatoenaolised, v_arvtasu.summa;
+        -- ошибка в сумме
+        result = 0;
+        error_message = 'Vale summa';
+        RETURN;
+    END IF;
 
     -- создаем проводку (или ищем если уже создана)
 
@@ -250,5 +279,5 @@ GRANT EXECUTE ON FUNCTION docs.tasumine_ebatoenaolised(INTEGER, INTEGER, INTEGER
 GRANT EXECUTE ON FUNCTION docs.tasumine_ebatoenaolised(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.tasumine_ebatoenaolised(4457788, 4927537,5424 );
+SELECT docs.tasumine_ebatoenaolised(5775317, 5136458,5407 );
 */

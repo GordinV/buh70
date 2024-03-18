@@ -25,7 +25,11 @@ SELECT e.id,
        'EUR' :: CHARACTER VARYING                   AS valuuta,
        1 :: NUMERIC                                 AS kuurs,
        e.is_parandus                                AS tun,
-       l.nimetus
+       l.nimetus,
+       coalesce(t1.proj, '')                        AS projekt,
+       coalesce(t1.objekt, '')                      AS objekt,
+       coalesce(t1.kood4, '')                       AS uritus
+       
 FROM eelarve.tulud e
          JOIN ou.rekv r ON e.rekvid = r.id
          LEFT OUTER JOIN (
@@ -36,6 +40,7 @@ FROM eelarve.tulud e
       AND l.status <> 3) l
                          ON l.kood = e.kood5
          LEFT OUTER JOIN ou.rekv parent ON parent.id = r.parentid
+         LEFT OUTER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id
 WHERE e.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
 GRANT SELECT ON TABLE cur_tulud TO dbpeakasutaja;

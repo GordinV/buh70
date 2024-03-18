@@ -34,6 +34,7 @@ BEGIN
            coalesce(l_kuu, 0) AS kuu,
            0                  AS kinnitaja,
            l_muud :: TEXT     AS muud
+
            INTO l_proj_row;
 
     SELECT row_to_json(row) INTO l_json

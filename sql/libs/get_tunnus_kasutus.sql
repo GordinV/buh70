@@ -6,11 +6,14 @@ CREATE FUNCTION get_tunnus_kasutus(l_lib_id INTEGER, l_kpv DATE)
 AS
 $$
 DECLARE
-    tulemus    JSONB = '[]'::JSONB;
+    tulemus    JSONB   = '[]'::JSONB;
     v_docs     RECORD;
-    l_lib_kood TEXT  = (SELECT ltrim(rtrim(kood))
-                        FROM libs.library
-                        WHERE id = l_lib_id);
+    l_lib_kood TEXT    = (SELECT ltrim(rtrim(kood))
+                          FROM libs.library
+                          WHERE id = l_lib_id);
+    l_rekv_id  INTEGER = (SELECT rekvid
+                          FROM libs.library
+                          WHERE id = l_lib_id);
 BEGIN
 
     IF l_lib_id IS NOT NULL
@@ -22,18 +25,21 @@ BEGIN
                      INNER JOIN ou.rekv r ON n.rekvid = r.id
             WHERE ((n.properties ->> 'valid')::DATE IS NULL OR (n.properties ->> 'valid')::DATE > l_kpv)
               AND n.properties ->> 'tunnus' IS NOT NULL
+              AND n.rekvid = l_rekv_id
               AND ltrim(rtrim(n.properties ->> 'tunnus')) = l_lib_kood
             UNION
-            SELECT 'Lib. amet kood:' || ltrim(rtrim(n.kood))  AS dok_nr
+            SELECT 'Lib. amet kood:' || ltrim(rtrim(n.kood)) AS dok_nr
             FROM libs.library n
             WHERE n.library = 'AMET'
+              AND n.rekvid = l_rekv_id
               AND ((n.properties::JSON ->> 'valid')::DATE IS NULL OR (n.properties::JSON ->> 'valid')::DATE > l_kpv)
               AND (n.properties::JSON ->> 'tunnusid' IS NOT NULL AND
                    (n.properties::JSON ->> 'tunnusid')::INTEGER = l_lib_id)
             UNION
-            SELECT 'Lib. palk kood:' || ltrim(rtrim(n.kood))  AS dok_nr
+            SELECT 'Lib. palk kood:' || ltrim(rtrim(n.kood)) AS dok_nr
             FROM libs.library n
             WHERE n.library = 'PALK'
+              AND n.rekvid = l_rekv_id
               AND ((n.properties::JSON ->> 'valid')::DATE IS NULL OR (n.properties::JSON ->> 'valid')::DATE > l_kpv)
               AND (n.properties::JSON ->> 'tunnusid' IS NOT NULL AND
                    (n.properties::JSON ->> 'tunnusid')::INTEGER = l_lib_id)
@@ -44,6 +50,7 @@ BEGIN
                      INNER JOIN docs.mk1 m1 ON m.id = m1.parentid
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
+              AND m.rekvid = l_rekv_id
               AND ltrim(rtrim(m1.tunnus)) = l_lib_kood
             UNION
             SELECT DISTINCT 'Dok. kassa order nr.:' || ltrim(rtrim(m.number)) || ' (' || ltrim(rtrim(r.nimetus)) ||
@@ -52,14 +59,16 @@ BEGIN
                      INNER JOIN docs.korder2 m1 ON m.id = m1.parentid
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
+              AND m.rekvid = l_rekv_id
               AND ltrim(rtrim(m1.tunnus)) = l_lib_kood
             UNION
             SELECT DISTINCT
-                    'Dok avans nr.:' || ltrim(rtrim(m.number)) || ' (' || ltrim(rtrim(r.nimetus)) || ')' AS dok_nr
+                        'Dok avans nr.:' || ltrim(rtrim(m.number)) || ' (' || ltrim(rtrim(r.nimetus)) || ')' AS dok_nr
             FROM docs.avans1 m
                      INNER JOIN docs.avans2 m1 ON m.id = m1.parentid
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
+              AND m.rekvid = l_rekv_id
               AND ltrim(rtrim(m1.tunnus)) = l_lib_kood
             UNION
             SELECT DISTINCT 'Dok PV operatsioon inv.nr.:' || ltrim(rtrim(p.kood)) || ' (' || ltrim(rtrim(r.nimetus)) ||
@@ -75,6 +84,7 @@ BEGIN
             FROM cur_journal m
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
+              AND m.rekvid = l_rekv_id
               AND ltrim(rtrim(m.tunnus)) = l_lib_kood
 
             LOOP
@@ -118,11 +128,3 @@ select * from libs.library where rekvid = 63 and library = 'AMET'
 
 */
 
-SELECT 'Lib. amet kood:' || ltrim(rtrim(n.kood))  AS dok_nr,
-       n.properties::JSON ->> 'tunnusid'
-FROM libs.library n
-WHERE n.library = 'AMET'
-  and rekvid = 63
-  AND ((n.properties::JSON ->> 'valid')::DATE IS NULL OR (n.properties::JSON ->> 'valid')::DATE > '2019-12-31')
-  AND (n.properties::JSON ->> 'tunnusid' IS NOT NULL AND
-       (n.properties::JSON ->> 'tunnusid')::INTEGER = 214939)

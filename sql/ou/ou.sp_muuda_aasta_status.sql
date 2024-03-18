@@ -11,8 +11,10 @@ $BODY$
 DECLARE
     l_aasta_id  INTEGER = params ->> 'id';
     l_status    INTEGER = coalesce((params ->> 'status') :: INTEGER, 0);
+    l_module    TEXT    = coalesce((params ->> 'module') :: TEXT, '');
     l_kuu       INTEGER = params ->> 'kuu';
     l_aasta     INTEGER = params ->> 'aasta';
+    l_kinni     INTEGER = 0;
     v_user      RECORD;
     v_doc       RECORD;
     l_rekv_id   INTEGER = (SELECT rekvid
@@ -41,8 +43,8 @@ BEGIN
 
     IF l_aasta_id IS NOT NULL
     THEN
-        SELECT kuu, aasta
-        INTO l_kuu, l_aasta
+        SELECT kuu, aasta, kinni
+        INTO l_kuu, l_aasta, l_kinni
         FROM ou.aasta
         WHERE id = l_aasta_id;
 
@@ -57,7 +59,7 @@ BEGIN
              ) qry
         WHERE CASE WHEN l_status = 1 THEN rekv_id = rekv_id ELSE rekv_id = l_rekv_id END
         LOOP
-            RAISE NOTICE 'v_rekv.id %', v_rekv.rekv_id;
+--            RAISE NOTICE 'v_rekv.id %', v_rekv.rekv_id;
             l_aasta_id = (SELECT id
                           FROM ou.aasta a
                           WHERE rekvid = v_rekv.rekv_id
@@ -113,10 +115,22 @@ BEGIN
                 END IF;
             END IF;
 
-            UPDATE ou.aasta
-            SET ajalugu = coalesce(ajalugu, '[]') :: JSONB || new_history:: JSONB,
-                kinni   = l_status
-            WHERE id = l_aasta_id;
+            IF upper(coalesce(l_module, '')) <> 'PALK'
+            THEN
+                UPDATE ou.aasta
+                SET ajalugu    = coalesce(ajalugu, '[]') :: JSONB || new_history:: JSONB,
+                    kinni      = l_status,
+                    palk_kinni = l_status
+                WHERE id = l_aasta_id;
+            ELSE
+
+
+                UPDATE ou.aasta
+                SET ajalugu    = coalesce(ajalugu, '[]') :: JSONB || new_history:: JSONB,
+                    palk_kinni = case when l_kinni = 1 then 1 else l_status end
+                WHERE id = l_aasta_id;
+
+            END IF;
         END LOOP;
     result = 1;
     RETURN;

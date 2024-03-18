@@ -65,7 +65,7 @@ BEGIN
             UPDATE eelarve.taotlus
             SET status     = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
                 allkiri    = 0,
-                KoostajaID = user_id,
+--                KoostajaID = user_id,
                 muud       = muud || chr(13) || current_user :: TEXT || ':' + tcMuud
             WHERE parentid = doc_id;
 

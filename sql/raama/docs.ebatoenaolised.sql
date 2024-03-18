@@ -1,7 +1,9 @@
 DROP FUNCTION IF EXISTS docs.ebatoenaolised(INTEGER, DATE);
+DROP FUNCTION IF EXISTS docs.ebatoenaolised(INTEGER, DATE, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.ebatoenaolised(IN l_rekv_id INTEGER,
                                                IN l_kpv DATE DEFAULT current_date,
+                                               IN l_arv_id INTEGER DEFAULT NULL,
                                                OUT error_code INTEGER,
                                                OUT result INTEGER,
                                                OUT error_message TEXT)
@@ -9,40 +11,42 @@ CREATE OR REPLACE FUNCTION docs.ebatoenaolised(IN l_rekv_id INTEGER,
 AS
 $BODY$
 DECLARE
-    v_arv          RECORD;
-    v_tasud        RECORD;
-    l_json         JSONB;
-    l_json_details JSONB          = '[]'::JSONB;
-    v_params       RECORD;
-    l_user_id      INTEGER; -- Иимя пользователя от чьего имени будет создана проводка
-    userName       TEXT           = 'temp'; -- имя пользователя, который выполняет таску
-    l_journal_id   INTEGER;
-    l_summa        NUMERIC(14, 2) = 0;
-    v_aasta        RECORD;
-    l_selg         TEXT           = 'Ebatõenäolised nõuded';
-    l_seisuga      DATE           = (WITH params AS (
+    v_arv            RECORD;
+    v_tasud          RECORD;
+    l_json           JSONB;
+    l_json_details   JSONB          = '[]'::JSONB;
+    v_params         RECORD;
+    l_user_id        INTEGER; -- Иимя пользователя от чьего имени будет создана проводка
+    userName         TEXT           = 'temp'; -- имя пользователя, который выполняет таску
+    l_journal_id     INTEGER;
+    l_summa          NUMERIC(14, 2) = 0;
+    l_summa_1        NUMERIC(14, 2) = 0; -- сумма 1 начисления
+    l_summa_tagastus NUMERIC(14, 2) = 0; -- сумма погашения маловероятных
+    v_aasta          RECORD;
+    l_selg           TEXT           = 'Ebatõenäolised nõuded';
+    l_seisuga        DATE           = (WITH params AS (
         SELECT l_kpv AS kpv
     )
-                                     SELECT CASE
-                                                WHEN (params.kpv) > make_date(year(params.kpv) - 1, 12, 31) AND
-                                                     params.kpv < make_date(year(params.kpv), 03, 31)
-                                                    THEN make_date(year(params.kpv) - 1, 12, 31)
-                                                WHEN (params.kpv) > make_date(year(params.kpv), 03, 31) AND
-                                                     params.kpv < make_date(year(params.kpv), 06, 30)
-                                                    THEN make_date(year(params.kpv), 03, 31)
-                                                WHEN (params.kpv) > make_date(year(params.kpv), 06, 30) AND
-                                                     params.kpv < make_date(year(params.kpv), 09, 30)
-                                                    THEN make_date(year(params.kpv), 06, 30)
-                                                WHEN (params.kpv) > make_date(year(params.kpv), 09, 30) AND
-                                                     params.kpv < make_date(year(params.kpv), 12, 31)
-                                                    THEN make_date(year(params.kpv), 09, 30)
-                                                ELSE
-                                                    make_date(year(params.kpv), 12, 31)
-                                                END AS kpv
-                                     FROM params);
+                                       SELECT CASE
+                                                  WHEN (params.kpv) > make_date(year(params.kpv) - 1, 12, 31) AND
+                                                       params.kpv < make_date(year(params.kpv), 03, 31)
+                                                      THEN make_date(year(params.kpv) - 1, 12, 31)
+                                                  WHEN (params.kpv) > make_date(year(params.kpv), 03, 31) AND
+                                                       params.kpv < make_date(year(params.kpv), 06, 30)
+                                                      THEN make_date(year(params.kpv), 03, 31)
+                                                  WHEN (params.kpv) > make_date(year(params.kpv), 06, 30) AND
+                                                       params.kpv < make_date(year(params.kpv), 09, 30)
+                                                      THEN make_date(year(params.kpv), 06, 30)
+                                                  WHEN (params.kpv) > make_date(year(params.kpv), 09, 30) AND
+                                                       params.kpv < make_date(year(params.kpv), 12, 31)
+                                                      THEN make_date(year(params.kpv), 09, 30)
+                                                  ELSE
+                                                      make_date(year(params.kpv), 12, 31)
+                                                  END AS kpv
+                                       FROM params);
 BEGIN
 
-    IF l_rekv_id in (select id from ou.rekv where parentid = 119 or id = 119) and l_seisuga = '2023-09-30'::DATE
+    IF l_rekv_id IN (SELECT id FROM ou.rekv WHERE parentid = 119 OR id = 119) AND l_seisuga = '2023-09-30'::DATE
     THEN
         -- S.Guljaeva
         l_seisuga = '2023-10-31'::DATE;
@@ -55,7 +59,7 @@ BEGIN
         RAISE EXCEPTION 'Viga, vale kuupaev %, l_seisuga %',l_kpv, l_seisuga;
     END IF;
 
-raise notice 'l_seisuga %', l_seisuga;
+    RAISE NOTICE 'l_seisuga %', l_seisuga;
     -- формируем список просроченных счетов (50%)
     FOR v_arv IN
         WITH arved AS (
@@ -107,8 +111,8 @@ raise notice 'l_seisuga %', l_seisuga;
               AND (l_kpv - a.tahtaeg) > 3 * 30      -- просрочен более чем на 4 месяца
               AND ((a.properties ->> 'ebatoenaolised_1_id') IS NULL -- помметка, что на счет начислено списание
                 OR (a.properties ->> 'ebatoenaolised_2_id') IS NULL)
-              AND a.liik = 0 -- только доходы
-            -- AND a.asutusid = 40589 -- только заданный пример
+              AND a.liik = 0                        -- только доходы
+              AND (l_arv_id IS NULL OR a.parentid = l_arv_id) -- только заданный пример
         ),
              tasud AS (
                  SELECT sum(summa) AS summa, doc_arv_id
@@ -125,7 +129,8 @@ raise notice 'l_seisuga %', l_seisuga;
         WHERE (a.summa - coalesce(t.summa, 0) > 0)
 
         LOOP
-            raise notice 'arv %', v_arv.id;
+
+            RAISE NOTICE 'v_arv.id %, v_arv.saldo %', v_arv.id, v_arv.saldo;
 
             IF v_arv.lausendi_period = '2023-09-30'::DATE
             THEN
@@ -151,7 +156,6 @@ raise notice 'l_seisuga %', l_seisuga;
                 LIMIT 1;
 
                 v_arv.lausendi_period = get_last_day(gomonth(make_date(v_aasta.aasta, v_aasta.kuu, 1)::DATE, 1));
-                RAISE NOTICE 'new kpv v_arv.lausendi_period %', v_arv.lausendi_period;
             END IF;
 
             l_json_details = '[]'::JSONB; -- инициализируем массив под проводку
@@ -168,20 +172,40 @@ raise notice 'l_seisuga %', l_seisuga;
                 l_selg = 'Ebatõenäolised nõuded (100)';
 
                 -- расчет суммы
-                l_summa = v_arv.saldo - coalesce((SELECT sum(j1.summa)
-                                                  FROM docs.journal1 j1
-                                                           INNER JOIN docs.journal j ON j.id = j1.parentid
-                                                  WHERE j.parentid IN (coalesce(v_arv.ebatoenaolised_1_id, 0),
-                                                                       coalesce(v_arv.ebatoenaolised_2_id, 0))));
+                l_summa_1 = coalesce((SELECT sum(j1.summa)
+                                      FROM docs.journal1 j1
+                                               INNER JOIN docs.journal j ON j.id = j1.parentid
+                                      WHERE j.parentid IN (coalesce(v_arv.ebatoenaolised_1_id, 0),
+                                                           coalesce(v_arv.ebatoenaolised_2_id, 0))));
+
+                l_summa_tagastus = coalesce((SELECT sum(j1.summa)
+                                             FROM docs.journal1 j1
+                                                      INNER JOIN docs.journal j ON j.id = j1.parentid
+                                             WHERE j.parentid IN
+                                                   (SELECT coalesce(
+                                                                   (properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER,
+                                                                   0)
+                                                    FROM docs.arvtasu
+                                                    WHERE doc_arv_id = v_arv.id
+                                                      and kpv <= v_arv.lausendi_period
+                                                      AND status < 3)));
+
+                l_summa = v_arv.saldo - (coalesce(l_summa_1, 0) + coalesce(l_summa_tagastus, 0));
+                -- не более первой части маловероятных
+                if l_summa > coalesce(l_summa_1, 0) then
+                    l_summa = coalesce(l_summa_1, 0);
+                END IF;
+               RAISE NOTICE 'l_summa %, v_arv.lausendi_period %, l_kpv %, l_selg %, v_arv.saldo %,l_summa_1 %, l_summa_tagastus %', l_summa, v_arv.lausendi_period, l_kpv, l_selg, v_arv.saldo, l_summa_1, l_summa_tagastus;
+
             ELSE
                 -- первое начисление (50%)
                 l_selg = 'Ebatõenäolised nõuded (50)';
 
             END IF;
 
-            raise notice 'l_summa %, v_arv.lausendi_period %, l_kpv %', l_summa, v_arv.lausendi_period, l_kpv;
+--            RAISE NOTICE 'l_summa %, v_arv.lausendi_period %, l_kpv %, l_selg %, v_arv.saldo %', l_summa, v_arv.lausendi_period, l_kpv, l_selg, v_arv.saldo;
             IF l_summa > 0
-                   --AND v_arv.lausendi_period <= l_kpv
+                --AND v_arv.lausendi_period <= l_kpv
             THEN
                 -- делаем проводку
 
@@ -298,14 +322,17 @@ $BODY$
     VOLATILE
     COST 100;
 
-ALTER FUNCTION docs.ebatoenaolised( INTEGER, DATE )
+ALTER FUNCTION docs.ebatoenaolised( INTEGER, DATE , INTEGER)
     OWNER TO postgres;
 
-GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(id, current_date::DATE)
+SELECT docs.ebatoenaolised(81, '2024-01-05'::DATE, 5136458)
 from ou.rekv where parentid = 119
 */
+
+
+
 

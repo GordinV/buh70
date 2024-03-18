@@ -61,3 +61,12 @@ GRANT SELECT ON TABLE com_nomenclature TO dbkasutaja;
 GRANT SELECT ON TABLE com_nomenclature TO dbvaatleja;
 GRANT SELECT ON TABLE com_nomenclature TO dbpeakasutaja;
 
+/*
+select * from com_nomenclature
+where kood = 'Veo183'
+
+SELECT *
+FROM com_nomenclature
+WHERE (rekvid = 1 OR rekvid IS NULL)
+and kood = 'Veo183'
+ORDER BY kood*/

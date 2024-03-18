@@ -1,0 +1,26 @@
+{
+  "port": 3000,
+  "https": 443,
+  "name": "app",
+  "pg": {
+    "host": "213.184.47.198",
+    "port": "5436",
+    "database":"narvalv",
+    "connection": "postgres://vlad:Vlad490710@213.184.47.198:5436/narvalv",
+    "query_timeout": "600000",
+    "session_connection": "postgres://vlad:Vlad490710@213.184.47.198:5436/narvalv"
+  },
+  "session": {
+    "secret": "SecretsOfÕuna",
+    "key": "vlad",
+    "resave": true,
+    "saveUninitialized": true,
+    "cookie": {
+      "path": "/",
+      "httpOnly": true,
+      "secure": true,
+      "maxAge":  86400000
+    }
+  }
+
+}

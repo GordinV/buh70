@@ -32,6 +32,7 @@ const getConfigData = async function (user) {
     const docConfig = new Doc('config', user.asutusId, user.userId, user.asutusId, 'lapsed');
     const configData = await docConfig.select();
     UserConfig.email = {...configData.row[0]};
+    console.log('UserConfig.email',UserConfig)
 };
 
 exports.post = async (req, res) => {
@@ -201,7 +202,7 @@ exports.post = async (req, res) => {
                                     params = [arve.id, user.userId, err];
 
                                 if (sql) {
-                                    db.queryDb(sql, params);
+                                   let tulemus = await db.queryDb(sql, params);
                                 }
                             }
 

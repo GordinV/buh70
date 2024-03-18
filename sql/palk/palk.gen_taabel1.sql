@@ -54,6 +54,15 @@ BEGIN
         RETURN;
     END IF;
 
+    -- контроль периода для модуля ЗП
+    IF NOT (ou.fnc_aasta_palk_kontrol(v_user.rekvid,
+                                      make_date((params -> 0 ->> 'aasta')::INTEGER, (params -> 0 ->> 'kuu')::INTEGER,
+                                                1)))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. palk kinni';
+    END IF;
+
+
     -- loop throug params
     FOR json_object IN
         SELECT *
@@ -174,7 +183,7 @@ EXCEPTION
 
             RETURN;
 
-END;
+END ;
 $$;
 
 

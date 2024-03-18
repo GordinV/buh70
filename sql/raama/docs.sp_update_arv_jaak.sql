@@ -58,7 +58,7 @@ BEGIN
         jaak  = coalesce(l_jaak, 0)
     WHERE parentid = l_arv_Id;
 
-
+raise notice 'l_jaak %', l_jaak;
     IF docs.is_period_opened(l_arv_Id) 
     THEN
         UPDATE docs.doc
@@ -82,7 +82,7 @@ GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbpeakasutaja;
 /*
 
-SELECT docs.sp_update_arv_jaak(5600984)
+SELECT docs.sp_update_arv_jaak(5863297)
 FROM docs.arv
 
 select

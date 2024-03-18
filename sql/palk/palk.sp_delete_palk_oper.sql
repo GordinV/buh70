@@ -93,6 +93,14 @@ BEGIN
         RETURN;
     END IF;
 
+    -- контроль периода для модуля ЗП
+    IF NOT (ou.fnc_aasta_palk_kontrol(v_doc.rekvid, v_doc.kpv))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. palk kinni';
+    END IF;
+
+
+
     -- Логгирование удаленного документа
     -- docs.arv
 

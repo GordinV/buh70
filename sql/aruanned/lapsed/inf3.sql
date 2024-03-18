@@ -25,9 +25,9 @@ WITH params AS (
 SELECT report.summa,
        --CASE WHEN report.summa < 0 THEN 0 ELSE report.summa END::NUMERIC(14, 2) AS summa,
        report.maksja_nimi,
-       report.maksja_isikukood,
+       ltrim(rtrim(report.maksja_isikukood)) AS maksja_isikukood,
        report.lapse_nimi,
-       report.lapse_isikukood,
+       ltrim(rtrim(report.lapse_isikukood))  AS lapse_isikukood,
        report.aasta::INTEGER,
        report.rekvid::INTEGER,
        report.liik::INTEGER,
@@ -71,6 +71,7 @@ FROM (
                              AND a.liik = 0
                              AND a1.summa <> 0
                              AND (CASE WHEN a.summa > 0 THEN (a.jaak < a.summa) ELSE TRUE END) -- без неоплаченных счетов
+                             AND year(a.kpv) <= l_aasta::INTEGER
                            GROUP BY a.parentid,
                                     a.summa
                        ),
@@ -135,7 +136,12 @@ FROM (
                   qry.aasta,
                   qry.rekvid,
                   r.properties ->> 'liik'
-     ) report;
+     ) report
+WHERE summa <> 0
+  AND left(lapse_isikukood, 1) NOT IN ('9') -- А. Варгунин, 01.02.2024
+  AND maksja_isikukood NOT IN ('19701028-00172') -- А. Варгунин, 01.02.2024
+--  AND (left(lapse_isikukood, 1) IN ('3', '4', '5', '6') AND len(lapse_isikukood) = 11)
+    ;
 
 $BODY$
     LANGUAGE SQL
@@ -156,7 +162,7 @@ select * from (
                   SELECT *
                   FROM lapsed.inf3(119, '2023')
               ) qry
-where lapse_isikukood ilike '%51210173716%'
+where  maksja_isikukood ilike '%48004230084%'
 
 
 -- execution: 12 s 27 ms, fetching: 185 ms)

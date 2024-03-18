@@ -736,6 +736,7 @@ BEGIN
 
         IF l_row_count > 0
         THEN
+            raise notice 'l_json %', l_json;
             result = docs.sp_salvesta_journal(l_json :: JSON, user_Id, v_arv.rekvId);
         ELSE
             error_message = 'Puudub kehtiv read';

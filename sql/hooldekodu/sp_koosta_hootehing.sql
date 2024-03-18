@@ -75,23 +75,23 @@ BEGIN
 
                 -- опредлеляем источник
                 l_allikas = CASE
-                                WHEN (left(v_journal.deebet, 6) = '100100' AND
+                                WHEN (left(v_journal.deebet, 6) in ('100100','999999') AND
                                       v_journal.kreedit IN ('203630', '20363001') OR
                                       v_journal.deebet IN ('203630', '20363001')) THEN
                                     'PENSION85'
-                                WHEN (left(v_journal.deebet, 6) = '100100' AND
+                                WHEN (left(v_journal.deebet, 6) in ('100100','999999') AND
                                       v_journal.kreedit IN ('20363002') OR
                                       v_journal.deebet IN ('20363002')) THEN
                                     'PENSION15'
-                                WHEN (left(v_journal.deebet, 6) = '100100' AND
+                                WHEN (left(v_journal.deebet, 6) in ('100100','999999') AND
                                       v_journal.kreedit IN ('20363003') OR
                                       v_journal.deebet IN ('20363003')) THEN
                                     'TOETUS'
-                                WHEN (left(v_journal.deebet, 6) = '100100' AND
+                                WHEN (left(v_journal.deebet, 6) in ('100100','999999') AND
                                       v_journal.kreedit IN ('20363004') OR
                                       v_journal.deebet IN ('20363004')) THEN
                                     'VARA'
-                                WHEN (left(v_journal.deebet, 6) = '100100' AND
+                                WHEN (left(v_journal.deebet, 6) in ('100100','999999') AND
                                       v_journal.kreedit IN ('20363005') OR
                                       v_journal.deebet IN ('20363005')) THEN
                                     'MUUD'

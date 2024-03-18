@@ -462,17 +462,17 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, I
 
 /*
 select * from (
-    SELECT * from eelarve.eelarve_andmik_lisa_1_5_query(DATE(2022, 03, 31), 119, 1)
+    SELECT * from eelarve.eelarve_andmik_lisa_1_5_query(DATE(2024, 01, 31), 132, 0)
     ) qry
-where artikkel =  '3221'
-
+where artikkel like  '3223%'
+or tegev like '07240%'
 
 1413729.28
 
 SELECT *
 FROM tmp_andmik
-WHERE artikkel like '100%'
-and aasta = 2020
+WHERE artikkel like '3223%'
+and aasta = 2024
   AND tyyp = 2;
 
 select *from eelarve.saldoandmik

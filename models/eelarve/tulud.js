@@ -5,52 +5,51 @@ let now = new Date();
 const Tulud = {
     select: [
         {
-            sql: `SELECT
-                    e.id,
-                    $2 AS userid,
-                    e.rekvid,
-                    e.aasta,
-                    e.kuu,
-                    e.summa,
-                    e.summa_kassa,
-                    e.muud,
-                    e.kood1::varchar(20) as kood1 ,
-                    e.kood2::varchar(20) as kood2,
-                    e.kood3::varchar(20) as kood3,
-                    e.kood4::varchar(20) as kood4,
-                    e.kood5::varchar(20) as kood5,
-                    e.objekt::varchar(20) as objekt,
-                    e.tunnus,
-                    e.is_parandus,
-                    coalesce(e.is_kulud,0)::integer as is_kulud,
-                    e.kpv  as kpv,
-                    'EUR' as valuuta,
-                    1::numeric as kuurs,
-                    (enum_range(NULL :: DOK_STATUS))[e.status]::varchar(20) as dok_status
-                    FROM eelarve.tulud e
-                    WHERE e.id = $1`,
-            sqlAsNew: `SELECT
-                      $1 :: INTEGER                                 AS id,
-                      $2 :: INTEGER                                 AS userid,
-                      0::integer as rekvid,
-                      extract(year from current_date)::integer as aasta,
-                      0::integer as kuu,
-                      0::numeric(12,2) as summa,
-                      0::numeric(12,2) as summa_kassa,
-                      null::text as muud,
-                      null::varchar(20) as kood1,
-                      null::varchar(20) as kood2,
-                      null::varchar(20) as kood3,
-                      null::varchar(20) as kood4,
-                      null::varchar(20) as kood5,
-                      null::date as kpv,
-                      null::varchar(20) as tunnus,
-                      'EUR'::varchar(20) as valuuta,
-                      1::numeric(12,4) as kuurs,
-                      'new' as dok_status,
-                      null::date as kpv,
-                      0 as is_paranadus,
-                      0 as is_kulud`,
+            sql: `SELECT e.id,
+                         $2                                                      AS userid,
+                         e.rekvid,
+                         e.aasta,
+                         e.kuu,
+                         e.summa,
+                         e.summa_kassa,
+                         e.muud,
+                         e.kood1::VARCHAR(20)                                    AS kood1,
+                         e.kood2::VARCHAR(20)                                    AS kood2,
+                         e.kood3::VARCHAR(20)                                    AS kood3,
+                         e.kood4::VARCHAR(20)                                    AS kood4,
+                         e.kood5::VARCHAR(20)                                    AS kood5,
+                         t1.objekt::VARCHAR(20)                                  AS objekt,
+                         e.tunnus,
+                         e.is_parandus,
+                         coalesce(e.is_kulud, 0)::INTEGER                        AS is_kulud,
+                         e.kpv                                                   AS kpv,
+                         'EUR'                                                   AS valuuta,
+                         1::NUMERIC                                              AS kuurs,
+                         (enum_range(NULL :: DOK_STATUS))[e.status]::VARCHAR(20) AS dok_status
+                  FROM eelarve.tulud e
+                           LEFT OUTER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id
+                  WHERE e.id = $1`,
+            sqlAsNew: `SELECT $1 :: INTEGER                            AS id,
+                              $2 :: INTEGER                            AS userid,
+                              0::INTEGER                               AS rekvid,
+                              extract(YEAR FROM current_date)::INTEGER AS aasta,
+                              0::INTEGER                               AS kuu,
+                              0::NUMERIC(12, 2)                        AS summa,
+                              0::NUMERIC(12, 2)                        AS summa_kassa,
+                              NULL::TEXT                               AS muud,
+                              NULL::VARCHAR(20)                        AS kood1,
+                              NULL::VARCHAR(20)                        AS kood2,
+                              NULL::VARCHAR(20)                        AS kood3,
+                              NULL::VARCHAR(20)                        AS kood4,
+                              NULL::VARCHAR(20)                        AS kood5,
+                              NULL::DATE                               AS kpv,
+                              NULL::VARCHAR(20)                        AS tunnus,
+                              'EUR'::VARCHAR(20)                       AS valuuta,
+                              1::NUMERIC(12, 4)                        AS kuurs,
+                              'new'                                    AS dok_status,
+                              NULL::DATE                               AS kpv,
+                              0                                        AS is_paranadus,
+                              0                                        AS is_kulud`,
             query: null,
             multiple: false,
             alias: 'row',
@@ -72,11 +71,11 @@ const Tulud = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Status", width: "100px"}
         ],
-        sqlString: `SELECT
-                          d.*,
-                          'TULUD'::varchar(20) as liik
-                        FROM cur_tulud d
-                        WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1::integer))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT d.*,
+                           'TULUD'::VARCHAR(20) AS liik
+                    FROM cur_tulud d
+                    WHERE d.rekvId IN (SELECT rekv_id FROM get_asutuse_struktuur($1::INTEGER))
+                      AND (d.summa <> 0 OR d.summa_kassa <> 0)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curEelarve'
     },
@@ -96,7 +95,8 @@ const Tulud = {
         ]
     },
     saveDoc: `select docs.sp_salvesta_eelarve($1::json, $2::integer, $3::integer) as id`,
-    deleteDoc: `select error_code, result, error_message from eelarve.sp_delete_eelarve($1::integer, $2::integer, 0)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM eelarve.sp_delete_eelarve($1::INTEGER, $2::INTEGER, 0)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'summa',

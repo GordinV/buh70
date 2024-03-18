@@ -320,8 +320,9 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_detailne(DATE, INTEGER
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_detailne(DATE, INTEGER, INTEGER ) TO dbvaatleja;
 
 
-/*SELECT len(tegevus), len(tunnus), *
-FROM eelarve.eelarve_andmik_lisa_1_5_detailne(DATE(2023, 06, 30), 69, 1) qry
+/*
+SELECT *
+FROM eelarve.eelarve_andmik_lisa_1_5_detailne(DATE(2024, 01, 31), 81, 1) qry
 WHERE
 
 

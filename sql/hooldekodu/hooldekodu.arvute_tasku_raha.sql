@@ -27,12 +27,13 @@ DECLARE
     l_aasta      INTEGER        = date_part('year', l_kpv);
     l_selg       TEXT           = 'KOV taskuraha kohustis';
     l_summa      NUMERIC(16, 2) = 0;
-    DB           TEXT           = '413800';
+    DB           TEXT           = '413110'; -- Поправлено 29.01.24 В.Б  '413800';
     KR           TEXT           = '20356001';
     TUNNUS       TEXT           = CASE WHEN l_rekvid = 64 THEN '4023' ELSE '2101' END;
     ALLIKAS      TEXT           = 'LE-P';
     TEGEV        TEXT           = '10200';
-    ARTIKKEL     TEXT           = '4138';
+    ARTIKKEL     TEXT           = '4131';-- -- Поправлено 29.01.24 В.Б '4138';
+    URITUS       TEXT           = 'Taskuraha';
     v_hk         RECORD;
     v_kp         RECORD;
     v_pm         RECORD;
@@ -170,7 +171,8 @@ BEGIN
                                                    'tunnus', TUNNUS,
                                                    'kood1', TEGEV,
                                                    'kood2', ALLIKAS,
-                                                   'kood5', ARTIKKEL
+                                                   'kood5', ARTIKKEL,
+                                                   'kood4', URITUS
         );
 
     l_json = jsonb_build_object('id', coalesce(l_lausend_id, 0),

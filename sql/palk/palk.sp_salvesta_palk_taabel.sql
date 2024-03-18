@@ -43,6 +43,14 @@ BEGIN
         RETURN 0;
     END IF;
 
+    -- контроль периода для модуля ЗП
+    IF NOT (ou.fnc_aasta_palk_kontrol(user_rekvid, make_date(doc_aasta, doc_kuu, 1)))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. palk kinni';
+    END IF;
+
+
+
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';

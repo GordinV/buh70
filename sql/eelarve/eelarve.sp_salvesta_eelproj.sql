@@ -3,92 +3,85 @@ DROP FUNCTION IF EXISTS eelarve.sp_salvesta_eelproj(JSON, INTEGER, INTEGER);
 CREATE OR REPLACE FUNCTION eelarve.sp_salvesta_eelproj(data JSON,
                                                        user_id INTEGER,
                                                        user_rekvid INTEGER)
-  RETURNS INTEGER AS
+    RETURNS INTEGER AS
 $BODY$
 
 DECLARE
-  eelarve_id    INTEGER;
-  userName      TEXT;
-  doc_id        INTEGER = data ->> 'id';
-  doc_data      JSON    = data ->> 'data';
-  doc_aasta     INTEGER = doc_data ->> 'aasta';
-  doc_kuu       INTEGER = doc_data ->> 'kuu';
-  doc_kinnitaja INTEGER = doc_data ->> 'kinnitaja';
-  doc_muud      TEXT    = doc_data ->> 'muud';
-  doc_rekvid    INTEGER = doc_data ->> 'rekvid';
-  new_history   JSON;
-  is_import     BOOLEAN = data ->> 'import';
+    eelarve_id    INTEGER;
+    userName      TEXT;
+    doc_id        INTEGER = data ->> 'id';
+    doc_data      JSON    = data ->> 'data';
+    doc_aasta     INTEGER = doc_data ->> 'aasta';
+    doc_kuu       INTEGER = doc_data ->> 'kuu';
+    doc_kinnitaja INTEGER = doc_data ->> 'kinnitaja';
+    doc_muud      TEXT    = doc_data ->> 'muud';
+    doc_rekvid    INTEGER = doc_data ->> 'rekvid';
+    new_history   JSON;
+    is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
 
-  SELECT kasutaja
-         INTO userName
-  FROM ou.userid u
-  WHERE u.rekvid = 63
-    and (u.roles ->> 'is_eel_aktsepterja')::boolean
-    AND u.id = user_id;
+    SELECT kasutaja
+    INTO userName
+    FROM ou.userid u
+    WHERE u.rekvid = 63
+      AND (u.roles ->> 'is_eel_aktsepterja')::BOOLEAN
+      AND u.id = user_id;
 
 
-  IF is_import IS NULL AND userName IS NULL
-  THEN
-    RAISE NOTICE 'User not found %', user;
-    RETURN 0;
-  END IF;
+    IF is_import IS NULL AND userName IS NULL
+    THEN
+        RAISE EXCEPTION 'Kasutaja ei leidnud või puuduvad õigused %', user;
+    END IF;
 
-  IF (doc_id IS NULL)
-  THEN
-    doc_id = doc_data ->> 'id';
-  END IF;
+    IF (doc_id IS NULL)
+    THEN
+        doc_id = doc_data ->> 'id';
+    END IF;
 
-  -- вставка или апдейт docs.doc
-  IF doc_id IS NULL OR doc_id = 0
-  THEN
-
-
-    SELECT row_to_json(row)
-           INTO new_history
-    FROM (SELECT
-            now()    AS created,
-            userName AS user) row;
-
-    INSERT INTO eelarve.eelproj (rekvid, aasta, kuu, kinnitaja, muud, ajalugu, status)
-    VALUES
-    (doc_rekvid, doc_aasta, doc_kuu, doc_kinnitaja, doc_muud, new_history, 1)
-    RETURNING id
-      INTO eelarve_id;
-
-  ELSE
+    -- вставка или апдейт docs.doc
+    IF doc_id IS NULL OR doc_id = 0
+    THEN
 
 
-    SELECT row_to_json(row)
-           INTO new_history
-    FROM (SELECT
-            now()    AS updated,
-            userName AS user,
-            e.*
-          FROM eelarve.eelproj e
-          WHERE e.id = doc_id) row;
+        SELECT row_to_json(row)
+        INTO new_history
+        FROM (SELECT now()    AS created,
+                     userName AS user) row;
+
+        INSERT INTO eelarve.eelproj (rekvid, aasta, kuu, kinnitaja, muud, ajalugu, status)
+        VALUES (doc_rekvid, doc_aasta, doc_kuu, doc_kinnitaja, doc_muud, new_history, 1) RETURNING id
+            INTO eelarve_id;
+
+    ELSE
 
 
-    UPDATE eelarve.eelproj
-    SET
-      rekvid    = doc_rekvid,
-      aasta     = doc_aasta,
-      kuu       = doc_kuu,
-      kinnitaja = doc_kinnitaja,
-      muud      = coalesce(doc_muud, muud),
-      ajalugu   = coalesce(ajalugu,'[]'::jsonb) || new_history::jsonb
-    WHERE id = doc_id
-      RETURNING id
-        INTO eelarve_id;
-  END IF;
-  RETURN eelarve_id;
+        SELECT row_to_json(row)
+        INTO new_history
+        FROM (SELECT now()    AS updated,
+                     userName AS user,
+                     e.*
+              FROM eelarve.eelproj e
+              WHERE e.id = doc_id) row;
+
+
+        UPDATE eelarve.eelproj
+        SET rekvid    = doc_rekvid,
+            aasta     = doc_aasta,
+            kuu       = doc_kuu,
+            kinnitaja = doc_kinnitaja,
+            muud      = coalesce(doc_muud, muud),
+            ajalugu   = coalesce(ajalugu, '[]'::JSONB) || new_history::JSONB
+        WHERE id = doc_id RETURNING id
+            INTO eelarve_id;
+    END IF;
+    RETURN eelarve_id;
 
 END;
 $BODY$
-  LANGUAGE plpgsql
-  VOLATILE
-  COST 100;
+    LANGUAGE plpgsql
+    VOLATILE
+    COST 100;
 
 
 GRANT EXECUTE ON FUNCTION eelarve.sp_salvesta_eelproj(JSON, INTEGER, INTEGER) TO eelaktsepterja;

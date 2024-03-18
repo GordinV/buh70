@@ -47,7 +47,8 @@ const PalkOper = {
                          t.parentid,
                          (pl.properties::JSONB ->> 'liik')::INTEGER                        AS liik,
                          (pl.properties::JSONB ->> 'asutusest')::INTEGER                   AS asutusest,
-                         (d.history -> 0 ->> 'user')::VARCHAR(120)                         AS koostaja
+                         (d.history -> 0 ->> 'user')::VARCHAR(120)                         AS koostaja,
+                         (p.properties ->> 'objekt')::VARCHAR(20) as objekt
                   FROM docs.doc d
                            INNER JOIN palk.palk_oper p ON p.parentId = d.id
                            INNER JOIN palk.tooleping t ON t.id = p.lepingid
@@ -103,7 +104,8 @@ const PalkOper = {
                           0::integer                                AS kas_lausend,
                           NULL::INTEGER                                 AS parentid,
                           1                                             AS liik,
-                          NULL :: INTEGER                               AS lausend`,
+                          NULL :: INTEGER                               AS lausend,
+                          NULL :: VARCHAR(20)                           AS objekt`,
             query: null,
             multiple: false,
             alias: 'row',

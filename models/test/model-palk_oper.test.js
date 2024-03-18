@@ -7,6 +7,7 @@ const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
+const config = require('./../../config/test');
 
 describe('dok. type Palk_oper tests', function () {
     let globalDocId = 0; // для сохранения ид документа
@@ -88,7 +89,8 @@ describe('dok. type Palk_oper tests', function () {
 
     it('doc type library should contain PALK_OPER doc.type', async () => {
         let sql = `select id from libs.library where kood = 'PALK_OPER' and  library = 'DOK' limit 1`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
+
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -97,7 +99,8 @@ describe('dok. type Palk_oper tests', function () {
 
     it('should exists view cur_palkoper', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palkoper'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
+
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -106,7 +109,7 @@ describe('dok. type Palk_oper tests', function () {
 
     it('should exists proc sp_delete_palk_oper', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_palk_oper'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -115,7 +118,7 @@ describe('dok. type Palk_oper tests', function () {
 
     it('should exists proc sp_salvesta_palk_oper', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_palk_oper'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -124,7 +127,7 @@ describe('dok. type Palk_oper tests', function () {
 
     it('should exists trigger proc palk.trigiud_palk_oper_after_recalc_palk_jaak', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'trigiud_palk_oper_after_recalc_palk_jaak'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -135,7 +138,7 @@ describe('dok. type Palk_oper tests', function () {
         let sql = `SELECT 1
                         FROM   pg_trigger
                         WHERE  tgname = 'trigiud_palk_oper_after_recalc_palk_jaak'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -144,7 +147,7 @@ describe('dok. type Palk_oper tests', function () {
 
     it('should exists view palk.cur_palk_oper_lausend', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_oper_lausend'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);

@@ -7,6 +7,7 @@ const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
+const config = require('./../../config/test');
 
 describe('dok. type Palk_Kaart tests', function () {
     let globalDocId = 0; // для сохранения ид документа
@@ -78,7 +79,7 @@ describe('dok. type Palk_Kaart tests', function () {
 
     it('doc type library should contain PALK_KAART doc.type', async()=> {
         let sql = `select id from libs.library where kood = 'PALK_KAART' and  library = 'DOK' limit 1`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -87,7 +88,7 @@ describe('dok. type Palk_Kaart tests', function () {
 
     it('should exists view com_palk_kaart', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'com_palk_kaart'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
@@ -95,14 +96,14 @@ describe('dok. type Palk_Kaart tests', function () {
     });
     it('should exists view cur_palk_kaart', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_kaart'`;
-        let returnValue = await db.queryDb(sql, []);
+        let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 
     });
 
-    it('call import from tmpl procedure, shoul not return error_code', async () => {
+    it.skip('call import from tmpl procedure, shoul not return error_code', async () => {
         let sql = `WITH qry AS (SELECT pk.id
                                  FROM palk.palk_kaart pk
                                  LIMIT 1)

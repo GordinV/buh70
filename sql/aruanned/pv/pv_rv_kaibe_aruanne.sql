@@ -199,32 +199,32 @@ WITH params AS (
                       OR empty(po.kood3))
                   UNION ALL
                   -- rv02
-                  SELECT po.pv_kaart_id                 AS pv_kaart_id,
-                         0:: NUMERIC(12, 2)             AS alg_soetmaks,
-                         0:: NUMERIC(12, 2)             AS alg_kulum,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv01,
-                         po.summa::NUMERIC(12, 2)       AS kb_pv_rv02,
-                         (pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0))::NUMERIC(12, 2)  AS kb_kulum_rv02,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv11,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv12,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv12,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv13,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv13,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv14,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv14,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv15,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv15,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv16,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv16,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv17,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv17,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv19,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv21,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv23,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv24,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv24,
-                         0::NUMERIC(12, 2)              AS kb_pv_rv29,
-                         0::NUMERIC(12, 2)              AS kb_kulum_rv29
+                  SELECT po.pv_kaart_id                                                AS pv_kaart_id,
+                         0:: NUMERIC(12, 2)                                            AS alg_soetmaks,
+                         0:: NUMERIC(12, 2)                                            AS alg_kulum,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv01,
+                         po.summa::NUMERIC(12, 2)                                      AS kb_pv_rv02,
+                         (pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0))::NUMERIC(12, 2) AS kb_kulum_rv02,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv11,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv12,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv12,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv13,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv13,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv14,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv14,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv15,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv15,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv16,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv16,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv17,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv17,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv19,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv21,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv23,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv24,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv24,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv29,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv29
                   FROM po
                            INNER JOIN pv_kaardid pk ON pk.pv_kaart_id = po.pv_kaart_id
                            LEFT OUTER JOIN po_rv11 k ON k.pv_kaart_id = pk.pv_kaart_id
@@ -295,6 +295,39 @@ WITH params AS (
                   WHERE po.liik = 4
                     AND coalesce(po.kood3, '') = '12'
                   UNION ALL
+                  -- rv 12 paandus ja kumun (22.01.2023 kultuur)
+                  SELECT po.pv_kaart_id                                                           AS pv_kaart_id,
+                         0:: NUMERIC(12, 2)                                                       AS alg_soetmaks,
+                         0:: NUMERIC(12, 2)                                                       AS alg_kulum,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv01,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv02,
+                         0 ::NUMERIC(12, 2)                                                       AS kb_kulum_rv02,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv11,
+                         CASE WHEN po.liik IN (1, 3) THEN 1 ELSE 0 END * po.summa::NUMERIC(12, 2) AS kb_pv_rv12,
+                         CASE WHEN po.liik = 2 THEN 1 ELSE 0 END * po.summa::NUMERIC(12, 2)       AS kb_kulum_rv12,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv13,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv13,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv14,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv14,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv15,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv15,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv16,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv16,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv17,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv17,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv19,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv21,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv23,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv24,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv24,
+                         0::NUMERIC(12, 2)                                                        AS kb_pv_rv29,
+                         0::NUMERIC(12, 2)                                                        AS kb_kulum_rv29
+                  FROM po
+                           INNER JOIN pv_kaardid pk ON pk.pv_kaart_id = po.pv_kaart_id
+                  WHERE po.liik <> 4
+                    AND coalesce(po.kood3, '') = '12'
+
+                  UNION ALL
                   -- rv13
                   SELECT po.pv_kaart_id                AS pv_kaart_id,
                          0:: NUMERIC(12, 2)            AS alg_soetmaks,
@@ -360,32 +393,32 @@ WITH params AS (
                     AND coalesce(po.kood3, '') = '14'
                   UNION ALL
                   -- rv15
-                  SELECT po.pv_kaart_id                AS pv_kaart_id,
-                         0:: NUMERIC(12, 2)            AS alg_soetmaks,
-                         0:: NUMERIC(12, 2)            AS alg_kulum,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv01,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv02,
-                         0 ::NUMERIC(12, 2)            AS kb_kulum_rv02,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv11,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv12,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv12,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv13,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv13,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv14,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv14,
-                         po.summa::NUMERIC(12, 2)      AS kb_pv_rv15,
+                  SELECT po.pv_kaart_id                                                AS pv_kaart_id,
+                         0:: NUMERIC(12, 2)                                            AS alg_soetmaks,
+                         0:: NUMERIC(12, 2)                                            AS alg_kulum,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv01,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv02,
+                         0 ::NUMERIC(12, 2)                                            AS kb_kulum_rv02,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv11,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv12,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv12,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv13,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv13,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv14,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv14,
+                         po.summa::NUMERIC(12, 2)                                      AS kb_pv_rv15,
                          (pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0))::NUMERIC(12, 2) AS kb_kulum_rv15,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv16,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv16,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv17,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv17,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv19,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv21,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv23,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv24,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv24,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv29,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv29
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv16,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv16,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv17,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv17,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv19,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv21,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv23,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv24,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv24,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv29,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv29
                   FROM po
                            INNER JOIN pv_kaardid pk ON pk.pv_kaart_id = po.pv_kaart_id
                            LEFT OUTER JOIN po_rv11 k ON k.pv_kaart_id = pk.pv_kaart_id
@@ -526,64 +559,64 @@ WITH params AS (
                             , '') = '21'
                   UNION ALL
                   -- rv23
-                  SELECT po.pv_kaart_id           AS pv_kaart_id,
-                         0:: NUMERIC(12, 2)       AS alg_soetmaks,
-                         0:: NUMERIC(12, 2)       AS alg_kulum,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv01,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv02,
-                         0 ::NUMERIC(12, 2)       AS kb_kulum_rv02,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv11,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv12,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv12,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv13,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv13,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv14,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv14,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv15,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv15,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv16,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv16,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv17,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv17,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv19,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv21,
-                         po.summa::NUMERIC(12, 2) AS kb_pv_rv23,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv24,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv24,
-                         0::NUMERIC(12, 2)        AS kb_pv_rv29,
-                         0::NUMERIC(12, 2)        AS kb_kulum_rv29
+                  SELECT po.pv_kaart_id                                                      AS pv_kaart_id,
+                         0:: NUMERIC(12, 2)                                                  AS alg_soetmaks,
+                         0:: NUMERIC(12, 2)                                                  AS alg_kulum,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv01,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv02,
+                         0 ::NUMERIC(12, 2)                                                  AS kb_kulum_rv02,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv11,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv12,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv12,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv13,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv13,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv14,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv14,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv15,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv15,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv16,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv16,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv17,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv17,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv19,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv21,
+                         CASE WHEN po.liik = 4 THEN -1 ELSE 1 END * po.summa::NUMERIC(12, 2) AS kb_pv_rv23,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv24,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv24,
+                         0::NUMERIC(12, 2)                                                   AS kb_pv_rv29,
+                         0::NUMERIC(12, 2)                                                   AS kb_kulum_rv29
                   FROM po
-                  WHERE po.liik IN (1, 3)
+                  WHERE po.liik IN (1, 3, 4) -- 22.01.2024 lisatud mahakandmine
                     AND COALESCE(po.kood3
                             , '') = '23'
                   UNION ALL
                   -- rv24
-                  SELECT po.pv_kaart_id                AS pv_kaart_id,
-                         0:: NUMERIC(12, 2)            AS alg_soetmaks,
-                         0:: NUMERIC(12, 2)            AS alg_kulum,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv01,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv02,
-                         0 ::NUMERIC(12, 2)            AS kb_kulum_rv02,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv11,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv12,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv12,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv13,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv13,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv14,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv14,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv15,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv15,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv16,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv16,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv17,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv17,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv19,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv21,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv23,
-                         po.summa::NUMERIC(12, 2)      AS kb_pv_rv24,
-                         (pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0))::NUMERIC(12, 2)  AS kb_kulum_rv24,
-                         0::NUMERIC(12, 2)             AS kb_pv_rv29,
-                         0::NUMERIC(12, 2)             AS kb_kulum_rv29
+                  SELECT po.pv_kaart_id                                                AS pv_kaart_id,
+                         0:: NUMERIC(12, 2)                                            AS alg_soetmaks,
+                         0:: NUMERIC(12, 2)                                            AS alg_kulum,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv01,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv02,
+                         0 ::NUMERIC(12, 2)                                            AS kb_kulum_rv02,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv11,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv12,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv12,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv13,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv13,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv14,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv14,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv15,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv15,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv16,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv16,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv17,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv17,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv19,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv21,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv23,
+                         po.summa::NUMERIC(12, 2)                                      AS kb_pv_rv24,
+                         (pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0))::NUMERIC(12, 2) AS kb_kulum_rv24,
+                         0::NUMERIC(12, 2)                                             AS kb_pv_rv29,
+                         0::NUMERIC(12, 2)                                             AS kb_kulum_rv29
                   FROM po
                            INNER JOIN pv_kaardid pk
                                       ON pk.pv_kaart_id = po.pv_kaart_id
@@ -593,32 +626,35 @@ WITH params AS (
                     AND COALESCE(po.kood3, '') = '24'
                   UNION ALL
                   -- rv29
-                  SELECT po.pv_kaart_id                                                                       AS pv_kaart_id,
-                         0:: NUMERIC(12, 2)                                                                   AS alg_soetmaks,
-                         0:: NUMERIC(12, 2)                                                                   AS alg_kulum,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv01,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv02,
-                         0 ::NUMERIC(12, 2)                                                                   AS kb_kulum_rv02,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv11,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv12,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv12,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv13,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv13,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv14,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv14,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv15,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv15,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv16,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv16,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv17,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv17,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv19,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv21,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv23,
-                         0::NUMERIC(12, 2)                                                                    AS kb_pv_rv24,
-                         0::NUMERIC(12, 2)                                                                    AS kb_kulum_rv24,
-                         CASE WHEN po.liik = 1 THEN 1 ELSE -1 END * po.summa::NUMERIC(12, 2)                  AS kb_pv_rv29,
-                         CASE WHEN po.liik = 1 THEN pk.alg_kulum ELSE -1 * ((pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0))::NUMERIC(12, 2)) END ::NUMERIC(12, 2) AS kb_kulum_rv29
+                  SELECT po.pv_kaart_id                                                                                AS pv_kaart_id,
+                         0:: NUMERIC(12, 2)                                                                            AS alg_soetmaks,
+                         0:: NUMERIC(12, 2)                                                                            AS alg_kulum,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv01,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv02,
+                         0 ::NUMERIC(12, 2)                                                                            AS kb_kulum_rv02,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv11,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv12,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv12,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv13,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv13,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv14,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv14,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv15,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv15,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv16,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv16,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv17,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv17,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv19,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv21,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv23,
+                         0::NUMERIC(12, 2)                                                                             AS kb_pv_rv24,
+                         0::NUMERIC(12, 2)                                                                             AS kb_kulum_rv24,
+                         CASE WHEN po.liik = 1 THEN 1 ELSE -1 END * po.summa::NUMERIC(12, 2)                           AS kb_pv_rv29,
+                         CASE
+                             WHEN po.liik = 1 THEN pk.alg_kulum
+                             ELSE -1 *
+                                  ((pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0))::NUMERIC(12, 2)) END ::NUMERIC(12, 2) AS kb_kulum_rv29
                   FROM po
                            INNER JOIN pv_kaardid pk
                                       ON pk.pv_kaart_id = po.pv_kaart_id
@@ -665,8 +701,8 @@ SELECT pk.kood::VARCHAR(20),
        kb.kb_kulum_rv29:: NUMERIC(12, 2), -- Muud mitterahalised kanded varadega
 
        lopp_kulum:: NUMERIC(12, 2),
-       a.nimetus:: VARCHAR(254) AS vastisik,
-       r.nimetus:: VARCHAR(254) AS asutus
+       coalesce(a.nimetus, ''):: VARCHAR(254) AS vastisik,
+       r.nimetus:: VARCHAR(254)               AS asutus
 
 FROM pv_kaardid pk
          INNER JOIN qryKaibed kb ON kb.pv_kaart_id = pk.pv_kaart_id
@@ -683,7 +719,25 @@ GRANT EXECUTE ON FUNCTION docs.pv_rv_kaibe_aruanne( DATE, DATE, INTEGER, INTEGER
 GRANT EXECUTE ON FUNCTION docs.pv_rv_kaibe_aruanne( DATE, DATE, INTEGER , INTEGER, JSONB) TO dbkasutaja;
 
 
-
 SELECT *
-FROM docs.pv_rv_kaibe_aruanne('2023-01-01', '2023-12-31' :: DATE, 63, 1, null::JSONB)
-WHERE kb_pv_rv02 > 0
+FROM (
+         SELECT *
+         FROM docs.pv_rv_kaibe_aruanne('2023-01-01', '2023-12-31' :: DATE, 130, 1, '{
+           "konto": "156200"
+         }'::JSONB)
+     ) qry
+WHERE konto ILIKE '156200%'
+
+
+SELECT (row_number() OVER ())::INTEGER AS jrnr, *
+FROM (SELECT qry.*
+      FROM docs.pv_rv_kaibe_aruanne('2023-01-01'::DATE, '2023-12-31'::DATE, 130::INTEGER,
+                                    0::INTEGER, '        {
+                "konto": "156200",
+                "grupp": "",
+                "vastisik": ""
+              }'::JSONB) qry
+      ORDER BY konto, kood) qry
+WHERE konto ILIKE '156200%'
+--  AND grupp ILIKE '%%'
+--  AND vastisik ILIKE '%%'

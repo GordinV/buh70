@@ -13,3 +13,9 @@ FROM libs.library l
          LEFT JOIN libs.asutus a ON (l.properties :: JSONB ->> 'asutusid') :: INTEGER = a.id
 WHERE l.library = 'OBJEKT'
   AND l.status <> 3;
+
+
+
+GRANT SELECT ON cur_objekt TO dbpeakasutaja;
+GRANT SELECT ON cur_objekt TO dbkasutaja;
+GRANT SELECT ON cur_objekt TO dbvaatleja;

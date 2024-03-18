@@ -70,6 +70,7 @@ BEGIN
                   FROM lapsed.cur_laste_arved a
                   WHERE asutusid = l_prev_arv_isik_id
                     AND a.rekvid = user_rekvid
+                    and a.kpv >= '2023-01-01'::date -- A. Vargunin, 21.02.2024
                     AND NOT a.kas_esitatud)
         THEN
             -- ошибка. нельзя менять ответственного, пока есть не отправленные счета

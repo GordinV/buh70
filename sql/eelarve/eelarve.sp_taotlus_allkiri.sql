@@ -63,7 +63,6 @@ BEGIN
     ELSE
         --		* puudub eelarve variant
         --		lnresult = -1;
-raise notice 'puudub eelproj';
         lnEelProjId = (select e.result from eelarve.koosta_eelproj(70,
                                              json_build_object('rekvid', tmpTaotlus.rekvid, 'aasta', tmpTaotlus.aasta,
                                                                'muud', tmpTaotlus.muud)) e);

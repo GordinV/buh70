@@ -68,11 +68,21 @@ DECLARE
     l_mk_id               INTEGER;
     l_km                  TEXT;
     l_mks                 RECORD;
+    v_aasta               RECORD;
+    l_osaliselt_suletatud BOOLEAN        = FALSE;
+    l_suletatud           BOOLEAN        = FALSE;
+    l_raha_saaja          TEXT; -- PayToName for export
+
 BEGIN
     -- если есть ссылка на ребенка, то присвоим viitenumber
     IF doc_lapsid IS NOT NULL
     THEN
         doc_viitenr = lapsed.get_viitenumber(user_rekvid, doc_lapsid);
+    END IF;
+
+    IF user_rekvid = 132
+    THEN
+        l_raha_saaja = (SELECT ltrim(rtrim(muud)) AS raha_saaja FROM ou.rekv WHERE id = 64 LIMIT 1);
     END IF;
     dok_props = (SELECT row_to_json(row)
                  FROM (SELECT doc_aa               AS aa,
@@ -82,6 +92,7 @@ BEGIN
                               doc_isik_id          AS isik_id,
                               doc_asendus_id       AS asendus_id,
                               doc_taskuraha_kov    AS taskuraha_kov,
+                              l_raha_saaja         AS raha_saaja,
                               doc_print            AS print) row);
 
     IF (doc_id IS NULL)
@@ -109,9 +120,34 @@ BEGIN
 
     IF NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
-        RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
+        IF (doc_id IS NULL OR doc_id = 0) AND doc_liik = 1
+        THEN
+            -- проверяем период
+            -- То есть тогда, если вдруг по каким-то причинам период закрыт, то алгоритм должен это учитывать и делать проводки в первом месяце открытого периода.
+            SELECT *
+            INTO v_aasta
+            FROM ou.aasta
+            WHERE rekvid = user_rekvid
+              AND aasta = year(doc_kpv)
+              AND kinni = 1
+            ORDER BY make_date(aasta, kuu, 1) DESC
+            LIMIT 1;
+            doc_kpv = gomonth(make_date(v_aasta.aasta, v_aasta.kuu, 1)::DATE, 1);
+            --        ELSE
+--            RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
+        END IF;
     END IF;
 
+    l_suletatud = (SELECT NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv));
+    IF (l_suletatud)
+    THEN
+        l_osaliselt_suletatud = ou.is_last_quarter_opened(user_rekvid, doc_kpv);
+    END IF;
+
+    IF is_import IS NULL AND l_suletatud AND NOT l_osaliselt_suletatud
+    THEN
+        RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
+    END IF;
 
 
 -- установим срок оплаты, если не задан
@@ -123,6 +159,10 @@ BEGIN
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
+        IF is_import IS NULL AND l_suletatud AND l_osaliselt_suletatud
+        THEN
+            RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
+        END IF;
 
         SELECT row_to_json(row)
         INTO new_history
@@ -162,39 +202,44 @@ BEGIN
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
-
-        UPDATE docs.doc
-        SET lastupdate = now(),
-            history    = coalesce(history, '[]') :: JSONB || new_history,
-            rekvid     = user_rekvid
-        WHERE id = doc_id;
-
-        IF doc_lepingId IS NOT NULL
+        IF NOT l_suletatud
         THEN
-            -- will add reference to leping
-            UPDATE docs.doc
-            SET docs_ids = array_append(docs_ids, doc_lepingId)
-            WHERE id = doc_id;
-        END IF;
+            -- не допустимо при закрытии периода
 
-        UPDATE docs.arv
-        SET liik       = doc_liik,
-            operid     = doc_operid,
-            number     = doc_number,
-            kpv        = doc_kpv,
-            asutusid   = doc_asutusid,
-            lisa       = doc_lisa,
-            tahtaeg    = doc_tahtaeg,
-            kbmta      = coalesce(doc_kbmta, 0),
-            kbm        = coalesce(doc_kbm, 0),
-            summa      = coalesce(doc_summa, 0),
-            muud       = doc_muud,
-            objektid   = doc_objektid,
-            objekt     = doc_objekt,
-            doklausid  = tnDokLausId,
-            properties = properties::JSONB || dok_props::JSONB
-        WHERE parentid = doc_id RETURNING id
-            INTO arv_id;
+            UPDATE docs.doc
+            SET lastupdate = now(),
+                history    = coalesce(history, '[]') :: JSONB || new_history,
+                rekvid     = user_rekvid
+            WHERE id = doc_id;
+
+            IF doc_lepingId IS NOT NULL
+            THEN
+                -- will add reference to leping
+                UPDATE docs.doc
+                SET docs_ids = array_append(docs_ids, doc_lepingId)
+                WHERE id = doc_id;
+            END IF;
+
+            UPDATE docs.arv
+            SET liik       = doc_liik,
+                operid     = doc_operid,
+                number     = doc_number,
+                kpv        = doc_kpv,
+                asutusid   = doc_asutusid,
+                lisa       = doc_lisa,
+                tahtaeg    = doc_tahtaeg,
+                kbmta      = coalesce(doc_kbmta, 0),
+                kbm        = coalesce(doc_kbm, 0),
+                summa      = coalesce(doc_summa, 0),
+                muud       = doc_muud,
+                objektid   = doc_objektid,
+                objekt     = doc_objekt,
+                doklausid  = tnDokLausId,
+                properties = properties::JSONB || dok_props::JSONB
+            WHERE parentid = doc_id RETURNING id
+                INTO arv_id;
+
+        END IF;
 
     END IF;
 
@@ -220,6 +265,40 @@ BEGIN
                                             allikas_taskuraha NUMERIC(12, 2),
                                             umardamine NUMERIC(12, 2), sugulane_osa NUMERIC(12, 2),
                                             omavalitsuse_osa NUMERIC(12, 2), objekt TEXT);
+
+
+            IF ltrim(rtrim(json_record.kood1)) = 'null'
+            THEN
+                json_record.kood1 = ''::TEXT;
+            END IF;
+            IF ltrim(rtrim(json_record.kood2)) = 'null'
+            THEN
+                json_record.kood2 = ''::TEXT;
+            END IF;
+            IF ltrim(rtrim(json_record.kood3)) = 'null'
+            THEN
+                json_record.kood3 = ''::TEXT;
+            END IF;
+            IF ltrim(rtrim(json_record.kood4)) = 'null'
+            THEN
+                json_record.kood4 = ''::TEXT;
+            END IF;
+            IF ltrim(rtrim(json_record.kood5)) = 'null'
+            THEN
+                json_record.kood5 = ''::TEXT;
+            END IF;
+            IF ltrim(rtrim(json_record.proj)) = 'null'
+            THEN
+                json_record.proj = ''::TEXT;
+            END IF;
+            IF ltrim(rtrim(json_record.tunnus)) = 'null'
+            THEN
+                json_record.tunnus = ''::TEXT;
+            END IF;
+            IF ltrim(rtrim(json_record.objekt)) = 'null'
+            THEN
+                json_record.objekt = ''::TEXT;
+            END IF;
 
 
             SELECT row_to_json(row)
@@ -248,45 +327,50 @@ BEGIN
                     json_record.kbm = 0;
                 END IF;
 
-                IF coalesce(json_record.km, '') NOT IN ('0', '5', '10', '20')
+                IF coalesce(json_record.km, '') NOT IN ('0', '5', '10', '20', '22')
                 THEN
                     json_record.km = '0';
                 END IF;
 
-                INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4,
-                                       kood5,
-                                       konto, tunnus, objekt, tp, proj, muud, kbm_maar, properties, soodus)
-                VALUES (arv_id, json_record.nomid,
-                        coalesce(json_record.kogus, 1),
-                        coalesce(json_record.hind, 0),
-                        coalesce(json_record.kbm, 0),
-                        coalesce(json_record.kbmta, coalesce(json_record.kogus, 1) * coalesce(json_record.hind, 0)),
-                        coalesce(json_record.summa, (coalesce(json_record.kogus, 1) * coalesce(json_record.hind, 0)) +
-                                                    coalesce(json_record.kbm, 0)),
-                        coalesce(json_record.kood1, ''),
-                        coalesce(json_record.kood2, ''),
-                        coalesce(json_record.kood3, ''),
-                        coalesce(json_record.kood4, ''),
-                        coalesce(json_record.kood5, ''),
-                        coalesce(json_record.konto, ''),
-                        coalesce(json_record.tunnus, ''),
-                        json_record.objekt,
-                        coalesce(json_record.tp, ''),
-                        coalesce(json_record.proj, ''),
-                        coalesce(json_record.muud, ''),
-                        coalesce(json_record.km, ''),
-                        arv1_rea_json,
-                        CASE
-                            WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
-                                THEN coalesce(json_record.soodus, 0)
-                            ELSE json_record.soodustus END ::NUMERIC(14, 4)) RETURNING id
-                           INTO arv1_id;
+                IF NOT l_osaliselt_suletatud
+                THEN
 
-                -- add new id into array of ids
-                ids = array_append(ids, arv1_id);
+                    INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4,
+                                           kood5,
+                                           konto, tunnus, objekt, tp, proj, muud, kbm_maar, properties, soodus)
+                    VALUES (arv_id, json_record.nomid,
+                            coalesce(json_record.kogus, 1),
+                            coalesce(json_record.hind, 0),
+                            coalesce(json_record.kbm, 0),
+                            coalesce(json_record.kbmta, coalesce(json_record.kogus, 1) * coalesce(json_record.hind, 0)),
+                            coalesce(json_record.summa,
+                                     (coalesce(json_record.kogus, 1) * coalesce(json_record.hind, 0)) +
+                                     coalesce(json_record.kbm, 0)),
+                            coalesce(json_record.kood1, ''),
+                            coalesce(json_record.kood2, ''),
+                            coalesce(json_record.kood3, ''),
+                            coalesce(json_record.kood4, ''),
+                            coalesce(json_record.kood5, ''),
+                            coalesce(json_record.konto, ''),
+                            coalesce(json_record.tunnus, ''),
+                            json_record.objekt,
+                            coalesce(json_record.tp, ''),
+                            coalesce(json_record.proj, ''),
+                            coalesce(json_record.muud, ''),
+                            coalesce(json_record.km, ''),
+                            arv1_rea_json,
+                            CASE
+                                WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
+                                    THEN coalesce(json_record.soodus, 0)
+                                ELSE json_record.soodustus END ::NUMERIC(14, 4)) RETURNING id
+                               INTO arv1_id;
+
+                    -- add new id into array of ids
+                    ids = array_append(ids, arv1_id);
+                END IF;
 
             ELSE
-                IF coalesce(json_record.km, '') NOT IN ('0', '5', '10', '20')
+                IF coalesce(json_record.km, '') NOT IN ('0', '5', '10', '20', '22')
                 THEN
                     json_record.km = '0';
                 END IF;
@@ -296,40 +380,55 @@ BEGIN
                     json_record.kbm = 0;
                 END IF;
 
-                UPDATE docs.arv1
-                SET parentid   = arv_id,
-                    nomid      = json_record.nomid,
-                    kogus      = coalesce(json_record.kogus, 0),
-                    hind       = coalesce(json_record.hind, 0),
-                    kbm        = coalesce(json_record.kbm, 0),
-                    kbmta      = coalesce(json_record.kbmta, kogus * hind),
-                    summa      = coalesce(json_record.summa, (kogus * hind) + kbm),
-                    kood1      = coalesce(json_record.kood1, ''),
-                    kood2      = coalesce(json_record.kood2, ''),
-                    kood3      = coalesce(json_record.kood3, ''),
-                    kood4      = coalesce(json_record.kood4, ''),
-                    kood5      = coalesce(json_record.kood5, ''),
-                    konto      = coalesce(json_record.konto, ''),
-                    tunnus     = coalesce(json_record.tunnus, ''),
-                    objekt     = json_record.objekt,
-                    tp         = coalesce(json_record.tp, ''),
-                    proj       = coalesce(json_record.proj, ''),
-                    kbm_maar   = coalesce(json_record.km, ''),
-                    muud       = json_record.muud,
-                    soodus     = CASE
-                                     WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
-                                         THEN coalesce(json_record.soodus, 0)
-                                     ELSE json_record.soodustus END::NUMERIC(14, 4),
-                    properties = coalesce(properties, '{}'::JSONB) || arv1_rea_json
-                WHERE id = json_record.id :: INTEGER RETURNING id
-                    INTO arv1_id;
+                IF l_osaliselt_suletatud
+                THEN
+                    -- допустимо менять только доп. классификаторы
+                    UPDATE docs.arv1
+                    SET kood4  = coalesce(json_record.kood4, ''),
+                        tunnus = coalesce(json_record.tunnus, ''),
+                        objekt = json_record.objekt,
+                        proj   = coalesce(json_record.proj, '')
+                    WHERE id = json_record.id :: INTEGER RETURNING id
+                        INTO arv1_id;
 
-                -- add new id into array of ids
-                ids = array_append(ids, arv1_id);
+                ELSE
+
+                    UPDATE docs.arv1
+                    SET parentid   = arv_id,
+                        nomid      = json_record.nomid,
+                        kogus      = coalesce(json_record.kogus, 0),
+                        hind       = coalesce(json_record.hind, 0),
+                        kbm        = coalesce(json_record.kbm, 0),
+                        kbmta      = coalesce(json_record.kbmta, kogus * hind),
+                        summa      = coalesce(json_record.summa, (kogus * hind) + kbm),
+                        kood1      = coalesce(json_record.kood1, ''),
+                        kood2      = coalesce(json_record.kood2, ''),
+                        kood3      = coalesce(json_record.kood3, ''),
+                        kood4      = coalesce(json_record.kood4, ''),
+                        kood5      = coalesce(json_record.kood5, ''),
+                        konto      = coalesce(json_record.konto, ''),
+                        tunnus     = coalesce(json_record.tunnus, ''),
+                        objekt     = json_record.objekt,
+                        tp         = coalesce(json_record.tp, ''),
+                        proj       = coalesce(json_record.proj, ''),
+                        kbm_maar   = coalesce(json_record.km, ''),
+                        muud       = json_record.muud,
+                        soodus     = CASE
+                                         WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
+                                             THEN coalesce(json_record.soodus, 0)
+                                         ELSE json_record.soodustus END::NUMERIC(14, 4),
+                        properties = coalesce(properties, '{}'::JSONB) || arv1_rea_json
+                    WHERE id = json_record.id :: INTEGER RETURNING id
+                        INTO arv1_id;
+
+                    -- add new id into array of ids
+                    ids = array_append(ids, arv1_id);
+                END IF;
 
             END IF;
 
-            IF (arv1_id IS NOT NULL AND NOT empty(arv1_id) AND json_record.arve_id IS NOT NULL)
+            IF (arv1_id IS NOT NULL AND NOT empty(arv1_id) AND json_record.arve_id IS NOT NULL AND
+                NOT l_osaliselt_suletatud)
             THEN
                 -- в параметрах есть ссылки на другие счета
                 l_json_arve_id = (SELECT row_to_json(row) FROM (SELECT json_record.arve_id AS arve_id) row)::JSONB;
@@ -345,7 +444,7 @@ BEGIN
             END IF;
 
             -- есои задан параметр json_record.lapse_kaart_id то устанавливаем статус табеля = 2 (закрыт)
-            IF json_record.lapse_taabel_id IS NOT NULL
+            IF json_record.lapse_taabel_id IS NOT NULL AND NOT l_osaliselt_suletatud
             THEN
                 UPDATE lapsed.lapse_taabel SET staatus = 2 WHERE id = json_record.lapse_taabel_id;
             END IF;
@@ -354,7 +453,7 @@ BEGIN
         END LOOP;
 
     -- delete record which not in json
-    IF array_length(ids, 1) > 0
+    IF array_length(ids, 1) > 0 AND NOT l_osaliselt_suletatud
     THEN
         -- проверить на наличие ссылок на другие счета и снять ссылку
         IF exists(
@@ -382,96 +481,98 @@ BEGIN
         WHERE parentid = arv_id
           AND id NOT IN (SELECT unnest(ids));
     END IF;
-    -- update arv summad
-    SELECT sum(summa) AS summa,
-           sum(kbm)   AS kbm
-    INTO doc_summa, doc_kbm
-    FROM docs.arv1
-    WHERE parentid = arv_id;
 
-    UPDATE docs.arv
-    SET kbmta = coalesce(doc_summa, 0) - coalesce(doc_kbm, 0),
-        kbm   = coalesce(doc_kbm, 0),
-        summa = coalesce(doc_summa, 0)
-    WHERE parentid = doc_id;
-
-    IF (doc_ettemaksu_arve_id IS NOT NULL)
+    IF NOT l_osaliselt_suletatud
     THEN
-        -- will add reference to ettemaksu arve
-        UPDATE docs.doc
-        SET docs_ids = array_append(docs_ids, doc_ettemaksu_arve_id)
-        WHERE id = doc_id;
+        -- update arv summad
+        SELECT sum(summa) AS summa,
+               sum(kbm)   AS kbm
+        INTO doc_summa, doc_kbm
+        FROM docs.arv1
+        WHERE parentid = arv_id;
 
-        UPDATE docs.doc
-        SET docs_ids = array_append(docs_ids, doc_id)
-        WHERE id = doc_ettemaksu_arve_id;
+        UPDATE docs.arv
+        SET kbmta = coalesce(doc_summa, 0) - coalesce(doc_kbm, 0),
+            kbm   = coalesce(doc_kbm, 0),
+            summa = coalesce(doc_summa, 0)
+        WHERE parentid = doc_id;
 
-
-    END IF;
-
-    -- lapse module
-
-    IF doc_lapsid IS NOT NULL
-    THEN
-        IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
+        IF (doc_ettemaksu_arve_id IS NOT NULL)
         THEN
-            INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
+            -- will add reference to ettemaksu arve
+            UPDATE docs.doc
+            SET docs_ids = array_append(docs_ids, doc_ettemaksu_arve_id)
+            WHERE id = doc_id;
+
+            UPDATE docs.doc
+            SET docs_ids = array_append(docs_ids, doc_id)
+            WHERE id = doc_ettemaksu_arve_id;
+
+
+        END IF;
+
+        -- lapse module
+
+        IF doc_lapsid IS NOT NULL
+        THEN
+            IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
+            THEN
+                INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
+            END IF;
+
+        END IF;
+
+        -- расчет сальдо счета
+        l_jaak = docs.sp_update_arv_jaak(doc_id);
+
+        IF doc_id IS NOT NULL AND doc_id > 0 AND l_jaak > 0
+        THEN
+            -- проверить на наличие предоплат
+            PERFORM docs.sp_loe_arv(doc_id, user_id);
+        END IF;
+
+        -- если счет отрицательный, то возможно это кредитоввый счет
+        IF doc_id IS NOT NULL AND doc_id > 0 AND doc_summa < 0
+        THEN
+            PERFORM docs.kas_kreedit_arve(doc_id, user_id, doc_alus_arve_id);
+        END IF;
+
+        -- если это доходный счет, созданный на основе предоплатного
+        IF doc_ettemaksu_arve_id IS NULL AND doc_ettemaksu_period IS NOT NULL
+        THEN
+            doc_ettemaksu_arve_id = (SELECT d.id
+                                     FROM docs.doc d
+                                              INNER JOIN docs.arv a ON d.id = a.parentid
+                                     WHERE d.id IN (
+                                         SELECT unnest((SELECT d.docs_ids
+                                                        FROM docs.arv a
+                                                                 INNER JOIN docs.doc d ON d.id = a.parentid
+                                                        WHERE parentid = doc_id)))
+                                       AND a.properties ->> 'tyyp' IS NOT NULL
+                                       AND a.properties ->> 'tyyp' = 'ETTEMAKS'
+                                     LIMIT 1
+            );
+
+        END IF;
+
+        IF doc_ettemaksu_arve_id IS NOT NULL
+        THEN
+            -- проверим оплату счета
+            IF exists(SELECT id FROM docs.arv WHERE parentid = doc_ettemaksu_arve_id
+                --                                AND coalesce(jaak, summa) > 0
+                )
+            THEN
+                -- вызываем оплату
+                FOR l_mks IN SELECT doc_tasu_id AS mk_id FROM docs.arvtasu WHERE doc_arv_id = doc_ettemaksu_arve_id
+                    LOOP
+                        PERFORM docs.sp_tasu_arv(l_mks.mk_id, doc_ettemaksu_arve_id, user_id);
+
+                    END LOOP;
+
+            END IF;
         END IF;
 
     END IF;
-
-    -- расчет сальдо счета
-    l_jaak = docs.sp_update_arv_jaak(doc_id);
-
-    IF doc_id IS NOT NULL AND doc_id > 0 AND l_jaak > 0
-    THEN
-        -- проверить на наличие предоплат
---        PERFORM docs.check_ettemaks(doc_id, user_id);
-        PERFORM docs.sp_loe_arv(doc_id, user_id);
-    END IF;
-
-    -- если счет отрицательный, то возможно это кредитоввый счет
-    IF doc_id IS NOT NULL AND doc_id > 0 AND doc_summa < 0
-    THEN
-        PERFORM docs.kas_kreedit_arve(doc_id, user_id, doc_alus_arve_id);
-    END IF;
-
-    -- если это доходный счет, созданный на основе предоплатного
-    IF doc_ettemaksu_arve_id IS NULL AND doc_ettemaksu_period IS NOT NULL
-    THEN
-        doc_ettemaksu_arve_id = (SELECT d.id
-                                 FROM docs.doc d
-                                          INNER JOIN docs.arv a ON d.id = a.parentid
-                                 WHERE d.id IN (
-                                     SELECT unnest((SELECT d.docs_ids
-                                                    FROM docs.arv a
-                                                             INNER JOIN docs.doc d ON d.id = a.parentid
-                                                    WHERE parentid = doc_id)))
-                                   AND a.properties ->> 'tyyp' IS NOT NULL
-                                   AND a.properties ->> 'tyyp' = 'ETTEMAKS'
-                                 LIMIT 1
-        );
-
-    END IF;
-
-    IF doc_ettemaksu_arve_id IS NOT NULL
-    THEN
-        -- проверим оплату счета
-        IF exists(SELECT id FROM docs.arv WHERE parentid = doc_ettemaksu_arve_id
-            --                                AND coalesce(jaak, summa) > 0
-            )
-        THEN
-            -- вызываем оплату
-            FOR l_mks IN SELECT doc_tasu_id AS mk_id FROM docs.arvtasu WHERE doc_arv_id = doc_ettemaksu_arve_id
-                LOOP
-                    PERFORM docs.sp_tasu_arv(l_mks.mk_id, doc_ettemaksu_arve_id, user_id);
-
-                END LOOP;
-
-        END IF;
-    END IF;
-
---    PERFORM docs.sp_update_arv_jaak(doc_id);
 
     RETURN doc_id;
 END;
@@ -480,7 +581,7 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO ladukasutaja;
+--GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO ladukasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 

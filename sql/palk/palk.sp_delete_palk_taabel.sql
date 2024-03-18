@@ -16,7 +16,8 @@ BEGIN
 
   SELECT
     t.*,
-    u.ametnik AS user_name
+    u.ametnik AS user_name,
+         u.rekvid
   INTO v_doc
   FROM palk.palk_taabel1 t
     LEFT OUTER JOIN ou.userid u ON u.id = userid
@@ -46,6 +47,13 @@ BEGIN
     RETURN;
 
   END IF;
+
+  -- контроль периода для модуля ЗП
+  IF NOT (ou.fnc_aasta_palk_kontrol(v_doc.rekvid, make_date(v_doc.aasta, v_doc.kuu, 1)))
+  THEN
+      RAISE EXCEPTION 'Viga, periodi kontrol. palk kinni';
+  END IF;
+
 
   -- Логгирование удаленного документа
 

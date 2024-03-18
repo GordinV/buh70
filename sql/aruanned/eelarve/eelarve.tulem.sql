@@ -498,5 +498,5 @@ GRANT EXECUTE ON FUNCTION eelarve.tulem(l_kpv DATE, l_rekvid INTEGER, l_kond INT
 
 
 SELECT *
-FROM eelarve.tulem('2020-12-31' :: DATE, 63, 1)
+FROM eelarve.tulem('2023-12-31' :: DATE, 63, 1)
 ORDER BY idx, konto

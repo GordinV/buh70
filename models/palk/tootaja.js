@@ -47,20 +47,20 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20)                  AS aa,
-                         $2 :: INTEGER                                        AS userid,
-                         coalesce((e.element ->> 'kas_palk') :: BOOLEAN, false)::INTEGER     AS kas_palk,
-                         coalesce((e.element ->> 'kas_raama') :: BOOLEAN, false)::INTEGER    AS kas_raama,
-                         coalesce((e.element ->> 'kas_oppetasu') :: BOOLEAN, false)::INTEGER AS kas_oppetasu,
-                         row_number() OVER ()                                 AS id,
-                         libs.get_asutuse_aa(a.id, 'RAAMA'::TEXT)             AS default_aa
+            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20)                                 AS aa,
+                         $2 :: INTEGER                                                       AS userid,
+                         coalesce((e.element ->> 'kas_palk') :: BOOLEAN, FALSE)::INTEGER     AS kas_palk,
+                         coalesce((e.element ->> 'kas_raama') :: BOOLEAN, FALSE)::INTEGER    AS kas_raama,
+                         coalesce((e.element ->> 'kas_oppetasu') :: BOOLEAN, FALSE)::INTEGER AS kas_oppetasu,
+                         row_number() OVER ()                                                AS id,
+                         libs.get_asutuse_aa(a.id, 'RAAMA'::TEXT)                            AS default_aa
                   FROM libs.asutus a,
                        json_array_elements(CASE
                                                WHEN (a.properties ->> 'asutus_aa') IS NULL THEN '[]'::JSON
                                                ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (element)
                   WHERE a.id = $1
                     AND NOT empty((e.element ->> 'aa'))
-                  `, //$1 - doc_id, $2 0 userId
+            `, //$1 - doc_id, $2 0 userId
             query: null,
             multiple: true,
             alias: 'asutus_aa',
@@ -113,7 +113,8 @@ module.exports = {
                          minsots,
                          rekvid,
                          kood::VARCHAR(20)               AS kood,
-                         nimetus::VARCHAR(254)           AS nimetus
+                         nimetus::VARCHAR(254)           AS nimetus,
+                         pk.objekt::VARCHAR(20)
                   FROM palk.cur_palk_kaart pk
                   WHERE pk.parentid = $1 --asutus_id
                     AND pk.rekvid IN (SELECT rekvid

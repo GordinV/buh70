@@ -34,6 +34,7 @@ DECLARE
     doc_tunnus        TEXT    = doc_data ->> 'tunnus';
     doc_tunnus_id     INTEGER = doc_data ->> 'tunnusid';
     doc_proj          TEXT    = doc_data ->> 'proj';
+    doc_objekt          TEXT    = doc_data ->> 'objekt';
     doc_tulumaks      NUMERIC = doc_data ->> 'tulumaks';
     doc_sotsmaks      NUMERIC = doc_data ->> 'sotsmaks';
     doc_tootumaks     NUMERIC = doc_data ->> 'tootumaks';
@@ -88,6 +89,13 @@ BEGIN
         RAISE EXCEPTION 'Korrigeerimised summa ainult < 0';
     END IF;
 
+    -- контроль периода для модуля ЗП
+    IF NOT (ou.fnc_aasta_palk_kontrol(user_rekvid, doc_kpv))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. palk kinni';
+    END IF;
+
+
     IF doc_tululiik IS NULL AND doc_libid IN (
         SELECT id
         FROM com_palklib
@@ -113,7 +121,8 @@ BEGIN
     END IF;
 
     l_props = (SELECT row_to_json(row)
-               FROM (SELECT doc_pohjus_selg AS pohjus_selg) row);
+               FROM (SELECT doc_pohjus_selg AS pohjus_selg,
+                            doc_objekt as objekt) row);
 
 
     -- вставка или апдейт docs.doc

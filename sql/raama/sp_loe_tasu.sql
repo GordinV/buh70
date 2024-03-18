@@ -153,6 +153,12 @@ BEGIN
                 END LOOP;
         END IF;
 
+        -- если есть сальдо и есть возврат, закроем возврат
+        if l_tasu_jaak > 0 and v_tasu.liik <> 'VM' AND
+           l_laps_id IS NOT NULL then
+
+        END IF;
+
 
     END IF;
 END ;

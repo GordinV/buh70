@@ -44,7 +44,7 @@ BEGIN
         IF coalesce(l_summa, 0) < 0 AND l_opt <> 1
         THEN
             -- перенос платежа
-
+raise notice 'start перенос платежа l_summa %, l_opt %', l_summa, l_opt;
             SELECT *
             INTO v_tulemus
             FROM docs.sp_loe_tagasimakse(doc_id, user_id);
@@ -79,7 +79,7 @@ GRANT EXECUTE ON FUNCTION docs.makse_umber_jaotada(INTEGER, INTEGER, INTEGER) TO
 
 
 /*
-SELECT * from docs.makse_umber_jaotada_(5397, 5426570)
+SELECT * from docs.makse_umber_jaotada(5419, 5711303, 0)
 
 select * FROM docs.arvtasu WHERE doc_tasu_id in( 5426570)
 or doc_arv_id in ( 5157151, 5213784)

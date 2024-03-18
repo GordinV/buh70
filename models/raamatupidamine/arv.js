@@ -6,7 +6,20 @@ const start = require('./../BP/start'),
     endProcess = require('./../BP/endProcess');
 
 const Arv = {
-    selectAsLibs: `SELECT id, arv_id, number, kpv, summa, liik, asutus::varchar(254) as asutus, asutusid, arvid, rekvid, jaak, tasudok, tasud , $2 AS rekvid
+    selectAsLibs: `SELECT id,
+                          arv_id,
+                          number,
+                          kpv,
+                          summa,
+                          liik,
+                          asutus::VARCHAR(254) AS asutus,
+                          asutusid,
+                          arvid,
+                          rekvid,
+                          jaak,
+                          tasudok,
+                          tasud,
+                          $2                   AS rekvid
                    FROM com_arved a
                    WHERE (a.rekvId = $1::INTEGER)`, //$1 - rekvid, $2 userid
     select: [
@@ -54,15 +67,16 @@ const Arv = {
                          coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120)    AS viitenr,
                          coalesce((a.properties ->> 'tyyp')::TEXT, '')::VARCHAR(20)        AS tyyp,
                          coalesce((a.properties ->> 'taskuraha_kov')::NUMERIC, 0)          AS taskuraha_kov,
-                         (select arv.number
-                          from docs.arvtasu at
-                                   INNER JOIN docs.arv arv on arv.parentid = at.doc_arv_id
-                          where at.pankkassa = 4 -- kreeditarve
-                            and at.doc_tasu_id = a.parentid
-                            and at.status < 3
-                          limit 1
-                         )                                                      AS kr_number,       
-                         (a.properties->> 'alus_arve_id')::integer as alus_arve_id
+                         (SELECT arv.number
+                          FROM docs.arvtasu at
+                                   INNER JOIN docs.arv arv ON arv.parentid = at.doc_arv_id
+                          WHERE at.pankkassa = 4 -- kreeditarve
+                            AND at.doc_tasu_id = a.parentid
+                            AND at.status < 3
+                          LIMIT 1
+                         )                                                                 AS kr_number,
+                         (a.properties ->> 'alus_arve_id')::INTEGER                        AS alus_arve_id,
+                         (a.properties ->> 'raha_saaja')::VARCHAR(254)                     AS raha_saaja
                   FROM docs.doc d
                            INNER JOIN libs.library l ON l.id = d.doc_type_id
                            INNER JOIN docs.arv a ON a.parentId = d.id
@@ -126,8 +140,8 @@ const Arv = {
                               NULL :: VARCHAR(120)                                                   AS koostaja,
                               0 ::INTEGER                                                            AS is_show_journal,
                               ''::VARCHAR(120)                                                       AS viitenr,
-                              0::numeric                                                             AS taskuraha_kov,
-                              NULL::INTEGER                                                          AS  alus_arve_id
+                              0::NUMERIC                                                             AS taskuraha_kov,
+                              NULL::INTEGER                                                          AS alus_arve_id
                        FROM libs.library l,
                             libs.library s,
                             ou.userid u
@@ -469,7 +483,8 @@ const Arv = {
                                     coalesce(a.arve, qry_aa.arve)::VARCHAR(20) AS aa,
                                     a.viitenr::VARCHAR(120)                    AS viitenr,
                                     ebatoenaolised,
-                                    korr_konto
+                                    korr_konto,
+                                    raha_saaja
                              FROM cur_arved a,
                                   params,
                                   (SELECT arve
