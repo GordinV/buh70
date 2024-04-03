@@ -9,13 +9,16 @@ CREATE OR REPLACE FUNCTION libs.sp_delete_library(IN userid INTEGER,
 $BODY$
 
 DECLARE
-    v_doc RECORD;
+    v_doc          RECORD;
+    userName       TEXT;
+    is_peakasutaja BOOLEAN = FALSE;
+
 BEGIN
 
     SELECT l.*,
            u.ametnik AS user_name,
            u.rekvid  AS kasutaja_rekvid
-           INTO v_doc
+    INTO v_doc
     FROM libs.library l
              LEFT OUTER JOIN ou.userid u ON u.id = userid
     WHERE l.id = doc_id;
@@ -40,7 +43,7 @@ BEGIN
         error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
                         coalesce(userid, 0) :: TEXT;
         result = 0;
-        RETURN;
+--        RETURN;
 
     END IF;
 
@@ -60,29 +63,41 @@ BEGIN
                                                       WHERE r.properties ->> 'liik' IS NOT NULL
                                                         AND r.properties ->> 'liik' = v_doc.kood::TEXT))
     THEN
-        RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
         error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
         error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
         result = 0;
+
+        RAISE EXCEPTION 'Есть связанные доку менты. удалять нельзя';
         RETURN;
+
+    END IF;
+
+
+    IF v_doc.library IN ('TUNNUS', 'OBJEKT', 'PROJ', 'URITUS')
+    THEN
+        -- контроль за правами. Ограничен (В.Б)
+        SELECT kasutaja,
+               (u.roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
+
+        INTO userName, is_peakasutaja
+        FROM ou.userid u
+        WHERE u.rekvid = v_doc.rekvid
+          AND u.id = userId;
+
+        IF (userName IS NULL OR NOT is_peakasutaja)
+        THEN
+            RAISE EXCEPTION 'Viga, Puuduvad õigused või kasutaja ei leidnud %', user;
+--            RETURN ;
+        END IF;
 
     END IF;
 
     UPDATE libs.library
     SET status = 3
     WHERE id = doc_id;
-
     result = 1;
     RETURN;
 
-EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % % %', MESSAGE_TEXT, PG_EXCEPTION_DETAIL, PG_EXCEPTION_HINT;
-            error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-            error_message = MESSAGE_TEXT;
-            result = 0;
-            RETURN;
 END;
 $BODY$
     LANGUAGE plpgsql

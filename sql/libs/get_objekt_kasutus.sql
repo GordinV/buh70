@@ -6,11 +6,14 @@ CREATE FUNCTION get_objekt_kasutus(l_lib_id INTEGER, l_kpv DATE)
 AS
 $$
 DECLARE
-    tulemus    JSONB = '[]'::JSONB;
-    v_docs     RECORD;
-    l_lib_kood TEXT  = (SELECT ltrim(rtrim(kood))
-                        FROM libs.library
-                        WHERE id = l_lib_id);
+    tulemus       JSONB   = '[]'::JSONB;
+    v_docs        RECORD;
+    l_lib_kood    TEXT    = (SELECT ltrim(rtrim(kood))
+                             FROM libs.library
+                             WHERE id = l_lib_id);
+    l_lib_rekv_id INTEGER = (SELECT rekvid
+                             FROM libs.library l
+                             WHERE l.id = l_lib_id);
 BEGIN
 
     IF l_lib_id IS NOT NULL
@@ -23,17 +26,19 @@ BEGIN
             WHERE ((n.properties ->> 'valid')::DATE IS NULL OR (n.properties ->> 'valid')::DATE > l_kpv)
               AND n.properties ->> 'objekt' IS NOT NULL
               AND ltrim(rtrim(n.properties ->> 'objekt')) = l_lib_kood
+              AND n.rekvid = l_lib_rekv_id
             UNION
             -- docs
-            SELECT DISTINCT
-                    'Dok lausend nr.:' || ltrim(rtrim(m.number::text)) || ' (' || ltrim(rtrim(r.nimetus)) || ')' AS dok_nr
+            SELECT DISTINCT 'Dok lausend nr.:' || ltrim(rtrim(m.number::TEXT)) || ' (' || ltrim(rtrim(r.nimetus)) ||
+                            ')' AS dok_nr
             FROM cur_journal m
                      INNER JOIN ou.rekv r ON m.rekvid = r.id
             WHERE m.kpv > l_kpv
               AND ltrim(rtrim(m.objekt)) = l_lib_kood
+              AND m.rekvid = l_lib_rekv_id
             LOOP
                 tulemus = tulemus || to_jsonb(row)
-                          FROM (SELECT 'Projekt kood ' || ltrim(rtrim(l_lib_kood)) || ' kasutusel, ' ||
+                          FROM (SELECT 'Objekti kood ' || ltrim(rtrim(l_lib_kood)) || ' kasutusel, ' ||
                                        ltrim(rtrim(v_docs.dok_nr)) AS error_message,
                                        1                           AS error_code) row;
             END LOOP;

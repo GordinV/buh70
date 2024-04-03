@@ -280,13 +280,18 @@ BEGIN
                                     WHEN v_tululiik.tululiik ::INTEGER < 20 THEN 1
                                     ELSE 0 END) *
                                CASE
-                                   WHEN v_tululiik.tululiigi_arv > 1 AND v_fakt_arv.mvt > v_arv.mvt_kokku THEN 0
+                                   WHEN v_tululiik.tululiigi_arv > 1
+                                       -- дала ошибку в расчете мвт 27.03.2024
+                                       --     AND v_fakt_arv.mvt > v_arv.mvt_kokku
+                                       THEN 0
                                    WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
                                    ELSE 0 END *
                                coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
                                v_tululiik.tululiik                                          AS tululiik,
                                'Umardamine' :: TEXT || v_arv.selg                           AS selg
                         INTO v_palk_oper;
+
+                        raise notice 'v_tululiik.tululiigi_arv %, v_fakt_arv.mvt %, v_arv.mvt_kokku %',v_tululiik.tululiigi_arv, v_fakt_arv.mvt, v_arv.mvt_kokku;
 
                         l_save_params = row_to_json(v_palk_oper);
 

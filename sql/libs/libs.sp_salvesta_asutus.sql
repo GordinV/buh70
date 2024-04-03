@@ -13,36 +13,37 @@ AS
 $BODY$
 
 DECLARE
-    asutus_id      INTEGER;
-    userName       TEXT;
-    doc_id         INTEGER = data ->> 'id';
-    doc_data       JSON    = data ->> 'data';
-    doc_regkood    TEXT    = doc_data ->> 'regkood';
-    doc_nimetus    TEXT    = doc_data ->> 'nimetus';
-    doc_omvorm     TEXT    = doc_data ->> 'omvorm';
-    doc_kontakt    TEXT    = doc_data ->> 'kontakt';
-    doc_aadress    TEXT    = doc_data ->> 'aadress';
-    doc_tp         TEXT    = doc_data ->> 'tp';
-    doc_tel        TEXT    = doc_data ->> 'tel';
-    doc_email      TEXT    = doc_data ->> 'email';
-    doc_mark       TEXT    = doc_data ->> 'mark';
-    doc_muud       TEXT    = doc_data ->> 'muud';
-    doc_pank       TEXT    = doc_data ->> 'pank';
-    doc_kmkr       TEXT    = doc_data ->> 'kmkr';
-    doc_KEHTIVUS   DATE    = CASE
-                                 WHEN ltrim(rtrim((doc_data ->> 'kehtivus')))::TEXT = '' THEN NULL::DATE
-                                 ELSE (doc_data ->> 'kehtivus')::DATE END;
-    is_import      BOOLEAN = data ->> 'import';
-    doc_is_tootaja BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
-    doc_asutus_aa  JSONB   = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]':: JSONB);
-    doc_details    JSONB   = doc_data ->> 'gridData';
-    doc_aa         TEXT    = doc_data ->> 'aa';
-    doc_palk_email TEXT    = doc_data ->> 'palk_email';
-    new_properties JSONB;
-    new_history    JSONB   = '[]'::JSONB;
-    new_rights     JSONB;
-    new_aa         JSONB;
-    l_old_regkood  TEXT;
+    asutus_id          INTEGER;
+    userName           TEXT;
+    doc_id             INTEGER = data ->> 'id';
+    doc_data           JSON    = data ->> 'data';
+    doc_regkood        TEXT    = doc_data ->> 'regkood';
+    doc_nimetus        TEXT    = doc_data ->> 'nimetus';
+    doc_omvorm         TEXT    = doc_data ->> 'omvorm';
+    doc_kontakt        TEXT    = doc_data ->> 'kontakt';
+    doc_aadress        TEXT    = doc_data ->> 'aadress';
+    doc_tp             TEXT    = doc_data ->> 'tp';
+    doc_tel            TEXT    = doc_data ->> 'tel';
+    doc_email          TEXT    = doc_data ->> 'email';
+    doc_mark           TEXT    = doc_data ->> 'mark';
+    doc_muud           TEXT    = doc_data ->> 'muud';
+    doc_pank           TEXT    = doc_data ->> 'pank';
+    doc_kmkr           TEXT    = doc_data ->> 'kmkr';
+    doc_KEHTIVUS       DATE    = CASE
+                                     WHEN ltrim(rtrim((doc_data ->> 'kehtivus')))::TEXT = '' THEN NULL::DATE
+                                     ELSE (doc_data ->> 'kehtivus')::DATE END;
+    is_import          BOOLEAN = data ->> 'import';
+    doc_is_tootaja     BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
+    doc_asutus_aa      JSONB   = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]':: JSONB);
+    doc_details        JSONB   = doc_data ->> 'gridData';
+    doc_aa             TEXT    = doc_data ->> 'aa';
+    doc_palk_email     TEXT    = doc_data ->> 'palk_email';
+    doc_kas_teiste_kov BOOLEAN = doc_data ->> 'kas_teiste_kov';
+    new_properties     JSONB;
+    new_history        JSONB   = '[]'::JSONB;
+    new_rights         JSONB;
+    new_aa             JSONB;
+    l_old_regkood      TEXT;
 BEGIN
 
 
@@ -103,7 +104,8 @@ BEGIN
                  CASE
                      WHEN doc_aa IS NOT NULL AND NOT empty(doc_aa) THEN '[]'::JSONB || new_aa :: JSONB
                      ELSE doc_asutus_aa :: JSONB END                                       AS asutus_aa,
-                 doc_kmkr                                                                  AS kmkr) row;
+                 doc_kmkr                                                                  AS kmkr,
+                 coalesce(doc_kas_teiste_kov, FALSE)                                       AS kas_teiste_kov) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

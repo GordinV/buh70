@@ -38,7 +38,12 @@ WITH qryRekv AS (
                 CASE
                     WHEN position('"email"' IN d.history::TEXT) > 0 THEN 'SAADETUD'
                     WHEN position('email_error' IN history::TEXT) > 0
-                        THEN 'VIGANE' END                                                              AS saatmise_staatus
+                        THEN 'VIGANE'
+                    WHEN position('email_viga' IN history::TEXT) > 0
+                        THEN 'VIGANE'
+                    WHEN empty(asutus.email) THEN 'PUUDUB EMAIL'
+                    ELSE 'MUUD'
+                    END                                                                                AS saatmise_staatus
          FROM docs.doc d
                   INNER JOIN docs.arv a ON d.id = a.parentid
                   INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
@@ -52,12 +57,15 @@ WITH qryRekv AS (
            AND a.kpv <= p.kpv_2
            AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'ARV')
            AND d.rekvid IN (SELECT rekv_id FROM qryRekv)
+           AND (va.properties ->> 'email_alates' IS NULL OR
+                (va.properties ->> 'email_alates')::DATE <= (a.kpv + INTERVAL '1 month'))
            AND va.kas_email),
      logs AS (
          WITH doc AS (
              SELECT qry.id,
                     to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS')         AS email,
                     to_char((ajalugu ->> 'email_error')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS')   AS email_error,
+                    to_char((ajalugu ->> 'email_viga')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS')    AS email_viga,
                     to_char((ajalugu ->> 'email_error_1')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS email_error_1,
                     to_char((ajalugu ->> 'email_error_2')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS email_error_2,
                     to_char((ajalugu ->> 'email_error_3')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS email_error_3
@@ -73,6 +81,7 @@ WITH qryRekv AS (
                          CASE
                              WHEN l.email IS NOT NULL THEN l.email
                              WHEN l.email_error IS NOT NULL THEN l.email_error
+                             WHEN l.email_viga IS NOT NULL THEN l.email_viga
                              WHEN l.email_error_3 IS NOT NULL THEN l.email_error_3
                              WHEN l.email_error_2 IS NOT NULL THEN l.email_error_2
                              WHEN l.email_error_1 IS NOT NULL THEN l.email_error_1
@@ -109,6 +118,7 @@ GRANT EXECUTE ON FUNCTION lapsed.arved_emailiga(INTEGER, DATE, DATE) TO arvestaj
 
 SELECT *
 FROM  lapsed.arved_emailiga(69, null::date, null::date)
+where empty(saadetud)
 limit 100
 
 --test

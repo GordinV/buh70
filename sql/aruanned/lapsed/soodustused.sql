@@ -21,7 +21,8 @@ CREATE OR REPLACE FUNCTION lapsed.soodustused(l_rekvid INTEGER, l_kond INTEGER D
         percent         TEXT,
         viga            TEXT,
         kood            TEXT,
-        vanem_id        INTEGER
+        vanem_id        INTEGER,
+        kas_tulu_teenus BOOLEAN
     )
 AS
 $BODY$
@@ -64,8 +65,21 @@ WITH qry AS (
                         lt.parentid     AS laps_id,
                         lt.rekvid,
                         sum(tais_summa) AS tais_summa,
-                        lt.kood
-                 FROM (SELECT lt.summa, lt.soodustus, lt.parentid, lt.rekvid, (lt.hind * lt.kogus) AS tais_summa, n.kood
+                        lt.kood,
+                        lt.kas_tulu_teenus
+                 FROM (SELECT lt.summa,
+                              lt.soodustus,
+                              lt.parentid,
+                              lt.rekvid,
+                              (lt.hind * lt.kogus) AS tais_summa,
+                              n.kood,
+                              CASE
+                                  WHEN n.properties ->> 'konto' IN ('322020', '322030')
+                                      AND NOT coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)
+                                      AND empty(coalesce((n.properties ->> 'tyyp')::TEXT, ''))
+                                      AND n.hind > 0 THEN TRUE
+                                  ELSE FALSE END   AS kas_tulu_teenus -- услуги, на кторые начисляются льготы
+
                        FROM lapsed.lapse_taabel lt,
                             libs.nomenklatuur n,
                             params
@@ -76,19 +90,25 @@ WITH qry AS (
                          AND make_date(aasta, kuu, 1) <= params.arv_lopp_kpv
                          AND lt.rekvid IN (SELECT rekv_id FROM rekv_ids)
                       ) lt
-                 WHERE lt.soodustus <> 0
+                 WHERE (lt.soodustus <> 0 OR lt.kas_tulu_teenus)
                  GROUP BY lt.parentid
                          , lt.rekvid
-                         , lt.kood
+                         , lt.kood,
+                          kas_tulu_teenus
              ),
              esindajad AS (
-                 SELECT asutusid,
-                        parentid                               AS laps_id,
-                        count(id) OVER (PARTITION BY asutusid) AS lapsed_peres
-                 FROM lapsed.vanemad v,
+                 SELECT v.asutusid,
+                        v.parentid                               AS laps_id,
+                        count(v.id) OVER (PARTITION BY asutusid) AS lapsed_peres,
+                        coalesce((a.properties->>'kas_teiste_kov')::boolean, false) as kas_teiste_kov
+                 FROM lapsed.vanemad v
+                          INNER JOIN libs.asutus a ON a.id = v.asutusid
+                          INNER JOIN lapsed.laps l ON l.id = v.parentid,
                       params
                  WHERE v.staatus <> 3
                    AND coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)
+                   AND date_part('year', current_date) - date_part('year', palk.get_sunnipaev(l.isikukood)) <
+                       10 -- отчечь работников, оставить только до 10 лет
                    AND exists(SELECT id
                               FROM lapsed.lapse_kaart lk
                               WHERE lk.parentid = v.parentid
@@ -111,29 +131,32 @@ WITH qry AS (
                      )
              )
 
-        SELECT l.isikukood::TEXT                          AS lapse_isikukood,
-               l.nimi::TEXT                               AS lapse_nimi,
+        SELECT l.isikukood::TEXT                                                                      AS lapse_isikukood,
+               l.nimi::TEXT                                                                           AS lapse_nimi,
                s.kood,
-               s.soodustus::NUMERIC(12, 2)                AS soodustus,
-               s.summa::NUMERIC(12, 2)                    AS summa,
-               round(s.soodustus / s.tais_summa * 100, 0) AS arv_percent,
-               r.nimetus::TEXT                            AS asutus,
-               e.asutusid                                 AS vanem_id,
-               e.lapsed_peres                             AS lapsed_peres,
+               s.soodustus::NUMERIC(12, 2)                                                            AS soodustus,
+               s.summa::NUMERIC(12, 2)                                                                AS summa,
+               CASE WHEN s.tais_summa <> 0 THEN round(s.soodustus / s.tais_summa * 100, 0) ELSE 0 END AS arv_percent,
+               r.nimetus::TEXT                                                                        AS asutus,
+               e.asutusid                                                                             AS vanem_id,
+               e.lapsed_peres                                                                         AS lapsed_peres,
                (SELECT count(*)
                 FROM (SELECT DISTINCT asutusid
                       FROM esindajad es
                       WHERE es.laps_id IN (SELECT sd.laps_id FROM soodustused sd)
                      ) es)
-                                                          AS pered_kokku,
+                                                                                                      AS pered_kokku,
                s.rekvid,
-               lapsed.get_viitenumber(s.rekvid, l.id)     AS viitenumber
+               lapsed.get_viitenumber(s.rekvid, l.id)                                                 AS viitenumber,
+               s.kas_tulu_teenus,
+               e.kas_teiste_kov
 
         FROM lapsed.laps l
-                 INNER JOIN soodustused s ON s.laps_id = l.id
+                 INNER JOIN esindajad e ON e.laps_id = l.id
+                 LEFT OUTER JOIN soodustused s ON s.laps_id = l.id
                  INNER JOIN ou.rekv r ON r.id = s.rekvid
-                 LEFT OUTER JOIN esindajad e ON e.laps_id = l.id
-        WHERE s.soodustus <> 0
+        WHERE (s.soodustus <> 0 OR (e.lapsed_peres > 1 AND s.kas_tulu_teenus))
+          AND s.summa <> 0
     )
 )
 SELECT soodustus::NUMERIC(12, 2)                    AS soodustus,
@@ -150,6 +173,7 @@ SELECT soodustus::NUMERIC(12, 2)                    AS soodustus,
        qry.rekvid,
        qry.viitenumber::TEXT,
        sum(CASE
+               WHEN qry.kas_teiste_kov AND soodustus > 0 THEN 1
                WHEN lapsed_peres < 2 AND soodustus > 0 THEN 1
                WHEN lapsed_peres <= 2 AND arv_percent > 25 THEN 1
                WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 1
@@ -161,13 +185,15 @@ SELECT soodustus::NUMERIC(12, 2)                    AS soodustus,
            WHEN lapsed_peres >= 3 THEN '100'
            ELSE '' END::TEXT                        AS percent,
        CASE
+           WHEN qry.kas_teiste_kov AND soodustus > 0 THEN 'Viga, teiste KOVide'
            WHEN coalesce(lapsed_peres, 0) < 2 AND arv_percent > 0 THEN 'Viga, <> 0'
            WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 'Viga, <> 25'
            WHEN lapsed_peres > 2 AND arv_percent < 100 THEN 'Viga, < 100'
            ELSE NULL::TEXT
            END::TEXT                                AS viga,
        qry.kood::TEXT,
-       qry.vanem_id
+       qry.vanem_id,
+       qry.kas_tulu_teenus
 FROM qry
          LEFT OUTER JOIN libs.asutus a ON a.id = qry.vanem_id
 

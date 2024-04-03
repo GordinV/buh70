@@ -97,8 +97,7 @@ module.exports = {
     ],
     returnData:
         {
-            row: {}
-            ,
+            row: {},
             teenused: [],
             gridConfig:
                 [

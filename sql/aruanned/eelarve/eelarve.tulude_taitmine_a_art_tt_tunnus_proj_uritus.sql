@@ -576,13 +576,6 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_a_art_tt_tunnus_proj_uritus(IN
 GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_a_art_tt_tunnus_proj_uritus(INTEGER, DATE, DATE,INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
 /*
-sum;sum;sum;sum;sum;sum
-202063393.52;200308643.92;438372496;540017952;438372496;528503248
-
-sum;sum;sum;sum;sum;sum
-202063393.52;200308643.92;438372496;540017952;438372496;528503248
-
-
 
 SELECT *
 FROM (

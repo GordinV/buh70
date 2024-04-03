@@ -12,14 +12,15 @@ module.exports = {
                      muud,
                      tp,
                      staatus,
-                     $2::INTEGER                                     AS userid,
-                     'ASUTUSED'                                      AS doc_type_id,
-                     (properties ->> 'pank')::VARCHAR(20)            AS pank,
-                     (properties ->> 'kmkr')::VARCHAR(20)            AS kmkr,
-                     (properties ->> 'kehtivus')::DATE               AS kehtivus,
-                     (properties ->> 'kehtivus')::DATE               AS valid,
-                     (properties -> 'asutus_aa' -> 0 ->> 'aa')::TEXT AS aa,
-                     (properties ->> 'palk_email'):: VARCHAR(254)    AS palk_email
+                     $2::INTEGER                                                            AS userid,
+                     'ASUTUSED'                                                             AS doc_type_id,
+                     (properties ->> 'pank')::VARCHAR(20)                                   AS pank,
+                     (properties ->> 'kmkr')::VARCHAR(20)                                   AS kmkr,
+                     (properties ->> 'kehtivus')::DATE                                      AS kehtivus,
+                     (properties ->> 'kehtivus')::DATE                                      AS valid,
+                     (properties -> 'asutus_aa' -> 0 ->> 'aa')::TEXT                        AS aa,
+                     (properties ->> 'palk_email'):: VARCHAR(254)                           AS palk_email,
+                     coalesce((properties ->> 'kas_teiste_kov'):: BOOLEAN, FALSE):: BOOLEAN AS kas_teiste_kov
               FROM libs.asutus
               WHERE id = $1`,
         sqlAsNew: `select $1::integer as id , $2::integer as userid, 'ASUTUSED' as doc_type_id,
@@ -38,6 +39,7 @@ module.exports = {
             '' :: VARCHAR(254)    AS palk_email,            
             ''::varchar(20) as kmkr,
             ''::text as mark,
+            false as kas_teiste_kov,
             ''::TEXT AS aa`,
         query: null,
         multiple: false,
@@ -150,7 +152,7 @@ module.exports = {
             {id: "aadress", name: "Aadress", width: "25%"},
             {id: "valid", name: "Kehtivus", width: "10%", type: 'date', show: false},
         ],
-        sqlString: `SELECT a.*,$1::INTEGER as rekv, $2::INTEGER AS userId, a.kehtivus AS valid
+        sqlString: `SELECT a.*, $1::INTEGER AS rekv, $2::INTEGER AS userId, a.kehtivus AS valid
                     FROM cur_asutused a`,     //
         params: '',
         alias: 'curAsutused'

@@ -152,6 +152,48 @@ WITH qryLisa1Lisa5 AS (
                 sum(saldoandmik)        AS saldoandmik
          FROM qryLisa1Lisa5
          WHERE (artikkel LIKE '40%' OR artikkel LIKE '413%' OR artikkel LIKE '4500%' OR artikkel LIKE '452%')
+         UNION ALL
+         -- 03.04.2024 VB
+         SELECT '4'   AS artikkel,
+                0     AS eelarve,
+                0     AS eelarve_taps,
+                0     AS eelarve_kassa,
+                0     AS eelarve_kassa_taps,
+                summa AS tegelik,
+                0     AS kassa,
+                summa AS saldoandmik
+         FROM cur_journal j
+         WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+           AND kpv <= l_kpv
+           AND j.rekvid IN (SELECT rekv_id
+                            FROM get_asutuse_struktuur(l_rekvid))
+           AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+           AND left(deebet, 6) = '601000'
+           AND kood5 LIKE '41%'
+         UNION ALL
+         SELECT '4'        AS artikkel,
+                0          AS eelarve,
+                0          AS eelarve_taps,
+                0          AS eelarve_kassa,
+                0          AS eelarve_kassa_taps,
+                -1 * summa AS tegelik,
+                0          AS kassa,
+                -1 * summa AS saldoandmik
+         FROM cur_journal j
+         WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+           AND kpv <= l_kpv
+           AND j.rekvid IN (SELECT rekv_id
+                            FROM get_asutuse_struktuur(l_rekvid))
+           AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+           AND left(kreedit, 6) = '601000'
+           AND left(kood5, 2) = '41'
+
+--             Строка 4* Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) +
+         --             Сумма всех строк с бюджетом 4* в отчете Eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine +
+         --             Строка 4502 Tekke  täitmine  в отчете EELARVEARUANNE (Lisa 1, Lisa 5)
+         --             + (D 601000 art 41* - К 601000 art 41*) в Päevaraamat соответствующего периода=0
+
+
      ),
 -- 	where (artikkel Like '40%' Or artikkel Like '413%' Or artikkel Like '4500%'  Or artikkel Like '452%');
      qryTuludTaitmine AS (
@@ -2154,6 +2196,37 @@ FROM (
                   FROM qrySaldoandmik
                   WHERE left(konto, 1) = '413'
                     AND left(tp, 6) = '185101'
+                  UNION ALL
+                  -- 03.04.2024 VB
+                  SELECT 0     AS eelarve,
+                         0     AS eelarve_taps,
+                         0     AS eelarve_kassa,
+                         0     AS eelarve_kassa_taps,
+                         0     AS kassa,
+                         summa AS saldoandmik
+                  FROM cur_journal j
+                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                    AND kpv <= l_kpv
+                    AND j.rekvid IN (SELECT rekv_id
+                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                    AND left(deebet, 6) = '601000'
+                    AND kood5 LIKE '41%'
+                  UNION ALL
+                  SELECT 0          AS eelarve,
+                         0          AS eelarve_taps,
+                         0          AS eelarve_kassa,
+                         0          AS eelarve_kassa_taps,
+                         0          AS kassa,
+                         -1 * summa AS saldoandmik
+                  FROM cur_journal j
+                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                    AND kpv <= l_kpv
+                    AND j.rekvid IN (SELECT rekv_id
+                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                    AND left(kreedit, 6) = '601000'
+                    AND left(kood5, 2) = '41'
               ) qry413
          UNION ALL
          -- Строка 4500* Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5)+
@@ -2301,6 +2374,38 @@ FROM (
                   FROM qrySaldoandmik
                   WHERE left(konto, 2) = '55'
                     AND left(tp, 6) = '185101'
+                  UNION ALL
+                  -- 03.04.2024 VB
+                  SELECT 0     AS eelarve,
+                         0     AS eelarve_taps,
+                         0     AS eelarve_kassa,
+                         0     AS eelarve_kassa_taps,
+                         0     AS kassa,
+                         summa AS saldoandmik
+                  FROM cur_journal j
+                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                    AND kpv <= l_kpv
+                    AND j.rekvid IN (SELECT rekv_id
+                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                    AND left(deebet, 6) = '601000'
+                    AND kood5 LIKE '41%'
+                  UNION ALL
+                  SELECT 0          AS eelarve,
+                         0          AS eelarve_taps,
+                         0          AS eelarve_kassa,
+                         0          AS eelarve_kassa_taps,
+                         0          AS kassa,
+                         -1 * summa AS saldoandmik
+                  FROM cur_journal j
+                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                    AND kpv <= l_kpv
+                    AND j.rekvid IN (SELECT rekv_id
+                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                    AND left(kreedit, 6) = '601000'
+                    AND left(kood5, 2) = '41'
+
 /*                  UNION ALL
                   -- убираем элиминирование отд. культуры
                   SELECT 0,
@@ -2868,7 +2973,7 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO
 
 /*
 SELECT sum(saldoandmik) OVER (PARTITION BY nimetus) AS sa_kokku, *
-FROM eelarve.lisa1_lisa5_kontrol('2023-09-30'::DATE, 63, 1)
+FROM eelarve.lisa1_lisa5_kontrol('2024-03-31'::DATE, 63, 1)
 --WHERE  nimetus like '3221%'
 ORDER BY idx, nimetus
 */

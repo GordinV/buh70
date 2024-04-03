@@ -11,8 +11,9 @@ DECLARE
     l_kuu       INTEGER;
     l_paev      INTEGER;
 BEGIN
+
     IF l_isikukood IS NULL OR l_isikukood = '' OR len(l_isikukood) < 7 OR l_paev < 1 OR l_paev > 31 OR l_kuu < 1 OR
-       l_kuu > 12
+       l_kuu > 12 OR position('.' IN l_isikukood) > 0 OR position('V' IN l_isikukood) > 0
     THEN
         RETURN current_date;
     END IF;
@@ -33,6 +34,11 @@ BEGIN
 
 
     RETURN l_sunnipaev;
+EXCEPTION
+    WHEN OTHERS
+        THEN
+            RAISE NOTICE 'error l_isikukood % % %',l_isikukood, SQLERRM, SQLSTATE;
+            RETURN l_sunnipaev;
 
 END
 $$;
