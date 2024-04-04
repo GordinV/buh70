@@ -98,7 +98,7 @@ module.exports = {
                                   n.nimetus,
                                   k.hind                                                            hind,
                                   (SELECT l.nimetus
-                                   FROM libs.library l 
+                                   FROM libs.library l
                                    WHERE l.rekvid = k.rekvid
                                      AND l.kood = k.properties ->> 'yksus'
                                      AND l.library = 'LAPSE_GRUPP'
@@ -107,7 +107,7 @@ module.exports = {
                                    LIMIT 1)                                                      AS yksus,
                                   k.properties ->> 'yksus'::TEXT                                 AS yksuse_kood,
                                   CASE
-                                      WHEN (n.properties ->>'kas_inf3')::BOOLEAN
+                                      WHEN (n.properties ->> 'kas_inf3')::BOOLEAN
                                           THEN
                                           'INF3'
                                       ELSE ''
@@ -255,6 +255,7 @@ module.exports = {
                 {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "rekv_names", name: "Asutused", width: "20%", default: `DocContext.userData.asutus`},
                 {id: "arveldus", name: "Kas arveldus?", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
+                {id: "kov", name: "Kas teise KOV?", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString: `
@@ -266,7 +267,16 @@ module.exports = {
                     $4::DATE        AS period_finish,
                     case when $5::text is not null and $5::text = '' then null::date else $5::DATE end::date as kehtiv_kpv
          ),
-            
+        tesise_kov_esindajad AS (
+            SELECT a.id, v.parentid AS laps_id
+            FROM libs.asutus a
+                     INNER JOIN lapsed.vanemad v ON v.asutusid = a.id
+            WHERE a.properties ->> 'kas_teiste_kov' IS NOT NULL
+              AND (a.properties ->> 'kas_teiste_kov')::BOOLEAN
+              AND v.staatus <> 3
+              AND a.staatus <> 3 
+              AND coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)                                         
+        ),            
        cur_lapsed AS (
             SELECT l.id,
                    l.isikukood,
@@ -279,8 +289,8 @@ module.exports = {
         
                    lk_range,
                    (SELECT string_agg(vn, ', ')
-                    FROM (SELECT DISTINCT vn FROM unnest(viitenumbers) vn) vn)                                    AS viitenumbers
-        
+                    FROM (SELECT DISTINCT vn FROM unnest(viitenumbers) vn) vn)                                    AS viitenumbers,
+                    exists(SELECT id FROM tesise_kov_esindajad WHERE laps_id = l.id) AS kas_teiste_kov        
             FROM lapsed.laps l
                      JOIN (SELECT parentid,
                                   array_agg(rekvid)      AS rekv_ids,
@@ -353,8 +363,8 @@ module.exports = {
                 r.kehtiv_kpv::date as kehtiv_kpv,
                 CASE
                     WHEN exists(SELECT id FROM lapsed.vanem_arveldus va WHERE parentid = l.id AND arveldus and rekvid = $1) THEN 'JAH'
-                    ELSE 'EI' END                     AS arveldus
-                                       
+                    ELSE 'EI' END                     AS arveldus,
+                case when kas_teiste_kov then 'JAH' else 'EI' end as kov                                       
         FROM cur_lapsed l
                  LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                   FROM lapsed.viitenr vn

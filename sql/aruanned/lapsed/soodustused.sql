@@ -155,7 +155,7 @@ WITH qry AS (
                  INNER JOIN esindajad e ON e.laps_id = l.id
                  LEFT OUTER JOIN soodustused s ON s.laps_id = l.id
                  INNER JOIN ou.rekv r ON r.id = s.rekvid
-        WHERE (s.soodustus <> 0 OR (e.lapsed_peres > 1 AND s.kas_tulu_teenus))
+        WHERE (s.soodustus <> 0 OR (e.lapsed_peres > 1 AND s.kas_tulu_teenus and not e.kas_teiste_kov))
           AND s.summa <> 0
     )
 )
