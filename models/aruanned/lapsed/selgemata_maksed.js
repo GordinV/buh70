@@ -21,7 +21,7 @@ module.exports = {
                                  vv.selg,
                                  coalesce(v.rekv_id, (left(vv.viitenumber, 3))::INTEGER) AS rekv_id,
                                  case 
-                                    when vv.viitenumber is null and v.viitenumber is null then 'Vale viitenumber' 
+                                    WHEN v.viitenumber IS NULL and  (empty(coalesce(vv.viitenumber,''))  or len(vv.viitenumber) <> '10')   THEN 'Vale viitenumber'
                                     when vv.isikukood is null or empty(vv.isikukood) then 'Vale maksja IK'
                                     when vv.kpv::DATE < '2022-09-01' AND v.rekv_id IN (SELECT id
                                                                    FROM ou.rekv r
