@@ -33,7 +33,7 @@ module.exports = {
                            $2                                             AS user_id
                     FROM lapsed.ebatoenaolised($1, $3) qry
                              INNER JOIN ou.rekv r ON r.id = qry.rekvid
-                    WHERE (qry.noude_50 + qry.noude_100) <> 0
+                    WHERE (qry.noude_50 + qry.noude_100) > 0
 
                     ORDER BY asutus, number
         `,     // $1 - rekvid, $3 - kond
