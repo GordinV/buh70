@@ -311,6 +311,13 @@ const Journal = {
         type: "sql",
         alias: "getLogs"
     },
+    // import from virasoft
+    importDoc: {
+        command: `SELECT result AS id, result, error_message, $2::integer as userId, $3::integer as rekvId
+                  FROM docs.sp_import_from_virasoft($1::JSONB)`, // $1 - data json, $2 - userid, $3 - rekvid
+        type: 'sql',
+        alias: 'importRaama'
+    },
 
 };
 

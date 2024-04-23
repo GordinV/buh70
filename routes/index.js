@@ -21,6 +21,9 @@ module.exports = function (app) {
     app.post('/print/TAOTLUS/:hash/:id', require('./eelproj/taotlus').post); //checkAuth
 
 
+// virasoft
+    app.post('/virasoft/import/', require('./virasoft')); //checkAuth
+
     // same as main
     app.get('/', require('./login').get);
     app.post('/', require('./login').post);

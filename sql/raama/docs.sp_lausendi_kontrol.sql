@@ -87,8 +87,17 @@ BEGIN
         AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::INTEGER, (substr(v_lib.valid::TEXT, 5, 2))::INTEGER,
                               (substr(v_lib.valid::TEXT, 7, 2))::INTEGER)
     THEN
-        lcMsg1 = 'TP-K,Ei saa kasuta, sest TP kood ei ole kehtiv';
+        lcMsg1 = 'TP-K,Ei saa kasuta, sest TP kood ei ole kehtiv;';
         l_msg = l_msg + lcMsg1;
+    END IF;
+
+    -- контроль ТП кода
+    IF not empty(coalesce(l_tp_k,'')) and not exists (select id from libs.library
+        where kood =  l_tp_k  and library.library = 'TP' and status < 3 ) then
+
+        lcMsg1 = 'TP-K, kood (' || coalesce(l_tp_k,'') || ') registris puudub; ';
+        l_msg = l_msg + lcMsg1;
+
     END IF;
 
     -- D
@@ -98,9 +107,19 @@ BEGIN
         AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::INTEGER, (substr(v_lib.valid::TEXT, 5, 2))::INTEGER,
                               (substr(v_lib.valid::TEXT, 7, 2))::INTEGER)
     THEN
-        lcMsg1 = 'TP-D,Ei saa kasuta, sest TP kood ei ole kehtiv';
+        lcMsg1 = 'TP-D,Ei saa kasuta, sest TP kood ei ole kehtiv ';
         l_msg = l_msg + lcMsg1;
     END IF;
+
+    -- контроль ТП кода
+    IF not empty(coalesce(l_tp_d,'')) and not exists (select id from libs.library
+                                                      where kood =  l_tp_d  and library.library = 'TP' and status < 3 ) then
+
+        lcMsg1 = 'TP-D, kood (' || l_tp_d || ') registris puudub;';
+        l_msg = l_msg + lcMsg1;
+
+    END IF;
+
 
 
 -- konto kehtivus (D)
@@ -379,6 +398,16 @@ BEGIN
 
     END IF;
 
+    -- контроль TT кода
+    IF not empty(coalesce(l_tt,'')) and not exists (select id from libs.library
+                                                      where kood =  l_tt  and library.library = 'TEGEV' and status < 3 ) then
+
+        lcMsg1 = 'TEGEVUSALA, kood (' || l_tt || ') registris puudub;';
+        l_msg = l_msg + lcMsg1;
+
+    END IF;
+
+
     IF v_konto_k.allikas IS NOT NULL AND v_konto_k.allikas::TEXT = '1' AND
        (public.empty(l_allikas) OR public.isdigit(l_allikas) = 0) AND lnAllikas = 0
     THEN
@@ -392,6 +421,16 @@ BEGIN
 
     END IF;
 
+    -- контроль Allikas кода
+    IF not empty(coalesce(l_allikas,'')) and not exists (select id from libs.library
+                                                    where kood =  l_allikas  and library.library = 'ALLIKAD' and status < 3 ) then
+
+        lcMsg1 = 'Allikas, kood (' || l_allikas || ') registris puudub;';
+        l_msg = l_msg + lcMsg1;
+
+    END IF;
+
+
     IF v_konto_k.rahavoog IS NOT NULL AND v_konto_k.rahavoog::TEXT = '1' AND public.empty(l_rahavoog) AND lnRahavoog = 0
     THEN
         lnRahavoog = 1;
@@ -402,6 +441,7 @@ BEGIN
         END IF;
 
     END IF;
+
 
     IF left(l_kr, 1) = '7'
     THEN
@@ -593,6 +633,16 @@ BEGIN
         END IF;
     END IF;
 
+    -- контроль Artikkel кода
+    IF not empty(coalesce(l_eelarve,'')) and not exists (select id from libs.library
+                                                         where kood =  l_eelarve  and library.library = 'TULUDEALLIKAD' and status < 3 ) then
+
+        lcMsg1 = 'Artikkel, kood (' || l_eelarve || ') registris puudub;';
+        l_msg = l_msg + lcMsg1;
+
+    END IF;
+
+
 -- tegev, kehtivus
     SELECT l.kood,
            (l.properties::JSONB ->> 'valid')::DATE AS valid
@@ -651,9 +701,9 @@ GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja
 select rekvid, kpv, deebet, lisa_d, kreedit, lisa_k, kood1, kood2, kood3, kood4, kood5 from cur_journal where kreedit = '150020'
 order by kpv desc
 
-SELECT docs.sp_lausendikontrol_('{
+SELECT docs.sp_lausendikontrol(('{
   "db": "10010008",
-  "tpd": "800401",
+  "tpd": "800401XXX",
   "kr": "350050",
   "tpk": "",
   "oma_tp"  : "18510130",
