@@ -53,6 +53,7 @@ exports.get = async (req, res) => {
                 ulekanned: (row.ulekanned),
                 mahakantud: row.mahakantud,
                 jaak: row.jaak,
+                jaak_inf3: row.jaak_inf3,
                 asutus: row.asutus
 
             };

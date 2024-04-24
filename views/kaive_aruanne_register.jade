@@ -70,6 +70,7 @@ block content
                         th Ülekanne
                         th Mahakantud
                         th Võlg
+                        th s.h.INF3
 
                 tbody
                     each rea in asutus[Object.keys(asutus)[0]]
@@ -87,6 +88,7 @@ block content
                             td=rea.ulekanned
                             td=rea.mahakantud
                             td=rea.jaak
+                            td=rea.jaak_inf3
                     tr.group
                         td.group=Object.keys(asutus)[0] + ' Read kokku:'
                         td.group=Number(asutus[Object.keys(asutus)[0]].length)
@@ -101,4 +103,5 @@ block content
                         td.group=asutus[Object.keys(asutus)[0]][0].ulekanned_group
                         td.group=asutus[Object.keys(asutus)[0]][0].mahakantud_group
                         td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
+                        td.group=asutus[Object.keys(asutus)[0]][0].jaak_inf3_group
 

@@ -2,8 +2,8 @@
 DROP FUNCTION IF EXISTS lapsed.kaive_aruanne(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.kaive_aruanne(l_rekvid INTEGER,
-                                                kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
-                                                kpv_end DATE DEFAULT current_date)
+                                                 kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
+                                                 kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         id              BIGINT,
         period          DATE,
@@ -20,6 +20,7 @@ CREATE OR REPLACE FUNCTION lapsed.kaive_aruanne(l_rekvid INTEGER,
         tagastused      NUMERIC(14, 2),
         ulekanned       NUMERIC(14, 2),
         jaak            NUMERIC(14, 2),
+        jaak_inf3       NUMERIC(14, 2),
         rekvid          INTEGER
     )
 AS
@@ -83,15 +84,18 @@ SELECT count(*) OVER (PARTITION BY report.laps_id)                  AS id,
         COALESCE(mahakantud, 0) +
         COALESCE(tagastused, 0) +
         COALESCE(ulekanned, 0))::NUMERIC(14, 2)                     AS jaak,
+       inf3_jaak,
        report.rekv_id
 FROM (
          WITH alg_saldo AS (
-             SELECT laps_id, rekv_id, sum(summa) AS jaak
+             SELECT laps_id, rekv_id, sum(summa) AS jaak, array_agg(id) AS docs_ids
              FROM (
                       -- laekumised
                       SELECT -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk1.summa AS summa,
                              l.id                                                       AS laps_id,
-                             D.rekvid                                                   AS rekv_id
+                             D.rekvid                                                   AS rekv_id,
+                             0                                                          AS inf3_jaak,
+                             NULL                                                       AS id
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
                                INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
@@ -104,7 +108,9 @@ FROM (
                       UNION ALL
                       SELECT a1.summa    AS summa,
                              ld.parentid AS laps_id,
-                             D.rekvid    AS rekv_id
+                             D.rekvid    AS rekv_id,
+                             0           AS inf3_jaak,
+                             d.id
                       FROM docs.doc D
                                INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                                INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -121,7 +127,9 @@ FROM (
                       UNION ALL
                       SELECT -1 * a.summa AS summa,
                              l.parentid   AS laps_id,
-                             a.rekvid     AS rekv_id
+                             a.rekvid     AS rekv_id,
+                             0            AS inf3_jaak,
+                             arv.parentid AS id
                       FROM docs.arvtasu a
                                INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
                                INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
@@ -216,7 +224,8 @@ FROM (
                                  WHEN kas_umberarvestus THEN 0
                                  ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END ::NUMERIC(14, 2)) AS arvestatud,
                          sum((COALESCE(a1.soodustus, 0) * a1.kogus)::NUMERIC(14, 2))                            AS soodustus,
-                         D.rekvid::INTEGER                                                                      AS rekv_id
+                         D.rekvid::INTEGER                                                                      AS rekv_id,
+                         array_agg(d.id)                                                                        AS docs_ids
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -263,7 +272,8 @@ FROM (
                                  WHEN kas_umberarvestus THEN 0
                                  ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END) ::NUMERIC(14, 4) AS arvestatud,
                          sum(a1.soodustus)                                                                      AS soodustus,
-                         D.rekvid::INTEGER                                                                      AS rekv_id
+                         D.rekvid::INTEGER                                                                      AS rekv_id,
+                         array_agg(CASE WHEN a.jaak > 0 THEN d.id ELSE 0 END)                                   AS docs_ids
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -308,6 +318,7 @@ FROM (
                 sum(mahakantud)    AS mahakantud,
                 sum(tagastused)    AS tagastused,
                 sum(ulekanned)     AS ulekanned,
+                sum(inf3_jaak)     AS inf3_jaak,
                 qry.rekv_id,
                 qry.laps_id
          FROM (
@@ -320,6 +331,7 @@ FROM (
                          0         AS mahakantud,
                          0         AS tagastused,
                          0         AS ulekanned,
+                         0         AS inf3_jaak,
                          a.rekv_id AS rekv_id,
                          a.laps_id
                   FROM alg_saldo a
@@ -333,6 +345,7 @@ FROM (
                          0         AS mahakantud,
                          0         AS tagastused,
                          0         AS ulekanned,
+                         0         AS inf3_jaak,
                          l.rekv_id AS rekv_id,
                          l.laps_id
                   FROM laekumised l
@@ -346,6 +359,7 @@ FROM (
                          l.summa   AS mahakantud,
                          0         AS tagastused,
                          0         AS ulekanned,
+                         0         AS inf3_jaak,
                          l.rekv_id AS rekv_id,
                          l.laps_id
                   FROM mahakandmine l
@@ -359,6 +373,7 @@ FROM (
                          0                    AS mahakantud,
                          COALESCE(t.summa, 0) AS tagastused,
                          0                    AS ulekanned,
+                         0                    AS inf3_jaak,
                          t.rekv_id            AS rekv_id,
                          t.laps_id
                   FROM tagastused t
@@ -372,6 +387,7 @@ FROM (
                          0                    AS mahakantud,
                          0                    AS tagastused,
                          coalesce(t.summa, 0) AS ulekanned,
+                         0                    AS inf3_jaak,
                          t.rekv_id            AS rekv_id,
                          t.laps_id
                   FROM ulekanned t
@@ -385,9 +401,44 @@ FROM (
                          0               AS mahakantud,
                          0               AS tagastused,
                          0               AS ulekanned,
+                         0               AS inf3_jaak,
                          k.rekv_id       AS rekv_id,
                          k.laps_id
                   FROM arvestatud k
+                  UNION ALL
+                  -- inf3 jaak alg_saldost
+                  SELECT *
+                  FROM (
+                           WITH docs AS (
+                               SELECT lapsed.get_inf3_jaak(a.parentid, kpv_end) AS inf3_jaak,
+                                      a.rekvid                                  AS rekv_id,
+                                      l.parentid                                AS laps_id
+                               FROM docs.arv a
+                                        INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+                               WHERE a.parentid IN (
+                                   SELECT unnest(a.docs_ids) AS id
+                                   FROM alg_saldo a
+                                   UNION ALL
+                                   SELECT unnest(a.docs_ids) AS id
+                                   FROM arvestatud a
+                               )
+                                 AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                                 AND (a.jaak > 0
+                                   OR coalesce(a.tasud, current_date) >= kpv_end)
+                           )
+                           SELECT 0         AS alg_saldo,
+                                  0         AS arvestatud,
+                                  0         AS umberarvestus,
+                                  0         AS soodustus,
+                                  0         AS laekumised,
+                                  0         AS mahakantud,
+                                  0         AS tagastused,
+                                  0         AS ulekanned,
+                                  inf3_jaak AS inf3_jaak,
+                                  k.rekv_id AS rekv_id,
+                                  k.laps_id
+                           FROM docs k
+                       ) qry
               ) qry
          GROUP BY laps_id, rekv_id
      ) report
@@ -409,6 +460,19 @@ GRANT EXECUTE ON FUNCTION lapsed.kaive_aruanne(INTEGER, DATE, DATE) TO dbvaatlej
 
 /*
 select *
-FROM lapsed.kaive_aruanne(119, '2022-01-01', '2022-01-31') qry
-where viitenumber= '0990090706'
+FROM lapsed.kaive_aruanne_(80, '2024-01-01', '2024-03-31') qry
+where viitenumber= '0800147558'
+
+execution: 2 s 780 ms, fetching: 69 ms
+
+select *
+FROM lapsed.kaive_aruanne(80, '2024-01-01', '2024-03-31') qry
+where viitenumber= '0800147558'
+
+execution: 2 s 789 ms, fetching: 50 ms
+
+jaak;jaak_inf3
+254.69;191.23
+
+
 */

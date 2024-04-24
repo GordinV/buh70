@@ -3,9 +3,9 @@ module.exports = {
         gridConfiguration: [
             {id: "period", name: "Period", width: "1%", show: false, type: "date", interval: true},
             {id: "kulastatavus", name: "Külastatavus", width: "5%", show: true},
-            {id: "lapse_nimi", name: "Lapse nimi", width: "7%"},
+            {id: "lapse_nimi", name: "Lapse nimi", width: "6%"},
             {id: "lapse_isikukood", name: "Lapse IK", width: "0%", show: false},
-            {id: "viitenumber", name: "Viitenumber", width: "7%", show: true},
+            {id: "viitenumber", name: "Viitenumber", width: "6%", show: true},
             {id: "alg_saldo", name: "Alg.saldo", width: "5%", type: "number", interval: true},
             {id: "arvestatud", name: "Arvestatud", width: "5%", type: "number", interval: true},
             {id: "soodustus", name: "Soodustus", width: "5%", type: "number", interval: true},
@@ -17,9 +17,24 @@ module.exports = {
             {id: "mahakantud", name: "Mahakantud", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Jääk", width: "5%", type: "number", show: false},
-            {id: "asutuste_count", name: "Asutuste arv(jääk<>0) ", width: "5%", type: "number", show: false, interval: true},
-            {id: "lasteaed_count", name: "Lasteaede arv(jääk<>0) ", width: "5%", type: "number", show: false, interval: true},
-            {id: "asutus", name: "Asutus", width: "8%"},
+            {id: "jaak_inf3", name: "s.h.INF3", width: "5%", type: "number", show: true, interval: true},
+            {
+                id: "asutuste_count",
+                name: "Asutuste arv(jääk<>0) ",
+                width: "4%",
+                type: "number",
+                show: false,
+                interval: true
+            },
+            {
+                id: "lasteaed_count",
+                name: "Lasteaede arv(jääk<>0) ",
+                width: "4%",
+                type: "number",
+                show: false,
+                interval: true
+            },
+            {id: "asutus", name: "Asutus", width: "7%"},
         ],
         sqlString: `with lasteaeds as (
                         select id, coalesce((properties->>'liik')::TEXT,'MUUD') as liik from ou.rekv where parentid = 119 
@@ -41,6 +56,7 @@ module.exports = {
                            -1 * sum(qryReport.tagastused) OVER (PARTITION BY rekvid)          AS tagastused_group,
                            -1 * sum(qryReport.ulekanned) OVER (PARTITION BY rekvid)          AS ulekanned_group,
                            sum(qryReport.jaak) OVER (PARTITION BY rekvid)                     AS jaak_group,
+                           sum(qryReport.jaak_inf3) OVER (PARTITION BY rekvid)                AS jaak_inf3_group,
                            count(*) OVER ()                                                   AS rows_total,
                            sum(lasteaed_count) OVER (PARTITION BY lapse_isikukood)            AS lasteaed_count,
                            sum(asutuste_count) OVER (PARTITION BY lapse_isikukood)            AS asutuste_count,
@@ -62,6 +78,7 @@ module.exports = {
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0) +
                             coalesce(umberarvestus, 0))::NUMERIC(14, 2)                       AS arv_kokku,
                            coalesce(jaak, 0)::NUMERIC(14, 2)                                  AS jaak,
+                           coalesce(jaak_inf3, 0)::NUMERIC(14, 2)                             AS jaak_inf3,
                            rekvid,
                            $2                                                                 AS user_id,
                            r.nimetus::TEXT                                                    AS asutus,
