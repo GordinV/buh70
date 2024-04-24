@@ -78,16 +78,20 @@ module.exports = async (req, res) => {
                     result: saved,
                     data: returnData
                 };
+                return res.status(200).send(returnObject);
+
             } else {
                 returnObject = {
                     error_message: response.error_message,
                     result: response.result,
                     data: []
                 };
+                return res.status(500).send(returnObject);
+
             }
 
         }
-        return res.status(200).send(returnObject);
+        return res.status(500).send(returnObject);
 
     } catch (e) {
         console.error(e);
