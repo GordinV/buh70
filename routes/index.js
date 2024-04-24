@@ -23,6 +23,7 @@ module.exports = function (app) {
 
 // virasoft
     app.post('/virasoft/import/', require('./virasoft')); //checkAuth
+    app.post('/virosoft/import/', require('./virasoft')); //checkAuth
 
     // same as main
     app.get('/', require('./login').get);
