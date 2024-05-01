@@ -44,7 +44,7 @@ block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
-        h1 AASTA NÄITAJAD
+        h1 AASTA NÄITAJAD (ilma töötajata)
         h2 Vanematetasu
         each parameter in filter
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
