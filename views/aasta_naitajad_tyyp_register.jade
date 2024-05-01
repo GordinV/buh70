@@ -40,6 +40,19 @@ block content
             width: 70%;
         }
 
+        .sub_total {
+            font-size: medium;
+            font-weight: bold;
+        }
+
+        .total {
+            font-size: medium;
+            font-weight: bold;
+        }
+
+        .column {
+            width: 7%;
+        }
 
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
@@ -50,59 +63,125 @@ block content
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 
         each asutus in data
-            p #{Object.keys(asutus)[0]}
+            -var Asutus = Object.keys(asutus)[0];
+            -var jaanuar_asutus = 0;
+            -var veebruar_asutus = 0;
+            -var marts_asutus = 0;
+            -var apriil_asutus = 0;
+            -var mai_asutus = 0;
+            -var juuni_asutus = 0;
+            -var juuli_asutus = 0;
+            -var august_asutus = 0;
+            -var september_asutus = 0;
+            -var oktoober_asutus = 0;
+            -var november_asutus = 0;
+            -var detsember_asutus = 0;
 
-            table.table.table-hover.grid_data
-                thead.grid_head
-                    tr
-                        th Liik
-                        th Tüüp
-                        th Koolituse nimetus
-                        th Jaanuar
-                        th Veebruar
-                        th Märts
-                        th Apriil
-                        th Mai
-                        th Juuni
-                        th Juuli
-                        th August
-                        th September
-                        th Oktoober
-                        th November
-                        th desember
+            p.total #{Asutus}
+            each liik in asutus[Asutus]
+                -var Liik = Object.keys(liik)[0];
+                p.sub_total #{Liik}
 
-                tbody
-                    each rea in asutus[Object.keys(asutus)[0]]
+                table.table.table-hover.grid_data
+                    thead.grid_head
                         tr
-                            td=rea.liik
-                            td=rea.tyyp
-                            td=rea.tyyp_nimi
-                            td=rea.jaanuar
-                            td=rea.veebruar
-                            td=rea.marts
-                            td=rea.apriil
-                            td=rea.mai
-                            td=rea.juuni
-                            td=rea.juuli
-                            td=rea.august
-                            td=rea.september
-                            td=rea.oktoober
-                            td=rea.november
-                            td=rea.detsember
-                tr.group
-                    td
-                    td
-                    td.group='Kokku:'
-                    td.group=asutus[Object.keys(asutus)[0]][0].jaanuar_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].veebruar_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].marts_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].apriil_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].mai_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].juuni_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].juuli_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].august_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].september_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].oktoober_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].november_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].detsember_group
-            p Read kokku #{data.length}
+                            th Tüüp
+                            th Koolituse nimetus
+                            th.column Jaanuar
+                            th.column Veebruar
+                            th.column Märts
+                            th.column Apriil
+                            th.column Mai
+                            th.column Juuni
+                            th.column Juuli
+                            th.column August
+                            th.column September
+                            th.column Oktoober
+                            th.column November
+                            th.column detsember
+
+                    tbody
+                        -var jaanuar = 0;
+                        -var veebruar = 0;
+                        -var marts = 0;
+                        -var apriil = 0;
+                        -var mai = 0;
+                        -var juuni = 0;
+                        -var juuli = 0;
+                        -var august = 0;
+                        -var september = 0;
+                        -var oktoober = 0;
+                        -var november = 0;
+                        -var detsember = 0;
+
+                        each rea in liik[Liik]
+                            -jaanuar += Number(rea.jaanuar);
+                            -veebruar += Number(rea.veebruar);
+                            -marts += Number(rea.marts);
+                            -apriil += Number(rea.apriil);
+                            -mai += Number(rea.mai);
+                            -juuni += Number(rea.juuni);
+                            -juuli += Number(rea.juuli);
+                            -august += Number(rea.august);
+                            -september += Number(rea.september);
+                            -november += Number(rea.november);
+                            -detsember += Number(rea.detsember);
+                            tr
+                                td=rea.tyyp
+                                td=rea.tyyp_nimi
+                                td(align='right')=rea.jaanuar
+                                td(align='right')=rea.veebruar
+                                td(align='right')=rea.marts
+                                td(align='right')=rea.apriil
+                                td(align='right')=rea.mai
+                                td(align='right')=rea.juuni
+                                td(align='right')=rea.juuli
+                                td(align='right')=rea.august
+                                td(align='right')=rea.september
+                                td(align='right')=rea.oktoober
+                                td(align='right')=rea.november
+                                td(align='right')=rea.detsember
+                        tr.group.sub_total
+                            td.grouo.sub_total='Read ' + liik[Liik].length
+                            td.group.sub_total=Liik + ' kokku:'
+                            td.group.sub_total(align='right')=Number(jaanuar)
+                            td.group.sub_total(align='right')=Number(veebruar)
+                            td.group.sub_total(align='right')=Number(marts)
+                            td.group.sub_total(align='right')=Number(apriil)
+                            td.group.sub_total(align='right')=Number(mai)
+                            td.group.sub_total(align='right')=Number(juuni)
+                            td.group.sub_total(align='right')=Number(juuli)
+                            td.group.sub_total(align='right')=Number(august)
+                            td.group.sub_total(align='right')=Number(september)
+                            td.group.sub_total(align='right')=Number(oktoober)
+                            td.group.sub_total(align='right')=Number(november)
+                            td.group.sub_total(align='right')=Number(detsember)
+                        -jaanuar_asutus += Number(jaanuar);
+                        -veebruar_asutus += Number(veebruar);
+                        -marts_asutus += Number(marts);
+                        -apriil_asutus += Number(apriil);
+                        -mai_asutus += Number(mai);
+                        -juuni_asutus += Number(juuni);
+                        -juuli_asutus += Number(juuli);
+                        -august_asutus += Number(august);
+                        -september_asutus += Number(september);
+                        -oktoober_asutus += Number(oktoober);
+                        -november_asutus += Number(november);
+                        -detsember_asutus += Number(detsember);
+            table.table.table-hover.grid_data
+                tr
+                    td.group
+                    td.group='Kokku ' + Asutus
+                    td.group.sub_total.column(align='right',width='100px')=Number(jaanuar_asutus)
+                    td.group.sub_total.column(align='right')=Number(veebruar_asutus)
+                    td.group.sub_total.column(align='right')=Number(marts_asutus)
+                    td.group.sub_total.column(align='right')=Number(apriil_asutus)
+                    td.group.sub_total.column(align='right')=Number(mai_asutus)
+                    td.group.sub_total.column(align='right')=Number(juuni_asutus)
+                    td.group.sub_total.column(align='right')=Number(juuli_asutus)
+                    td.group.sub_total.column(align='right')=Number(august_asutus)
+                    td.group.sub_total.column(align='right')=Number(september_asutus)
+                    td.group.sub_total.column(align='right')=Number(oktoober_asutus)
+                    td.group.sub_total.column(align='right')=Number(november_asutus)
+                    td.group.sub_total.column(align='right')=Number(detsember_asutus)
+

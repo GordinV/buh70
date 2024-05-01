@@ -432,6 +432,19 @@ const Arv = {
             alias: 'validate_asutus',
             data: []
         },
+        {
+            sql: `SELECT parentid as id, jaak, kpv 
+                  FROM docs.arv a
+                  WHERE a.asutusid = $3::INTEGER
+                    AND number = $2::TEXT
+                    AND rekvid = $1::INTEGER
+                  ORDER BY jaak DESC
+                  LIMIT 1`,
+            query: null,
+            multiple: false,
+            alias: 'locate_arve_by_number',
+            data: []
+        },
 
 
     ],

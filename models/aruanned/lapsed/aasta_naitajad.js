@@ -18,7 +18,6 @@ module.exports = {
                 show: false,
                 toolTip: 'LASTEAJARÜHM,AED,SPORT,HUVIRING'
             },
-            {id: "liik", name: "Liik", width: "10%"},
             {id: "asutus", name: "Asutus", width: "15%"},
             {id: "jaanuar", name: "Jaanuar", width: "5%", type: "integer", filter: "not"},
             {id: "veebruar", name: "Veebruar", width: "5%", type: "integer", filter: "not"},
@@ -37,7 +36,6 @@ module.exports = {
                         select 
                            d.rekvid,
                            d.period,
-                           d.liik,
                            sum(d.lapsed_kokku)                         AS lapsed_kokku,
                            sum(d.jaanuar)                              AS jaanuar,
                            sum(d.veebruar)                             AS veebruar,
@@ -54,7 +52,7 @@ module.exports = {
                            r.nimetus::TEXT                             AS asutus
                     FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT, 1) d
                              INNER JOIN ou.rekv r ON r.id = d.rekvid
-                    GROUP BY d.rekvid, d.period, d.liik, r.nimetus                        
+                    GROUP BY d.rekvid, d.period, r.nimetus                        
                         )
                         
                     SELECT row_number() OVER ()                        AS row_id,
@@ -74,7 +72,6 @@ module.exports = {
                            $5::TEXT                                    AS koolituse_tyyp,
                            d.rekvid,
                            d.period,
-                           d.liik,
                            (d.lapsed_kokku)                         AS lapsed_kokku,
                            (d.jaanuar)                              AS jaanuar,
                            (d.veebruar)                             AS veebruar,
@@ -91,7 +88,7 @@ module.exports = {
                            d.asutus::TEXT                           AS asutus,
                            $2                                       AS user_id
                     FROM report d
-                    ORDER BY d.asutus, d.liik
+                    ORDER BY d.asutus
         `,     // $1 - rekvid, $2 - user_id, $3 - seisuga, $4 - grupp_liik, $5 - koolituse_tyyp
         params: ['rekvid', 'userid', 'period', 'grupp_liik', 'koolituse_tyyp'],
         min_params: 3,

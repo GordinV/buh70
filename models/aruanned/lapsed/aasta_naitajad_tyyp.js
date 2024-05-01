@@ -38,7 +38,8 @@ module.exports = {
             {id: "november", name: "November", width: "5%", type: "integer", filter: "not"},
             {id: "detsember", name: "Detsember", width: "5%", type: "integer", filter: "not"},
         ],
-        sqlString: `SELECT row_number() OVER ()                        AS row_id,
+        sqlString: `WITH report AS (
+                        SELECT row_number() OVER ()                        AS row_id,
                            sum(d.jaanuar) OVER (PARTITION BY rekvid)   AS jaanuar_group,
                            sum(d.veebruar) OVER (PARTITION BY rekvid)  AS veebruar_group,
                            sum(d.marts) OVER (PARTITION BY rekvid)     AS marts_group,
@@ -51,6 +52,18 @@ module.exports = {
                            sum(d.oktoober) OVER (PARTITION BY rekvid)  AS oktoober_group,
                            sum(d.november) OVER (PARTITION BY rekvid)  AS november_group,
                            sum(d.detsember) OVER (PARTITION BY rekvid) AS detsember_group,
+                           sum(d.jaanuar) OVER ()                      AS jaanuar_kokku,
+                           sum(d.veebruar) OVER ()                     AS veebruar_kokku,
+                           sum(d.marts) OVER ()                        AS marts_kokku,
+                           sum(d.apriil) OVER ()                       AS apriil_kokku,
+                           sum(d.mai) OVER ()                          AS mai_kokku,
+                           sum(d.juuni) OVER ()                        AS juuni_kokku,
+                           sum(d.juuli) OVER ()                        AS juuli_kokku,
+                           sum(d.august) OVER ()                       AS august_kokku,
+                           sum(d.september) OVER ()                    AS september_kokku,
+                           sum(d.oktoober) OVER ()                     AS oktoober_kokku,
+                           sum(d.november) OVER ()                     AS november_kokku,
+                           sum(d.detsember) OVER ()                    AS detsember_kokku,
                            $4::TEXT                                    AS grupp_liik,
                            $5::TEXT                                    AS koolituse_tyyp,
                            d.rekvid,
@@ -73,10 +86,64 @@ module.exports = {
                            d.detsember,
                            r.nimetus::TEXT                             AS asutus,
                            $2                                          AS user_id
-                    FROM lapsed.aasta_naitajad($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT, 0) d
+                    FROM lapsed.aasta_naitajad_liik($1::INTEGER, $3::DATE, $4::TEXT, $5::TEXT, 0) d
                              INNER JOIN ou.rekv r ON r.id = d.rekvid
-                    ORDER BY r.nimetus, d.liik, d.tyyp
-        `,     // $1 - rekvid, $2 - user_id, $3 - seisuga, $4 - grupp_liik, $5 - koolituse_tyyp
+                    ),
+                 liik_total AS (
+                     SELECT sum(d.jaanuar) FILTER (WHERE liik = 'Põhiõpe')   AS jaanuar_kokku_pohi,
+                            sum(d.veebruar) FILTER (WHERE liik = 'Põhiõpe')  AS veebruar_kokku_pohi,
+                            sum(d.marts) FILTER (WHERE liik = 'Põhiõpe')     AS marts_kokku_pohi,
+                            sum(d.apriil) FILTER (WHERE liik = 'Põhiõpe')    AS apriil_kokku_pohi,
+                            sum(d.mai) FILTER (WHERE liik = 'Põhiõpe')       AS mai_kokku_pohi,
+                            sum(d.juuni) FILTER (WHERE liik = 'Põhiõpe')     AS juuni_kokku_pohi,
+                            sum(d.juuli) FILTER (WHERE liik = 'Põhiõpe')     AS juuli_kokku_pohi,
+                            sum(d.august) FILTER (WHERE liik = 'Põhiõpe')    AS august_kokku_pohi,
+                            sum(d.september) FILTER (WHERE liik = 'Põhiõpe') AS september_kokku_pohi,
+                            sum(d.oktoober) FILTER (WHERE liik = 'Põhiõpe')  AS oktoober_kokku_pohi,
+                            sum(d.november) FILTER (WHERE liik = 'Põhiõpe')  AS november_kokku_pohi,
+                            sum(d.detsember) FILTER (WHERE liik = 'Põhiõpe') AS detsember_kokku_pohi,
+                            sum(d.jaanuar) FILTER (WHERE liik = 'Vabaõpe')   AS jaanuar_kokku_vaba,
+                            sum(d.veebruar) FILTER (WHERE liik = 'Vabaõpe')  AS veebruar_kokku_vaba,
+                            sum(d.marts) FILTER (WHERE liik = 'Vabaõpe')     AS marts_kokku_vaba,
+                            sum(d.apriil) FILTER (WHERE liik = 'Vabaõpe')    AS apriil_kokku_vaba,
+                            sum(d.mai) FILTER (WHERE liik = 'Vabaõpe')       AS mai_kokku_vaba,
+                            sum(d.juuni) FILTER (WHERE liik = 'Vabaõpe')     AS juuni_kokku_vaba,
+                            sum(d.juuli) FILTER (WHERE liik = 'Vabaõpe')     AS juuli_kokku_vaba,
+                            sum(d.august) FILTER (WHERE liik = 'Vabaõpe')    AS august_kokku_vaba,
+                            sum(d.september) FILTER (WHERE liik = 'Vabaõpe') AS september_kokku_vaba,
+                            sum(d.oktoober) FILTER (WHERE liik = 'Vabaõpe')  AS oktoober_kokku_vaba,
+                            sum(d.november) FILTER (WHERE liik = 'Vabaõpe')  AS november_kokku_vaba,
+                            sum(d.detsember) FILTER (WHERE liik = 'Vabaõpe') AS detsember_kokku_vaba
+                     FROM report d
+                 )
+            SELECT r.*,
+                   l.jaanuar_kokku_pohi   AS jaanuar_liik_pohi,
+                   l.veebruar_kokku_pohi  AS veebruar_liik_pohi,
+                   l.marts_kokku_pohi     AS marts_liik_pohi,
+                   l.apriil_kokku_pohi    AS apriil_liik_pohi,
+                   l.mai_kokku_pohi       AS mai_liik_pohi,
+                   l.juuni_kokku_pohi     AS juuni_liik_pohi,
+                   l.juuli_kokku_pohi     AS juuli_liik_pohi,
+                   l.august_kokku_pohi    AS august_liik_pohi,
+                   l.september_kokku_pohi AS september_liik_pohi,
+                   l.oktoober_kokku_pohi  AS oktoober_liik_pohi,
+                   l.november_kokku_pohi  AS november_liik_pohi,
+                   l.detsember_kokku_pohi AS detsember_liik_pohi,
+                   l.jaanuar_kokku_vaba   AS jaanuar_liik_vaba,
+                   l.veebruar_kokku_vaba  AS veebruar_liik_vaba,
+                   l.marts_kokku_vaba     AS marts_liik_vaba,
+                   l.apriil_kokku_vaba as apriil_liik_vaba,
+                   l.mai_kokku_vaba       AS mai_liik_vaba,
+                   l.juuni_kokku_vaba     AS juuni_liik_vaba,
+                   l.juuli_kokku_vaba     AS juuli_liik_vaba,
+                   l.august_kokku_vaba    AS august_liik_vaba,
+                   l.september_kokku_vaba AS september_liik_vaba,
+                   l.oktoober_kokku_vaba  AS oktoober_liik_vaba,
+                   l.november_kokku_vaba  AS november_liik_vaba,
+                   l.detsember_kokku_vaba AS detsember_liik_vaba
+            FROM report r,
+                 liik_total l
+            ORDER BY r.asutus, r.liik, r.tyyp        `,     // $1 - rekvid, $2 - user_id, $3 - seisuga, $4 - grupp_liik, $5 - koolituse_tyyp
         params: ['rekvid', 'userid', 'period', 'grupp_liik', 'tyyp'],
         min_params: 3,
         alias: 'aasta_naitajad_report',
@@ -86,7 +153,7 @@ module.exports = {
         {
             view: 'aasta_naitajad_tyyp_register',
             params: 'sqlWhere',
-            group: 'asutus'
+            group: ['asutus','liik'],
         },
     ],
 

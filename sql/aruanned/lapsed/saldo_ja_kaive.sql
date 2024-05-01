@@ -2,8 +2,8 @@
 DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaive(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
-                                                 kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
-                                                 kpv_end DATE DEFAULT current_date)
+                                                  kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
+                                                  kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         id              BIGINT,
         period          DATE,
@@ -49,38 +49,24 @@ WITH rekv_ids AS (
                 rekvid,
                 yksus,
                 min(alg_kpv)            AS alg_kpv,
-                max(lopp_kpv)           AS lopp_kpv,
-                CASE
-                    WHEN
-                            (('[' || format_date(min(qry.alg_kpv)::TEXT)::TEXT || ',' ||
-                              format_date((max(qry.lopp_kpv)::DATE +
-                                           CASE
-                                               WHEN min(qry.alg_kpv) = max(qry.lopp_kpv) THEN INTERVAL '1 day'
-                                               ELSE INTERVAL '0 day' END)::TEXT)::TEXT ||
-                              ')'))::DATERANGE @> range_parameters.range THEN 'Jah'
-                    ELSE 'Ei' END::TEXT AS kulastavus_,
-                CASE
-                    WHEN max(lopp_kpv) >= kpv_end OR min(alg_kpv) < kpv_start THEN 'Jah'
-                    ELSE 'Ei' END::TEXT AS kulastavus
+                max(lopp_kpv)           AS lopp_kpv
+
          FROM (
                   SELECT parentid,
                          rekvid,
                          lk.properties ->> 'yksus'                                                  AS yksus,
                          coalesce(
-                                 (lk.properties ->> 'alg_kpv')::DATE,
+                                 CASE
+                                     WHEN (lk.properties ->> 'alg_kpv')::DATE > (lk.properties ->> 'lopp_kpv')::DATE
+                                         THEN (lk.properties ->> 'lopp_kpv')::DATE
+                                     ELSE (lk.properties ->> 'alg_kpv')::DATE END::DATE,
                                  make_date(date_part('year', current_date)::INTEGER, 1, 1))::DATE   AS alg_kpv,
                          coalesce(
-                                 (lk.properties ->> 'lopp_kpv')::DATE,
-                                 make_date(date_part('year', current_date)::INTEGER, 12, 31))::DATE AS lopp_kpv,
-                         ('[' || format_date(coalesce((lk.properties ->> 'alg_kpv')::TEXT,
-                                                      make_date(year(current_date), 01, 01)::TEXT))::TEXT || ',' ||
-                          (format_date(((lk.properties ->> 'lopp_kpv')::DATE::DATE + CASE
-                                                                                         WHEN (lk.properties ->> 'alg_kpv')::DATE =
-                                                                                              (lk.properties ->> 'lopp_kpv')::DATE
-                                                                                             THEN INTERVAL '1 day'
-                                                                                         ELSE INTERVAL '0 day' END)::TEXT)::TEXT) ||
-                          ')') ::DATERANGE                                                          AS lk_range
-
+                                 CASE
+                                     WHEN (lk.properties ->> 'alg_kpv')::DATE > (lk.properties ->> 'lopp_kpv')::DATE
+                                         THEN (lk.properties ->> 'alg_kpv')::DATE
+                                     ELSE (lk.properties ->> 'lopp_kpv')::DATE END,
+                                 make_date(date_part('year', current_date)::INTEGER, 12, 31))::DATE AS lopp_kpv
                   FROM lapsed.lapse_kaart lk
                   WHERE lk.staatus <> 3
                     AND lk.rekvid IN (SELECT rekv_id FROM rekv_ids)
@@ -497,6 +483,11 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbkasuta
 GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO arvestaja;
 GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatleja;
+
+
+SELECT 1,
+       *
+FROM lapsed.saldo_ja_kaive(119, '2023-01-01', '2023-12-31') qry
 
 
 /*

@@ -3,6 +3,7 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
+const InputText = require('../../components/input-text/input-text.jsx');
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./styles');
@@ -27,7 +28,7 @@ class Documents extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
 
         this.state = {
-            jaanuar: 0,
+            jaanuar: '',
             veebruar: 0,
             marts: 0,
             apriil: 0,
@@ -61,77 +62,77 @@ class Documents extends React.PureComponent {
                              ref="input-read"
                              value={Number(this.state.read) || 0}
                              disabled={true}/>
-                <InputNumber title="Jaanuar kokku:"
+                <InputText title="Jaanuar kokku:"
                              name='jaanuar_kokku'
                              style={styles.total}
                              ref="input-jaanuar"
-                             value={Number(this.state.jaanuar).toFixed(2) || 0}
+                             value={this.state.jaanuar || 0}
                              disabled={true}/>
-                <InputNumber title="Veebruar kokku:"
+                <InputText title="Veebruar kokku:"
                              name='veebruar_kokku'
                              style={styles.total}
                              ref="input-veebruar"
-                             value={Number(this.state.veebruar).toFixed(2) || 0}
+                             value={this.state.veebruar || 0}
                              disabled={true}/>
-                <InputNumber title="Märts kokku:"
+                <InputText title="Märts kokku:"
                              name='marts_kokku'
                              style={styles.total}
                              ref="input-marts"
-                             value={Number(this.state.marts).toFixed(2) || 0}
+                             value={this.state.marts || 0}
                              disabled={true}/>
-                <InputNumber title="Apriil kokku:"
+                <InputText title="Apriil kokku:"
                              name='apriil_kokku'
                              style={styles.total}
                              ref="input-apriil"
-                             value={Number(this.state.apriil).toFixed(2) || 0}
+                             value={this.state.apriil || 0}
                              disabled={true}/>
-                <InputNumber title="Mai kokku:"
+                <InputText title="Mai kokku:"
                              name='mai_kokku'
                              style={styles.total}
                              ref="input-mai"
-                             value={Number(this.state.mai).toFixed(2) || 0}
+                             value={this.state.mai || 0}
                              disabled={true}/>
-                <InputNumber title="Juuni kokku:"
+                <InputText title="Juuni kokku:"
                              name='juuni_kokku'
                              style={styles.total}
                              ref="input-juuni"
-                             value={Number(this.state.juuni).toFixed(2) || 0}
+                             value={this.state.juuni || 0}
                              disabled={true}/>
-                <InputNumber title="Juuli kokku:"
+                <InputText title="Juuli kokku:"
                              name='juuli_kokku'
                              style={styles.total}
                              ref="input-juuli"
-                             value={Number(this.state.juuli).toFixed(2) || 0}
+                             value={this.state.juuli || 0}
                              disabled={true}/>
-                <InputNumber title="August kokku:"
+                <InputText title="August kokku:"
                              name='august_kokku'
                              style={styles.total}
                              ref="input-august"
-                             value={Number(this.state.august).toFixed(2) || 0}
+                             value={this.state.august || 0}
                              disabled={true}/>
-                <InputNumber title="September kokku:"
+                <InputText title="September kokku:"
                              name='september_kokku'
                              style={styles.total}
                              ref="input-september"
-                             value={Number(this.state.september).toFixed(2) || 0}
+                             value={this.state.september || 0}
                              disabled={true}/>
-                <InputNumber title="Oktoober kokku:"
+                <InputText title="Oktoober kokku:"
                              name='oktoober_kokku'
                              style={styles.total}
                              ref="input-oktoober"
-                             value={Number(this.state.oktoober).toFixed(2) || 0}
+                             value={this.state.oktoober || 0}
                              disabled={true}/>
-                <InputNumber title="November kokku:"
+                <InputText title="November kokku:"
                              name='november_kokku'
                              style={styles.total}
                              ref="input-november"
-                             value={Number(this.state.november).toFixed(2) || 0}
+                             value={this.state.november || 0}
                              disabled={true}/>
-                <InputNumber title="Detsember kokku:"
+                <InputText title="Detsember kokku:"
                              name='detsember_kokku'
                              style={styles.total}
                              ref="input-detsember"
-                             value={Number(this.state.detsember).toFixed(2) || 0}
+                             value={this.state.detsember || 0}
                              disabled={true}/>
 
             </div>
@@ -139,33 +140,111 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        let jaanuar = self.gridData ? getSum (self.gridData,'jaanuar') : 0;
-        let veebruar = self.gridData ? getSum (self.gridData,'veebruar') : 0;
-        let marts = self.gridData ? getSum (self.gridData,'marts') : 0;
-        let apriil = self.gridData ? getSum (self.gridData,'apriil') : 0;
-        let mai = self.gridData ? getSum (self.gridData,'mai') : 0;
-        let juuni = self.gridData ? getSum (self.gridData,'juuni') : 0;
-        let juuli = self.gridData ? getSum (self.gridData,'juuli') : 0;
-        let august = self.gridData ? getSum (self.gridData,'august') : 0;
-        let september = self.gridData ? getSum (self.gridData,'september') : 0;
-        let oktoober = self.gridData ? getSum (self.gridData,'oktoober') : 0;
-        let november = self.gridData ? getSum (self.gridData,'november') : 0;
-        let detsember = self.gridData ? getSum (self.gridData,'detsember') : 0;
+/*
+        //let jaanuar = self.gridData ? getSum (self.gridData,'jaanuar') : '';
+        let jaanuar = self.gridData ? `${self.gridData[0].jaanuar_kokku} s.h. ( ${self.gridData[0].liik}: ${self.gridData[0].jaanuar_liik}`: '';
+*/
+        let jaanuar = 0;
+        let veebruar = 0;
+        let marts =  0;
+        let apriil =  0;
+        let mai =  0;
+        let juuni =0;
+        let juuli = 0;
+        let august =0;
+        let september =  0;
+        let oktoober = 0;
+        let november = 0;
+        let detsember = 0;
 
-        if (self.gridData) {
+        let jaanuar_pohi = 0;
+        let veebruar_pohi = 0;
+        let marts_pohi =  0;
+        let apriil_pohi =  0;
+        let mai_pohi =  0;
+        let juuni_pohi =0;
+        let juuli_pohi = 0;
+        let august_pohi =0;
+        let september_pohi =  0;
+        let oktoober_pohi = 0;
+        let november_pohi = 0;
+        let detsember_pohi = 0;
+
+        let jaanuar_vaba = 0;
+        let veebruar_vaba = 0;
+        let marts_vaba =  0;
+        let apriil_vaba =  0;
+        let mai_vaba =  0;
+        let juuni_vaba =0;
+        let juuli_vaba = 0;
+        let august_vaba =0;
+        let september_vaba =  0;
+        let oktoober_vaba = 0;
+        let november_vaba = 0;
+        let detsember_vaba = 0;
+
+        if (self.gridData && self.gridData.length) {
+            let data = self.gridData[0];
+            self.gridData.forEach(row=> {
+                jaanuar+=row.jaanuar;
+                veebruar+=row.veebruar;
+                marts += row.marts;
+                apriil +=row.apriil;
+                mai += row.mai;
+                juuni += row.juuni;
+                juuli += row.juuli;
+                august += row.august;
+                september += row.september;
+                oktoober += row.oktoober;
+                november += row.november;
+                detsember += row.detsember;
+
+                if (row.liik === 'Põhiõpe') {
+                    jaanuar_pohi +=row.jaanuar;
+                    veebruar_pohi +=row.veebruar;
+                    marts_pohi += row.marts;
+                    apriil_pohi +=row.apriil;
+                    mai_pohi += row.mai;
+                    juuni_pohi += row.juuni;
+                    juuli_pohi += row.juuli;
+                    august_pohi += row.august;
+                    september_pohi += row.september;
+                    oktoober_pohi += row.oktoober;
+                    november_pohi += row.november;
+                    detsember_pohi += row.detsember;
+                }
+
+                if (row.liik === 'Vabaõpe') {
+                    jaanuar_vaba+=row.jaanuar;
+                    veebruar_vaba+=row.veebruar;
+                    marts_vaba += row.marts;
+                    apriil_vaba +=row.apriil;
+                    mai_vaba += row.mai;
+                    juuni_vaba += row.juuni;
+                    juuli_vaba += row.juuli;
+                    juuli_vaba += row.august;
+                    september_vaba += row.september;
+                    oktoober_vaba += row.oktoober;
+                    november_vaba += row.november;
+                    detsember_vaba += row.detsember;
+
+                }
+
+            });
+
             this.setState({
-                jaanuar: jaanuar,
-                veebruar: veebruar,
-                marts: marts,
-                apriil: apriil,
-                mai: mai,
-                juuni:juuni,
-                juuli: juuli,
-                august: august,
-                september: september,
-                oktoober: oktoober,
-                november: november,
-                detsember: detsember,
+                jaanuar: `${jaanuar} (s.h. Põhiõpe:${jaanuar_pohi} Vabaõpe:${jaanuar_vaba})`,
+                veebruar: `${veebruar} (s.h. Põhiõpe:${veebruar_pohi} Vabaõpe:${veebruar_vaba})`,
+                marts: `${marts} (s.h. Põhiõpe:${marts_pohi} Vabaõpe:${marts_vaba})`,
+                apriil: `${apriil} (s.h. Põhiõpe:${apriil_pohi} Vabaõpe:${apriil_vaba})`,
+                mai: `${mai} (s.h. Põhiõpe:${mai_pohi} Vabaõpe:${mai_vaba})`,
+                juuni:`${juuni} (s.h. Põhiõpe:${juuni_pohi} Vabaõpe:${juuni_vaba})`,
+                juuli: `${juuli} (s.h. Põhiõpe:${juuli_pohi} Vabaõpe:${juuli_vaba})`,
+                august: `${august} (s.h. Põhiõpe:${august_pohi} Vabaõpe:${juuli_vaba})`,
+                september: `${september} (s.h. Põhiõpe:${september_pohi} Vabaõpe:${september_vaba})`,
+                oktoober: `${oktoober} (s.h. Põhiõpe:${oktoober_pohi} Vabaõpe:${oktoober_vaba})`,
+                november: `${november} (s.h. Põhiõpe:${november_pohi} Vabaõpe:${november_vaba})`,
+                detsember: `${detsember} (s.h. Põhiõpe:${detsember_pohi} Vabaõpe:${detsember_vaba})`,
                 read: self.gridData.length});
         }
 

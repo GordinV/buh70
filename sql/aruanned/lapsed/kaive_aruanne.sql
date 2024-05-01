@@ -460,7 +460,7 @@ GRANT EXECUTE ON FUNCTION lapsed.kaive_aruanne(INTEGER, DATE, DATE) TO dbvaatlej
 
 /*
 select *
-FROM lapsed.kaive_aruanne_(80, '2024-01-01', '2024-03-31') qry
+FROM lapsed.kaive_aruanne(80, '2024-03-01', '2024-03-31') qry
 where viitenumber= '0800147558'
 
 execution: 2 s 780 ms, fetching: 69 ms
