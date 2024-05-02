@@ -25,7 +25,7 @@ BEGIN
     THEN
         error_code = 6;
         error_message = 'Viga, Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
-        raise notice 'error_message %', error_message;
+        RAISE NOTICE 'error_message %', error_message;
         result = 0;
         RETURN;
 
@@ -46,6 +46,7 @@ BEGIN
 
     -- сальдо платежа
     PERFORM docs.sp_update_mk_jaak(v_doc.doc_tasu_id);
+    PERFORM docs.sp_update_arv_jaak(v_doc.doc_tasu_id); -- kreedit arve
 
     result = 1;
 

@@ -531,6 +531,17 @@ module.exports = {
         alias: 'SaamaYksuseTeenused'
     },
 
+    ulekanneVolg: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM docs.ulekanne_volg($2::INTEGER, (SELECT to_jsonb(row.*)
+                                                        FROM (SELECT $1       AS laps_id,
+                                                                     $3::DATE AS kpv,
+                                                                     $4::TEXT AS viitenumber
+                                                             ) row))`, //$1 - docs.doc.id, $2 - userId, $3 - kpv
+        type: "sql",
+        alias: 'ulekanneVolg'
+    },
+
     bpm: [
         {
             name: 'Arvesta taabel (kuni 1000)',
@@ -563,6 +574,20 @@ module.exports = {
             hideDate: false,
             showYksus: true,
             action: 'SaamaYksuseTeenused',
+        },
+        {
+            name: 'Ülekanne võlg',
+            task: 'ulekanneVolg',
+            type: 'manual',
+            hideDate: false,
+            showYksus: false,
+            action: 'ulekanneVolg',
+            showDate: true,
+            titleDate: 'Seisuga:',
+            showViitenumber: true,
+            titleViitenumber: 'Viitenumber:',
+            actualStep: false,
+
         }
 
 

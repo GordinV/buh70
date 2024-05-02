@@ -357,7 +357,9 @@ BEGIN
                             coalesce(json_record.tp, ''),
                             coalesce(json_record.proj, ''),
                             coalesce(json_record.muud, ''),
-                            coalesce(json_record.km, ''),
+                            CASE
+                                WHEN doc_kpv >= '2024-01-01' AND coalesce(json_record.km, '') = '20' THEN '22'
+                                ELSE coalesce(json_record.km, '') END,
                             arv1_rea_json,
                             CASE
                                 WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
@@ -411,7 +413,10 @@ BEGIN
                         objekt     = json_record.objekt,
                         tp         = coalesce(json_record.tp, ''),
                         proj       = coalesce(json_record.proj, ''),
-                        kbm_maar   = coalesce(json_record.km, ''),
+                        kbm_maar   = CASE
+                                         WHEN doc_kpv >= '2024-01-01' AND coalesce(json_record.km, '') = '20' THEN '22'
+                                         ELSE coalesce(json_record.km, '') END,
+
                         muud       = json_record.muud,
                         soodus     = CASE
                                          WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
@@ -575,7 +580,7 @@ BEGIN
     END IF;
 
     RETURN doc_id;
-END;
+END ;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE

@@ -201,7 +201,7 @@ BEGIN
                     'doc_type_id', 'JOURNAL',
                     'kpv', (json_object ->> 'kpv')::DATE,
                     'selg', json_object ->> 'selgitus',
-                    'muud', 'VIRASOFT IMPORT',
+                    'muud', 'VIROSOFT IMPORT',
                     'asutusid', l_asutus_id,
                     'gridData', json_lausend_read);
 

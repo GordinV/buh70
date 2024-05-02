@@ -63,6 +63,7 @@ DECLARE
 
 
 BEGIN
+
     SELECT 0 AS asutusid, 0 AS id INTO v_prev_doc;
 
     SELECT kasutaja,
@@ -90,7 +91,7 @@ BEGIN
     -- проверка на период
     IF doc_kpv IS NULL
     THEN
-        RAISE NOTICE 'Viga, Null kpv';
+        RAISE NOTICE 'Viga, Null kpv ';
         RETURN 0;
     END IF;
 
@@ -104,8 +105,6 @@ BEGIN
     THEN
         RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
     END IF;
-
-    RAISE NOTICE 'l_osaliselt_suletatud %', l_osaliselt_suletatud;
 
     -- проверка на символы
     PERFORM check_text(doc_selg);
@@ -317,7 +316,6 @@ BEGIN
                             coalesce(json_record.kuurs, 1) * json_record.summa);
 --                            RETURNING id INTO journal1_id;
                     SELECT currval('docs.journal1_id_seq') INTO journal1_id;
-
 
                     -- add new id into array of ids
                     ids = array_append(ids, journal1_id);

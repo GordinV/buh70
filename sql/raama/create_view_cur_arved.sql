@@ -56,7 +56,7 @@ FROM docs.doc d
                           GROUP BY a1.parentid) a1 ON a1.arv_id = a.id
          INNER JOIN libs.library s ON s.kood = d.status :: TEXT AND s.library = 'STATUS'
          LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
-         LEFT OUTER JOIN libs.asutus asutus ON a.asutusid = asutus.id AND d.status < 3
+         LEFT OUTER JOIN libs.asutus asutus ON a.asutusid = asutus.id AND asutus.staatus< 3
          LEFT OUTER JOIN ou.userid u ON u.id = a.userid AND u.status < 3
          LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id

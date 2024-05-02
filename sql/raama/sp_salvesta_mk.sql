@@ -68,7 +68,7 @@ BEGIN
 
     IF NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
-        RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %', doc_kpv;
+        RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %, doc_viitenr %, doc_lapsid %, doc_selg %', doc_kpv, doc_viitenr, doc_lapsid, doc_selg;
     END IF;
     
 

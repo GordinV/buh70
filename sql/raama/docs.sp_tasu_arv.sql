@@ -216,12 +216,15 @@ BEGIN
     -- сальдо платежа
     -- оплата маловероятных
     --только при положительной сумме оплат
+    
+/*  
+    -- меняем алгоритм
     IF ((v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND
         coalesce(v_arv.tyyp, '') <> 'ETTEMAKS' AND v_params.summa > 0)
     THEN
         PERFORM docs.tasumine_ebatoenaolised(l_tasu_id, l_arv_id, l_user_id);
     END IF;
-
+*/
 
     RETURN l_doc_id;
 

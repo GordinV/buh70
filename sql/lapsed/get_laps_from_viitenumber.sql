@@ -66,7 +66,7 @@ GRANT EXECUTE ON FUNCTION lapsed.get_laps_from_viitenumber(TEXT) TO dbpeakasutaj
 GRANT EXECUTE ON FUNCTION lapsed.get_laps_from_viitenumber(TEXT) TO arvestaja;
 
 
-SELECT lapsed.get_laps_from_viitenumber('1000000030');
+SELECT lapsed.get_laps_from_viitenumber('0770157759');
 /*
 SELECT *
 FROM lapsed.laps

@@ -49,6 +49,7 @@ DECLARE
                                    WHERE id = user_id);
     l_nom_id     INTEGER;
     v_nom_rea    RECORD;
+    l_arv_jaak   NUMERIC        = 0;
 BEGIN
 
     doc_type_id = 'SMK';
@@ -138,14 +139,22 @@ BEGIN
         l_selg = 'Arve nr.' || ltrim(rtrim(v_arv.number))::TEXT;
     END IF;
 
+    RAISE NOTICE 'l_summa %, v_arv.jaak %', l_summa, v_arv.jaak;
 
     IF l_summa IS NULL AND l_arv_id IS NOT NULL
     THEN
+
         l_summa = v_arv.jaak;
         IF v_arv.jaak IS NULL OR v_arv.jaak = 0
         THEN
-            l_summa = v_arv.summa - (SELECT sum(summa) FROM docs.arvtasu WHERE doc_arv_id = l_arv_id AND status <> 3);
+            -- расчет сальдо счета
+            l_arv_jaak = docs.sp_update_arv_jaak(l_arv_id);
+
+            l_summa = v_arv.summa - l_arv_jaak;
         END IF;
+
+        RAISE NOTICE ' 2 l_summa %, v_arv.summa %', l_summa, v_arv.summa;
+
     END IF;
 
     -- если счет имеет обратное сальдо , то меняем тип на противоположный

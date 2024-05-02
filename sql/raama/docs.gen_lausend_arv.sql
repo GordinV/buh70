@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN user_Id INTEGER, OUT error_code INTEGER,
-                                                OUT result INTEGER, OUT error_message TEXT)
+                                                 OUT result INTEGER, OUT error_message TEXT)
 AS
 $BODY$
 DECLARE

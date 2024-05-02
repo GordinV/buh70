@@ -162,12 +162,22 @@ BEGIN
 
     -- удаление оплат
     FOR v_mk IN
-        SELECT id, doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_id
+        SELECT id, doc_tasu_id, pankkassa
+        FROM docs.arvtasu
+        WHERE (doc_arv_id = doc_id OR doc_tasu_id = doc_id)
+          AND status < 3
         LOOP
             -- удаление оплат
             DELETE FROM docs.arvtasu WHERE id = v_mk.id;
+            --PERFORM docs.sp_delete_arvtasu(user_id, v_mk.id);
             -- перерасчет сальдо платежа
             PERFORM docs.sp_update_mk_jaak(v_mk.doc_tasu_id);
+            -- kreedit arve
+            IF v_mk.pankkassa = 4
+            THEN
+                PERFORM docs.sp_update_arv_jaak(v_mk.doc_tasu_id);
+            END IF;
+
         END LOOP;
 
 
