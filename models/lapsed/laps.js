@@ -39,6 +39,7 @@ module.exports = {
                            $2::INTEGER                                      AS userid,
                            coalesce(ll.jaak, 0)::NUMERIC(12,2) AS jaak,
                            (l.properties ->> 'eritunnus')::TEXT                AS eritunnus,
+                           coalesce((l.properties ->> 'kas_teiste_kov'):: BOOLEAN, FALSE):: BOOLEAN AS kas_teiste_kov,                           
                            coalesce((SELECT count(id)
                                      FROM lapsed.vanem_arveldus va
                                      WHERE parentid = l.id
@@ -57,6 +58,7 @@ module.exports = {
                   null::text as muud,
                   0::integer as arveldus,
                   NULL::TEXT as eritunnus,
+                  FALSE as kas_teiste_kov,
                   0::numeric(14,2) as jaak`,
             query: null,
             multiple: false,
@@ -290,7 +292,7 @@ module.exports = {
                    lk_range,
                    (SELECT string_agg(vn, ', ')
                     FROM (SELECT DISTINCT vn FROM unnest(viitenumbers) vn) vn)                                    AS viitenumbers,
-                    exists(SELECT id FROM tesise_kov_esindajad WHERE laps_id = l.id) AS kas_teiste_kov        
+                    coalesce((l.properties ->> 'kas_teiste_kov')::BOOLEAN, FALSE) AS kas_teiste_kov
             FROM lapsed.laps l
                      JOIN (SELECT parentid,
                                   array_agg(rekvid)      AS rekv_ids,

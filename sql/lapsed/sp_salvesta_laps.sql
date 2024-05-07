@@ -8,21 +8,22 @@ CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_laps(data JSONB,
 $BODY$
 
 DECLARE
-    userName         TEXT;
-    doc_data         JSON    = data ->> 'data';
-    doc_id           INTEGER = doc_data ->> 'id';
-    doc_isikukood    TEXT    = doc_data ->> 'isikukood';
-    doc_nimi         TEXT    = doc_data ->> 'nimi';
-    doc_viitenr      TEXT    = doc_data ->> 'viitenumber';
-    doc_vanemId      INTEGER = doc_data ->> 'vanemid';
-    doc_muud         TEXT    = doc_data ->> 'muud';
-    doc_eritunnus    TEXT    = doc_data ->> 'eritunnus';
-    is_import        BOOLEAN = coalesce((doc_data ->> 'import')::BOOLEAN, FALSE);
-    v_vanem          RECORD;
-    json_props       JSONB;
-    json_props_vanem JSONB;
-    json_ajalugu     JSONB;
-    l_vana_ik        TEXT;
+    userName           TEXT;
+    doc_data           JSON    = data ->> 'data';
+    doc_id             INTEGER = doc_data ->> 'id';
+    doc_isikukood      TEXT    = doc_data ->> 'isikukood';
+    doc_nimi           TEXT    = doc_data ->> 'nimi';
+    doc_viitenr        TEXT    = doc_data ->> 'viitenumber';
+    doc_vanemId        INTEGER = doc_data ->> 'vanemid';
+    doc_muud           TEXT    = doc_data ->> 'muud';
+    doc_eritunnus      TEXT    = doc_data ->> 'eritunnus';
+    doc_kas_teiste_kov BOOLEAN = doc_data ->> 'kas_teiste_kov';
+    is_import          BOOLEAN = coalesce((doc_data ->> 'import')::BOOLEAN, FALSE);
+    v_vanem            RECORD;
+    json_props         JSONB;
+    json_props_vanem   JSONB;
+    json_ajalugu       JSONB;
+    l_vana_ik          TEXT;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -49,8 +50,9 @@ BEGIN
     END IF;
 
     json_props = to_jsonb(row)
-                 FROM (SELECT doc_viitenr   AS viitenumber,
-                              doc_eritunnus AS eritunnus
+                 FROM (SELECT doc_viitenr                         AS viitenumber,
+                              doc_eritunnus                       AS eritunnus,
+                              coalesce(doc_kas_teiste_kov, FALSE) AS kas_teiste_kov
                       ) row;
 
 

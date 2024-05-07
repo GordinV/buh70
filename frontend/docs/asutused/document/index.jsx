@@ -97,15 +97,6 @@ class Asutused extends React.PureComponent {
                         {self.state.gridRowEdit ?
                             this.createGridRow(self)
                             : null}
-                        <div style={styles.docRow}>
-                            <CheckBox title="Teiste KOVide lapsed:"
-                                      name='kas_teiste_kov'
-                                      value={Boolean(self.docData.kas_teiste_kov)}
-                                      ref={'checkbox_kas_teiste_kov'}
-                                      onChange={self.handleInputChange}
-                                      readOnly={!self.state.edited}
-                            />
-                        </div>
 
                     </div>
                 </div>

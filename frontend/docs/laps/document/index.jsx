@@ -15,6 +15,7 @@ const
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
+    CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     styles = require('./laps.styles');
 
 //const LIBRARIES = [{id: 'lapse_grupp', filter: ``}];
@@ -170,6 +171,13 @@ class Laps extends React.PureComponent {
                                 btnDelete={isEditMode}
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}/>
+                        <CheckBox title="Teiste KOVide lapsed:"
+                                  name='kas_teiste_kov'
+                                  value={Boolean(self.docData.kas_teiste_kov)}
+                                  ref={'checkbox_kas_teiste_kov'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!self.state.edited}
+                        />
                     </div>
                     <div style={styles.docColumn}>
                         <div style={styles.docRow}>
