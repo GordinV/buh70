@@ -21,7 +21,8 @@ CREATE OR REPLACE FUNCTION lapsed.kaive_aruanne(l_rekvid INTEGER,
         ulekanned       NUMERIC(14, 2),
         jaak            NUMERIC(14, 2),
         jaak_inf3       NUMERIC(14, 2),
-        rekvid          INTEGER
+        rekvid          INTEGER,
+        paevad          INTEGER
     )
 AS
 $BODY$
@@ -85,17 +86,19 @@ SELECT count(*) OVER (PARTITION BY report.laps_id)                  AS id,
         COALESCE(tagastused, 0) +
         COALESCE(ulekanned, 0))::NUMERIC(14, 2)                     AS jaak,
        inf3_jaak,
-       report.rekv_id
+       report.rekv_id,
+       kpv_end - kpv                                                AS paevad
 FROM (
          WITH alg_saldo AS (
-             SELECT laps_id, rekv_id, sum(summa) AS jaak, array_agg(id) AS docs_ids
+             SELECT laps_id, rekv_id, sum(summa) AS jaak, array_agg(id) AS docs_ids, max(kpv) AS kpv
              FROM (
                       -- laekumised
                       SELECT -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk1.summa AS summa,
                              l.id                                                       AS laps_id,
                              D.rekvid                                                   AS rekv_id,
                              0                                                          AS inf3_jaak,
-                             NULL                                                       AS id
+                             NULL                                                       AS id,
+                             mk.maksepaev                                               AS kpv
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
                                INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
@@ -110,7 +113,8 @@ FROM (
                              ld.parentid AS laps_id,
                              D.rekvid    AS rekv_id,
                              0           AS inf3_jaak,
-                             d.id
+                             d.id,
+                             a.kpv       AS kpv
                       FROM docs.doc D
                                INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                                INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -129,7 +133,8 @@ FROM (
                              l.parentid   AS laps_id,
                              a.rekvid     AS rekv_id,
                              0            AS inf3_jaak,
-                             arv.parentid AS id
+                             arv.parentid AS id,
+                             a.kpv        AS kpv
                       FROM docs.arvtasu a
                                INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
                                INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
@@ -149,7 +154,8 @@ FROM (
               mahakandmine AS (
                   SELECT sum(a.summa) AS summa,
                          l.parentid   AS laps_id,
-                         a.rekvid     AS rekv_id
+                         a.rekvid     AS rekv_id,
+                         max(a.kpv)   AS kpv
                   FROM docs.arvtasu a
                            INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
                            INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
@@ -166,9 +172,10 @@ FROM (
                   GROUP BY l.parentid, a.rekvid
               ),
               laekumised AS (
-                  SELECT sum(mk1.summa) AS summa,
-                         l.id           AS laps_id,
-                         D.rekvid       AS rekv_id
+                  SELECT sum(mk1.summa)    AS summa,
+                         l.id              AS laps_id,
+                         D.rekvid          AS rekv_id,
+                         max(mk.maksepaev) AS kpv
                   FROM docs.doc D
                            INNER JOIN docs.Mk mk ON mk.parentid = D.id
                            INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
@@ -186,7 +193,8 @@ FROM (
               tagastused AS (
                   SELECT sum(mk1.summa) AS summa,
                          l.id           AS laps_id,
-                         D.rekvid       AS rekv_id
+                         D.rekvid       AS rekv_id,
+                         max(maksepaev) AS kpv
                   FROM docs.doc D
                            INNER JOIN docs.Mk mk ON mk.parentid = D.id
                            INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
@@ -203,7 +211,8 @@ FROM (
               ulekanned AS (
                   SELECT sum(-1 * mk1.summa) AS summa,
                          l.id                AS laps_id,
-                         D.rekvid            AS rekv_id
+                         D.rekvid            AS rekv_id,
+                         max(mk.maksepaev)   AS kpv
                   FROM docs.doc D
                            INNER JOIN docs.Mk mk ON mk.parentid = D.id
                            INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
@@ -225,7 +234,8 @@ FROM (
                                  ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END ::NUMERIC(14, 2)) AS arvestatud,
                          sum((COALESCE(a1.soodustus, 0) * a1.kogus)::NUMERIC(14, 2))                            AS soodustus,
                          D.rekvid::INTEGER                                                                      AS rekv_id,
-                         array_agg(d.id)                                                                        AS docs_ids
+                         array_agg(d.id)                                                                        AS docs_ids,
+                         max(a.kpv)                                                                             AS kpv
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -273,7 +283,8 @@ FROM (
                                  ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END) ::NUMERIC(14, 4) AS arvestatud,
                          sum(a1.soodustus)                                                                      AS soodustus,
                          D.rekvid::INTEGER                                                                      AS rekv_id,
-                         array_agg(CASE WHEN a.jaak > 0 THEN d.id ELSE 0 END)                                   AS docs_ids
+                         array_agg(CASE WHEN a.jaak > 0 THEN d.id ELSE 0 END)                                   AS docs_ids,
+                         max(a.kpv)                                                                             AS kpv
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -320,7 +331,8 @@ FROM (
                 sum(ulekanned)     AS ulekanned,
                 sum(inf3_jaak)     AS inf3_jaak,
                 qry.rekv_id,
-                qry.laps_id
+                qry.laps_id,
+                max(kpv)           AS kpv
          FROM (
                   -- alg.saldo
                   SELECT a.jaak    AS alg_saldo,
@@ -333,7 +345,8 @@ FROM (
                          0         AS ulekanned,
                          0         AS inf3_jaak,
                          a.rekv_id AS rekv_id,
-                         a.laps_id
+                         a.laps_id,
+                         a.kpv
                   FROM alg_saldo a
                   UNION ALL
                   -- laekumised
@@ -347,7 +360,8 @@ FROM (
                          0         AS ulekanned,
                          0         AS inf3_jaak,
                          l.rekv_id AS rekv_id,
-                         l.laps_id
+                         l.laps_id,
+                         l.kpv
                   FROM laekumised l
                   UNION ALL
                   -- mahakandmine
@@ -361,7 +375,8 @@ FROM (
                          0         AS ulekanned,
                          0         AS inf3_jaak,
                          l.rekv_id AS rekv_id,
-                         l.laps_id
+                         l.laps_id,
+                         l.kpv
                   FROM mahakandmine l
                   UNION ALL
                   -- tagastused
@@ -375,7 +390,8 @@ FROM (
                          0                    AS ulekanned,
                          0                    AS inf3_jaak,
                          t.rekv_id            AS rekv_id,
-                         t.laps_id
+                         t.laps_id,
+                         t.kpv
                   FROM tagastused t
                   UNION ALL
                   -- ulekanned
@@ -389,7 +405,8 @@ FROM (
                          coalesce(t.summa, 0) AS ulekanned,
                          0                    AS inf3_jaak,
                          t.rekv_id            AS rekv_id,
-                         t.laps_id
+                         t.laps_id,
+                         t.kpv
                   FROM ulekanned t
                   UNION ALL
                   -- arvestused
@@ -403,7 +420,8 @@ FROM (
                          0               AS ulekanned,
                          0               AS inf3_jaak,
                          k.rekv_id       AS rekv_id,
-                         k.laps_id
+                         k.laps_id,
+                         k.kpv
                   FROM arvestatud k
                   UNION ALL
                   -- inf3 jaak alg_saldost
@@ -412,7 +430,8 @@ FROM (
                            WITH docs AS (
                                SELECT lapsed.get_inf3_jaak(a.parentid, kpv_end) AS inf3_jaak,
                                       a.rekvid                                  AS rekv_id,
-                                      l.parentid                                AS laps_id
+                                      l.parentid                                AS laps_id,
+                                      a.kpv
                                FROM docs.arv a
                                         INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
                                WHERE a.parentid IN (
@@ -436,7 +455,8 @@ FROM (
                                   0         AS ulekanned,
                                   inf3_jaak AS inf3_jaak,
                                   k.rekv_id AS rekv_id,
-                                  k.laps_id
+                                  k.laps_id,
+                                  k.kpv
                            FROM docs k
                        ) qry
               ) qry
@@ -460,7 +480,7 @@ GRANT EXECUTE ON FUNCTION lapsed.kaive_aruanne(INTEGER, DATE, DATE) TO dbvaatlej
 
 /*
 select *
-FROM lapsed.kaive_aruanne(80, '2024-03-01', '2024-03-31') qry
+FROM lapsed.kaive_aruanne_(94, '2023-01-01', '2024-04-30') qry
 where viitenumber= '0800147558'
 
 execution: 2 s 780 ms, fetching: 69 ms

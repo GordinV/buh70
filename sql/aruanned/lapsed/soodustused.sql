@@ -100,9 +100,8 @@ WITH qry AS (
                  SELECT v.asutusid,
                         v.parentid                               AS laps_id,
                         count(v.id) OVER (PARTITION BY asutusid) AS lapsed_peres,
-                        coalesce((a.properties->>'kas_teiste_kov')::boolean, false) as kas_teiste_kov
+                        coalesce((l.properties->>'kas_teiste_kov')::boolean, false) as kas_teiste_kov
                  FROM lapsed.vanemad v
-                          INNER JOIN libs.asutus a ON a.id = v.asutusid
                           INNER JOIN lapsed.laps l ON l.id = v.parentid,
                       params
                  WHERE v.staatus <> 3
@@ -156,7 +155,8 @@ WITH qry AS (
                  LEFT OUTER JOIN soodustused s ON s.laps_id = l.id
                  INNER JOIN ou.rekv r ON r.id = s.rekvid
         WHERE (s.soodustus <> 0 OR (e.lapsed_peres > 1 AND s.kas_tulu_teenus and not e.kas_teiste_kov))
-          AND s.summa <> 0
+--          AND s.summa <> 0 /* S. Guljaeva 03/03/2024*/
+
     )
 )
 SELECT soodustus::NUMERIC(12, 2)                    AS soodustus,
@@ -211,7 +211,7 @@ GRANT EXECUTE ON FUNCTION lapsed.soodustused(INTEGER, INTEGER, DATE, DATE) TO db
 
 
 /*
-
+select * from lapsed.soodustused(119, 1, '2024-01-01'::DATE, '2024-04-30'::DATE)
 
 
 */

@@ -18,6 +18,7 @@ module.exports = {
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Jääk", width: "5%", type: "number", show: false},
             {id: "jaak_inf3", name: "s.h.INF3", width: "5%", type: "number", show: true, interval: true},
+            {id: "paevad", name: "Viimane tehing", width: "5%", type: "number", show: true, interval: true},
             {
                 id: "asutuste_count",
                 name: "Asutuste arv(jääk<>0) ",
@@ -82,7 +83,8 @@ module.exports = {
                            rekvid,
                            $2                                                                 AS user_id,
                            r.nimetus::TEXT                                                    AS asutus,
-                           vn.vn                                                              AS vana_vn
+                           vn.vn                                                              AS vana_vn,
+                           paevad
                     FROM qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood

@@ -54,6 +54,7 @@ exports.get = async (req, res) => {
                 mahakantud: row.mahakantud,
                 jaak: row.jaak,
                 jaak_inf3: row.jaak_inf3,
+                paevad: row.paevad,
                 asutus: row.asutus
 
             };
