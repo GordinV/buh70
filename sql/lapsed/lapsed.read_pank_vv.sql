@@ -74,6 +74,14 @@ BEGIN
 
             ELSE
                 l_new_viitenr = ltrim(rtrim(v_pank_vv.viitenumber));
+            END IF;
+
+            -- контроль на закрытые учреждения
+            IF left(l_new_viitenr, 3) IN ('081', '082', '085')
+            THEN
+                -- платеж в закрытое учреждение, перенаправляем в TP18510139
+                --'009'
+                l_new_viitenr = overlay(l_new_viitenr PLACING '009' FROM 1 FOR 3);
 
             END IF;
 
@@ -105,10 +113,19 @@ BEGIN
             -- задаем признак
             l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvid);
 
+
+            -- признак для закрытых учреждений
+            IF left(l_new_viitenr, 3) IN ('009')
+            THEN
+                -- Тогда в базе ТР18510139 можно использовать по ЗАКРЫТЫМ садам общий tunnus, - например, 0911088.
+                l_tunnus = '0911088';
+            END IF;
+
             IF NOT empty(coalesce((SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id), ''))
             THEN
                 l_tunnus = (SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id);
             END IF;
+
 
 
 /*

@@ -42,23 +42,24 @@ BEGIN
     SELECT d.docs_ids,
            k.*,
            aa.tp,
-           aa.konto
+           aa.konto,
+           k.properties ->> 'tehingu_tyyp' AS tehingu_tyyp
     INTO v_smk
     FROM docs.mk k
              INNER JOIN docs.doc d ON d.id = k.parentId
              LEFT OUTER JOIN ou.aa aa ON aa.id = k.aaid
-    WHERE d.id = tnId;
+        WHERE d.id = tnId;
 
     IF v_smk.konto IS NULL
     THEN
         SELECT *
         INTO v_aa
         FROM ou.aa
-        WHERE parentid = v_smk.rekvid
-          AND default_ = 1
-          AND kassa = 1
-        ORDER BY id DESC
-        LIMIT 1;
+            WHERE parentid = v_smk.rekvid
+                 AND default_ = 1
+                 AND kassa = 1
+            ORDER BY id DESC
+            LIMIT 1;
         v_smk.konto = v_aa.konto;
         v_smk.tp = v_aa.tp;
 
@@ -87,8 +88,8 @@ BEGIN
     SELECT kasutaja
     INTO userName
     FROM ou.userid u
-    WHERE u.rekvid = v_smk.rekvId
-      AND u.id = userId;
+        WHERE u.rekvid = v_smk.rekvId
+             AND u.id = userId;
 
     IF userName IS NULL
     THEN
@@ -112,8 +113,10 @@ BEGIN
              INNER JOIN libs.library library ON library.id = dokprop.parentid
             ,
          jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
-    WHERE dokprop.id = v_smk.doklausid
-    LIMIT 1;
+        WHERE
+         dokprop.id = v_smk.doklausid
+        LIMIT
+         1;
 
     IF NOT Found OR v_dokprop.registr = 0
     THEN
@@ -128,14 +131,14 @@ BEGIN
     lcSelg = trim(v_dokprop.selg);
     IF (SELECT count(id)
         FROM ou.rekv
-        WHERE parentid = 119
-           OR id = 119) > 0
+            WHERE parentid = 119
+                 OR id = 119) > 0
     THEN -- Narva LV kultuuriosakond. @todo need flexible solution
         FOR v_selg IN
             SELECT DISTINCT nom.nimetus
             FROM docs.mk1 k1
                      INNER JOIN libs.nomenklatuur nom ON k1.nomid = nom.id
-            WHERE k1.parentid = v_smk.id
+                WHERE k1.parentid = v_smk.id
             LOOP
                 lcSelg = lcSelg || ', ' || trim(v_selg.nimetus);
             END LOOP;
@@ -147,7 +150,8 @@ BEGIN
 -- ссылка на счет, если есть
     IF (v_smk.arvid IS NOT NULL AND v_smk.arvid > 0)
     THEN
-        SELECT number FROM docs.arv a WHERE parentid = v_smk.arvid INTO v_arv;
+        SELECT number
+        FROM docs.arv a WHERE parentid = v_smk.arvid INTO v_arv;
         IF v_arv.number IS NOT NULL AND NOT empty(v_arv.number)
         THEN
             l_dok = 'Arve nr. ' || v_arv.number;
@@ -168,12 +172,13 @@ BEGIN
         FROM docs.mk1 k1
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
                  INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
-        WHERE k1.parentid = v_smk.Id
+            WHERE k1.parentid = v_smk.Id
         LOOP
             l_asutus_id = v_smk1.asutusid;
             -- если род. плата, то меняем на ответственного
 
-            l_laps_id = (SELECT parentid FROM lapsed.liidestamine l WHERE docid = v_smk.parentid LIMIT 1);
+            l_laps_id = (SELECT parentid
+                         FROM lapsed.liidestamine l WHERE docid = v_smk.parentid LIMIT 1);
 
             -- если есть ребенок, то используем ответственного родителя для контировки
             IF l_laps_id IS NOT NULL
@@ -181,11 +186,15 @@ BEGIN
                 l_asutus_id = (SELECT asutusid
                                FROM lapsed.vanem_arveldus v
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
-                               WHERE v.parentid = l_laps_id
-                                 AND v.rekvid = v_smk.rekvid
-                               ORDER BY coalesce(v.arveldus, FALSE) DESC
-                                       , v.id DESC
-                               LIMIT 1);
+                                   WHERE
+                                    v.parentid = l_laps_id
+                                        AND v.rekvid = v_smk.rekvid
+                                   ORDER BY
+                                    coalesce (v.arveldus, FALSE) DESC
+                                       ,
+                                    v.id DESC
+                                   LIMIT
+                                    1);
 
                 IF l_asutus_id IS NULL
                 THEN
@@ -198,7 +207,8 @@ BEGIN
             IF l_laps_id IS NOT NULL
             THEN
                 v_smk1.konto = '10300029';
-                v_smk1.tp = coalesce((SELECT tp FROM libs.asutus WHERE id = l_asutus_id), '800699');
+                v_smk1.tp = coalesce((SELECT tp
+                                      FROM libs.asutus WHERE id = l_asutus_id), '800699');
                 IF empty(v_smk1.tp)
                 THEN
                     v_smk1.tp = '800699';
@@ -234,8 +244,8 @@ BEGIN
                 v_smk1.tunnus =
                         coalesce(v_smk1.tunnus, (SELECT regexp_replace(nimetus, '[[:alpha:]]', '', 'g')
                                                  FROM ou.rekv
-                                                 WHERE id = v_smk.rekvid
-                                                 LIMIT 1));
+                                                     WHERE id = v_smk.rekvid
+                                                     LIMIT 1));
 
 /*                В проводках по поступлению денег в Selgitus-е хорошо бы поставить так:
                     - при tegevusala 09110 поставить Lasteaiatasu
@@ -261,6 +271,16 @@ BEGIN
                     v_smk.kpv = '2023-01-01'::DATE;
                 END IF;
 
+                -- перенос сальдо
+                IF v_smk.tehingu_tyyp IS NOT NULL AND v_smk.tehingu_tyyp = 'jaak_ulekandmine'
+                THEN
+                    -- Kalle 17.05.2024
+                    --Д888888-К10300029 (-) в базе закрытого учреждения с tunnus-ом этого закрытого учреждения, например 0911030
+                    --Д888888-К10300029 (+) в базе действующего учреждения с tunnus-ом этого действующего учреждения, например 0911010
+                    v_smk.konto = '888888';
+                    v_smk1.konto = '10300029';
+                END IF;
+
                 -- Muusikakool, üür
 
                 IF v_smk.rekvid = 71 AND
@@ -270,8 +290,8 @@ BEGIN
                                    INNER JOIN docs.arvtasu at
                                               ON at.doc_arv_id = a.parentid AND at.doc_tasu_id = v_smk.parentid AND
                                                  at.status < 3
-                          WHERE a.parentid IN (SELECT unnest(v_smk.docs_ids))
-                            AND a1.konto = '323330'
+                              WHERE a.parentid IN (SELECT unnest(v_smk.docs_ids))
+                                   AND a1.konto = '323330'
                        )
                 THEN
                     -- есть в оплате счета сумма аренды
@@ -284,29 +304,29 @@ BEGIN
                     l_arv_id = (SELECT a.parentid
                                 FROM docs.arv a
                                          INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
-                                WHERE a.parentid IN
-                                      (SELECT at.doc_arv_id
-                                       FROM docs.arvtasu at
-                                       WHERE at.doc_tasu_id = v_smk.parentid
-                                         AND at.status < 3)
-                                  AND a1.konto IN ('323330')
-                                ORDER BY a.kpv DESC
-                                LIMIT 1);
+                                    WHERE a.parentid IN
+                                          (SELECT at.doc_arv_id
+                                           FROM docs.arvtasu at
+                                               WHERE at.doc_tasu_id = v_smk.parentid
+                                                    AND at.status < 3)
+                                         AND a1.konto IN ('323330')
+                                    ORDER BY a.kpv DESC
+                                    LIMIT 1);
 
                     -- сумма аренды в счете
                     SELECT sum(a1.summa)
                     INTO l_uur_summa
                     FROM docs.arv1 a1
                              INNER JOIN docs.arv a ON a.id = a1.parentid
-                    WHERE a.parentid = l_arv_id
-                      AND a1.konto IN ('323330');
+                        WHERE a.parentid = l_arv_id
+                             AND a1.konto IN ('323330');
 
                     -- сумма оплаты счета
                     l_tasu_summa = (SELECT at.summa)
                                    FROM docs.arvtasu at
-                                   WHERE at.doc_arv_id = l_arv_id
-                                     AND at.doc_tasu_id = v_smk.parentid
-                                     AND at.status < 3;
+                                       WHERE at.doc_arv_id = l_arv_id
+                                            AND at.doc_tasu_id = v_smk.parentid
+                                            AND at.status < 3;
 
                     IF l_tasu_summa < l_uur_summa
                     THEN
@@ -419,7 +439,7 @@ BEGIN
                 SELECT docs_ids
                 INTO a_docs_ids
                 FROM docs.doc
-                WHERE id = result;
+                    WHERE id = result;
 
                 -- add new id into docs. ref. array
                 a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, v_smk.parentId)));
@@ -441,21 +461,23 @@ BEGIN
             -- параллельная проводка для нач. сальдо
             IF v_smk.selg = 'Oppetasu algsaldo 2023' AND result IS NOT NULL AND result > 0
             THEN
-                v_journal.asutusid = (SELECT id FROM libs.asutus WHERE regkood = '88888888880' AND staatus < 3 LIMIT 1);
+                v_journal.asutusid = (SELECT id
+                                      FROM libs.asutus WHERE regkood = '88888888880' AND staatus < 3 LIMIT 1);
                 v_journal.id = 0;
                 v_journal1.deebet = '203900';
                 v_journal1.kreedit = '888888';
                 l_json_details = to_jsonb(v_journal1);
 
 
-                SELECT 0                                                                                  AS id,
-                       'JOURNAL'                                                                          AS doc_type_id,
-                       v_smk.kpv                                                                          AS kpv,
-                       lcSelg                                                                             AS selg,
-                       v_smk.muud                                                                         AS muud,
-                       l_dok                                                                              AS dok,
-                       (SELECT id FROM libs.asutus WHERE regkood = '88888888880' AND staatus < 3 LIMIT 1) AS asutusid,
-                       l_json_details                                                                     AS gridData
+                SELECT 0                                                                        AS id,
+                       'JOURNAL'                                                                AS doc_type_id,
+                       v_smk.kpv                                                                AS kpv,
+                       lcSelg                                                                   AS selg,
+                       v_smk.muud                                                               AS muud,
+                       l_dok                                                                    AS dok,
+                       (SELECT id
+                        FROM libs.asutus WHERE regkood = '88888888880' AND staatus < 3 LIMIT 1) AS asutusid,
+                       l_json_details                                                           AS gridData
                 INTO v_journal;
 
                 -- создаем параметры
@@ -470,7 +492,7 @@ BEGIN
                     SELECT docs_ids
                     INTO a_docs_ids
                     FROM docs.doc
-                    WHERE id = l_parallel_doc;
+                        WHERE id = l_parallel_doc;
 
                     -- add new id into docs. ref. array
                     a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, v_smk.parentId)));
@@ -485,8 +507,8 @@ BEGIN
 
         END LOOP;
 
-        -- проверка на замещение и передачу кассовых доходов
-        PERFORM docs.kassatulude_uleviimine(userid, tnid);
+    -- проверка на замещение и передачу кассовых доходов
+    PERFORM docs.kassatulude_uleviimine(userid, tnid);
 
     RETURN;
 END ;

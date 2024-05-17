@@ -139,8 +139,6 @@ BEGIN
         l_selg = 'Arve nr.' || ltrim(rtrim(v_arv.number))::TEXT;
     END IF;
 
-    RAISE NOTICE 'l_summa %, v_arv.jaak %', l_summa, v_arv.jaak;
-
     IF l_summa IS NULL AND l_arv_id IS NOT NULL
     THEN
 
@@ -152,8 +150,6 @@ BEGIN
 
             l_summa = v_arv.summa - l_arv_jaak;
         END IF;
-
-        RAISE NOTICE ' 2 l_summa %, v_arv.summa %', l_summa, v_arv.summa;
 
     END IF;
 

@@ -13,6 +13,7 @@ DECLARE
     l_maksepaev   DATE    = params ->> 'maksepaev';
     l_viitenumber TEXT    = params ->> 'viitenumber';
     l_summa       NUMERIC = coalesce((params ->> 'kogus')::NUMERIC, 0);
+    l_tyyp        TEXT    = params ->> 'tyyp'; -- отдельно задан перенос сальдо
     mk_id         INTEGER;
     l_dok         TEXT    = 'SMK';
     l_dokprop_id  INTEGER;
@@ -63,10 +64,11 @@ BEGIN
     SELECT id
     INTO l_user_id
     FROM ou.userid
-    WHERE rekvid = l_rekvid
-      AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id)
-      AND status <> 3
-    LIMIT 1;
+        WHERE rekvid = l_rekvid
+             AND kasutaja IN (SELECT kasutaja
+                              FROM ou.userid WHERE id = user_id)
+             AND status <> 3
+        LIMIT 1;
 
 
     -- контроль
@@ -85,22 +87,25 @@ BEGIN
     INTO v_mk
     FROM docs.mk mk
              INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
-    WHERE mk.parentid = l_mk_id
-    LIMIT 1;
+        WHERE mk.parentid = l_mk_id
+        LIMIT 1;
 
     -- ищем расч. счет в новом учреждении
     SELECT id
     INTO l_aa_id
     FROM ou.aa
-    WHERE parentid = l_rekvid
-      AND kassa = 1
-      AND arve IN (SELECT arve FROM ou.aa WHERE id = v_mk.aaid)
-    LIMIT 1;
+        WHERE parentid = l_rekvid
+             AND kassa = 1
+             AND arve IN (SELECT arve
+                          FROM ou.aa WHERE id = v_mk.aaid)
+        LIMIT 1;
 
     IF l_aa_id IS NULL
     THEN
         -- используем дефолтный расч. счет
-        SELECT id INTO l_aa_id FROM ou.aa WHERE parentid = l_rekvid AND kassa = 1 ORDER BY default_ DESC LIMIT 1;
+        SELECT id
+        INTO l_aa_id
+        FROM ou.aa WHERE parentid = l_rekvid AND kassa = 1 ORDER BY default_ DESC LIMIT 1;
     END IF;
 
 
@@ -120,8 +125,8 @@ BEGIN
            proj
     INTO v_mk1
     FROM docs.mk1
-    WHERE parentid = v_mk.id
-    LIMIT 1;
+        WHERE parentid = v_mk.id
+        LIMIT 1;
 
     -- контроль
     IF v_mk1 IS NULL
@@ -135,10 +140,10 @@ BEGIN
 
     l_dokprop_id = (SELECT id
                     FROM com_dokprop l
-                    WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
-                      AND kood = l_dok
-                    ORDER BY id DESC
-                    LIMIT 1
+                        WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
+                             AND kood = l_dok
+                        ORDER BY id DESC
+                        LIMIT 1
     );
 
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(v_mk1))));
@@ -155,10 +160,18 @@ BEGIN
            l_maksepaev                               AS kpv,
            l_maksepaev                               AS maksepaev,
            'Tagasimakse ' || coalesce(v_mk.selg, '') AS selg,
+           l_tyyp                                    AS tehingu_tyyp,
            NULL                                      AS muud,
            json_mk1                                  AS "gridData",
            v_mk.laps_id                              AS lapsid
     INTO v_params;
+
+    -- Перенос сальдо
+    IF l_tyyp IS NOT NULL AND l_tyyp = 'jaak_ulekandmine'
+    THEN
+        v_params.selg = 'SALDO ÜLEKANNE';
+    END IF;
+
 
     SELECT row_to_json(row)
     INTO json_object
@@ -189,10 +202,11 @@ BEGIN
     SELECT id, properties ->> 'tegev' AS tegev, properties ->> 'artikkel' AS artikkel, properties ->> 'tunnus' AS tunnus
     INTO v_new_nom
     FROM libs.nomenklatuur n
-    WHERE kood IN (SELECT kood FROM libs.nomenklatuur n WHERE id = v_mk1.nomid)
-      AND rekvid = l_rekvId
-      AND n.status < 3
-    LIMIT 1;
+        WHERE kood IN (SELECT kood
+                       FROM libs.nomenklatuur n WHERE id = v_mk1.nomid)
+             AND rekvid = l_rekvId
+             AND n.status < 3
+        LIMIT 1;
 
     IF v_new_nom.id IS NOT NULL
     THEN
@@ -216,9 +230,16 @@ BEGIN
            l_maksepaev                                 AS maksepaev,
            'Ülekannemakse ' || coalesce(v_mk.selg, '') AS selg,
            NULL                                        AS muud,
+           l_tyyp                                      AS tehingu_tyyp,
            json_mk1                                    AS "gridData",
            l_laps_id                                   AS lapsid
     INTO v_params;
+
+    -- Перенос сальдо
+    IF l_tyyp IS NOT NULL AND l_tyyp = 'jaak_ulekandmine'
+    THEN
+        v_params.selg = 'SALDO ÜLEKANNE';
+    END IF;
 
     SELECT row_to_json(row)
     INTO json_object
@@ -248,7 +269,7 @@ BEGIN
     END IF;
 
     RETURN;
-EXCEPTION
+/*EXCEPTION
     WHEN OTHERS
         THEN
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
@@ -256,6 +277,7 @@ EXCEPTION
             error_message = SQLERRM;
             result = 0;
             RETURN;
+*/
 END;
 $BODY$
     LANGUAGE plpgsql

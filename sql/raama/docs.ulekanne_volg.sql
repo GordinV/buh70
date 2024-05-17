@@ -107,7 +107,7 @@ BEGIN
     l_jaak = l_jaak - l_jaak_inf3;
 
 
-    IF (coalesce(l_jaak, 0) + coalesce(l_jaak_inf3, 0)) <= 0
+    IF (coalesce(l_jaak, 0) + coalesce(l_jaak_inf3, 0)) = 0
     THEN
         -- выходим
         error_code = 0;
@@ -126,122 +126,135 @@ BEGIN
 
     IF l_jaak > 0
     THEN
-        SELECT n.id                                              AS nomid,
-               1                                                 AS kogus,
-               -1 * l_jaak                                       AS hind,
-               -1 * l_jaak                                       AS summa,
-               0::NUMERIC                                        AS vat,
-               (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
-               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)  AS projekt,
-               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)   AS tunnus,
-               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)    AS tegev,
-               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)  AS allikas,
-               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20) AS rahavoog,
-               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
-        INTO v_nom_rea
-        FROM libs.nomenklatuur n
-        WHERE kood = '888888-001'
-          AND rekvid = l_rekvId
-          AND status < 3
-        LIMIT 1;
 
-        -- формируем строку
-        json_rea = json_rea::JSONB || (SELECT row_to_json(row)
-                                       FROM (SELECT v_nom_rea.nomid    AS nomid,
-                                                    v_nom_rea.kogus    AS kogus,
-                                                    v_nom_rea.hind,
-                                                    v_nom_rea.summa    AS kbmta,
-                                                    0                  AS kbm,
-                                                    v_nom_rea.summa    AS summa,
-                                                    v_nom_rea.tegev    AS kood1,
-                                                    v_nom_rea.allikas  AS kood2,
-                                                    v_nom_rea.rahavoog AS kood3,
-                                                    v_nom_rea.artikkel AS kood5,
-                                                    v_nom_rea.konto    AS konto,
-                                                    v_nom_rea.tunnus,
-                                                    v_nom_rea.projekt,
-                                                    ''                 AS yksus,
-                                                    ''                 AS all_yksus,
-                                                    'SALDO ÜLEKANNE'   AS muud,
-                                                    '800699'           AS tp) row) :: JSONB;
+        FOR v_arved IN
+            WITH docs AS (
+                SELECT a.jaak AS volg, lapsed.get_inf3_jaak(a.id, l_kpv) AS inf3_jaak, a.kpv
+                FROM lapsed.cur_laste_arved a
+                WHERE a.laps_id = l_laps_id
+                  AND rekvid = l_rekvId
+                  AND a.jaak > 0
+            )
+            SELECT volg - inf3_jaak AS jaak, inf3_jaak, volg
+            FROM docs
+            ORDER BY kpv
+            LOOP
+                SELECT n.id                                              AS nomid,
+                       1                                                 AS kogus,
+                       -1 * v_arved.jaak                                 AS hind,
+                       -1 * v_arved.jaak                                 AS summa,
+                       0::NUMERIC                                        AS vat,
+                       (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
+                       (n.properties::JSONB ->> 'projekt')::VARCHAR(20)  AS projekt,
+                       (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)   AS tunnus,
+                       (n.properties::JSONB ->> 'tegev')::VARCHAR(20)    AS tegev,
+                       (n.properties::JSONB ->> 'allikas')::VARCHAR(20)  AS allikas,
+                       (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20) AS rahavoog,
+                       (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
+                INTO v_nom_rea
+                FROM libs.nomenklatuur n
+                WHERE kood = '888888-001'
+                  AND rekvid = l_rekvId
+                  AND status < 3
+                LIMIT 1;
+
+                -- формируем строку
+                json_rea = json_rea::JSONB || (SELECT row_to_json(row)
+                                               FROM (SELECT v_nom_rea.nomid    AS nomid,
+                                                            v_nom_rea.kogus    AS kogus,
+                                                            v_nom_rea.hind,
+                                                            v_nom_rea.summa    AS kbmta,
+                                                            0                  AS kbm,
+                                                            v_nom_rea.summa    AS summa,
+                                                            v_nom_rea.tegev    AS kood1,
+                                                            v_nom_rea.allikas  AS kood2,
+                                                            v_nom_rea.rahavoog AS kood3,
+                                                            v_nom_rea.artikkel AS kood5,
+                                                            v_nom_rea.konto    AS konto,
+                                                            v_nom_rea.tunnus,
+                                                            v_nom_rea.projekt,
+                                                            ''                 AS yksus,
+                                                            ''                 AS all_yksus,
+                                                            'SALDO ÜLEKANNE'   AS muud,
+                                                            '800699'           AS tp) row) :: JSONB;
+
+                -- строка на инф3 часть долга
+                IF v_arved.inf3_jaak > 0
+                THEN
+                    SELECT n.id                                              AS nomid,
+                           1                                                 AS kogus,
+                           -1 * v_arved.inf3_jaak                                  AS hind,
+                           -1 * v_arved.inf3_jaak                                  AS summa,
+                           0::NUMERIC                                        AS vat,
+                           (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
+                           (n.properties::JSONB ->> 'projekt')::VARCHAR(20)  AS projekt,
+                           (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)   AS tunnus,
+                           (n.properties::JSONB ->> 'tegev')::VARCHAR(20)    AS tegev,
+                           (n.properties::JSONB ->> 'allikas')::VARCHAR(20)  AS allikas,
+                           (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20) AS rahavoog,
+                           (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
+                    INTO v_nom_rea
+                    FROM libs.nomenklatuur n
+                    WHERE kood = '888888-002'
+                      AND rekvid = l_rekvId
+                      AND status < 3
+                    LIMIT 1;
+
+                    -- формируем строку
+                    json_rea = json_rea::JSONB || (SELECT row_to_json(row)
+                                                   FROM (SELECT v_nom_rea.nomid    AS nomid,
+                                                                v_nom_rea.kogus    AS kogus,
+                                                                v_nom_rea.hind,
+                                                                v_nom_rea.summa    AS kbmta,
+                                                                0                  AS kbm,
+                                                                v_nom_rea.summa    AS summa,
+                                                                v_nom_rea.tegev    AS kood1,
+                                                                v_nom_rea.allikas  AS kood2,
+                                                                v_nom_rea.rahavoog AS kood3,
+                                                                v_nom_rea.artikkel AS kood5,
+                                                                v_nom_rea.konto    AS konto,
+                                                                v_nom_rea.tunnus,
+                                                                v_nom_rea.projekt,
+                                                                ''                 AS yksus,
+                                                                ''                 AS all_yksus,
+                                                                'SALDO ÜLEKANNE'   AS muud,
+                                                                '800699'           AS tp) row) :: JSONB;
+                END IF;
+
+                -- создаем счет в учреждении на сумму долга
+
+                json_object = (SELECT to_jsonb(row)
+                               FROM (SELECT 0                                AS id,
+                                            NULL::TEXT                       AS number,
+                                            l_doklausend_id                  AS doklausid,
+                                            0                                AS liik,
+                                            l_kpv                            AS kpv,
+                                            (l_kpv +
+                                             coalesce(
+                                                         (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
+                                                         20)::INTEGER)::DATE AS tahtaeg,
+                                            l_asutus_id                      AS asutusid,
+                                            l_aa                             AS aa,
+                                            l_laps_id                        AS lapsid,
+                                            'SALDO ÜLEKANNE'                 AS muud,
+                                            json_rea                         AS "gridData") row);
+
+                -- подготавливаем параметры для создания счета
+
+                json_object = jsonb_build_object('id', 0, 'data', json_object);
+
+                -- сохраняем кредитовый счет
+                doc_id_kreedit = docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid);
+
+                IF doc_id_kreedit IS NULL OR empty(doc_id_kreedit)
+                THEN
+                    RAISE EXCEPTION 'Viga:,kreedit arve salvestamine ebaõnnestus';
+                END IF;
+
+                -- контировка
+                PERFORM docs.gen_lausend_arv(doc_id_kreedit, user_id);
+            END LOOP;
     END IF;
-
-    -- строка на инф3 часть долга
-    IF l_jaak_inf3 > 0
-    THEN
-        SELECT n.id                                              AS nomid,
-               1                                                 AS kogus,
-               -1 * l_jaak_inf3                                  AS hind,
-               -1 * l_jaak_inf3                                  AS summa,
-               0::NUMERIC                                        AS vat,
-               (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
-               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)  AS projekt,
-               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)   AS tunnus,
-               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)    AS tegev,
-               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)  AS allikas,
-               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20) AS rahavoog,
-               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
-        INTO v_nom_rea
-        FROM libs.nomenklatuur n
-        WHERE kood = '888888-002'
-          AND rekvid = l_rekvId
-          AND status < 3
-        LIMIT 1;
-
-        -- формируем строку
-        json_rea = json_rea::JSONB || (SELECT row_to_json(row)
-                                       FROM (SELECT v_nom_rea.nomid    AS nomid,
-                                                    v_nom_rea.kogus    AS kogus,
-                                                    v_nom_rea.hind,
-                                                    v_nom_rea.summa    AS kbmta,
-                                                    0                  AS kbm,
-                                                    v_nom_rea.summa    AS summa,
-                                                    v_nom_rea.tegev    AS kood1,
-                                                    v_nom_rea.allikas  AS kood2,
-                                                    v_nom_rea.rahavoog AS kood3,
-                                                    v_nom_rea.artikkel AS kood5,
-                                                    v_nom_rea.konto    AS konto,
-                                                    v_nom_rea.tunnus,
-                                                    v_nom_rea.projekt,
-                                                    ''                 AS yksus,
-                                                    ''                 AS all_yksus,
-                                                    'SALDO ÜLEKANNE'   AS muud,
-                                                    '800699'           AS tp) row) :: JSONB;
-    END IF;
-
-    -- создаем счет в учреждении на сумму долга
-
-    json_object = (SELECT to_jsonb(row)
-                   FROM (SELECT 0                                AS id,
-                                NULL::TEXT                       AS number,
-                                l_doklausend_id                  AS doklausid,
-                                0                                AS liik,
-                                l_kpv                            AS kpv,
-                                (l_kpv +
-                                 coalesce(
-                                             (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
-                                             20)::INTEGER)::DATE AS tahtaeg,
-                                l_asutus_id                      AS asutusid,
-                                l_aa                             AS aa,
-                                l_laps_id                        AS lapsid,
-                                'SALDO ÜLEKANNE'                 AS muud,
-                                json_rea                         AS "gridData") row);
-
-    -- подготавливаем параметры для создания счета
-
-    json_object = jsonb_build_object('id', 0, 'data', json_object);
-
-    -- сохраняем кредитовый счет
-    doc_id_kreedit = docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid);
-
-    IF doc_id_kreedit IS NULL OR empty(doc_id_kreedit)
-    THEN
-        RAISE EXCEPTION 'Viga:, arve salvestamine ebaõnnestus';
-    END IF;
-
-    -- контировка
-    PERFORM docs.gen_lausend_arv(doc_id_kreedit, user_id);
-
 
     -- проверяем счета, по которым перенос долга
     FOR v_arved IN
@@ -288,8 +301,8 @@ BEGIN
     -- ищем группу
     l_yksus = (SELECT properties ->> 'yksus'
                FROM lapsed.lapse_kaart
-               WHERE parentid = 15775
-                 AND rekvid = 77
+               WHERE parentid = l_laps_id
+                 AND rekvid = l_rekvId_new
                  AND staatus < 3
                ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
                LIMIT 1);

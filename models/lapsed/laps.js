@@ -543,6 +543,15 @@ module.exports = {
         type: "sql",
         alias: 'ulekanneVolg'
     },
+    tuludeMahakandmine: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM docs.tulude_mahakandmine($2::INTEGER, (SELECT to_jsonb(row.*)
+                                                        FROM (SELECT $1       AS laps_id,
+                                                                     $3::DATE AS kpv
+                                                             ) row))`, //$1 - docs.doc.id, $2 - userId, $3 - kpv
+        type: "sql",
+        alias: 'tuludeMahakandmine'
+    },
 
     bpm: [
         {
@@ -588,6 +597,19 @@ module.exports = {
             titleDate: 'Seisuga:',
             showViitenumber: true,
             titleViitenumber: 'Viitenumber:',
+            actualStep: false,
+
+        },
+        {
+            name: 'Tulude mahakandmine',
+            task: 'tuludeMahakandmine',
+            type: 'manual',
+            hideDate: false,
+            showYksus: false,
+            action: 'tuludeMahakandmine',
+            showDate: true,
+            titleDate: 'Seisuga:',
+            showViitenumber: false,
             actualStep: false,
 
         }
