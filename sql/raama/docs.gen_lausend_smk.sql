@@ -386,6 +386,15 @@ BEGIN
                    coalesce(v_smk1.kood5, v_smk1.n_artikkel) AS kood5
             INTO v_journal1;
 
+            -- нужно убрать TP код при 888888. Kalle
+            if v_journal1.deebet = '888888' then
+                v_journal1.lisa_d = '';
+            END IF;
+            if v_journal1.kreedit = '888888' then
+                v_journal1.lisa_k = '';
+            END IF;
+
+
             -- готовим параметры
             l_json_details = l_json_details || to_jsonb(v_journal1);
 
@@ -526,7 +535,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_smk(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 SELECT
-docs.gen_lausend_smk(2486841,2477)
+docs.gen_lausend_smk(6091837,5407)
 
 
 */

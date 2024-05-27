@@ -18,7 +18,7 @@ DECLARE
 
     l_rekvId        INTEGER = (SELECT rekvid
                                FROM ou.userid
-                                   WHERE id = user_id); -- ид учреждения, откуда списываем долг
+                               WHERE id = user_id); -- ид учреждения, откуда списываем долг
 
     json_rea        JSONB   = '[]'::JSONB;
     json_object     JSONB;
@@ -29,33 +29,34 @@ DECLARE
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanem_arveldus v
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
-                                   WHERE v.parentid = l_laps_id
-                                        AND v.rekvid = l_rekvid
-                                        AND arveldus
-                                   ORDER BY v.id DESC
-                                   LIMIT 1);
+                               WHERE v.parentid = l_laps_id
+                                 AND v.rekvid = l_rekvid
+                                 AND arveldus
+                               ORDER BY v.id DESC
+                               LIMIT 1);
 
     l_aa            TEXT    = (SELECT arve
                                FROM ou.aa
-                                   WHERE parentid IN (SELECT rekvid
-                                                      FROM ou.userid WHERE id = user_id)
-                                        AND kassa = 1
-                                   ORDER BY default_ DESC
-                                   LIMIT 1);
+                               WHERE parentid IN (SELECT rekvid
+                                                  FROM ou.userid
+                                                  WHERE id = user_id)
+                                 AND kassa = 1
+                               ORDER BY default_ DESC
+                               LIMIT 1);
     l_yksus         TEXT;
 
-    l_rekv_siht     INTEGER = 9; -- все сальдо переводим сюда
+    l_rekv_siht     INTEGER = l_rekvId; -- все сальдо переводим сюда
     l_nom_kood_siht TEXT    = 'TULUDE_MAHAKANDMINE'; -- код услуги в целевом учреждении
 
     l_db_konto      TEXT    = '10300029'; -- согдасно описанию отдела культуры
     l_doklausend_id INTEGER = (SELECT dp.id
                                FROM libs.dokprop dp
                                         INNER JOIN libs.library l ON l.id = dp.parentid
-                                   WHERE dp.rekvid = l_rekvid
-                                        AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                                        AND l.kood = 'ARV'
-                                   ORDER BY dp.id DESC
-                                   LIMIT 1
+                               WHERE dp.rekvid = l_rekvid
+                                 AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                                 AND l.kood = 'ARV'
+                               ORDER BY dp.id DESC
+                               LIMIT 1
     );
 BEGIN
 
@@ -75,8 +76,8 @@ BEGIN
     SELECT -1 * qry.jaak
     INTO l_jaak
     FROM lapsed.kaive_aruanne(l_rekvId, l_kpv, l_kpv) qry
-        WHERE viitenumber = lapsed.get_viitenumber(l_rekvId, l_laps_id)
-             AND jaak < 0; -- только минус (переплата)
+    WHERE viitenumber = lapsed.get_viitenumber(l_rekvId, l_laps_id)
+      AND jaak < 0; -- только минус (переплата)
 
     RAISE NOTICE 'l_jaak %, l_rekvId %, l_kpv %, l_laps_id %, user_id %', l_jaak, l_rekvId, l_kpv,l_laps_id, user_id;
 
@@ -93,10 +94,11 @@ BEGIN
     SELECT id
     INTO doc_id_kreedit
     FROM lapsed.cur_lapsed_mk mk
-        WHERE mk.rekvid = l_rekvId
-             AND mk.laps_id = l_laps_id
-             AND mk.jaak > 0
-        ORDER BY kpv DESC LIMIT 1;
+    WHERE mk.rekvid = l_rekvId
+      AND mk.laps_id = l_laps_id
+      AND mk.jaak > 0
+    ORDER BY kpv DESC
+    LIMIT 1;
 
     IF doc_id_kreedit IS NULL
     THEN
@@ -111,28 +113,41 @@ BEGIN
     -- Так как учреждение было закрыто путем слияния с другим учреждением, то сначала делаем перенос сальдо из базы закрытого учреждения в базу учреждения, куда "слили" закрытое учреждение:
     -- делаем перенос платежа
 
-    -- получим ВН для целевого учреждения
-    l_viitenumber = lapsed.get_viitenumber(l_rekv_siht, l_laps_id);
 
-    json_object = jsonb_build_object('mk_id', doc_id_kreedit, 'maksepaev', l_kpv, 'viitenumber', l_viitenumber, 'kogus',
-                                     l_jaak, 'tyyp', 'jaak_ulekandmine');
-
-    doc_id_new = (SELECT um.result FROM docs.ulekanne_makse(user_id, json_object) um);
-
-    IF coalesce(doc_id_new, 0) = 0
+    IF l_rekvId IN (81, 82, 85)
+        -- только для закрытых учрежденией
     THEN
-        -- платеж не создан, ошибка
-        error_code = 0;
-        error_message = 'Uus MK salvestamine ebaõnnestus, viga';
-        result = 0;
-        RAISE EXCEPTION 'Viga: %', error_message;
+        l_rekv_siht = 9;
+
+        -- получим ВН для целевого учреждения
+        l_viitenumber = lapsed.get_viitenumber(l_rekv_siht, l_laps_id);
+
+        json_object =
+                jsonb_build_object('mk_id', doc_id_kreedit, 'maksepaev', l_kpv, 'viitenumber', l_viitenumber, 'kogus',
+                                   l_jaak, 'tyyp', 'jaak_ulekandmine');
+
+        doc_id_new = (SELECT um.result FROM docs.ulekanne_makse(user_id, json_object) um);
+
+        IF coalesce(doc_id_new, 0) = 0
+        THEN
+            -- платеж не создан, ошибка
+            error_code = 0;
+            error_message = 'Uus MK salvestamine ebaõnnestus, viga';
+            result = 0;
+            RAISE EXCEPTION 'Viga: %', error_message;
+        END IF;
+
     END IF;
 
     -- готовим счет на списание доходов в базе ТП
     -- ищем ном
     l_nom_id =
             (SELECT id
-             FROM libs.nomenklatuur n WHERE kood = l_nom_kood_siht AND rekvid = l_rekv_siht AND status < 3 LIMIT 1);
+             FROM libs.nomenklatuur n
+             WHERE kood = l_nom_kood_siht
+               AND rekvid = l_rekv_siht
+               AND status < 3
+             LIMIT 1);
 
 
     -- создаем параметры для счета на сумму долга в базе ТП
@@ -141,11 +156,12 @@ BEGIN
     SELECT id
     INTO l_user_id
     FROM ou.userid
-        WHERE rekvid = l_rekv_siht
-             AND kasutaja IN (SELECT kasutaja
-                              FROM ou.userid WHERE id = user_id)
-             AND status <> 3
-        LIMIT 1;
+    WHERE rekvid = l_rekv_siht
+      AND kasutaja IN (SELECT kasutaja
+                       FROM ou.userid
+                       WHERE id = user_id)
+      AND status <> 3
+    LIMIT 1;
 
 
     -- контроль
@@ -163,11 +179,11 @@ BEGIN
     -- ищем группу
     l_yksus = (SELECT properties ->> 'yksus'
                FROM lapsed.lapse_kaart
-                   WHERE parentid = l_laps_id
-                        AND rekvid = l_rekv_siht
-                        AND staatus < 3
-                   ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
-                   LIMIT 1);
+               WHERE parentid = l_laps_id
+                 AND rekvid = l_rekv_siht
+                 AND staatus < 3
+               ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
+               LIMIT 1);
 
     SELECT n.id                                              AS nomid,
            1                                                 AS kogus,
@@ -183,10 +199,10 @@ BEGIN
            (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
     INTO v_nom_rea
     FROM libs.nomenklatuur n
-        WHERE kood = l_nom_kood_siht
-             AND rekvid = l_rekv_siht
-             AND status < 3
-        LIMIT 1;
+    WHERE kood = l_nom_kood_siht
+      AND rekvid = l_rekv_siht
+      AND status < 3
+    LIMIT 1;
 
     -- формируем строку
     json_rea = json_rea::JSONB || (SELECT row_to_json(row)
@@ -220,7 +236,9 @@ BEGIN
                                 (l_kpv +
                                  coalesce(
                                          (SELECT tahtpaev
-                                          FROM ou.config WHERE rekvid = l_rekv_siht LIMIT 1),
+                                          FROM ou.config
+                                          WHERE rekvid = l_rekv_siht
+                                          LIMIT 1),
                                          20)::INTEGER)::DATE AS tahtaeg,
                                 l_asutus_id                  AS asutusid,
                                 l_aa                         AS aa,
@@ -255,7 +273,7 @@ BEGIN
             result = 0;
             RETURN;
 */
-END;
+END ;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE

@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN user_Id INTEGER, OUT error_code INTEGER,
-                                                 OUT result INTEGER, OUT error_message TEXT)
+                                                OUT result INTEGER, OUT error_message TEXT)
 AS
 $BODY$
 DECLARE
@@ -221,6 +221,7 @@ BEGIN
 
             lcKrTp = coalesce(v_arv.asutus_tp, '800699');
             lcDbTp = coalesce(v_arv.asutus_tp, '800699');
+
 
         END IF;
 
@@ -549,6 +550,14 @@ BEGIN
                                coalesce(v_arv1.kood5, '')      AS kood5
                         INTO v_journal;
 
+                        -- нужно убрать TP код при 888888. Kalle
+                        if v_journal.deebet = '888888' then
+                            v_journal.lisa_d = '';
+                        END IF;
+                        if v_journal.kreedit = '888888' then
+                            v_journal.lisa_k = '';
+                        END IF;
+
                         l_json_details = coalesce(l_json_details, '[]'::JSONB) || to_jsonb(v_journal);
 
 
@@ -736,7 +745,7 @@ BEGIN
 
         IF l_row_count > 0
         THEN
-            raise notice 'l_json %', l_json;
+            RAISE NOTICE 'l_json %', l_json;
             result = docs.sp_salvesta_journal(l_json :: JSON, user_Id, v_arv.rekvId);
         ELSE
             error_message = 'Puudub kehtiv read';
@@ -900,7 +909,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 
 /*
 
-SELECT  docs.gen_lausend_arv(5386332, 4461)
+SELECT  docs.gen_lausend_arv(6089799, 5407)
 
 */
 
