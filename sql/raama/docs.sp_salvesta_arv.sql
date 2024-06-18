@@ -7,71 +7,72 @@ CREATE OR REPLACE FUNCTION docs.sp_salvesta_arv(data JSON,
 $BODY$
 
 DECLARE
-    arv_id                INTEGER;
-    arv1_id               INTEGER;
-    userName              TEXT;
-    doc_id                INTEGER        = data ->> 'id';
-    doc_data              JSON           = data ->> 'data';
-    doc_type_kood         TEXT           = 'ARV'/*data->>'doc_type_id'*/;
-    doc_type_id           INTEGER        = (SELECT id
-                                            FROM libs.library
-                                            WHERE kood = doc_type_kood
-                                              AND library = 'DOK'
-                                            LIMIT 1);
+    arv_id                 INTEGER;
+    arv1_id                INTEGER;
+    userName               TEXT;
+    doc_id                 INTEGER        = data ->> 'id';
+    doc_data               JSON           = data ->> 'data';
+    doc_type_kood          TEXT           = 'ARV'/*data->>'doc_type_id'*/;
+    doc_type_id            INTEGER        = (SELECT id
+                                             FROM libs.library
+                                             WHERE kood = doc_type_kood
+                                               AND library = 'DOK'
+                                             LIMIT 1);
 
-    doc_details           JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-    doc_number            TEXT           = doc_data ->> 'number';
-    doc_summa             NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
-    doc_liik              INTEGER        = doc_data ->> 'liik';
-    doc_operid            INTEGER        = doc_data ->> 'operid';
-    doc_asutusid          INTEGER        = doc_data ->> 'asutusid';
-    doc_lisa              TEXT           = doc_data ->> 'lisa';
-    doc_kpv               DATE           = doc_data ->> 'kpv';
-    doc_tahtaeg_text      TEXT           = CASE
-                                               WHEN (trim(doc_data ->> 'tahtaeg')::TEXT)::TEXT = '' THEN current_date::TEXT
-                                               ELSE ((doc_data ->> 'tahtaeg')::TEXT) END;
-    doc_tahtaeg           DATE           = doc_tahtaeg_text::DATE;
-    doc_kbmta             NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
-    doc_kbm               NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
-    doc_muud              TEXT           = doc_data ->> 'muud';
-    doc_objektid          INTEGER        = doc_data ->> 'objektid'; -- считать или не считать (если не пусто) интресс
-    doc_objekt            TEXT           = doc_data ->> 'objekt';
-    tnDokLausId           INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
-    doc_lepingId          INTEGER        = doc_data ->> 'leping_id';
-    doc_aa                TEXT           = doc_data ->> 'aa'; -- eri arve
-    doc_viitenr           TEXT           = doc_data ->> 'viitenr'; -- viite number
-    doc_lapsid            INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
-    doc_type              TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату, hooldekodu
-    doc_print             JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
-    doc_ettemaksu_period  INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
-    doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
-    doc_asendus_id        INTEGER        = doc_data ->> 'asendus_id'; -- на основании импортированного табеля из замещения
-    doc_taskuraha_kov     NUMERIC        = doc_data ->> 'taskuraha_kov'; -- сумма карманных денег, по алгоритму замещения
-    doc_alus_arve_id      INTEGER        = doc_data ->> 'alus_arve_id'; -- ссылка на базовый счет (кредиоовые счета)
+    doc_details            JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+    doc_number             TEXT           = doc_data ->> 'number';
+    doc_summa              NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
+    doc_liik               INTEGER        = doc_data ->> 'liik';
+    doc_operid             INTEGER        = doc_data ->> 'operid';
+    doc_asutusid           INTEGER        = doc_data ->> 'asutusid';
+    doc_lisa               TEXT           = doc_data ->> 'lisa';
+    doc_kpv                DATE           = doc_data ->> 'kpv';
+    doc_tahtaeg_text       TEXT           = CASE
+                                                WHEN (trim(doc_data ->> 'tahtaeg')::TEXT)::TEXT = '' THEN current_date::TEXT
+                                                ELSE ((doc_data ->> 'tahtaeg')::TEXT) END;
+    doc_tahtaeg            DATE           = doc_tahtaeg_text::DATE;
+    doc_kbmta              NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
+    doc_kbm                NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
+    doc_muud               TEXT           = doc_data ->> 'muud';
+    doc_objektid           INTEGER        = doc_data ->> 'objektid'; -- считать или не считать (если не пусто) интресс
+    doc_objekt             TEXT           = doc_data ->> 'objekt';
+    tnDokLausId            INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
+    doc_lepingId           INTEGER        = doc_data ->> 'leping_id';
+    doc_aa                 TEXT           = doc_data ->> 'aa'; -- eri arve
+    doc_viitenr            TEXT           = doc_data ->> 'viitenr'; -- viite number
+    doc_lapsid             INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
+    doc_type               TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату, hooldekodu
+    doc_print              JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
+    doc_ettemaksu_period   INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
+    doc_ettemaksu_arve_id  INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
+    doc_asendus_id         INTEGER        = doc_data ->> 'asendus_id'; -- на основании импортированного табеля из замещения
+    doc_taskuraha_kov      NUMERIC        = doc_data ->> 'taskuraha_kov'; -- сумма карманных денег, по алгоритму замещения
+    doc_alus_arve_id       INTEGER        = doc_data ->> 'alus_arve_id'; -- ссылка на базовый счет (кредиоовые счета)
+    doc_kas_peata_saatmine BOOLEAN        = doc_data ->> 'kas_peata_saatmine'; --запрет на электронную рассылку
 
 -- Hooldekodu
-    doc_isik_id           INTEGER        = doc_data ->> 'isik_id'; -- kui arve salvestatud hooldekodu modulist
+    doc_isik_id            INTEGER        = doc_data ->> 'isik_id'; -- kui arve salvestatud hooldekodu modulist
 
-    dok_props             JSONB;
+    dok_props              JSONB;
 
-    json_object           JSON;
-    json_record           RECORD;
-    new_history           JSONB;
-    new_rights            JSONB;
-    ids                   INTEGER[];
-    l_json_arve_id        JSONB;
-    is_import             BOOLEAN        = data ->> 'import';
+    json_object            JSON;
+    json_record            RECORD;
+    new_history            JSONB;
+    new_rights             JSONB;
+    ids                    INTEGER[];
+    l_json_arve_id         JSONB;
+    is_import              BOOLEAN        = data ->> 'import';
 
-    arv1_rea_json         JSONB;
-    l_jaak                NUMERIC;
+    arv1_rea_json          JSONB;
+    l_jaak                 NUMERIC;
 
-    l_mk_id               INTEGER;
-    l_km                  TEXT;
-    l_mks                 RECORD;
-    v_aasta               RECORD;
-    l_osaliselt_suletatud BOOLEAN        = FALSE;
-    l_suletatud           BOOLEAN        = FALSE;
-    l_raha_saaja          TEXT; -- PayToName for export
+    l_mk_id                INTEGER;
+    l_km                   TEXT;
+    l_mks                  RECORD;
+    v_aasta                RECORD;
+    l_osaliselt_suletatud  BOOLEAN        = FALSE;
+    l_suletatud            BOOLEAN        = FALSE;
+    l_raha_saaja           TEXT; -- PayToName for export
 
 BEGIN
     -- если есть ссылка на ребенка, то присвоим viitenumber
@@ -85,15 +86,16 @@ BEGIN
         l_raha_saaja = (SELECT ltrim(rtrim(muud)) AS raha_saaja FROM ou.rekv WHERE id = 64 LIMIT 1);
     END IF;
     dok_props = (SELECT row_to_json(row)
-                 FROM (SELECT doc_aa               AS aa,
-                              doc_viitenr          AS viitenr,
-                              doc_type             AS tyyp,
-                              doc_ettemaksu_period AS ettemaksu_period,
-                              doc_isik_id          AS isik_id,
-                              doc_asendus_id       AS asendus_id,
-                              doc_taskuraha_kov    AS taskuraha_kov,
-                              l_raha_saaja         AS raha_saaja,
-                              doc_print            AS print) row);
+                 FROM (SELECT doc_aa                                  AS aa,
+                              doc_viitenr                             AS viitenr,
+                              doc_type                                AS tyyp,
+                              doc_ettemaksu_period                    AS ettemaksu_period,
+                              doc_isik_id                             AS isik_id,
+                              doc_asendus_id                          AS asendus_id,
+                              doc_taskuraha_kov                       AS taskuraha_kov,
+                              l_raha_saaja                            AS raha_saaja,
+                              doc_print                               AS print,
+                              coalesce(doc_kas_peata_saatmine, FALSE) AS kas_peata_saatmine) row);
 
     IF (doc_id IS NULL)
     THEN

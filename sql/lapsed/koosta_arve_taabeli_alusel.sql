@@ -14,48 +14,49 @@ CREATE OR REPLACE FUNCTION lapsed.koosta_arve_taabeli_alusel(IN user_id INTEGER,
 $BODY$
 
 DECLARE
-    l_rekvid        INTEGER = (SELECT rekvid
-                               FROM ou.userid u
-                               WHERE id = user_id
-                                   LIMIT 1);
+    l_rekvid             INTEGER = (SELECT rekvid
+                                    FROM ou.userid u
+                                    WHERE id = user_id
+                                    LIMIT 1);
 
-    l_asutus_id     INTEGER = (SELECT asutusid
-                               FROM lapsed.vanem_arveldus v
-                                        INNER JOIN libs.asutus a ON a.id = v.asutusid
-                               WHERE v.parentid = l_laps_id
-                                 AND v.rekvid = l_rekvid
-                                 AND arveldus
-                                   ORDER BY v.id DESC
-                                   LIMIT 1);
-    l_doklausend_id INTEGER;
-    l_liik          INTEGER = 0;
-    v_taabel        RECORD;
-    json_object     JSONB;
-    l_json_arve     JSON;
-    json_arvrea     JSONB   = '[]';
-    json_arvread    JSONB   = '[]';
+    l_asutus_id          INTEGER = (SELECT asutusid
+                                    FROM lapsed.vanem_arveldus v
+                                             INNER JOIN libs.asutus a ON a.id = v.asutusid
+                                    WHERE v.parentid = l_laps_id
+                                      AND v.rekvid = l_rekvid
+                                      AND arveldus
+                                    ORDER BY v.id DESC
+                                    LIMIT 1);
+    l_doklausend_id      INTEGER;
+    l_liik               INTEGER = 0;
+    v_taabel             RECORD;
+    json_object          JSONB;
+    l_json_arve          JSON;
+    json_arvrea          JSONB   = '[]';
+    json_arvread         JSONB   = '[]';
 
-    l_tp            TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
+    l_tp                 TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
 
-    l_arv_id        INTEGER = 0;
-    l_status        INTEGER;
-    l_number        TEXT;
-    l_arve_summa    NUMERIC = 0;
-    l_taabel_ids    INTEGER[];
-    i               INTEGER = 1;
-    v_maksja        RECORD;
-    jsonb_print     JSONB   = '[]';
-    l_aa            TEXT    = (SELECT arve
-                               FROM ou.aa
-                               WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
-                                 AND kassa = 1
-                                   ORDER BY default_ DESC
-                                   LIMIT 1);
+    l_arv_id             INTEGER = 0;
+    l_status             INTEGER;
+    l_number             TEXT;
+    l_arve_summa         NUMERIC = 0;
+    l_taabel_ids         INTEGER[];
+    i                    INTEGER = 1;
+    v_maksja             RECORD;
+    jsonb_print          JSONB   = '[]';
+    l_aa                 TEXT    = (SELECT arve
+                                    FROM ou.aa
+                                    WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
+                                      AND kassa = 1
+                                    ORDER BY default_ DESC
+                                    LIMIT 1);
 
-    l_db_konto      TEXT    = '10300029'; -- согдасно описанию отдела культуры
-    v_laps          RECORD;
-    l_arve_kogus    NUMERIC = 0; -- для проверки кол-ва услуг в счете
-    l_selg          TEXT; -- доп. пояснение
+    l_db_konto           TEXT    = '10300029'; -- согдасно описанию отдела культуры
+    v_laps               RECORD;
+    l_arve_kogus         NUMERIC = 0; -- для проверки кол-ва услуг в счете
+    l_selg               TEXT; -- доп. пояснение
+    l_kas_saldo_ulekanne BOOLEAN = FALSE; -- тип счета (перенос сальдо)
 
 BEGIN
 
@@ -95,8 +96,8 @@ BEGIN
                        WHERE dp.rekvid = l_rekvid
                          AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                          AND l.kood = 'ARV'
-                           ORDER BY dp.id DESC
-                           LIMIT 1
+                       ORDER BY dp.id DESC
+                       LIMIT 1
     );
 
 
@@ -136,36 +137,36 @@ BEGIN
     -- читаем табель и создаем детали счета
     FOR v_taabel IN
         SELECT lt.nomid,
-               coalesce(lt.kogus, 0)                                                 AS kogus,
-               coalesce(lt.hind)                                                     AS hind,
-               coalesce(lt.soodustus)                                                AS soodustus,
-               coalesce(lt.summa)                                                    AS summa,
-               coalesce(lt.vahe)                                                     AS vahe,
-               coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN AS kas_protsent,
-               coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN   AS kas_eraldi,
-               (lk.properties ->> 'sooduse_alg')::DATE                               AS sooduse_alg,
-               (lk.properties ->> 'sooduse_lopp')::DATE                              AS sooduse_lopp,
-               coalesce(n.properties ->> 'tyyp', '')                                 AS tyyp,
-               lt.soodustus                                                          AS real_soodus,
-               'Üksus: ' || (gr.nimetus::TEXT)::TEXT                                 AS muud,
-               lk.properties ->> 'yksus'                                             AS yksus,
-               lk.properties ->> 'all_yksus'                                         AS all_yksus,
-               lt.id                                                                 AS lapse_taabel_id,
-               lk.id                                                                 AS lapse_kaart_id,
-               coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC               AS vat,
-               (n.properties::JSONB ->> 'konto')::VARCHAR(20)                        AS konto,
-               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                      AS projekt,
-               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)                       AS tunnus,
-               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)                        AS tegev,
-               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)                      AS allikas,
-               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                     AS rahavoog,
-               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                     AS artikkel,
+               coalesce(lt.kogus, 0)                                                                  AS kogus,
+               coalesce(lt.hind)                                                                      AS hind,
+               coalesce(lt.soodustus)                                                                 AS soodustus,
+               coalesce(lt.summa)                                                                     AS summa,
+               coalesce(lt.vahe)                                                                      AS vahe,
+               coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN                  AS kas_protsent,
+               coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_eraldi,
+               (lk.properties ->> 'sooduse_alg')::DATE                                                AS sooduse_alg,
+               (lk.properties ->> 'sooduse_lopp')::DATE                                               AS sooduse_lopp,
+               coalesce(n.properties ->> 'tyyp', '')                                                  AS tyyp,
+               lt.soodustus                                                                           AS real_soodus,
+               'Üksus: ' || (gr.nimetus::TEXT)::TEXT                                                  AS muud,
+               lk.properties ->> 'yksus'                                                              AS yksus,
+               lk.properties ->> 'all_yksus'                                                          AS all_yksus,
+               lt.id                                                                                  AS lapse_taabel_id,
+               lk.id                                                                                  AS lapse_kaart_id,
+               coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC                                AS vat,
+               (n.properties::JSONB ->> 'konto')::VARCHAR(20)                                         AS konto,
+               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                                       AS projekt,
+               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)                                        AS tunnus,
+               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)                                         AS tegev,
+               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)                                       AS allikas,
+               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                                      AS rahavoog,
+               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                                      AS artikkel,
                lt.umberarvestus,
-               coalesce(lt.muud, '')                                                 AS markused,
-               lt.properties ->> 'kas_asendus'                                       AS kas_asendus,
-               at.rekvid                                                             AS asendus_rekvid,
-               ltrim(rtrim(CASE WHEN r.muud IS NULL or empty(r.muud)  THEN r.nimetus ELSE r.muud END)) AS asendus_asutus,
-               at.id                                                                 AS asendus_id
+               coalesce(lt.muud, '')                                                                  AS markused,
+               lt.properties ->> 'kas_asendus'                                                        AS kas_asendus,
+               at.rekvid                                                                              AS asendus_rekvid,
+               ltrim(rtrim(CASE WHEN r.muud IS NULL OR empty(r.muud) THEN r.nimetus ELSE r.muud END)) AS asendus_asutus,
+               at.id                                                                                  AS asendus_id
         FROM lapsed.lapse_taabel lt
                  INNER JOIN lapsed.lapse_kaart lk
                             ON lk.id = lt.lapse_kaart_id AND lt.nomid = lk.nomid AND lt.rekvid = lk.rekvid
@@ -184,7 +185,7 @@ BEGIN
           AND lk.rekvid = l_rekvid
           AND n.rekvid = lk.rekvid
           AND (lt.summa <> 0 OR lt.kogus <> 0)
-            ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
+        ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
 
         LOOP
@@ -231,20 +232,12 @@ BEGIN
                                                                             WHEN v_taabel.umberarvestus
                                                                                 THEN ' Ümberarvestus '
                                                                             WHEN v_taabel.asendus_id IS NOT NULL THEN
-                                                                                ' (' || ltrim(ltrim(v_taabel.asendus_asutus,'Narva')) || ')'
+                                                                                ' (' || ltrim(ltrim(v_taabel.asendus_asutus, 'Narva')) || ')'
                                                                             ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ', ' ELSE '' END) ||
                                                                                  v_taabel.markused END AS muud,
                                                        v_taabel.asendus_id                             AS asendus_id,
                                                        l_tp                                            AS tp) row) :: JSONB;
 
-/*            IF v_taabel.kas_asendus IS NOT NULL
-            THEN
-                l_selg = CASE
-                             WHEN v_taabel.asendus_asutus IS NOT NULL
-                                 THEN ' (Osutatavad teenused: ' || v_taabel.asendus_asutus || ')'
-                             ELSE '' END;
-            END IF;
-*/
 
             IF v_taabel.kas_eraldi
             THEN
@@ -265,12 +258,12 @@ BEGIN
                 WHERE l.parentid = l_laps_id
                   AND lk.id = v_taabel.lapse_kaart_id
                   AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-                    ORDER BY D.ID DESC
-                    LIMIT 1;
+                ORDER BY D.ID DESC
+                LIMIT 1;
+
 
                 IF coalesce(l_status, 0) <> 2
                 THEN
-
                     -- создаем параметры
                     l_json_arve = (SELECT to_json(row)
                                    FROM (SELECT coalesce(l_arv_id, 0)                                   AS id,
@@ -317,28 +310,131 @@ BEGIN
             i = i + 1;
         END LOOP;
 
-
-    -- проверяем на имеющийся счет
+    -- проверим на наличие счета на перенос сальдо
     SELECT d.id,
            d.status,
-           a.number
-    INTO l_arv_id, l_status, l_number
+           a.number,
+           TRUE   AS kas_saldo_ulekanne,
+           a.muud AS selg
+    INTO l_arv_id, l_status, l_number, l_kas_saldo_ulekanne, l_selg
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
-             INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
              INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-             INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.parentid
-             INNER JOIN lapsed.lapse_taabel lt ON lt.parentid = l.parentid AND lt.lapse_kaart_id = lk.id AND
-                                                  (a1.properties ->> 'lapse_taabel_id')::INTEGER = lt.id
-
     WHERE l.parentid = l_laps_id
-      AND NOT coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN
-      AND a.asutusid = l_asutus_id
-      AND lt.aasta = date_part('year', l_kpv)
-      AND lt.kuu = date_part('month', l_kpv)
+      AND a.kpv = l_kpv
       AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
+      AND coalesce(a.muud, '') ILIKE '%SALDO ÜLEKANNE%'
+    ORDER BY D.ID DESC
+    LIMIT 1;
+
+    IF coalesce(l_arv_id, 0) = 0
+    THEN
+
+        -- проверяем на имеющийся счет
+        SELECT d.id,
+               d.status,
+               a.number,
+               FALSE AS kas_saldo_ulekanne
+        INTO l_arv_id, l_status, l_number, l_kas_saldo_ulekanne
+        FROM docs.doc d
+                 INNER JOIN docs.arv a ON a.parentid = d.id
+                 INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
+                 INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+                 INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.parentid
+                 INNER JOIN lapsed.lapse_taabel lt ON lt.parentid = l.parentid AND lt.lapse_kaart_id = lk.id AND
+                                                      (a1.properties ->> 'lapse_taabel_id')::INTEGER = lt.id
+
+        WHERE l.parentid = l_laps_id
+          AND NOT coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN
+          AND a.asutusid = l_asutus_id
+          AND lt.aasta = date_part('year', l_kpv)
+          AND lt.kuu = date_part('month', l_kpv)
+          AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
         ORDER BY D.ID DESC
         LIMIT 1;
+    END IF;
+
+    IF l_kas_saldo_ulekanne
+    THEN
+        -- если есть счет на перенос сальдо, то копируем строки переноса в счет
+        json_arvrea = '[]'::JSONB || (SELECT row_to_json(row)
+                                      FROM (SELECT a1.id,
+                                                   a1.nomid,
+                                                   a1.kogus,
+                                                   a1.hind::NUMERIC(12, 4),
+                                                   a1.kbm::NUMERIC(12, 2),
+                                                   a1.kbmta::NUMERIC(12, 2),
+                                                   a1.summa::NUMERIC(12, 2),
+                                                   COALESCE((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4) AS soodustus,
+                                                   a1.soodus::NUMERIC(12, 4),
+                                                   a1.kood1,
+                                                   a1.kood2,
+                                                   a1.kood3,
+                                                   a1.kood4,
+                                                   a1.kood5,
+                                                   a1.tunnus,
+                                                   a1.proj,
+                                                   a1.objekt,
+                                                   a1.konto,
+                                                   a1.tp,
+                                                   a1.properties ->> 'yksus'                                                    AS yksus,
+                                                   a1.muud
+                                            FROM docs.arv1 a1
+                                                     INNER JOIN docs.arv a
+                                                                ON a.id = a1.parentId
+                                            WHERE a.parentid = l_arv_id
+                                              AND l_kas_saldo_ulekanne
+                                              AND a1.nomid IN (
+                                                SELECT n.id
+                                                FROM libs.nomenklatuur n
+                                                WHERE kood = '888888-001'
+                                                  AND rekvid = l_rekvid
+                                                  AND status < 3)
+                                           ) row) :: JSONB;
+
+        json_arvread = json_arvread || json_arvrea;
+
+        json_arvrea = '[]'::JSONB || (SELECT row_to_json(row)
+                                      FROM (SELECT a1.id,
+                                                   a1.nomid,
+                                                   a1.kogus,
+                                                   a1.hind::NUMERIC(12, 4),
+                                                   a1.kbm::NUMERIC(12, 2),
+                                                   a1.kbmta::NUMERIC(12, 2),
+                                                   a1.summa::NUMERIC(12, 2),
+                                                   COALESCE((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4) AS soodustus,
+                                                   a1.soodus::NUMERIC(12, 4),
+                                                   a1.kood1,
+                                                   a1.kood2,
+                                                   a1.kood3,
+                                                   a1.kood4,
+                                                   a1.kood5,
+                                                   a1.tunnus,
+                                                   a1.proj,
+                                                   a1.objekt,
+                                                   a1.konto,
+                                                   a1.tp,
+                                                   a1.properties ->> 'yksus'                                                    AS yksus,
+                                                   a1.muud,
+                                                   a1.muud                                                                      AS markused
+                                            FROM docs.arv1 a1
+                                                     INNER JOIN docs.arv a
+                                                                ON a.id = a1.parentId
+                                            WHERE a.parentid = l_arv_id
+                                              AND l_kas_saldo_ulekanne
+                                              AND a1.nomid IN (
+                                                SELECT n.id
+                                                FROM libs.nomenklatuur n
+                                                WHERE kood = '888888-002'
+                                                  AND rekvid = l_rekvid
+                                                  AND status < 3)
+                                           ) row) :: JSONB;
+
+        json_arvread = json_arvread || json_arvrea;
+
+
+    END IF;
+
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)

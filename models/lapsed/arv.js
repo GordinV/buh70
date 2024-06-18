@@ -25,6 +25,7 @@ const Arv = {
                  SELECT min(a.kpv) as alg_kpv, max(a.kpv) as lopp_kpv, a.rekvid
                  FROM docs.arv a
                  WHERE parentid IN (SELECT ids FROM params)
+                 and not coalesce((a.properties->>'kas_peata_saatmine')::boolean, false)
                  group by a.rekvid
              ),
              aa as (
@@ -264,7 +265,8 @@ const Arv = {
                             and at.status < 3
                             limit 1
                             )                                                      AS kr_number,
-                            (a.properties->> 'alus_arve_id')::integer as alus_arve_id                                                  
+                            (a.properties->> 'alus_arve_id')::integer as alus_arve_id,
+                            coalesce((a.properties ->> 'kas_peata_saatmine'):: BOOLEAN, FALSE):: BOOLEAN  as kas_peata_saatmine                                                  
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId

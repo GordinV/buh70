@@ -69,6 +69,7 @@ DECLARE
     l_yksus         TEXT;
 
     v_arved         RECORD;
+    l_selg          TEXT; -- строка пояснение в новый счет
 BEGIN
 
     doc_type_id = 'ARV';
@@ -100,8 +101,6 @@ BEGIN
     INTO l_jaak, l_jaak_inf3
     FROM lapsed.kaive_aruanne(l_rekvId, l_kpv, l_kpv) qry
     WHERE viitenumber = lapsed.get_viitenumber(l_rekvId, l_laps_id);
-
-    RAISE NOTICE 'l_jaak %, l_jaak_inf3 %, l_rekvId %, l_kpv %, l_laps_id %, user_id %', l_jaak, l_jaak_inf3, l_rekvId, l_kpv,l_laps_id, user_id;
 
     -- вычитаем из долга, долю инф3
     l_jaak = l_jaak - l_jaak_inf3;
@@ -183,8 +182,8 @@ BEGIN
                 THEN
                     SELECT n.id                                              AS nomid,
                            1                                                 AS kogus,
-                           -1 * v_arved.inf3_jaak                                  AS hind,
-                           -1 * v_arved.inf3_jaak                                  AS summa,
+                           -1 * v_arved.inf3_jaak                            AS hind,
+                           -1 * v_arved.inf3_jaak                            AS summa,
                            0::NUMERIC                                        AS vat,
                            (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
                            (n.properties::JSONB ->> 'projekt')::VARCHAR(20)  AS projekt,
@@ -222,6 +221,10 @@ BEGIN
                 END IF;
 
                 -- создаем счет в учреждении на сумму долга
+                -- создаем строку пояснение
+                l_selg = 'SALDO ÜLEKANNE, ' || l_viitenumber || ',' ||
+                         (SELECT ltrim(rtrim(nimetus)) AS nimetus FROM ou.rekv WHERE id = l_rekvId_new LIMIT 1);
+
 
                 json_object = (SELECT to_jsonb(row)
                                FROM (SELECT 0                                AS id,
@@ -236,7 +239,8 @@ BEGIN
                                             l_asutus_id                      AS asutusid,
                                             l_aa                             AS aa,
                                             l_laps_id                        AS lapsid,
-                                            'SALDO ÜLEKANNE'                 AS muud,
+                                            l_selg                           AS muud,
+                                            TRUE                             AS kas_peata_saatmine, -- счет не отправляется автоматически
                                             json_rea                         AS "gridData") row);
 
                 -- подготавливаем параметры для создания счета
@@ -394,6 +398,22 @@ BEGIN
 
     -- создаем счет в учреждении на сумму долга
 
+    -- параментр контировки в новом учреждении
+
+    l_doklausend_id = (SELECT dp.id
+                       FROM libs.dokprop dp
+                                INNER JOIN libs.library l ON l.id = dp.parentid
+                       WHERE dp.rekvid = l_rekvid_new
+                         AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                         AND l.kood = 'ARV'
+                       ORDER BY dp.id DESC
+                       LIMIT 1
+    );
+
+    -- создаем строку пояснение
+    l_selg = 'SALDO ÜLEKANNE, ' || lapsed.get_viitenumber(l_rekvid, l_laps_id) || ',' ||
+             (SELECT ltrim(rtrim(nimetus)) AS nimetus FROM ou.rekv WHERE id = l_rekvId LIMIT 1);
+
     json_object = (SELECT to_jsonb(row)
                    FROM (SELECT 0                                AS id,
                                 NULL::TEXT                       AS number,
@@ -407,7 +427,8 @@ BEGIN
                                 l_asutus_id                      AS asutusid,
                                 l_aa                             AS aa,
                                 l_laps_id                        AS lapsid,
-                                'SALDO ÜLEKANNE'                 AS muud,
+                                l_selg                           AS muud,
+                                TRUE                             AS kas_peata_saatmine, -- счет не отправляется автоматически
                                 json_rea                         AS "gridData") row);
 
     -- подготавливаем параметры для создания счета

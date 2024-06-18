@@ -15,6 +15,7 @@ const
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
+    CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     styles = require('./arve.styles');
 const Round = require('./../../../../libs/round_to_2');
 const Loading = require('./../../../components/loading/index.jsx');
@@ -239,6 +240,13 @@ class Arve extends React.PureComponent {
                                     collId={'kood'}
                                     ref="select-aa"
                                     readOnly={!isEditMode}/>
+                            <CheckBox title="Peata arve automatselt saatmine:"
+                                      name='kas_peata_saatmine'
+                                      value={Boolean(self.docData.kas_peata_saatmine)}
+                                      ref={'checkbox_kas_peata_saatmine'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!self.state.edited}
+                            />
 
                         </div>
                     </div>

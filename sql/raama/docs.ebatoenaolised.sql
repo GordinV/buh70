@@ -25,6 +25,8 @@ DECLARE
     l_noude_vahe      NUMERIC        = 0; -- тут отражается разница начтсленного и суммы отчета
     kas_noude_100     BOOLEAN        = FALSE; -- первое или второе начисление
     l_lausendi_period DATE           = l_kpv; -- дата проводки
+    l_db_konto        TEXT           = '605030';
+    l_kr_konto        TEXT           = '10300929';
 BEGIN
 
     -- формируем список просроченных счетов (50%)
@@ -52,7 +54,9 @@ BEGIN
            OR (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0)
            OR (
                 r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
-                exists(SELECT id FROM cur_journal WHERE id IN (SELECT unnest(r.docs_ids)) AND kreedit = '103009')
+                exists(SELECT id
+                       FROM cur_journal
+                       WHERE id IN (SELECT unnest(r.docs_ids)) AND left(kreedit, 6) = left(l_kr_konto, 6))
             )
 --        order by id desc limit 100
         LOOP
@@ -63,8 +67,8 @@ BEGIN
             SELECT sum(summa)
             INTO l_summa
             FROM cur_journal j
-            WHERE deebet = '605030'
-              AND kreedit = '103009'
+            WHERE deebet = l_db_konto
+              AND left(kreedit, 6) = left(l_kr_konto, 6)
               AND j.id IN (SELECT unnest(d.docs_ids)
                            FROM docs.doc d
                            WHERE d.id = v_aruanne.doc_id
@@ -118,8 +122,8 @@ BEGIN
                     l_json_details = l_json_details || to_jsonb(row)
                                      FROM (SELECT 0                                                                    AS id,
                                                   l_noude_vahe                                                         AS summa,
-                                                  '605030'                                                             AS deebet,
-                                                  '103009'                                                             AS kreedit,
+                                                  l_db_konto                                                           AS deebet,
+                                                  l_kr_konto                                                           AS kreedit,
                                                   CASE
                                                       WHEN a1.kood1 IS NULL OR empty(a1.kood1) THEN '01112'
                                                       ELSE a1.kood1 END                                                AS kood1,
@@ -232,7 +236,7 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(69, '2024-03-31'::DATE, 4815885)
+SELECT docs.ebatoenaolised(83, '2024-06-30'::DATE, 5697089)
 */
 
 
