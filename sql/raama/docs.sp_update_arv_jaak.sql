@@ -2,7 +2,7 @@
 DROP FUNCTION IF EXISTS docs.sp_update_arv_jaak(INTEGER, DATE);
 DROP FUNCTION IF EXISTS docs.sp_update_arv_jaak(INTEGER);
 
-CREATE OR REPLACE FUNCTION docs.sp_update_arv_jaak(l_arv_Id INTEGER)
+CREATE OR REPLACE FUNCTION docs.sp_update_arv_jaak(l_arv_Id INTEGER, arv_kpv date default current_date)
     RETURNS NUMERIC AS
 $BODY$
 DECLARE
@@ -27,7 +27,7 @@ BEGIN
              INNER JOIN docs.doc d ON d.id = arv.parentid
     WHERE d.id = l_arv_Id;
 
-    SELECT coalesce(sum(summa) FILTER ( WHERE arvtasu.kpv <= current_date OR pankkassa = 3), 0),
+    SELECT coalesce(sum(summa) FILTER ( WHERE arvtasu.kpv <= arv_kpv OR pankkassa = 3), 0),
            coalesce(max(arvtasu.kpv), NULL :: DATE)
     INTO l_tasu_summa, l_kpv
     FROM docs.arvtasu arvtasu
@@ -77,9 +77,9 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER, DATE) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER, DATE) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER, DATE) TO dbpeakasutaja;
 /*
 
 SELECT docs.sp_update_arv_jaak(5863297)

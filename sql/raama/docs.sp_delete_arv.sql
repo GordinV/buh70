@@ -20,17 +20,20 @@ DECLARE
     DOC_STATUS      INTEGER = 3; -- документ удален
     v_mk            RECORD;
     l_tasu_id       INTEGER; -- оплата счета пенсионера
+    v_arved         RECORD; -- список ид связанных счетов
+
 BEGIN
 
     SELECT d.*,
-           u.ametnik                                AS user_name,
+           u.ametnik                                    AS user_name,
            a.kpv,
-           a.id                                     AS doc_arv_id,
+           a.id                                         AS doc_arv_id,
            a.properties,
-           a.properties ->> 'tyyp'                  AS tyyp,
+           a.properties ->> 'tyyp'                      AS tyyp,
            a.liik,
            a.asutusid,
-           (a.properties ->> 'asendus_id')::INTEGER AS asendus_id
+           (a.properties ->> 'asendus_id')::INTEGER     AS asendus_id,
+           (a.properties -> 'doc_kreedit_arved')::JSONB AS kreedit_arved
     INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
@@ -49,6 +52,7 @@ BEGIN
         error_code = 5;
         error_message = 'Kasutaja ei leitud';
         result = 0;
+        RAISE EXCEPTION 'Viga: Kasutaja ei leitud';
         RETURN;
 
     END IF;
@@ -66,6 +70,19 @@ BEGIN
         error_message = 'Viga: Arve oli esitatud, kustutamine keelatud';
         result = 0;
         RAISE EXCEPTION 'Viga: Arve oli esitatud, kustutamine keelatud';
+    END IF;
+
+    -- Проверка на связаность счета с переносом сальдо
+    IF exists(SELECT id
+              FROM docs.arv
+              WHERE (properties -> 'doc_kreedit_arved')::JSONB @> to_jsonb(doc_id))
+    THEN
+
+        error_code = 5;
+        error_message = 'Viga: Arve seotud saldo ülekanne arvega, kustutamine keelatud';
+        result = 0;
+        RAISE EXCEPTION 'Viga: Arve seotud saldo ülekanne arvega, kustutamine keelatud';
+
     END IF;
 
 
@@ -254,7 +271,6 @@ BEGIN
     IF v_doc.tyyp IS NOT NULL AND coalesce(v_doc.tyyp, '') = 'HOOLDEKODU_ISIKU_OSA' AND v_doc.liik = 0
     THEN
         -- удалим списание пенсии
-        RAISE NOTICE 'l_tasu_id %', l_tasu_id;
 
         IF l_tasu_id IS NOT NULL
         THEN
@@ -268,7 +284,7 @@ BEGIN
     END IF;
 
 
-    --удалим из кеша отчета, если он там
+/*    --удалим из кеша отчета, если он там
     IF exists(SELECT 1 FROM pg_class WHERE relname = 'saldo_ja_kaive')
     THEN
         DELETE
@@ -277,18 +293,46 @@ BEGIN
             OR (params ->> 'kpv_start')::DATE >= v_doc.kpv))
           AND rekvid = v_doc.rekvid;
     END IF;
-    -- удалим сссылку в табеле
+*/    -- удалим сссылку в табеле
+
     IF exists(SELECT 1 FROM pg_class WHERE relname = 'hootaabel')
     THEN
         UPDATE hooldekodu.hootaabel
         SET arvid      = 0,
             properties = properties || jsonb_build_object('omavalitsus_osa', 0, 'isiku_osa', 0)
         WHERE arvid = v_doc.id;
+
         UPDATE hooldekodu.hootaabel
         SET sugulane_arv_id = NULL,
             properties      = properties || jsonb_build_object('sugulane_osa', 0)
         WHERE sugulane_arv_id = v_doc.id;
 
+    END IF;
+
+    -- если счет на перенос долга и есть кредитовые счета, удалим их
+    IF v_doc.kreedit_arved IS NOT NULL AND v_doc.kreedit_arved::TEXT <> 'null' AND
+       jsonb_array_length(v_doc.kreedit_arved) > 0
+    THEN
+        FOR v_arved IN
+            WITH doc_ids AS (
+                SELECT jsonb_array_elements(v_doc.kreedit_arved)::INTEGER AS id
+            )
+            SELECT u.id AS user_id, doc_ids.id::INTEGER AS doc_id
+            FROM doc_ids,
+                 docs.doc d,
+                 ou.userid u
+            WHERE d.id = doc_ids.id
+              AND d.rekvid = u.rekvid
+              AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id)
+              AND u.status < 3
+
+            LOOP
+                IF v_arved.user_id IS NULL
+                THEN
+                    RAISE EXCEPTION 'Viga, kasutaja siht asutuses puudub';
+                END IF;
+                PERFORM docs.sp_delete_arv(v_arved.user_id, v_arved.doc_id);
+            END LOOP;
     END IF;
 
 

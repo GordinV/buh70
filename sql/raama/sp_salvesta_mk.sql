@@ -38,6 +38,7 @@ DECLARE
     doc_dok_id        INTEGER = doc_data ->> 'dokid'; -- kui mk salvestatud avansiaruanne alusel
     doc_kasusaaja_id  INTEGER = doc_data ->> 'kasusaaja_id'; -- дл модуля Hooldekodu
     doc_tyyp        TEXT = doc_data ->> 'tehingu_tyyp'; -- если перенос сальдо из детского модуля
+    doc_kreedit_makse INTEGER = doc_data ->> 'doc_kreedit_makse'; -- если перенос сальдо то ссылка на первый документ
 
     json_object       JSON;
     json_record       RECORD;
@@ -140,7 +141,7 @@ BEGIN
     -- для модуля lapsed укажем тип операции, для последующей контировки с коррекцией корр.счетов
     IF (doc_tyyp IS NOT NULL AND NOT empty(doc_tyyp))
     THEN
-        json_properties = jsonb_build_object('tehingu_tyyp', doc_tyyp);
+        json_properties = jsonb_build_object('tehingu_tyyp', doc_tyyp, 'doc_kreedit_makse',doc_kreedit_makse);
     END IF;
 
     -- вставка или апдейт docs.doc

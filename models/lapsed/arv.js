@@ -774,10 +774,16 @@ const Arv = {
 
     },
     saveDoc: `select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id`,
-    deleteDoc: `SELECT docs.sp_delete_arv($1::INTEGER, id::INTEGER)
-                FROM lapsed.cur_laste_arved
+    deleteDoc: `WITH arved AS (
+                SELECT id,
+                       cardinality(string_to_array($2::TEXT, ',')) AS a_len,
+                       coalesce((markused ILIKE '%SALDO ÜLEKANNE%'), false)                           AS kas_saldo_ulekanne
+                FROM lapsed.cur_laste_arved a
                 WHERE id::TEXT IN (SELECT unnest(string_to_array($2::TEXT, ',')))
-    `, // $1 - userId, $2 - docId
+            )
+            SELECT docs.sp_delete_arv($1::INTEGER, id::INTEGER)
+            FROM arved
+            WHERE CASE WHEN a_len > 1 THEN NOT kas_saldo_ulekanne ELSE TRUE END`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',

@@ -17,6 +17,7 @@ DECLARE
     arvtasu_history JSONB;
     new_history     JSONB;
     DOC_STATUS      INTEGER = 3; -- документ удален
+    v_mk            RECORD;
 
 
 BEGIN
@@ -24,7 +25,9 @@ BEGIN
     SELECT d.*,
            (m.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER AS ebatoenaolised_tagastamine_id,
            u.ametnik                                                   AS user_name,
-           m.maksepaev
+           m.maksepaev,
+           (m.properties -> 'doc_kreedit_makse')::JSONB                AS kreedit_makse
+
     INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN docs.mk m ON m.parentid = d.id
@@ -38,9 +41,24 @@ BEGIN
         error_code = 6;
         error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
         result = 0;
+        RAISE EXCEPTION 'Viga %', error_message;
         RETURN;
 
     END IF;
+
+    -- Проверка на связаность платежа с переносом сальдо
+    IF exists(SELECT id
+              FROM docs.mk
+              WHERE (properties -> 'doc_kreedit_makse')::JSONB @> to_jsonb(doc_id))
+    THEN
+
+        error_code = 5;
+        error_message = 'Viga: Makse seotud saldo ülekannega , kustutamine keelatud';
+        result = 0;
+        RAISE EXCEPTION 'Viga: Arve seotud saldo ülekannega, kustutamine keelatud';
+
+    END IF;
+
 
     IF NOT exists(SELECT u.id
                   FROM ou.userid u
@@ -190,6 +208,26 @@ BEGIN
         status     = DOC_STATUS
     WHERE id = doc_id;
 
+    -- если платеж на перенос сальдо и есть кредитовые платежи, удалим их
+    IF v_doc.kreedit_makse IS NOT NULL AND v_doc.kreedit_makse::TEXT <> 'null' AND
+       v_doc.kreedit_makse::INTEGER > 0
+    THEN
+        SELECT u.id AS user_id, v_doc.kreedit_makse::INTEGER AS doc_id
+        INTO v_mk
+        FROM docs.doc d,
+             ou.userid u
+        WHERE d.id = v_doc.kreedit_makse::INTEGER
+          AND d.rekvid = u.rekvid
+          AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = l_user_id)
+          AND u.status < 3
+        LIMIT 1;
+
+        IF v_mk.user_id IS NULL
+        THEN
+            RAISE EXCEPTION 'Viga, kasutaja siht asutuses puudub';
+        END IF;
+        PERFORM docs.sp_delete_mk(v_mk.user_id, v_mk.doc_id);
+    END IF;
 
     result = 1;
     RETURN;

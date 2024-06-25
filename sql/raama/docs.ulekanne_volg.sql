@@ -70,6 +70,7 @@ DECLARE
 
     v_arved         RECORD;
     l_selg          TEXT; -- строка пояснение в новый счет
+    a_kreedit_arved JSONB   = '[]'; -- массив кредитовых счетов
 BEGIN
 
     doc_type_id = 'ARV';
@@ -97,14 +98,16 @@ BEGIN
     END IF;
 
     -- считаем сумму долга, вкл. сумму INF3
-    SELECT qry.jaak, qry.jaak_inf3
+    SELECT coalesce(qry.jaak,0), coalesce(qry.jaak_inf3,0)
     INTO l_jaak, l_jaak_inf3
     FROM lapsed.kaive_aruanne(l_rekvId, l_kpv, l_kpv) qry
     WHERE viitenumber = lapsed.get_viitenumber(l_rekvId, l_laps_id);
 
+    raise notice 'l_jaak %, l_jaak_inf3 %', l_jaak, l_jaak_inf3;
+
+
     -- вычитаем из долга, долю инф3
     l_jaak = l_jaak - l_jaak_inf3;
-
 
     IF (coalesce(l_jaak, 0) + coalesce(l_jaak_inf3, 0)) = 0
     THEN
@@ -118,17 +121,17 @@ BEGIN
     -- готовим кредитовый счет
     -- ищем ном для не инф3 услуги
     l_nom_id =
-            (SELECT id FROM libs.nomenklatuur n WHERE kood = '888888-001' AND rekvid = l_rekvId AND status < 3 LIMIT 1);
+            (SELECT id FROM libs.nomenklatuur n WHERE kood = '888888-002' AND rekvid = l_rekvId AND status < 3 LIMIT 1);
     -- ищем ном для инф3 услуги
     l_nom_inf3_id =
-            (SELECT id FROM libs.nomenklatuur n WHERE kood = '888888-002' AND rekvid = l_rekvId AND status < 3 LIMIT 1);
+            (SELECT id FROM libs.nomenklatuur n WHERE kood = '888888-001' AND rekvid = l_rekvId AND status < 3 LIMIT 1);
 
-    IF l_jaak > 0
+    IF (l_jaak + l_jaak_inf3) > 0
     THEN
 
         FOR v_arved IN
             WITH docs AS (
-                SELECT a.jaak AS volg, lapsed.get_inf3_jaak(a.id, l_kpv) AS inf3_jaak, a.kpv
+                SELECT coalesce(a.jaak,0) AS volg, coalesce(lapsed.get_inf3_jaak(a.id, l_kpv),0) AS inf3_jaak, a.kpv
                 FROM lapsed.cur_laste_arved a
                 WHERE a.laps_id = l_laps_id
                   AND rekvid = l_rekvId
@@ -138,6 +141,8 @@ BEGIN
             FROM docs
             ORDER BY kpv
             LOOP
+                raise notice 'v_arved.jaak %', v_arved.jaak;
+
                 SELECT n.id                                              AS nomid,
                        1                                                 AS kogus,
                        -1 * v_arved.jaak                                 AS hind,
@@ -152,7 +157,7 @@ BEGIN
                        (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
                 INTO v_nom_rea
                 FROM libs.nomenklatuur n
-                WHERE kood = '888888-001'
+                WHERE kood = '888888-002'
                   AND rekvid = l_rekvId
                   AND status < 3
                 LIMIT 1;
@@ -178,6 +183,8 @@ BEGIN
                                                             '800699'           AS tp) row) :: JSONB;
 
                 -- строка на инф3 часть долга
+                raise notice 'v_arved.inf3_jaak %', v_arved.inf3_jaak;
+
                 IF v_arved.inf3_jaak > 0
                 THEN
                     SELECT n.id                                              AS nomid,
@@ -194,7 +201,7 @@ BEGIN
                            (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
                     INTO v_nom_rea
                     FROM libs.nomenklatuur n
-                    WHERE kood = '888888-002'
+                    WHERE kood = '888888-001'
                       AND rekvid = l_rekvId
                       AND status < 3
                     LIMIT 1;
@@ -255,14 +262,26 @@ BEGIN
                     RAISE EXCEPTION 'Viga:,kreedit arve salvestamine ebaõnnestus';
                 END IF;
 
+                -- сохраняем в массиве
+                a_kreedit_arved = a_kreedit_arved || to_jsonb(doc_id_kreedit);
+
                 -- контировка
                 PERFORM docs.gen_lausend_arv(doc_id_kreedit, user_id);
+                json_rea = '[]'::jsonb;
             END LOOP;
+    END IF;
+
+    raise notice 'a_kreedit_arved %', a_kreedit_arved;
+
+    -- проверка на созданные кредитовые счета
+    IF jsonb_array_length(a_kreedit_arved) < 1
+    THEN
+        RAISE EXCEPTION 'Viga, kreedit arved ei ole koostatud';
     END IF;
 
     -- проверяем счета, по которым перенос долга
     FOR v_arved IN
-        SELECT id, docs.sp_update_arv_jaak(id) AS jaak, number
+        SELECT id, docs.sp_update_arv_jaak(id, l_kpv) AS jaak, number
         FROM lapsed.cur_laste_arved
         WHERE rekvid = l_rekvId
           AND laps_id = l_laps_id
@@ -271,7 +290,8 @@ BEGIN
             IF v_arved.jaak > 0
             THEN
                 -- ошибка при переносе
-                RAISE NOTICE 'Viga, arved tasumata, number %', v_arved.number;
+                RAISE notice 'Viga, arved tasumata, number %', v_arved.number;
+                return;
             END IF;
         END LOOP;
 
@@ -327,7 +347,7 @@ BEGIN
                (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
         INTO v_nom_rea
         FROM libs.nomenklatuur n
-        WHERE kood = '888888-001'
+        WHERE kood = '888888-002'
           AND rekvid = l_rekvId_new
           AND status < 3
         LIMIT 1;
@@ -370,7 +390,7 @@ BEGIN
                (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
         INTO v_nom_rea
         FROM libs.nomenklatuur n
-        WHERE kood = '888888-002'
+        WHERE kood = '888888-001'
           AND rekvid = l_rekvId_new
           AND status < 3
         LIMIT 1;
@@ -428,8 +448,10 @@ BEGIN
                                 l_aa                             AS aa,
                                 l_laps_id                        AS lapsid,
                                 l_selg                           AS muud,
+                                a_kreedit_arved                  AS kreedit_arved,      -- сылка на кредитовый счет
                                 TRUE                             AS kas_peata_saatmine, -- счет не отправляется автоматически
-                                json_rea                         AS "gridData") row);
+                                json_rea                         AS
+                                                                    "gridData") row);
 
     -- подготавливаем параметры для создания счета
 
@@ -469,7 +491,7 @@ GRANT EXECUTE ON FUNCTION docs.ulekanne_volg(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.ulekanne_volg(5419, '{"laps_id":14253, "kpv":"20240531", "viitenumber":"0840142539"}')
+SELECT docs.ulekanne_volg(5407, '{"laps_id":14244, "kpv":"20240630", "viitenumber":"0090142444"}')
 
 0940142536-0840142539
 

@@ -49,6 +49,7 @@ DECLARE
     doc_taskuraha_kov      NUMERIC        = doc_data ->> 'taskuraha_kov'; -- сумма карманных денег, по алгоритму замещения
     doc_alus_arve_id       INTEGER        = doc_data ->> 'alus_arve_id'; -- ссылка на базовый счет (кредиоовые счета)
     doc_kas_peata_saatmine BOOLEAN        = doc_data ->> 'kas_peata_saatmine'; --запрет на электронную рассылку
+    doc_kreedit_arved      JSONB          = doc_data ->> 'kreedit_arved'; -- ссылка на крелитовые счета при переносе долга
 
 -- Hooldekodu
     doc_isik_id            INTEGER        = doc_data ->> 'isik_id'; -- kui arve salvestatud hooldekodu modulist
@@ -96,6 +97,11 @@ BEGIN
                               l_raha_saaja                            AS raha_saaja,
                               doc_print                               AS print,
                               coalesce(doc_kas_peata_saatmine, FALSE) AS kas_peata_saatmine) row);
+
+    IF doc_kreedit_arved IS NOT NULL
+    THEN
+        dok_props = dok_props || jsonb_build_object('doc_kreedit_arved', doc_kreedit_arved);
+    END IF;
 
     IF (doc_id IS NULL)
     THEN

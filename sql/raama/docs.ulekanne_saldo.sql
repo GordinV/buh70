@@ -44,8 +44,6 @@ BEGIN
     WHERE viitenumber = lapsed.get_viitenumber(l_rekvId, l_laps_id)
       AND jaak < 0; -- только минус (переплата)
 
-    RAISE NOTICE 'l_jaak %, l_rekvId %, l_kpv %, l_laps_id %, user_id %', l_jaak, l_rekvId, l_kpv,l_laps_id, user_id;
-
     IF (coalesce(l_jaak, 0)) = 0
     THEN
         -- выходим

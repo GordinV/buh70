@@ -283,6 +283,7 @@ exports.delete = async (req, res) => {
     if (isBundleDelete) {
         Document.setDocumentId(docsIds.join(','));
     }
+
     deletedRows = 1;
     let result = await Document.delete();
 
