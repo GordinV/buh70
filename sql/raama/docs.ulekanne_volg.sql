@@ -98,12 +98,10 @@ BEGIN
     END IF;
 
     -- считаем сумму долга, вкл. сумму INF3
-    SELECT coalesce(qry.jaak,0), coalesce(qry.jaak_inf3,0)
+    SELECT coalesce(qry.jaak, 0), coalesce(qry.jaak_inf3, 0)
     INTO l_jaak, l_jaak_inf3
     FROM lapsed.kaive_aruanne(l_rekvId, l_kpv, l_kpv) qry
     WHERE viitenumber = lapsed.get_viitenumber(l_rekvId, l_laps_id);
-
-    raise notice 'l_jaak %, l_jaak_inf3 %', l_jaak, l_jaak_inf3;
 
 
     -- вычитаем из долга, долю инф3
@@ -131,7 +129,7 @@ BEGIN
 
         FOR v_arved IN
             WITH docs AS (
-                SELECT coalesce(a.jaak,0) AS volg, coalesce(lapsed.get_inf3_jaak(a.id, l_kpv),0) AS inf3_jaak, a.kpv
+                SELECT coalesce(a.jaak, 0) AS volg, coalesce(lapsed.get_inf3_jaak(a.id, l_kpv), 0) AS inf3_jaak, a.kpv
                 FROM lapsed.cur_laste_arved a
                 WHERE a.laps_id = l_laps_id
                   AND rekvid = l_rekvId
@@ -141,7 +139,6 @@ BEGIN
             FROM docs
             ORDER BY kpv
             LOOP
-                raise notice 'v_arved.jaak %', v_arved.jaak;
 
                 SELECT n.id                                              AS nomid,
                        1                                                 AS kogus,
@@ -183,7 +180,6 @@ BEGIN
                                                             '800699'           AS tp) row) :: JSONB;
 
                 -- строка на инф3 часть долга
-                raise notice 'v_arved.inf3_jaak %', v_arved.inf3_jaak;
 
                 IF v_arved.inf3_jaak > 0
                 THEN
@@ -267,11 +263,9 @@ BEGIN
 
                 -- контировка
                 PERFORM docs.gen_lausend_arv(doc_id_kreedit, user_id);
-                json_rea = '[]'::jsonb;
+                json_rea = '[]'::JSONB;
             END LOOP;
     END IF;
-
-    raise notice 'a_kreedit_arved %', a_kreedit_arved;
 
     -- проверка на созданные кредитовые счета
     IF jsonb_array_length(a_kreedit_arved) < 1
@@ -281,17 +275,28 @@ BEGIN
 
     -- проверяем счета, по которым перенос долга
     FOR v_arved IN
-        SELECT id, docs.sp_update_arv_jaak(id, l_kpv) AS jaak, number
-        FROM lapsed.cur_laste_arved
+        SELECT id, docs.sp_update_arv_jaak(a.id, l_kpv) AS jaak, number
+        FROM lapsed.cur_laste_arved a
         WHERE rekvid = l_rekvId
           AND laps_id = l_laps_id
           AND jaak <> 0
         LOOP
+
+            IF v_arved.jaak < 0
+            THEN
+                PERFORM docs.kas_kreedit_arve(v_arved.id, user_id, NULL::INTEGER);
+                PERFORM docs.sp_update_arv_jaak(v_arved.id, l_kpv);
+            END IF;
+
             IF v_arved.jaak > 0
             THEN
+                v_arved.jaak = docs.sp_update_arv_jaak(v_arved.id, l_kpv);
+
                 -- ошибка при переносе
-                RAISE notice 'Viga, arved tasumata, number %', v_arved.number;
-                return;
+                IF v_arved.jaak > 0
+                THEN
+                    RAISE EXCEPTION 'Viga, arved tasumata, number %', v_arved.number;
+                END IF;
             END IF;
         END LOOP;
 
@@ -471,15 +476,6 @@ BEGIN
     -- списываем долг у просроченных счетов
     result = doc_id_new;
     RETURN;
-/*EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            error_code = 1;
-            error_message = SQLERRM;
-            result = 0;
-            RETURN;
-*/
 END;
 $BODY$
     LANGUAGE plpgsql
@@ -491,7 +487,7 @@ GRANT EXECUTE ON FUNCTION docs.ulekanne_volg(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.ulekanne_volg(5407, '{"laps_id":14244, "kpv":"20240630", "viitenumber":"0090142444"}')
+SELECT docs.ulekanne_volg(5419, '{"laps_id":8067, "kpv":"20240630", "viitenumber":"0090080674"}')
 
 0940142536-0840142539
 

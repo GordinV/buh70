@@ -553,8 +553,10 @@ SELECT *
 FROM (
          SELECT sum(kassa) over() as kassa_kokku,
 *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2023::INTEGER,'2023-01-01'::date, '2023-12-31'::DATE, 64, 1)
-where artikkel = '2586'
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2023::INTEGER,'2024-01-01'::date, '2024-03-31'::DATE, 119, 1)
+where artikkel = '4500'
+and tegev = '08203'
+
 where rekv_id < 999
 and artikkel in (select kood from com_artikkel where is_kulud)
 

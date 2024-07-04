@@ -535,7 +535,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_smk(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 SELECT
-docs.gen_lausend_smk(6091837,5407)
+docs.gen_lausend_smk(6245432,5302)
 
 
 */

@@ -58,8 +58,7 @@ BEGIN
         jaak  = coalesce(l_jaak, 0)
     WHERE parentid = l_arv_Id;
 
-raise notice 'l_jaak %', l_jaak;
-    IF docs.is_period_opened(l_arv_Id) 
+    IF docs.is_period_opened(l_arv_Id)
     THEN
         UPDATE docs.doc
         SET status = CASE

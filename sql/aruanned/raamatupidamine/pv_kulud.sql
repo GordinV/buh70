@@ -30,7 +30,7 @@ WITH params AS (
            coalesce(params::JSONB ->> 'objekt', '')::TEXT || '%'          AS objekt,
            coalesce(params::JSONB ->> 'artikkel', '')::TEXT || '%'        AS artikkel,
            coalesce(params::JSONB ->> 'allikas', '')::TEXT || '%'         AS allikas,
-           coalesce(params::JSONB ->> 'tegevus', '')::TEXT || '%'           AS tegev,
+           coalesce(params::JSONB ->> 'tegevus', '')::TEXT || '%'         AS tegev,
            coalesce((params::JSONB ->> 'asutus_id')::INTEGER, 0)::INTEGER AS asutus_id,
            kpv_start                                                      AS kpv_1,
            kpv_end                                                        AS kpv_2
@@ -75,6 +75,33 @@ WITH params AS (
            AND (a1.kood3 = '01' -- Только Rv01
              OR left(a1.konto, 2) = '55'
              )
+         UNION ALL
+         SELECT d.id                                   AS doc_id,
+                j.dok                                  AS dokument,
+                j1.deebet                              AS konto,
+                coalesce(j1.kood5, '')::VARCHAR(20)    AS artikkel,
+                coalesce(j1.kood1, '')::VARCHAR(20)    AS tegevus,
+                coalesce(j1.kood2, '')::VARCHAR(20)    AS allikas,
+                coalesce(j1.tunnus, '')::VARCHAR(20)   AS tunnus,
+                coalesce(j1.kood4, '')                 AS uritus,
+                coalesce(j1.objekt, '')::VARCHAR(20)   AS objekt,
+                coalesce(j1.proj, '')::VARCHAR(20)     AS projekt,
+                (j1.summa):: NUMERIC(12, 2)            AS summa,
+                0:: NUMERIC(12, 2)                     AS kaibemaks,
+                j1.summa:: NUMERIC(12, 2)              AS kokku,
+                sum(j1.summa) OVER ():: NUMERIC(12, 2) AS doc_summa,
+                d.rekvid,
+                j.asutusid,
+                j1.kreedit::VARCHAR(20)                AS korr_konto
+         FROM docs.doc d
+                  INNER JOIN docs.journal j ON j.parentid = d.id
+                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
+              params p
+         WHERE d.status < 3
+           AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           AND j.kpv >= p.kpv_1
+           AND j.kpv <= p.kpv_2
+           AND left(j1.deebet, 1) = '4'
      ),
      qry_kassa AS (
          SELECT at.doc_arv_id AS doc_id, sum(at.summa) AS summa
@@ -158,11 +185,11 @@ GRANT EXECUTE ON FUNCTION docs.pv_kulud(DATE, DATE, INTEGER, JSONB) TO dbpeakasu
 GRANT EXECUTE ON FUNCTION docs.pv_kulud(DATE, DATE, INTEGER, JSONB) TO dbvaatleja;
 GRANT EXECUTE ON FUNCTION docs.pv_kulud(DATE, DATE, INTEGER, JSONB) TO dbkasutaja;
 
-
+/*
 SELECT *
-FROM docs.pv_kulud('2023-02-01'::DATE, '2024-02-29':: DATE, 130, '    {
+FROM docs.pv_kulud('2023-04-01'::DATE, '2024-05-31':: DATE, 119, '    {
   "tunnus": "",
-  "konto": "55",
+  "konto": "4",
   "proj": "",
   "uritus": "",
   "artikkel": "",
@@ -170,7 +197,7 @@ FROM docs.pv_kulud('2023-02-01'::DATE, '2024-02-29':: DATE, 130, '    {
   "allikas": "",
   "kond": 0,
   "objekt": ""
-}':: JSONB)
+}':: JSONB)*/
 --where dokument = 'U13883851'
 
 /*

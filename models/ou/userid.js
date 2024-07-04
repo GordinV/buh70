@@ -34,7 +34,8 @@ module.exports = {
                          (u.properties ->> 'user') :: TEXT                                             AS user,
                          (u.properties ->> 'pass') :: TEXT                                             AS pass,
                          (u.properties ->> 'smtp') :: TEXT                                             AS smtp,
-                         (u.properties ->> 'earved') :: TEXT                                           AS earved
+                         (u.properties ->> 'earved') :: TEXT                                           AS earved,
+                         current_date::DATE                                                            AS kpv
                   FROM ou.userid u
                   WHERE id = $1`,
             sqlAsNew: `SELECT

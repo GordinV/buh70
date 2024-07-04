@@ -20,7 +20,7 @@ module.exports = {
                            a.tp,
                            a.aadress,
                            ltrim(rtrim(r.nimetus))::VARCHAR(254) AS rekv_nimetus
-                    FROM docs.kontosaldoandmik($1::TEXT, $2::INTEGER, $3::DATE, $4::INTEGER, $5::INTEGER) qry
+                    FROM docs.kontosaldoandmik($1::TEXT, $2::INTEGER, $3::DATE, $4::INTEGER, $5::INTEGER, $6::jsonb) qry
                              INNER JOIN libs.asutus a ON a.id = qry.asutus_id
                              INNER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
                              INNER JOIN (SELECT id, parentid, regkood, nimetus
@@ -31,7 +31,7 @@ module.exports = {
                                         ON r.id = qry.rekv_id
 
                     WHERE qry.saldo <> 0
-                    ORDER BY r.parentid, r.id DESC, qry.konto, a.nimetus`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid, $5 - kond
+                    ORDER BY r.parentid, r.id DESC, qry.konto, a.nimetus`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid, $5 - kond, $6 lisa params
         params: '',
         alias: 'kontosaldoandmik_report'
     }

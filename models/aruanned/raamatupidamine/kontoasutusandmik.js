@@ -35,6 +35,7 @@ module.exports = {
                              qryReport.kood5::VARCHAR(20),
                              qryReport.proj::VARCHAR(20),
                              qryReport.tunnus::VARCHAR(20),
+                             qryReport.objekt::VARCHAR(20),
                              a.regkood::VARCHAR(20),
                              a.nimetus::VARCHAR(254)                                                   AS asutus,
                              a.tp::VARCHAR(20),

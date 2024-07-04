@@ -84,7 +84,7 @@ FROM (
 */
          UNION ALL
          -- востановление расходов
-         SELECT DISTINCT (-1 * j1.summa)            AS summa,
+         SELECT  (-1 * j1.summa)            AS summa,
                          j1.kood1::TEXT                AS tegev,
                          j1.kood2::TEXT                AS allikas,
                          j1.kood3::TEXT                AS rahavoog,
@@ -107,56 +107,7 @@ FROM (
          WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
-/*         GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid, month(coalesce(a.kpv, j.kpv)),
-                  year(coalesce(a.kpv, j.kpv))
-*/
-/*         UNION ALL
-         -- доходы
-         SELECT summa          AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
-                j1.tunnus::TEXT,
-                j.rekvid,
-                FALSE          AS kas_kulud
-         FROM docs.doc D
-                  INNER JOIN docs.journal j ON j.parentid = D.id
-                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                  INNER JOIN qryKontodTulud k ON k.kood = j1.kreedit
-                  INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE
-                              WHEN l_kond
-                                  > 0 THEN j.rekvid
-                              ELSE l_rekvid END
-         UNION ALL
-         -- востановление доходов
-         SELECT -1 * j1.summa  AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
-                j1.tunnus::TEXT,
-                j.rekvid,
-                FALSE          AS kas_kulud
-         FROM docs.doc D
-                  INNER JOIN docs.journal j ON j.parentid = D.id
-                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                  INNER JOIN qryKontodTulud k ON k.kood = j1.deebet
-                  INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.kreedit
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE
-                              WHEN l_kond
-                                  > 0 THEN j.rekvid
-                              ELSE l_rekvid END
-*/ ) qry
+ ) qry
 WHERE NOT empty(artikkel)
 --  and artikkel not in ('655')
   AND summa <> 0

@@ -27,12 +27,12 @@ DECLARE
     l_aasta      INTEGER        = date_part('year', l_kpv);
     l_selg       TEXT           = 'KOV taskuraha kohustis';
     l_summa      NUMERIC(16, 2) = 0;
-    DB           TEXT           = '413110'; -- Поправлено 29.01.24 В.Б  '413800';
+    DB           TEXT           =  '413899'; -- Поправлено 24.05.24 В.Б  '413110,413800';
     KR           TEXT           = '20356001';
     TUNNUS       TEXT           = CASE WHEN l_rekvid = 64 THEN '4023' ELSE '2101' END;
     ALLIKAS      TEXT           = 'LE-P';
     TEGEV        TEXT           = '10200';
-    ARTIKKEL     TEXT           = '4131';-- -- Поправлено 29.01.24 В.Б '4138';
+    ARTIKKEL     TEXT           = '4138';-- -- Поправлено 24.05.24 В.Б '4131';
     URITUS       TEXT           = 'Taskuraha';
     v_hk         RECORD;
     v_kp         RECORD;

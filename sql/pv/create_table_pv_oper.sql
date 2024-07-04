@@ -56,6 +56,8 @@ CREATE TRIGGER trigi_pv_oper_before
 EXECUTE PROCEDURE docs.trigi_check_docs_before();
 
 
+ALTER TABLE docs.pv_oper add COLUMN if not exists properties jsonb;
+
 /*
 select * from docs.pv_oper
 

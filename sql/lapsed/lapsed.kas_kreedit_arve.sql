@@ -28,7 +28,7 @@ BEGIN
     LIMIT 1;
 
     -- ищем аналогичный
-    SELECT a.parentid AS id, asutusid, rekvid, summa, jaak, l.parentid AS laps_id
+    SELECT a.parentid AS id, asutusid, rekvid, summa, docs.sp_update_arv_jaak(a.parentid, v_kreedit_arve.kpv::date) AS jaak, l.parentid AS laps_id
     INTO v_alus_arve
     FROM docs.arv a
              LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = a.parentid
@@ -43,8 +43,6 @@ BEGIN
     ORDER BY id DESC
     LIMIT 1;
 
-    RAISE NOTICE 'v_alus_arve %, v_kreedit_arve %', v_alus_arve.id, v_kreedit_arve;
-
     -- считаем сумму остатка кретового счета
     SELECT sum(summa)
     INTO l_kreedit_arve_jaak
@@ -56,8 +54,6 @@ BEGIN
         when  (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak,0)) = 0 then 0
         when  (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak,0)) >= v_alus_arve.jaak then v_alus_arve.jaak
         else  (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak,0)) end;
-
-    raise notice 'l_summa %,  v_kreedit_arve.summa %, l_kreedit_arve_jaak %', l_summa,  v_kreedit_arve.summa, l_kreedit_arve_jaak;
 
     IF v_alus_arve.id IS NOT NULL and l_summa > 0
     THEN
@@ -73,6 +69,8 @@ BEGIN
 
         -- оплата основного счета
         l_doc_id = docs.sp_tasu_arv(l_arv_id::INTEGER, v_alus_arve.id::INTEGER, l_user_id::INTEGER, l_summa);
+
+        -- сальдо
 
     END IF;
 
@@ -90,5 +88,5 @@ GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER) TO db
 --GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER, INTEGER) TO arvestaja;
 
 /*
-SELECT docs.kas_kreedit_arve(4713833, 5396, 4597388 )
+SELECT docs.kas_kreedit_arve(6244259, 5419, 4826368 )
 */

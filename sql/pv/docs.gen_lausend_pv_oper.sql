@@ -25,13 +25,18 @@ BEGIN
     SELECT d.docs_ids,
            d.rekvid,
            po.*,
+           po.properties ->> 'korr_konto'                                                          AS po_korr_konto,
+           po.properties ->> 'konto'                                                               AS po_konto,
+           po.properties ->> 'kulum_konto'                                                         AS po_kulum_konto,
            a.tp,
            l.kood,
            coalesce((l.properties :: JSONB ->> 'parhind') :: NUMERIC(12, 2), 0) :: NUMERIC(12, 2)  AS parhind,
            coalesce((l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 2), 0) :: NUMERIC(12, 2) AS algkulum,
            coalesce((l.properties :: JSONB ->> 'konto'),
                     (grupp.properties :: JSONB ->> 'konto')) :: TEXT                               AS korrkonto,
-           (l.properties :: JSONB ->> 'korr_konto')::TEXT                                          AS korr_konto, -- ainult kui umberklassifitseerimine
+           (l.properties :: JSONB ->> 'korr_konto')::TEXT                                          AS korr_konto,    -- ainult kui umberklassifitseerimine
+           (l.properties :: JSONB ->> 'prev_konto')::TEXT                                          AS prev_konto,    -- ainult kui umberklassifitseerimine
+           (l.properties :: JSONB ->> 'prev_pruppid')::INTEGER                                     AS prev_grupp_id, -- ainult kui umberklassifitseerimine
            (l.properties :: JSONB ->> 'konto')::TEXT                                               AS pv_kaart_konto,
            (l.properties :: JSONB ->> 'jaak') :: NUMERIC(12, 2)                                    AS jaak,
            aa.tp                                                                                   AS asutus_tp,
@@ -49,7 +54,7 @@ BEGIN
     WHERE d.id = tnId;
 
     -- если карточка в инвестициях, то конто износа 154010
-    IF v_pv_oper.pv_kaart_konto = '154000' and v_pv_oper.konto <> '154000'
+    IF v_pv_oper.pv_kaart_konto = '154000' AND v_pv_oper.konto <> '154000'
     THEN
         v_pv_oper.kulum_konto = '154010';
         IF empty(v_pv_oper.kood3)
@@ -58,6 +63,7 @@ BEGIN
         END IF;
 
     END IF;
+
 
     --  Можно еще убрать код партнёра у группы 154? Veronika Nikitina, 31.01.24
 /*    IF left(v_pv_oper.pv_kaart_konto,3) = '154'
@@ -109,7 +115,7 @@ BEGIN
             ,
          jsonb_to_record(dokprop.details) AS details(konto TEXT)
     WHERE dokprop.id = v_pv_oper.doklausid
-    LIMIT 1;
+        LIMIT 1;
 
     IF NOT Found OR v_dokprop.registr = 0
     THEN
@@ -155,6 +161,13 @@ BEGIN
                        coalesce(v_pv_oper.kood4, '')    AS kood4,
                        coalesce(v_pv_oper.kood5, '')    AS kood5
                 INTO v_journal1;
+
+                IF v_journal1.kood3 not in  ('01','19')
+                THEN
+                    v_journal1.lisa_d = '';
+--                    v_journal1.lisa_k = '';
+                END IF;
+
                 l_json_details = row_to_json(v_journal1);
 
         WHEN v_pv_oper.liik = 2 -- array_position(a_pv_opers, 'kulum')
@@ -177,6 +190,8 @@ BEGIN
 
         WHEN v_pv_oper.liik = 3 -- array_position(a_pv_opers, 'parandus')
             THEN
+
+
                 SELECT 0                                AS id,
                        coalesce(v_pv_oper.summa, 0)     AS summa,
                        v_pv_oper.korrkonto              AS deebet,
@@ -191,7 +206,15 @@ BEGIN
                        coalesce(v_pv_oper.kood4, '')    AS kood4,
                        coalesce(v_pv_oper.kood5, '')    AS kood5
                 INTO v_journal1;
+
+                IF v_journal1.kood3 in ('23')
+                THEN
+                    -- V. Nikitina В разделе парендусед. Увеличение стоимости основного имущества. Проводки с RV 23 должны быть без кода партнера.
+                    v_journal1.lisa_d = '';
+                    v_journal1.lisa_k = '';
+                END IF;
                 l_json_details = row_to_json(v_journal1);
+
 
         WHEN v_pv_oper.liik = 4 -- array_position(a_pv_opers, 'mahakandmine')
             THEN
@@ -277,14 +300,12 @@ BEGIN
             THEN
                 -- umberklassifitseerimine
                 -- PV->investeeringud
-
---                raise notice 'v_pv_oper.konto %, v_pv_oper.korr_konto %, kulum_konto %', v_pv_oper.konto, v_pv_oper.korr_konto, v_pv_oper.kulum_konto;
                 IF v_pv_oper.konto = '154000'
                 THEN
                     SELECT 0                              AS id,
                            coalesce(v_pv_oper.summa, 0)   AS summa,
-                           v_pv_oper.konto                AS deebet,
-                           v_pv_oper.korr_konto           AS kreedit,
+                           '154000'                       AS deebet,
+                           v_pv_oper.po_konto             AS kreedit,
                            ''                             AS lisa_d,
                            ''                             AS lisa_k,
                            coalesce(v_pv_oper.tunnus, '') AS tunnus,
@@ -297,20 +318,18 @@ BEGIN
                     INTO v_journal1;
                     l_json_details = row_to_json(v_journal1);
 
-                    IF v_pv_oper.korr_konto <> '155000' AND
+                    IF v_pv_oper.po_kulum_konto IS NOT NULL AND v_pv_oper.korr_konto <> '155000' AND
                        coalesce(v_pv_oper.kulum_kokku, 0) > 0 AND NOT empty(v_pv_oper.kulum_konto)
                     THEN
-                        raise notice 'kulum osa v_pv_oper.kulum_konto %', v_pv_oper.kulum_konto;
-
                         -- maa,
                         -- kulum
                         SELECT 0                                  AS id,
                                coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
-                               v_pv_oper.kulum_konto              AS deebet,
+                               v_pv_oper.po_kulum_konto           AS deebet,
                                '154010'                           AS kreedit,
                                coalesce(v_pv_oper.tunnus, '')     AS tunnus,
-                               ''                             AS lisa_d,
-                               ''                             AS lisa_k,
+                               ''                                 AS lisa_d,
+                               ''                                 AS lisa_k,
                                coalesce(v_pv_oper.proj, '')       AS proj,
                                coalesce(v_pv_oper.kood1, '')      AS kood1,
                                coalesce(v_pv_oper.kood2, '')      AS kood2,
@@ -326,7 +345,7 @@ BEGIN
                     -- investeeringud -> PV
                     SELECT 0                              AS id,
                            coalesce(v_pv_oper.summa, 0)   AS summa,
-                           v_pv_oper.korr_konto           AS deebet,
+                           v_pv_oper.konto                AS deebet,
                            '154000'                       AS kreedit,
                            ''                             AS lisa_d,
                            ''                             AS lisa_k,
@@ -340,17 +359,16 @@ BEGIN
                     INTO v_journal1;
                     l_json_details = row_to_json(v_journal1);
 
-                    IF v_pv_oper.korr_konto <> '155000' AND
+                    IF v_pv_oper.kulum_konto IS NOT NULL AND v_pv_oper.korr_konto <> '155000' AND
                        coalesce(v_pv_oper.kulum_kokku, 0) > 0 AND NOT empty(v_pv_oper.kulum_konto)
                     THEN
-                        -- maa,
                         -- kulum
                         SELECT 0                                  AS id,
                                coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
-                               v_pv_oper.kulum_konto              AS kreedit,
+                               v_pv_oper.po_kulum_konto           AS kreedit,
                                '154010'                           AS deebet,
-                               ''                             AS lisa_d,
-                               ''                             AS lisa_k,
+                               ''                                 AS lisa_d,
+                               ''                                 AS lisa_k,
                                coalesce(v_pv_oper.tunnus, '')     AS tunnus,
                                coalesce(v_pv_oper.proj, '')       AS proj,
                                coalesce(v_pv_oper.kood1, '')      AS kood1,

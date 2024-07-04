@@ -40,6 +40,31 @@ WITH qryLisa1Lisa5 AS (
                           FROM get_asutuse_struktuur(l_rekvid))
      ),
 
+     qry_601 as (
+         -- 03.04.2024 VB
+         select sum(summa) as summa from (
+                                    SELECT summa
+                                    FROM cur_journal j
+                                    WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                                      AND kpv <= l_kpv
+                                      AND j.rekvid IN (SELECT rekv_id
+                                                       FROM get_asutuse_struktuur(l_rekvid))
+                                      AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                                      AND left(deebet, 6) = '601000'
+                                      AND kood5 LIKE '41%'
+                                    UNION ALL
+                                    SELECT -1 * summa AS summa
+                                    FROM cur_journal j
+                                    WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                                      AND kpv <= l_kpv
+                                      AND j.rekvid IN (SELECT rekv_id
+                                                       FROM get_asutuse_struktuur(l_rekvid))
+                                      AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                                      AND left(kreedit, 6) = '601000'
+                                      AND left(kood5, 2) = '41'
+                                ) qry
+     ),
+
      -- art30
      qry_art30 AS (
          SELECT '30'                    AS artikkel,
@@ -159,39 +184,10 @@ WITH qryLisa1Lisa5 AS (
                 0     AS eelarve_taps,
                 0     AS eelarve_kassa,
                 0     AS eelarve_kassa_taps,
-                summa AS tegelik,
+                -1 * j.summa AS tegelik,
                 0     AS kassa,
-                summa AS saldoandmik
-         FROM cur_journal j
-         WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
-           AND kpv <= l_kpv
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
-           AND left(deebet, 6) = '601000'
-           AND kood5 LIKE '41%'
-         UNION ALL
-         SELECT '4'        AS artikkel,
-                0          AS eelarve,
-                0          AS eelarve_taps,
-                0          AS eelarve_kassa,
-                0          AS eelarve_kassa_taps,
-                -1 * summa AS tegelik,
-                0          AS kassa,
-                -1 * summa AS saldoandmik
-         FROM cur_journal j
-         WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
-           AND kpv <= l_kpv
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
-           AND left(kreedit, 6) = '601000'
-           AND left(kood5, 2) = '41'
-
---             Строка 4* Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) +
-         --             Сумма всех строк с бюджетом 4* в отчете Eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine +
-         --             Строка 4502 Tekke  täitmine  в отчете EELARVEARUANNE (Lisa 1, Lisa 5)
-         --             + (D 601000 art 41* - К 601000 art 41*) в Päevaraamat соответствующего периода=0
+                -1 * j.summa AS saldoandmik
+         FROM qry_601 j
 
 
      ),
@@ -2203,30 +2199,8 @@ FROM (
                          0     AS eelarve_kassa,
                          0     AS eelarve_kassa_taps,
                          0     AS kassa,
-                         summa AS saldoandmik
-                  FROM cur_journal j
-                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
-                    AND kpv <= l_kpv
-                    AND j.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
-                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
-                    AND left(deebet, 6) = '601000'
-                    AND kood5 LIKE '41%'
-                  UNION ALL
-                  SELECT 0          AS eelarve,
-                         0          AS eelarve_taps,
-                         0          AS eelarve_kassa,
-                         0          AS eelarve_kassa_taps,
-                         0          AS kassa,
-                         -1 * summa AS saldoandmik
-                  FROM cur_journal j
-                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
-                    AND kpv <= l_kpv
-                    AND j.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
-                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
-                    AND left(kreedit, 6) = '601000'
-                    AND left(kood5, 2) = '41'
+                         -1 * j.summa AS saldoandmik
+                  FROM qry_601 j
               ) qry413
          UNION ALL
          -- Строка 4500* Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5)+
@@ -2381,30 +2355,8 @@ FROM (
                          0     AS eelarve_kassa,
                          0     AS eelarve_kassa_taps,
                          0     AS kassa,
-                         summa AS saldoandmik
-                  FROM cur_journal j
-                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
-                    AND kpv <= l_kpv
-                    AND j.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
-                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
-                    AND left(deebet, 6) = '601000'
-                    AND kood5 LIKE '41%'
-                  UNION ALL
-                  SELECT 0          AS eelarve,
-                         0          AS eelarve_taps,
-                         0          AS eelarve_kassa,
-                         0          AS eelarve_kassa_taps,
-                         0          AS kassa,
-                         -1 * summa AS saldoandmik
-                  FROM cur_journal j
-                  WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
-                    AND kpv <= l_kpv
-                    AND j.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
-                    AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
-                    AND left(kreedit, 6) = '601000'
-                    AND left(kood5, 2) = '41'
+                         j.summa AS saldoandmik
+                  FROM qry_601 j
 
 /*                  UNION ALL
                   -- убираем элиминирование отд. культуры

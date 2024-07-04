@@ -1,10 +1,10 @@
 DROP FUNCTION IF EXISTS docs.saldoandmik(DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.saldoandmik(TEXT, INTEGER, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kontosaldoandmik(TEXT, INTEGER, DATE, INTEGER);
-DROP FUNCTION IF EXISTS docs.kontosaldoandmik(TEXT, INTEGER, DATE, INTEGER,INTEGER);
+DROP FUNCTION IF EXISTS docs.kontosaldoandmik(TEXT, INTEGER, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.kontosaldoandmik(l_konto TEXT, l_asutus INTEGER, l_kpv DATE, l_rekvid INTEGER,
-                                                 l_kond INTEGER DEFAULT 0)
+                                                  l_kond INTEGER DEFAULT 0, l_params JSONB DEFAULT NULL::JSONB)
     RETURNS TABLE (
         saldo     NUMERIC(14, 2),
         konto     VARCHAR(20),
@@ -25,6 +25,14 @@ WITH rekv_ids AS (
      docs_types AS (
          SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')
      ),
+     params AS (
+         SELECT coalesce(l_params::JSONB ->> 'tunnus', '')::TEXT || '%' AS tunnus,
+                coalesce(l_params::JSONB ->> 'proj', '')::TEXT || '%'   AS proj,
+                coalesce(l_params::JSONB ->> 'uritus', '')::TEXT || '%' AS uritus,
+                coalesce(l_params::JSONB ->> 'objekt', '')::TEXT || '%' AS objekt,
+                l_kpv                                                   AS kpv
+     ),
+
      report AS (
          SELECT sum(deebet) - sum(kreedit) AS saldo,
                 konto,
@@ -48,7 +56,11 @@ WITH rekv_ids AS (
                          trim(j1.deebet)::VARCHAR(20) AS konto,
                          CASE
                              WHEN left(j1.deebet, 4) IN ('1001') THEN coalesce((SELECT id FROM qryAsutus), 0)
-                             ELSE j.asutusid END      AS asutusid
+                             ELSE j.asutusid END      AS asutusid,
+                         coalesce(j1.proj, '')        AS proj,
+                         coalesce(j1.tunnus, '')      AS tunnus,
+                         coalesce(j1.kood4, '')       AS uritus,
+                         coalesce(j1.objekt, '')      AS objekt
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
                            LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
@@ -69,7 +81,12 @@ WITH rekv_ids AS (
                          trim(j1.kreedit)::VARCHAR(20) AS konto,
                          CASE
                              WHEN left(j1.kreedit, 4) IN ('1001') THEN coalesce((SELECT id FROM qryAsutus), 0)
-                             ELSE j.asutusid END       AS asutusid
+                             ELSE j.asutusid END       AS asutusid,
+                         coalesce(j1.proj, '')         AS proj,
+                         coalesce(j1.tunnus, '')       AS tunnus,
+                         coalesce(j1.kood4, '')        AS uritus,
+                         coalesce(j1.objekt, '')       AS objekt
+
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
                            LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
@@ -82,9 +99,14 @@ WITH rekv_ids AS (
                     AND d.status <> 3
                     AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv::DATE) OR
                          ltrim(rtrim(j1.kreedit)) IN (SELECT kood FROM com_kontoplaan WHERE tyyp IN (1, 2)))
-              ) qry
+              ) qry,
+              params p
          WHERE NOT empty(konto)
-           AND konto LIKE coalesce(ltrim(rtrim(l_konto)), '') || '%'
+           AND qry.konto LIKE coalesce(ltrim(rtrim(l_konto)), '') || '%'
+           AND qry.proj ILIKE p.proj
+           AND qry.tunnus ILIKE p.tunnus
+           AND qry.uritus ILIKE p.uritus
+           AND qry.objekt ILIKE p.objekt
          GROUP BY konto, asutusid, rekvid
      )
 SELECT saldo, konto, rekv_id, asutus_id
@@ -104,15 +126,16 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER,INTEGER ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER,INTEGER ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER,INTEGER ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER,INTEGER,JSONB ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER,INTEGER,JSONB ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER,INTEGER,JSONB ) TO dbkasutaja;
 
 
 /*
-SELECT *
-FROM docs.kontosaldoandmik('201000'::text, 0,'20231231' :: DATE, 64,1)
-
-
+SELECT k1.*, k2.*
+FROM docs.kontosaldoandmik_('201000'::text, 0,'20240331' :: DATE, 63,1) k1
+full outer join docs.kontosaldoandmik('201000'::text, 0,'20240331' :: DATE, 63,1) k2
+on k1.asutus_id = k2.asutus_id and k1.rekv_id = k2.rekv_id and k1.konto = k2.konto
+where k1.saldo <> k2.saldo
 select * from libs.asutus where REGKOOD ilike '10160868%'
 */

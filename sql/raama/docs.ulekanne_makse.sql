@@ -223,6 +223,13 @@ BEGIN
         v_mk1.tunnus = coalesce(v_new_nom.tunnus, v_mk1.tunnus);
     END IF;
 
+    -- проверим услуги в целнвом учреждении
+    IF NOT exists(
+            SELECT id FROM lapsed.lapse_kaart lk WHERE parentid = l_laps_id AND lk.rekvid = l_rekvid AND lk.staatus < 3)
+    THEN
+        RAISE EXCEPTION 'Viga, sihtasutusel puuduvad teenused';
+    END IF;
+
     -- параметры нового платежа
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(v_mk1))));
 
@@ -265,6 +272,8 @@ BEGIN
     IF mk_id IS NOT NULL AND mk_id > 0
     THEN
         result = mk_id;
+
+
         -- register
         PERFORM docs.gen_lausend_smk(mk_id, l_user_id);
         -- поиск неоплаченных счетов и их оплата

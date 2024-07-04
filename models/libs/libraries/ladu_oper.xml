@@ -1,22 +1,30 @@
 <?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
 <VFPData>
   <grid>
-    <sql>select l.id, l.kood, l.nimetus, 
-            (case when l.tun1 = 1 then '+' else '-' end)::text as liik,
-            $2::integer as userId
-            from libs.library l
-            where l.library = 'LADU_OPER'
-            and l.status &lt;&gt; 3
-            and (l.rekvId = $1 or l.rekvid is null)</sql>
+    <sql>SELECT l.id,
+                           l.kood,
+                           l.nimetus,
+                           (CASE WHEN l.tun1 = 1 THEN '+' ELSE '-' END)::TEXT AS liik,
+                           $2::INTEGER                                        AS userId
+                    FROM libs.library l
+                    WHERE l.library = 'LADU_OPER'
+                      AND l.status &lt;&gt; 3
+                      AND (l.rekvId = $1 OR l.rekvid IS NULL)</sql>
     <alias>curLaduOper</alias>
   </grid>
   <select>
-    <sql>select l.id, l.rekvid, l.kood, l.nimetus, l.status, l.library, 
-                tun1 as tun1,
-                $2::integer as userid, 'LADU_OPER' as doc_type_id,
-                l.muud                 
-                from libs.library l 
-                where l.id = $1</sql>
+    <sql>SELECT l.id,
+                     l.rekvid,
+                     l.kood,
+                     l.nimetus,
+                     l.status,
+                     l.library,
+                     tun1        AS tun1,
+                     $2::INTEGER AS userid,
+                     'LADU_OPER' AS doc_type_id,
+                     l.muud
+              FROM libs.library l
+              WHERE l.id = $1</sql>
     <sqlAsNew>select  $1::integer as id , 
             $2::integer as userid, 
             'LADU_OPER' as doc_type_id,
@@ -32,8 +40,9 @@
     <alias>row</alias>
   </select>
   <selectAsLibs>
-    <sql>select * from com_ladu_oper l
-        where  (l.rekvId = $1 or l.rekvid is null)</sql>
+    <sql>SELECT *, NULL::DATE AS valid
+                   FROM com_ladu_oper l
+                   WHERE (l.rekvId = $1 OR l.rekvid IS NULL)</sql>
     <alias>selectAsLibs</alias>
   </selectAsLibs>
   <saveDoc>
@@ -41,7 +50,8 @@
     <alias>saveDoc</alias>
   </saveDoc>
   <deleteDoc>
-    <sql>select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)</sql>
+    <sql>SELECT error_code, result, error_message
+                FROM libs.sp_delete_library($1::INTEGER, $2::INTEGER)</sql>
     <alias>deleteDoc</alias>
   </deleteDoc>
   <requiredFields>
@@ -68,4 +78,8 @@
     <alias />
   </generateJournal>
   <print></print>
+  <getLog>
+    <sql />
+    <alias />
+  </getLog>
 </VFPData>

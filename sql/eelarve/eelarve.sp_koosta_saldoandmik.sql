@@ -81,7 +81,7 @@ BEGIN
 
                 INSERT INTO eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu,
                                                  rekvid, omatp,
-                                                 tyyp)
+                                                 tyyp, docs_ids)
                 SELECT coalesce(l.nimetus, ''),
                        qry.deebet,
                        qry.kreedit,

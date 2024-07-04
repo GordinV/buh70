@@ -54,19 +54,42 @@ BEGIN
     -- проверка на тип справочника и роль
     IF NOT is_peakasutaja AND doc_library IN ('ALLIKAD', 'TEGEV', 'TULUDEALLIKAD', 'RAHA')
     THEN
-        RAISE exception 'Viga, Puudub õigused';
+        RAISE EXCEPTION 'Viga, Puudub õigused';
     END IF;
 
 
     -- проверка для типа обучения
     IF doc_library = 'KOOLITUSE_TYYP'
     THEN
-        IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9A-Z][0-9A-Z][0-9A-Z]'), ''))), 0) <> 8
+        IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9A-Z][0-9A-Z][0-9A-Z]'), ''))),
+                    0) <> 8
         THEN
             RAISE EXCEPTION 'Viga, kood peaks olla AAAA-999(AAA) aga sisestatud %',doc_kood;
         END IF;
 
     END IF;
+
+    IF doc_library IN ('TUNNUS', 'URITUS', 'PROJ', 'OBJEKT') AND (doc_valid IS NULL OR
+                                                                  doc_valid::DATE >= current_date)
+    THEN
+        -- ищем двойников в других справочниках
+        IF (
+               SELECT count(l.id)
+               FROM libs.library l
+               WHERE l.rekvid = user_rekvid
+                 AND l.kood = doc_kood
+                 AND (coalesce(doc_id, 0) = 0 OR l.id <> coalesce(doc_id, 0))
+                 AND l.status < 3
+                 AND l.library IN ('TUNNUS', 'URITUS', 'PROJ', 'OBJEKT')
+                 AND (l.properties::JSONB ->> 'valid' IS NULL OR l.properties::JSONB ->> 'valid' = ''
+                   OR (l.properties::JSONB ->> 'valid')::DATE >= current_date)) > 0
+        THEN
+
+            RAISE EXCEPTION 'Viga, kood juba kasutusel (TUNNUS, OBJEKT, PROJEKT või ÜRITIS) %',doc_kood;
+
+        END IF;
+    END IF;
+
 
     SELECT row_to_json(row)
     INTO json_object

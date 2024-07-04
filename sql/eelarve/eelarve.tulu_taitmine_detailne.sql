@@ -163,6 +163,12 @@ FROM (
 WHERE NOT empty(qry.artikkel)
   AND qry.summa <> 0
   AND qry.artikkel NOT IN ('2586')
+  AND (CASE
+           WHEN artikkel = '2585' AND ltrim(rtrim(allikas)) = '80' THEN TRUE
+           WHEN artikkel = '2585' AND empty(rahavoog) THEN TRUE
+           WHEN artikkel = '2585' AND rahavoog <> '05' THEN FALSE
+           ELSE TRUE END)
+
 GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, qry.tunnus, qry.proj, qry.uritus, qry.objekt, qry.rahavoog,
          qry.kuu,
          qry.aasta

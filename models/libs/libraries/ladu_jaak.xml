@@ -1,15 +1,18 @@
 <?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
 <VFPData>
   <grid>
-    <sql>select * from cur_ladu_jaak j 
-            where (j.rekvId = $1 or j.rekvid is null) and j.jaak &gt; 0</sql>
+    <sql>SELECT *
+                    FROM cur_ladu_jaak j
+                    WHERE (j.rekvId = $1 OR j.rekvid IS NULL)
+                      AND j.jaak &gt; 0</sql>
     <alias>curLaduJaak</alias>
   </grid>
   <select></select>
   <selectAsLibs>
-    <sql>select * from com_ladu_jaak 
-            where (rekvid = $1 or rekvid is null)
-            and jaak &gt; 0</sql>
+    <sql>SELECT *, NULL::DATE AS valid
+                   FROM com_ladu_jaak
+                   WHERE (rekvid = $1 OR rekvid IS NULL)
+                     AND jaak &gt; 0</sql>
     <alias>selectAsLibs</alias>
   </selectAsLibs>
   <saveDoc>
@@ -24,25 +27,24 @@
     <validate></validate>
   </requiredFields>
   <executeSql>
-    <sql>SELECT
-          arv.number,
-          arv.kpv,
-          a.nimetus                                  AS asutus,
-          arv.lisa,
-          arv.jaak,
-          coalesce(v.valuuta, 'EUR') :: VARCHAR AS valuuta,
-          arv.tasud
-        FROM docs.arv arv
-          INNER JOIN libs.asutus a ON arv.asutusid = a.id
-          LEFT OUTER JOIN docs.dokvaluuta1 v ON v.dokid = arv.id AND v.dokliik = 3
-        WHERE arv.rekvid = ?gRekv AND arv.id IN (
-            SELECT a.parentid FROM docs.arv1 a WHERE a.id IN
-                (
-                    SELECT j.dokitemid 
+    <sql>SELECT arv.number,
+                           arv.kpv,
+                           a.nimetus                             AS asutus,
+                           arv.lisa,
+                           arv.jaak,
+                           coalesce(v.valuuta, 'EUR') :: VARCHAR AS valuuta,
+                           arv.tasud
+                    FROM docs.arv arv
+                             INNER JOIN libs.asutus a ON arv.asutusid = a.id
+                             LEFT OUTER JOIN docs.dokvaluuta1 v ON v.dokid = arv.id AND v.dokliik = 3
+                    WHERE arv.rekvid = ?gRekv AND arv.id IN (
+                        SELECT a.parentid FROM docs.arv1 a WHERE a.id IN
+                        (
+                        SELECT j.dokitemid
                         FROM libs.ladu_jaak j
                         INNER JOIN libs.nomenklatuur n ON j.nomid = n.id
                         WHERE ltrim(rtrim(upper(n.kood))) = ?tcKood AND j.hind = ?tcHind
-        ))</sql>
+                        ))</sql>
     <alias>Analuus</alias>
   </executeSql>
   <executeCommand>
@@ -62,4 +64,8 @@
     <alias />
   </generateJournal>
   <print></print>
+  <getLog>
+    <sql />
+    <alias />
+  </getLog>
 </VFPData>

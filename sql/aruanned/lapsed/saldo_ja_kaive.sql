@@ -2,8 +2,8 @@
 DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaive(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
-                                                  kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
-                                                  kpv_end DATE DEFAULT current_date)
+                                                 kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
+                                                 kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         id              BIGINT,
         period          DATE,
@@ -48,8 +48,8 @@ WITH rekv_ids AS (
          SELECT parentid,
                 rekvid,
                 yksus,
-                min(alg_kpv)            AS alg_kpv,
-                max(lopp_kpv)           AS lopp_kpv
+                min(alg_kpv)  AS alg_kpv,
+                max(lopp_kpv) AS lopp_kpv
 
          FROM (
                   SELECT parentid,
@@ -105,10 +105,102 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
        report.rekvid
 FROM (
          WITH alg_saldo AS (
+             SELECT laps_id,
+                    rekv_id       AS rekvid,
+                    sum(summa)    AS alg_saldo,
+                    array_agg(id) AS docs_ids,
+                    max(kpv)      AS kpv,
+                    yksus
+             FROM (
+                      -- laekumised
+                      SELECT -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk1.summa AS summa,
+                             l.id                                                       AS laps_id,
+                             D.rekvid                                                   AS rekv_id,
+                             0                                                          AS inf3_jaak,
+                             NULL                                                       AS id,
+                             mk.maksepaev                                               AS kpv,
+                             CASE
+                                 WHEN mk.properties ->> 'yksus' IS NULL THEN ''
+                                 ELSE mk.properties ->> 'yksus' END                     AS yksus
+
+                      FROM docs.doc D
+                               INNER JOIN docs.Mk mk ON mk.parentid = D.id
+                               INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
+                               INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
+                               INNER JOIN lapsed.laps l ON l.id = ld.parentid
+                      WHERE D.status <> 3
+                        AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
+                        AND mk.maksepaev < kpv_start
+                      UNION ALL
+                      SELECT a1.summa                  AS summa,
+                             ld.parentid               AS laps_id,
+                             D.rekvid                  AS rekv_id,
+                             0                         AS inf3_jaak,
+                             d.id,
+                             a.kpv                     AS kpv,
+                             a1.properties ->> 'yksus' AS yksus
+
+                      FROM docs.doc D
+                               INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
+                               INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
+                               INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+                      WHERE COALESCE((a.properties ->> 'tyyp')::TEXT,
+                                     '') <>
+                            'ETTEMAKS'
+                        AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND d.status < 3
+                        AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                        AND a.liik = 0 -- только счета исходящие
+                        AND a.kpv < kpv_start
+-- mahakandmine
+                      UNION ALL
+                      SELECT -1 * a1.summa             AS summa,
+                             l.parentid                AS laps_id,
+                             a.rekvid                  AS rekv_id,
+                             0                         AS inf3_jaak,
+                             arv.parentid              AS id,
+                             a.kpv                     AS kpv,
+                             a1.properties ->> 'yksus' AS yksus
+                      FROM docs.arvtasu a
+                               INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
+                               INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
+                               INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
+                      WHERE a.pankkassa = 3 -- только проводки
+                        AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND a.kpv < kpv_start
+                        AND a.status <> 3
+                        AND (arv.properties ->>
+                             'tyyp' IS NULL OR
+                             arv.properties ->>
+                             'tyyp' <>
+                             'ETTEMAKS') -- уберем предоплаты
+
+
+/*             WITH laekumised AS (
+                 SELECT d.id                                                     AS d_id,
+                        -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk.jaak AS summa,
+                        l.id                                                     AS laps_id,
+                        CASE
+                            WHEN mk.properties ->> 'yksus' IS NULL THEN ''
+                            ELSE mk.properties ->> 'yksus' END                   AS yksus,
+                        D.rekvid                                                 AS rekv_id
+                 FROM docs.doc D
+                          INNER JOIN docs.Mk mk ON mk.parentid = D.id
+                          INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
+                          INNER JOIN lapsed.laps l ON l.id = ld.parentid
+                 WHERE D.status <> 3
+                   AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                   AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
+                   AND mk.maksepaev < '2024-01-01'
+                   AND mk.jaak <> 0
+             )
              SELECT laps_id, rekv_id AS rekvid, sum(summa) AS alg_saldo, yksus
              FROM (
                       -- laekumised (ettemaksed)
-                      SELECT -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk.jaak AS summa,
+                      SELECT l.summa, l.laps_id, l.yksus, l.rekv_id
+                      FROM laekumised l
+/*                      SELECT -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk.jaak AS summa,
                              l.id                                                     AS laps_id,
                              CASE
                                  WHEN mk.properties ->> 'yksus' IS NULL THEN ''
@@ -123,21 +215,35 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.jaak <> 0
+*/
                       UNION ALL
-                      -- возвраты
-                      SELECT sum(-1 * at.summa)                      AS summa,
-                             l.parentid                              AS laps_id,
-                             coalesce(mk.properties ->> 'yksus', '') AS yksus,
-                             at.rekvid
-                      FROM docs.arvtasu at
-                               INNER JOIN lapsed.liidestamine l ON l.docid = at.doc_arv_id
-                               INNER JOIN docs.mk mk ON mk.parentid = at.doc_arv_id
-                      WHERE mk.maksepaev < kpv_start
-                        AND at.status <> 3
-                        AND at.pankkassa = 4 -- только возвраты
-                        AND at.summa > 0     -- выплаты
-                        AND at.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                      GROUP BY l.parentid, at.rekvid, coalesce(mk.properties ->> 'yksus', '')
+                      -- возвраты по платежам
+                      SELECT *
+                      FROM (
+                               WITH tagstused AS (
+                                   SELECT DISTINCT mk.parentid AS doc_id, l.parentid
+                                   FROM docs.arvtasu AT
+                                            INNER JOIN lapsed.liidestamine l ON l.docid = AT.doc_arv_id
+                                            INNER JOIN docs.mk mk ON mk.parentid = AT.doc_arv_id
+                                   WHERE mk.maksepaev < '2024-01-01'
+                                     AND AT.status <> 3
+                                     AND AT.pankkassa = 4 -- только возвраты
+                                     AND AT.summa > 0     -- выплаты
+--                    and mk.jaak <> 0
+                                     AND AT.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                               )
+                               SELECT -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk.jaak AS summa,
+                                      t.parentid                                               AS laps_id,
+                                      COALESCE(mk.properties ->> 'yksus',
+                                               '')                                             AS yksus,
+                                      mk.rekvid
+                               FROM tagstused t
+                                        INNER JOIN docs.mk mk
+                                                   ON mk.parentid = t.doc_id
+                               WHERE mk.maksepaev < '2024-01-01'
+                                 AND mk.parentid NOT IN (SELECT doc_id FROM laekumised)
+                               GROUP BY t.parentid, mk.rekvid, COALESCE(mk.properties ->> 'yksus', ''), mk.id
+                           ) qry
 
                       UNION ALL
                       -- laekumised
@@ -157,6 +263,8 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
                         AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
                         AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND at.pankkassa <> 4 -- без кредитовых счетов
+
                       UNION ALL
                       SELECT a1.summa    AS summa,
                              ld.parentid AS laps_id,
@@ -192,6 +300,7 @@ FROM (
                              'tyyp' <>
                              'ETTEMAKS') -- уберем предоплаты
 
+*/
                   ) alg_saldo
              GROUP BY laps_id, rekv_id, yksus
          ),
@@ -483,11 +592,6 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbkasuta
 GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO arvestaja;
 GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatleja;
-
-
-SELECT 1,
-       *
-FROM lapsed.saldo_ja_kaive(119, '2023-01-01', '2023-12-31') qry
 
 
 /*

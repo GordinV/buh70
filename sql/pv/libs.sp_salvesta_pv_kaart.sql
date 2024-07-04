@@ -62,6 +62,11 @@ BEGIN
         RAISE EXCEPTION 'Viga, puudub vastutav isik';
     END IF;
 
+    IF doc_gruppid IS NULL OR doc_gruppid = 0
+    THEN
+        RAISE EXCEPTION 'Viga, puudub grupp';
+    END IF;
+
     SELECT row_to_json(row)
     INTO json_object
     FROM (SELECT doc_gruppid                    AS gruppid,

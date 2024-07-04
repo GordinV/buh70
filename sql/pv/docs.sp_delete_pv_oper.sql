@@ -14,15 +14,18 @@ DECLARE
     pv_oper_history JSONB;
     new_history     JSONB;
     DOC_STATUS      INTEGER = 3; -- документ удален
-    l_pv_oper_id    INTEGER;
-    l_konto         TEXT;
+    l_prev_grupp_id INTEGER; -- вернем обратно прежнее значение группы и конто
+    l_prev_konto    TEXT;
+
 BEGIN
 
     SELECT d.*,
            u.ametnik                                        AS user_name,
            po.liik,
            po.pv_kaart_id,
-           (l.properties :: JSONB ->> 'gruppid') :: INTEGER AS grupp_id
+           (l.properties :: JSONB ->> 'gruppid') :: INTEGER AS grupp_id,
+           po.properties ->> 'konto'                        AS prev_po_konto,
+           po.properties ->> 'prev_grupp_id'                AS prev_po_grupp_id
     INTO v_doc
     FROM docs.doc d
              INNER JOIN docs.pv_oper po ON po.parentid = d.id
@@ -116,41 +119,26 @@ BEGIN
 
     IF v_doc.liik = 6
     THEN
-        -- переклафикация. выполнем прежнюю или возвращаем корр.счет
-        SELECT d.id
-        INTO l_pv_oper_id
-        FROM docs.doc d
-                 INNER JOIN docs.pv_oper po ON d.id = po.parentid
-        WHERE po.pv_kaart_id = v_doc.pv_kaart_id
-          AND liik = 6
-          AND d.status <> 3
-        ORDER BY id DESC
-        LIMIT 1;
-
-        IF l_pv_oper_id IS NOT NULL
+        IF exists(SELECT d.id
+                  FROM docs.doc d
+                           INNER JOIN docs.pv_oper po ON d.id = po.parentid
+                  WHERE po.pv_kaart_id = v_doc.pv_kaart_id
+                    AND liik = 6
+                    AND d.id > doc_id
+                    AND d.status <> 3)
         THEN
-            -- выполняем переквалификацию
-            PERFORM docs.pv_umberklassifitseerimine(l_pv_oper_id);
-        ELSE
-            -- нет, берем кор. счет или из группы
-            SELECT properties::JSONB ->> 'korr_konto'
-            INTO l_konto
-            FROM libs.library
-            WHERE id = v_doc.pv_kaart_id;
+            -- удаляем не последнюю переквалификацию, ошибка
+            RAISE EXCEPTION 'Viga, kustutamine keelatud. Olemas varem tehtud üleviimised';
 
-            IF l_konto IS NULL
-            THEN
-                SELECT konto
-                INTO l_konto
-                FROM com_pv_gruppid
-                WHERE id = v_doc.grupp_id;
-            END IF;
-
-            UPDATE libs.library
-            SET properties = properties::JSONB || jsonb_build_object('konto', l_konto)
-            WHERE id = v_doc.pv_kaart_id;
         END IF;
+        -- берем из удаляемой операции прежние значения
+        l_prev_grupp_id = v_doc.prev_po_grupp_id;
+        l_prev_konto = v_doc.prev_po_konto;
+        -- переклафикация. выполнем прежнюю или возвращаем корр.счет
 
+        UPDATE libs.library
+        SET properties = properties::JSONB || jsonb_build_object('konto', l_prev_konto, 'gruppid', l_prev_grupp_id)
+        WHERE id = v_doc.pv_kaart_id;
     END IF;
 
 
@@ -164,7 +152,7 @@ BEGIN
 
     UPDATE docs.doc
     SET lastupdate = now(),
-        history    = coalesce(history, '[]') :: JSONB || new_history,
+        history    = COALESCE(history, '[]') :: JSONB || new_history,
         rekvid     = v_doc.rekvid,
         status     = DOC_STATUS
     WHERE id = doc_id;
@@ -184,8 +172,7 @@ BEGIN
     result = 1;
     RETURN;
 END;
-$BODY$
-    LANGUAGE plpgsql
+$BODY$ LANGUAGE plpgsql
     VOLATILE
     COST 100;
 ALTER FUNCTION docs.sp_delete_pv_oper(INTEGER, INTEGER)

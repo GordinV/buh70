@@ -161,7 +161,7 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine_detailne( DATE,DATE, I
 /*
 
 SELECT sum(summa) over(), *
-FROM eelarve.uus_kassa_tulu_taitmine_detailne('2023-01-01', '2023-12-31', 64, 1)
+FROM eelarve.uus_kassa_tulu_taitmine_detailne('2023-01-01', '2023-12-31', 132, 0)
 where artikkel = '2585'
 
 44761121.71

@@ -12,7 +12,8 @@ CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INT
         rahavoog VARCHAR(20),
         deebet   NUMERIC(14, 2),
         kreedit  NUMERIC(14, 2),
-        tyyp     INTEGER
+        tyyp     INTEGER,
+        docs_ids INTEGER[]
     )
 AS
 $BODY$
@@ -76,7 +77,8 @@ FROM (
                          sum(j1.summa)                         AS deebet,
                          0 :: NUMERIC                          AS kreedit,
                          j1.tunnus,
-                         j1.proj
+                         j1.proj,
+                         array_agg(d.id) as docs_ids
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
                            INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -106,7 +108,8 @@ FROM (
                          sum(j1.summa)                         AS deebet,
                          0 :: NUMERIC                          AS kreedit,
                          j1.tunnus,
-                         j1.proj
+                         j1.proj,
+                         array_agg(d.id) as docs_ids
                   FROM docs.doc d
                            INNER JOIN docs.journal j ON j.parentid = d.id
                            INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -137,7 +140,8 @@ FROM (
                          0 :: NUMERIC                          AS deebet,
                          sum(j1.summa)                         AS kreedit,
                          j1.tunnus,
-                         j1.proj
+                         j1.proj,
+                         array_agg(d.id) as docs_ids
                   FROM docs.doc d
                            INNER JOIN docs.journal j
                                       ON j.parentid = D.id
@@ -170,7 +174,8 @@ FROM (
                          0 :: NUMERIC                          AS deebet,
                          sum(j1.summa)                         AS kreedit,
                          j1.tunnus,
-                         j1.proj
+                         j1.proj,
+                         array_agg(d.id) as docs_ids
                   FROM docs.doc d
                            INNER JOIN docs.journal j
                                       ON j.parentid = D.id
