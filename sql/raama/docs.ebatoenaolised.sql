@@ -11,22 +11,27 @@ CREATE OR REPLACE FUNCTION docs.ebatoenaolised(IN l_rekv_id INTEGER,
 AS
 $BODY$
 DECLARE
-    l_json            JSONB;
-    l_json_details    JSONB          = '[]'::JSONB;
-    v_params          RECORD;
-    l_user_id         INTEGER; -- Иимя пользователя от чьего имени будет создана проводка
-    userName          TEXT           = 'temp'; -- имя пользователя, который выполняет таску
-    l_journal_id      INTEGER;
-    l_summa           NUMERIC(14, 2) = 0;
-    v_aasta           RECORD;
-    v_aruanne         RECORD;
-    l_selg            TEXT           = 'Ebatõenäolised nõuded';
-    l_seisuga         DATE           = l_kpv;
-    l_noude_vahe      NUMERIC        = 0; -- тут отражается разница начтсленного и суммы отчета
-    kas_noude_100     BOOLEAN        = FALSE; -- первое или второе начисление
-    l_lausendi_period DATE           = l_kpv; -- дата проводки
-    l_db_konto        TEXT           = '605030';
-    l_kr_konto        TEXT           = '10300929';
+    l_json             JSONB;
+    l_json_details     JSONB          = '[]'::JSONB;
+    v_params           RECORD;
+    l_user_id          INTEGER; -- Иимя пользователя от чьего имени будет создана проводка
+    userName           TEXT           = 'temp'; -- имя пользователя, который выполняет таску
+    l_journal_id       INTEGER;
+    l_summa            NUMERIC(14, 2) = 0;
+    v_aasta            RECORD;
+    v_aruanne          RECORD;
+    l_selg             TEXT           = 'Ebatõenäolised nõuded';
+    l_seisuga          DATE           = l_kpv;
+    l_noude_vahe       NUMERIC        = 0; -- тут отражается разница начтсленного и суммы отчета
+    kas_noude_100      BOOLEAN        = FALSE; -- первое или второе начисление
+    l_lausendi_period  DATE           = l_kpv; -- дата проводки
+    l_db_konto         TEXT ;
+    l_kr_konto         TEXT           = '10300929'; -- для род.платы, иначе 10300928
+    kas_vanemtasu      BOOLEAN        = TRUE;
+    kas_saldo_ulekkane BOOLEAN        = FALSE; -- если счет "оплачен" через перенос, то проводка иная плюс перенос маловероятных
+    l_lisa_selg        TEXT           = '';
+    l_kreedit_arve_id  INTEGER; -- кредитовый счет переноса сальдо
+
 BEGIN
 
     -- формируем список просроченных счетов (50%)
@@ -45,24 +50,50 @@ BEGIN
             FROM lapsed.ebatoenaolised(l_rekv_id::INTEGER, l_seisuga) r
                      LEFT OUTER JOIN docs.arv a ON a.parentid = r.doc_id
                      INNER JOIN docs.doc d ON d.id = a.parentid
-            WHERE (l_arv_id IS NULL
-                OR r.doc_id = l_arv_id)
+--            WHERE (l_arv_id IS NULL
+--                OR r.doc_id = l_arv_id)
         )
         SELECT *
         FROM reports r
-        WHERE (r.noude_50 + r.noude_100) > 0
-           OR (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0)
-           OR (
-                r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
-                exists(SELECT id
-                       FROM cur_journal
-                       WHERE id IN (SELECT unnest(r.docs_ids)) AND left(kreedit, 6) = left(l_kr_konto, 6))
-            )
---        order by id desc limit 100
+        WHERE (CASE WHEN l_arv_id IS NULL THEN TRUE ELSE r.doc_id = l_arv_id END)
+          AND (
+            CASE
+                WHEN (coalesce(r.noude_50, 0) + coalesce(r.noude_100, 0)) > 0 THEN TRUE
+                WHEN (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0) THEN TRUE
+                WHEN (
+                        r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
+                        exists(SELECT j.id
+                               FROM docs.journal j,
+                                    docs.journal1 j1
+                               WHERE j.id = j1.parentid
+                                 AND j.parentid IN (SELECT unnest(r.docs_ids))
+                                 AND left(j1.kreedit, 6) = left('103009', 6))
+                    ) THEN TRUE
+                ELSE FALSE END)
+    /*
+
+
+                  (l_arv_id IS NULL
+                OR r.doc_id = l_arv_id)
+              AND ((r.noude_50 + r.noude_100) > 0
+                OR (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0)
+                OR (
+                           r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
+                           exists(SELECT id
+                                  FROM cur_journal
+                                  WHERE id IN (SELECT unnest(r.docs_ids))
+                                    AND left(kreedit, 6) = left(l_kr_konto, 6))
+                       ))
+    */--        order by id desc limit 100
         LOOP
             RAISE NOTICE 'loop v_aruanne.arv_id %', v_aruanne.arv_id;
 
             l_journal_id = 0;
+            l_lisa_selg = '';
+            l_db_konto = '605030'; -- дефольный счет
+            kas_saldo_ulekkane = FALSE;
+
+            -- обнулим
             -- суммируем маловероятные для счетов в отчете
             SELECT sum(summa)
             INTO l_summa
@@ -117,6 +148,35 @@ BEGIN
                                    AND rekvid = v_aruanne.rekvid
                                  LIMIT 1);
 
+
+                    -- проверяем перенос ли это
+                    l_kreedit_arve_id = (SELECT (a.properties ->> 'kreedit_arve_id')::INTEGER
+                                         FROM docs.arv a
+                                         WHERE parentid = v_aruanne.doc_id
+                                         LIMIT 1);
+
+                    RAISE NOTICE 'kas ulekanne l_kreedit_arve_id %, v_aruanne.doc_id %, kas_saldo_ulekkane %',l_kreedit_arve_id, v_aruanne.doc_id, kas_saldo_ulekkane;
+
+                    IF l_kreedit_arve_id IS NOT NULL AND exists(SELECT id
+                                                                FROM docs.arv
+                                                                WHERE properties -> 'doc_kreedit_arved' @> to_jsonb(l_kreedit_arve_id)
+                                                                  AND rekvid = 9
+                        )
+                    THEN
+
+
+                        kas_saldo_ulekkane = TRUE;
+                        l_lisa_selg = '(üleviimine)';
+
+                        -- меняем кор.счет
+                        /*
+                         Переносы маловероятных:
+                        - Д888888-К10300929 (-) Ebatõenäolised nõuded (50) (üleviimine), либо Ebatõenäolised nõuded (100) (üleviimine) - из одного учреждения
+                        - Д888888-К10300929 (+) Ebatõenäolised nõuded (50) (üleviimine), либо Ebatõenäolised nõuded (100) (üleviimine) - в другое учреждение
+                         */
+                        l_db_konto = '888888';
+                    END IF;
+
                     -- делаем проводку
                     l_json_details = '[]'::JSONB; -- инициализируем массив под проводку
                     l_json_details = l_json_details || to_jsonb(row)
@@ -145,13 +205,13 @@ BEGIN
                                           ) row;
 
 
-                    SELECT 0                                                              AS id,
-                           'JOURNAL'                                                      AS doc_type_id,
-                           l_lausendi_period                                              AS kpv,
-                           l_selg || CASE WHEN kas_noude_100 THEN '(100)' ELSE '(50)' END AS selg,
+                    SELECT 0                                                                             AS id,
+                           'JOURNAL'                                                                     AS doc_type_id,
+                           l_lausendi_period                                                             AS kpv,
+                           l_selg || CASE WHEN kas_noude_100 THEN '(100)' ELSE '(50)' END || l_lisa_selg AS selg,
                            v_aruanne.Asutusid,
-                           'Arve nr.' || v_aruanne.number::TEXT                           AS dok,
-                           l_json_details                                                 AS "gridData"
+                           'Arve nr.' || v_aruanne.number::TEXT                                          AS dok,
+                           l_json_details                                                                AS "gridData"
                     INTO v_params;
 
                     l_json = to_json(row)
@@ -192,6 +252,15 @@ BEGIN
                             lastupdate = now(),
                             history    = coalesce(history, '[]') :: JSONB || l_json::JSONB
                         WHERE id = v_aruanne.doc_id;
+
+                        -- если перенос, то создаем параллельную проводку
+                        IF kas_saldo_ulekkane
+                        THEN
+                            RAISE NOTICE 'ebatoenaolised ulekanne';
+                            l_json = json_build_object('arv_id', v_aruanne.doc_id, 'ebatoenaolised_id', l_journal_id);
+                            PERFORM docs.ulekanne_ebatoenaolised(l_json);
+                        END IF;
+
                     ELSE
                         l_journal_id = 0;
                         result = 0;
@@ -236,7 +305,10 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(83, '2024-06-30'::DATE, 5697089)
+SELECT docs.ebatoenaolised(id, '2024-06-30'::DATE, null)
+from ou.rekv
+where parentid = 119
+and id  in (94)
 */
 
 

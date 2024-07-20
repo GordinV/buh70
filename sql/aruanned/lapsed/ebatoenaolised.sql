@@ -14,7 +14,8 @@ CREATE OR REPLACE FUNCTION lapsed.ebatoenaolised(l_rekvid INTEGER,
         noude_50         NUMERIC(12, 2),
         noude_100        NUMERIC(12, 2),
         jaak             NUMERIC(12, 2),
-        doc_id           INTEGER
+        doc_id           INTEGER,
+        konto            VARCHAR(20)
     )
 AS
 $BODY$
@@ -54,9 +55,9 @@ WITH report AS (
                     d.id                                              AS doc_id
              FROM docs.doc d
                       INNER JOIN docs.arv a ON a.parentid = d.id
-                      INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                      INNER JOIN lapsed.laps laps ON laps.id = l.parentid
                       INNER JOIN libs.asutus m ON m.id = a.asutusid
+                      LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = d.id
+                      LEFT OUTER JOIN lapsed.laps laps ON laps.id = l.parentid
                       LEFT OUTER JOIN arvtasu at ON d.id = at.arv_id
              WHERE a.tahtaeg <= l_kpv
 --           AND coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) > 0
@@ -65,7 +66,8 @@ WITH report AS (
          ) qry
 --    WHERE qry.jaak > 0
 )
-SELECT *
+SELECT *,
+       CASE WHEN lapse_isikukood IS NULL THEN '10300928' ELSE '10300929' END::VARCHAR(20) AS konto
 FROM report r
 
 
@@ -82,7 +84,8 @@ GRANT EXECUTE ON FUNCTION lapsed.ebatoenaolised(INTEGER, DATE) TO dbvaatleja;
 
 
 /*
-select * from lapsed.ebatoenaolised(66, '2024-03-31')
-where maksja_nimi ilike '%Pidvy%'
+select * from lapsed.ebatoenaolised(94, '2024-06-30')
+where konto = '10300928'
+maksja_nimi ilike '%Pidvy%'
 from ou.rekv where parentid = 119
 */

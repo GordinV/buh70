@@ -50,6 +50,12 @@ DECLARE
     l_nom_id     INTEGER;
     v_nom_rea    RECORD;
     l_arv_jaak   NUMERIC        = 0;
+    l_konto      TEXT           = CASE
+                                      WHEN exists(SELECT id
+                                                  FROM ou.rekv
+                                                  WHERE id = l_rekvId
+                                                    AND parentid = 119) THEN '10300029'
+                                      ELSE '103000' END;
 BEGIN
 
     doc_type_id = 'SMK';
@@ -313,7 +319,7 @@ BEGIN
                l_asutus_id        AS asutusid,
                l_summa            AS summa,
                l_aa               AS aa,
-               '103000'           AS konto,
+               l_konto           AS konto,
                v_nom_rea.tegev    AS kood1,
                v_nom_rea.allikas  AS kood2,
                v_nom_rea.artikkel AS kood5,

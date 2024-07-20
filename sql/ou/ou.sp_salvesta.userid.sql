@@ -94,38 +94,38 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
+    -- проверка наличия учетной записи
+    IF is_import IS NULL AND NOT exists(
+            SELECT 1
+            FROM pg_roles
+            WHERE rolname = doc_kasutaja)
+    THEN
+
+        IF exists(SELECT id
+                  FROM ou.cur_userid
+                  WHERE id = user_id
+                    AND coalesce(is_admin :: BOOLEAN, FALSE))
+        THEN
+            l_string = 'CREATE USER "' || doc_kasutaja ||
+                       '" WITH PASSWORD ' || quote_literal(doc_parool) ||
+                       ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
+            RAISE NOTICE 'create user %', l_string;
+            EXECUTE (l_string);
+            IF (roles_json ->> 'is_kasutaja')::BOOLEAN OR (roles_json ->> 'is_palga_kasutaja')::BOOLEAN OR
+               (roles_json ->> 'is_pohivara_kasutaja')::BOOLEAN
+            THEN
+                EXECUTE 'GRANT dbkasutaja TO "' || doc_kasutaja || '"';
+            END IF;
+
+        ELSE
+
+            RAISE EXCEPTION 'Viga, System role for user is not esists, kasutaja %, import %', doc_kasutaja, is_import;
+        END IF;
+    END IF;
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
-
-        -- проверка наличия учетной записи
-        IF is_import IS NULL AND NOT exists(
-                SELECT 1
-                FROM pg_roles
-                WHERE rolname = doc_kasutaja)
-        THEN
-
-            IF exists(SELECT id
-                      FROM ou.cur_userid
-                      WHERE id = user_id
-                        AND coalesce(is_admin :: BOOLEAN, FALSE))
-            THEN
-                l_string = 'CREATE USER "' || doc_kasutaja ||
-                           '" WITH PASSWORD ' || quote_literal(doc_parool) ||
-                           ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
-                RAISE NOTICE 'create user %', l_string;
-                EXECUTE (l_string);
-                IF (roles_json ->> 'is_kasutaja')::BOOLEAN OR (roles_json ->> 'is_palga_kasutaja')::BOOLEAN OR
-                   (roles_json ->> 'is_pohivara_kasutaja')::BOOLEAN
-                THEN
-                    EXECUTE 'GRANT dbkasutaja TO "' || doc_kasutaja || '"';
-                END IF;
-
-            ELSE
-
-                RAISE EXCEPTION 'Viga, System role for user is not esists, kasutaja %, import %', doc_kasutaja, is_import;
-            END IF;
-        END IF;
 
         SELECT row_to_json(row)
         INTO new_history
@@ -159,6 +159,17 @@ BEGIN
             ajalugu    = new_history
         WHERE id = doc_id RETURNING id
             INTO new_user_id;
+    END IF;
+
+    IF coalesce(doc_parool, 'null') <> 'null'
+    THEN
+        -- смена пароля
+        l_string = 'ALTER USER "' || doc_kasutaja || '"   WITH PASSWORD ' || quote_literal(doc_parool) ;
+        EXECUTE (l_string);
+
+        -- для обнуления пароля веб пользователя
+        UPDATE ou.userid SET parool = NULL WHERE kasutaja = doc_kasutaja AND status <> 3;
+
     END IF;
 
     -- roles
@@ -213,10 +224,9 @@ BEGIN
         roles_list = roles_list || ',hkametnik';
     END IF;
 
-    l_string = 'GRANT ' || roles_list || ' TO ' || quote_ident(doc_kasutaja);
-    RAISE NOTICE '%', l_string;
-    EXECUTE (l_string);
 
+    l_string = 'GRANT ' || roles_list || ' TO ' || quote_ident(doc_kasutaja);
+    EXECUTE (l_string);
 
     RETURN new_user_id;
 

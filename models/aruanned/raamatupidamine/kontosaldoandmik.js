@@ -27,7 +27,7 @@ module.exports = {
                                          FROM ou.rekv
                                          WHERE parentid < 999
                                          UNION ALL
-                                         SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
+                                         SELECT 999999, 0, '' AS regkood, 'Koond' AS nimetus) r
                                         ON r.id = qry.rekv_id
 
                     WHERE qry.saldo <> 0
