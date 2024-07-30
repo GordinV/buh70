@@ -85,6 +85,15 @@ BEGIN
                 RAISE EXCEPTION 'Vale viitenumber, < 10';
             END IF;
 
+            -- контроль на закрытые учреждения
+            IF left(l_new_viitenr, 3) IN ('081', '082', '085')
+            THEN
+                -- платеж в закрытое учреждение, перенаправляем в TP18510139
+                --'009'
+                l_new_viitenr = overlay(l_new_viitenr PLACING '009' FROM 1 FOR 3);
+
+            END IF;
+
 
             -- читаем ссылку и ищем учреждение
             l_rekvid = left(l_new_viitenr, 3)::INTEGER;

@@ -257,6 +257,8 @@ BEGIN
                 THEN
                     RAISE EXCEPTION 'Viga:,kreedit arve salvestamine ebaõnnestus';
                 END IF;
+                -- расчет сальдо кредитового
+                PERFORM docs.sp_update_arv_jaak(doc_id_kreedit);
 
                 -- сохраняем в массиве
                 a_kreedit_arved = a_kreedit_arved || to_jsonb(doc_id_kreedit);

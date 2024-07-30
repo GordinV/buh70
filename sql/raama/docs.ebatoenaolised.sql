@@ -50,6 +50,7 @@ BEGIN
             FROM lapsed.ebatoenaolised(l_rekv_id::INTEGER, l_seisuga) r
                      LEFT OUTER JOIN docs.arv a ON a.parentid = r.doc_id
                      INNER JOIN docs.doc d ON d.id = a.parentid
+--            WHERE r.konto = '10300929'
 --            WHERE (l_arv_id IS NULL
 --                OR r.doc_id = l_arv_id)
         )
@@ -176,6 +177,7 @@ BEGIN
                          */
                         l_db_konto = '888888';
                     END IF;
+                    l_kr_konto = v_aruanne.konto; -- берем из отчета
 
                     -- делаем проводку
                     l_json_details = '[]'::JSONB; -- инициализируем массив под проводку
@@ -305,7 +307,7 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(id, '2024-06-30'::DATE, null)
+SELECT docs.ebatoenaolised(97, '2024-06-30'::DATE, 4523834)
 from ou.rekv
 where parentid = 119
 and id  in (94)

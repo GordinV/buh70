@@ -80,8 +80,9 @@ block content
                     td.group='Read kokku:'
                     td.group=Number(asutus[Object.keys(asutus)[0]].length)
                     td.group=''
-                    td.group='Kokku:'
-                    td.group=asutus[Object.keys(asutus)[0]][0].noude_50_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].noude_100_group
-                    td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
+                    td.group=Object.keys(asutus)[0] || 'kokku:'
+                    td.group=asutus[Object.keys(asutus)[0]][0].noude_50_total
+                    td.group=asutus[Object.keys(asutus)[0]][0].noude_100_total
+                    td.group=asutus[Object.keys(asutus)[0]][0].jaak_total
+
 
