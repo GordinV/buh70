@@ -245,11 +245,21 @@ vana_asutus = 83;
                 LOOP
                     RAISE NOTICE 'v_lapsed.lopp_kpv %, v_lapsed.parentid %',v_lapsed.lopp_kpv, v_lapsed.parentid;
 
+                    l_uus_nom_id = (SELECT id
+                                    FROM libs.nomenklatuur n
+                                    WHERE n.kood IN (SELECT kood FROM libs.nomenklatuur WHERE id = v_teenused.nomid)
+                                      AND rekvid = uus_asutus
+                                      AND n.dok = 'ARV'
+                                      AND status < 3
+                                    ORDER BY id DESC
+                                    LIMIT 1
+                    );
+
                     -- параметры
                     json_object = to_jsonb(row)
                                   FROM (SELECT 0                               AS id,
                                                v_lapsed.parentid               AS parentid,
-                                               v_teenused.nomid                AS nomid,
+                                               l_uus_nom_id                    AS nomid,
                                                ltrim(rtrim(l_uus_yksuse_kood)) AS yksus,
                                                NULL                            AS all_yksus,
                                                v_teenused.kogus                AS kogus,
@@ -337,6 +347,10 @@ $BODY$
 /*
 SELECT *
 FROM lapsed.move_laspsed_to_new_asutus(99, 96);
+
+SELECT *
+FROM lapsed.move_laspsed_to_new_asutus(83, 92);
+
 
 DROP FUNCTION IF EXISTS lapsed.move_laspsed_to_new_asutus(IN vana_asutus INTEGER,
     IN uus_asutus INTEGER);

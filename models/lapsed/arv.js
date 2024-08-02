@@ -830,6 +830,13 @@ const Arv = {
             type: 'manual',
             hideDate: false,
             action: 'ebatoenaolised',
+        },
+        {
+            name: 'Ebatõenäolised arvestamine',
+            task: 'arvestaEbatoenaolised',
+            type: 'manual',
+            hideDate: false,
+            action: 'arvestaEbatoenaolised',
         }
 
     ],
@@ -855,6 +862,18 @@ const Arv = {
                   FROM docs.ebatoenaolised_mahakandmine($2::INTEGER, $1::INTEGER, $3::DATE)`, //$1 - docs.doc.id, $2 - userId, $3 - kpv
         type: "sql",
         alias: 'ebatoenaolised'
+    },
+    arvestaEbatoenaolised: {
+        command: `SELECT row_number() OVER ()                                          AS id,
+                         tulemus -> 'result'                                           AS result,
+                         tulemus -> 'error_code'                                       AS error_code,
+                         coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
+                         tulemus -> 'error_message'                                    AS error_message
+                  FROM (
+                           SELECT to_jsonb(docs.ebatoenaolised((select rekvid from ou.userid where id = $2::INTEGER),$3::DATE, $1::INTEGER )) tulemus
+                           ) qry`, //$1 - docs.doc.id, $2 - rekvId, $3 - kpv
+        type: "sql",
+        alias: 'arvestaEbatoenaolised'
     },
     ebatoenaolisedMass: {
         command: `SELECT row_number() OVER ()                                          AS id,

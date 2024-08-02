@@ -101,6 +101,7 @@ BEGIN
             FROM cur_journal j
             WHERE deebet = l_db_konto
               AND left(kreedit, 6) = left(l_kr_konto, 6)
+              and j.selg ilike '%Ebatõenäolised%'
               AND j.id IN (SELECT unnest(d.docs_ids)
                            FROM docs.doc d
                            WHERE d.id = v_aruanne.doc_id
@@ -307,7 +308,7 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(97, '2024-06-30'::DATE, 4523834)
+SELECT docs.ebatoenaolised(, '2024-06-30'::DATE, 4523834)
 from ou.rekv
 where parentid = 119
 and id  in (94)

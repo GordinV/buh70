@@ -42,7 +42,7 @@
 
                         SELECT 152586455            AS id,
                                '3'                  AS kood,
-                               'PÃµhitegevuse tulud' AS nimetus,
+                               'Põhitegevuse tulud' AS nimetus,
                                999999               AS rekvid,
                                FALSE                AS is_kulud,
                                NULL::DATE           AS valid
@@ -59,7 +59,7 @@
                                          FROM ou.rekv
                                          WHERE parentid &lt; 999
                                          UNION ALL
-                                         SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
+                                         SELECT 999999, 0, '' AS regkood, 'Koond' AS nimetus) r
                                         ON r.id = qryReport.rekv_id
                              LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id
                     WHERE (

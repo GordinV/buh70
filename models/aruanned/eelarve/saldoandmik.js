@@ -107,7 +107,7 @@ module.exports = {
                                      FROM ou.rekv
                                      WHERE parentid < 999
                                      UNION ALL
-                                     SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
+                                     SELECT 999999, 0, '' AS regkood, 'Koond' AS nimetus) r
                                     ON r.id = Report.rekv_id
                          LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id
                 ORDER BY CASE WHEN rekv_id = 999999 THEN 0 ELSE 1 END, r.parentid, r.nimetus, Report.konto, Report.tp,

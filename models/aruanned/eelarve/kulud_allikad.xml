@@ -16,7 +16,7 @@
                                          FROM ou.rekv
                                          WHERE parentid &lt; 999
                                          UNION ALL
-                                         SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r ON r.id = qryReport.rekv_id
+                                         SELECT 999999, 0, '' AS regkood, 'Koond' AS nimetus) r ON r.id = qryReport.rekv_id
                              LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    </sql>
     <alias>kulud_report</alias>
   </grid>

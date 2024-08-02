@@ -127,6 +127,7 @@ module.exports = function (app) {
     app.post('/calc/arvestaTaabel', checkAuth, require('./lapsed/arvestaTaabel').post); //checkAuth
     app.post('/calc/arvestaKoikTaabelid', checkAuth, require('./lapsed/arvestaKoikTaabelid').post); //checkAuth
     app.post('/calc/koostaTagasimakse', checkAuth, require('./raama/koostaTagasimakse').post); //checkAuth
+    app.post('/calc/arvestaEbatoenaolised', checkAuth, require('./raama/arvestaEbatoenaolised').post); //checkAuth
     app.post('/calc/loe_makse', checkAuth, require('./lapsed/loe_makse').post); //checkAuth
     app.post('/calc/ebatoenaolised', checkAuth, require('./raama/ebatoenaolised').post); //checkAuth
     app.post('/calc/importAsendusTaabel', checkAuth, require('./lapsed/importAsendusTaabel').post); //checkAuth

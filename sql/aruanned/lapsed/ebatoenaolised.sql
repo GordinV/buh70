@@ -28,8 +28,8 @@ WITH report AS (
            lapse_isikukood,
            maksja_nimi,
            maksja_isikukood,
-           CASE WHEN paevad >= 90 AND paevad < 180 THEN round(jaak / 2, 2) ELSE 0 END AS noude_50,
-           CASE WHEN paevad >= 180 THEN jaak ELSE 0 END                               AS noude_100,
+           CASE WHEN paevad >= 90 AND paevad < 180 and jaak >= 0  THEN round(jaak / 2, 2) ELSE 0 END AS noude_50,
+           CASE WHEN paevad >= 180 and jaak >= 0 THEN jaak ELSE 0 END                               AS noude_100,
            jaak,
            doc_id
     FROM (
@@ -63,6 +63,7 @@ WITH report AS (
 --           AND coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) > 0
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
+--               AND a.jaak >= 0
          ) qry
 --    WHERE qry.jaak > 0
 )

@@ -110,7 +110,7 @@ WITH params AS (
 
                   UNION ALL
                   -- востановление расходов
-                  SELECT DISTINCT d.id,
+                  SELECT  d.id,
                                   (-1 * j1.summa)               AS summa,
                                   j1.kood1::TEXT                AS tegev,
                                   j1.kood2::TEXT                AS allikas,

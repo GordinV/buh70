@@ -343,7 +343,7 @@ exports.executeTask = async (req, res) => {
         }
     }
 
-    if (taskName == 'ebatoenaolised') {
+    if (taskName == 'ebatoenaolised' || taskName == 'arvestaEbatoenaolised') {
         taskParams = [params.docId, user.userId, seisuga];
     }
 

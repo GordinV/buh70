@@ -580,8 +580,10 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_a_art_tt_tunnus_proj_uritus(IN
 SELECT *
 FROM (
          SELECT sum(tegelik) over(), sum(kassa) over(), sum(eelarve_kinni) over(), sum(eelarve_parandatud) over(), sum(eelarve_kassa_kinni) over(), sum(eelarve_kassa_parandatud) over(), *
-         FROM eelarve.tulude_taitmine_a_art_tt_tunnus_proj_uritus(2024::INTEGER, '2024-01-01'::DATE, '2024-12-30', 28, 1,'{"tunnus":null}')
-where artikkel = '3818'
+         FROM eelarve.tulude_taitmine_a_art_tt_tunnus_proj_uritus(2024::INTEGER, '2024-01-01'::DATE, '2024-06-30', 119, 1,'{"tunnus":null}')
+where artikkel = '5511'
+and tegev = '09212'
+
 
 allikas = '80'
 and artikkel = '3044'
