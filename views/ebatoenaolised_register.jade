@@ -62,7 +62,9 @@ block content
                         th Maksja nimi
                         th 50%
                         th 100%
-                        th Summa
+                        th Võlg
+                        th Arv. päevaraamatus
+                        th Vahe
 
                 tbody
                     each rea in asutus[Object.keys(asutus)[0]]
@@ -75,6 +77,8 @@ block content
                             td=rea.noude_50
                             td=rea.noude_100
                             td=rea.jaak
+                            td=rea.arv_pr
+                            td=rea.vahe
                 tr.group
                     td.group=''
                     td.group='Read kokku:'
@@ -84,5 +88,7 @@ block content
                     td.group=asutus[Object.keys(asutus)[0]][0].noude_50_total
                     td.group=asutus[Object.keys(asutus)[0]][0].noude_100_total
                     td.group=asutus[Object.keys(asutus)[0]][0].jaak_total
+                    td.group=asutus[Object.keys(asutus)[0]][0].arv_pr_total
+                    td.group=asutus[Object.keys(asutus)[0]][0].vahe_total
 
 

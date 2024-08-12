@@ -35,6 +35,8 @@ class Documents extends React.PureComponent {
             noude_100: 0,
             noude_kokku: 0,
             jaak: 0,
+            arv_pr: 0,
+            vahe: 0,
             read: 0
         };
 
@@ -81,6 +83,18 @@ class Documents extends React.PureComponent {
                              ref="input-jaak"
                              value={Number(this.state.jaak).toFixed(2) || 0}
                              disabled={true}/>
+                <InputNumber title="Arvestatus päevaraamatus kokku:"
+                             name='arv_pr_kokku'
+                             style={styles.total}
+                             ref="input-jaak"
+                             value={Number(this.state.arv_pr).toFixed(2) || 0}
+                             disabled={true}/>
+                <InputNumber title="Vahe kokku:"
+                             name='vahe_kokku'
+                             style={styles.total}
+                             ref="input-jaak"
+                             value={Number(this.state.vahe).toFixed(2) || 0}
+                             disabled={true}/>
 
             </div>
         )
@@ -90,12 +104,16 @@ class Documents extends React.PureComponent {
         let noude_50 = self.gridData ? getSum (self.gridData,'noude_50') : 0;
         let noude_100 = self.gridData ? getSum (self.gridData,'noude_100') : 0;
         let jaak = self.gridData ? getSum (self.gridData,'jaak') : 0;
+        let arv_pr = self.gridData ? getSum (self.gridData,'arv_pr') : 0;
+        let vahe = self.gridData ? getSum (self.gridData,'vahe') : 0;
         if (self.gridData) {
             this.setState({
                 noude_50: noude_50,
                 noude_100: noude_100,
                 noude_kokku: Number(noude_100) + Number(noude_50),
                 jaak: jaak,
+                arv_pr:arv_pr,
+                vahe: vahe,
                 read: self.gridData.length});
         }
 
