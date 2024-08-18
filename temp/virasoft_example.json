@@ -1,0 +1,102 @@
+// IP aadress ja näidis 
+//curl 80.235.127.119:3000/virasoft/import -X POST -H "Content-Type: application/json" --data-binary @"virasoft_example.json"
+
+// Faili struktuur
+
+{
+"fileId":7,	// unikaalne
+"userId":"a1e0b2df52ad1c932d941b7f92b8ecec5d492eb4",	
+"data":
+[
+{"rowId":"1", // unikaalne failis
+"regkood":"75008427", // Narva LV allasutuse reg.kood. Näiteks 75008427 - Rahandusamet
+"kpv":"2024-05-30", // Kuupäev, formaat YYYY-MM-DD
+"isikukood":"471021XXXXX", // 
+"deebet":"50025001",
+"kreedit":"202000",
+"summa":"100.00", // numbrid formaadis 99999.99 
+"artikkel":"5002",
+"allikas":"LE-P",
+"tegevusala":"01112",
+"tunnus":"OSAK",
+"projekt":"",
+"uritus":"",
+"objekt":"",
+"selgitus":"Palgarvestus"
+},
+{"rowId":"2",  // unikaalne failis
+"regkood":"75008427",
+"kpv":"2024-05-30",
+"isikukood":"471021XXXXX",
+"deebet":"202000",
+"kreedit":"10010002",
+"summa":"100",
+"artikkel":"5002",
+"allikas":"LE-P",
+"tegevusala":"01112",
+"tunnus":"OSAK",
+"projekt":"L16110039",
+"uritus":"COVID19",
+"objekt":"",
+"selgitus":"Palk, väljamaks"
+}
+
+]
+}
+
+/*
+asutuste nimekiri
+regkood;nimetus
+75008427            ;RAHANDUSAMET
+90003663            ;SA Narva Naitused
+90003692            ;SA Narva Sadam
+75008386            ;Narva Linnaarhiiv
+75024260            ;0860001 Kultuuriosakond
+75008485            ;LINNAKANTSELEI
+75029524            ;Narva Linna Arenduse ja Ökonoomika Amet
+75009148            ;Narva Linna Sotsiaalabiamet
+75029820            ;Narva Linnavalitsuse Arhitektuuri-ja Linnaplaneerimise Amet
+75039729            ;Narva Linnavalitsuse Linnamajandusamet
+75028016            ;Narva Linnavolikogu Kantselei
+75038078            ;Narva Sotsiaaltöökeskus
+75037334            ;0810202 Narva Spordikeskus
+75024449            ;0810203 Narva Paemurru Spordikool
+75009177            ;0810204 Narva Spordikool Energia
+75008723            ;0810799 Narva Noortekeskus
+75024461            ;0820101 Narva Keskraamatukogu
+75024314            ;0820201 Narva Kultuurimaja Rugodiv
+75009131            ;0820301 Narva Muuseum
+75024484            ;0823601 Narva Linna Sumfooniaorkester
+75026902            ;0911006 Narva Lasteaed Paasuke
+75008686            ;0911007 Narva Lasteaed Tuluke
+75026744            ;0911008 Narva Lasteaed Karikakar
+75026750            ;0911009 Narva Lasteaed Muinasjutt
+75026773            ;0911010 Narva Lasteaed Potsataja
+75024372            ;0911012 Narva Lasteaed Kaseke
+75026891            ;0911018 Narva Vanalinna Lasteaed
+75008670            ;0911021 Narva Lasteaed Paikene
+75008734            ;0911027 Narva Lasteaed Pongerjas
+75024403            ;0911030 Narva Lasteaed Tareke
+75008663            ;0911031 Narva Lasteaed Sipsik
+75024411            ;0911032 Narva Lasteaed Sademeke
+75024426            ;0911033 Narva Lasteaed Pingviin
+75026715            ;0911034 Narva Lasteaed Kirsike
+75009021            ;0911036 Narva Lasteaed Vikerkaar
+75026767            ;0911037 Narva Lasteaed Cipollino
+75008692            ;0911038 Narva Lasteaed Kaoke
+75008611            ;0921201 Narva Kesklinna Kool
+75024366            ;0921202 Narva Eesti Gumnaasium
+75008605            ;0921204 Narva Kreenholmi Kool
+75008657            ;0921206 Narva 6. Kool
+75026661            ;0921210 Narva Paju Kool
+75024357            ;0921211 Narva Pahklimae Kool
+75026690            ;0921213 Narva Soldino Kool
+75008640            ;0921214 Narva Keeltelutseum
+75024292            ;0921217 Narva Taiskasvanute Kool
+75026684            ;0951002 Narva Kunstikool
+75024337            ;0951004 Narva Muusikakool
+75024283            ;0951005 Narva Laste Loomemaja
+75009160            ;0951006 Narva Noorte Meremeeste Klubi
+TP18510139          ;TP18510139
+
+*/
