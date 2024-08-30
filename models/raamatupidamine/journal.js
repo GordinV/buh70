@@ -85,12 +85,9 @@ const Journal = {
             data: []
         },
         {
-            sql: "select rd.id, $2::integer as userid, trim(l.kood) as doc_type, trim(l.nimetus) as name " +
-                " from docs.doc d " +
-                " left outer join docs.doc rd on rd.id in (select unnest(d.docs_ids)) " +
-                " left outer join libs.library l on rd.doc_type_id = l.id " +
-                " inner join ou.userid u on u.id = $2::integer " +
-                " where d.id = $1",
+            sql: `SELECT d.*
+                  FROM docs.get_relative_docs($1::INTEGER) d
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER`,
             query: null,
             multiple: true,
             alias: 'relations',

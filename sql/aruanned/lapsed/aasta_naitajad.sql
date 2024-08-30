@@ -78,6 +78,11 @@ FROM (
                     AND d.doc_type_id IN
                         (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('ARV')
                         )
+                    AND a.properties ->> 'alus_arve_id' IS NULL -- кредитовые счета убираем
+                    AND CASE
+                            WHEN a.properties ->> 'doc_kreedit_arved' IS NOT NULL AND a.summa > 0 THEN TRUE
+                            WHEN a.properties ->> 'doc_kreedit_arved' IS NULL THEN TRUE
+                            ELSE FALSE END
                     AND coalesce((n.properties ->> 'oppe_tyyp')::TEXT, 'Põhiõpe')::TEXT <> 'Töötaja'
                     AND coalesce(n.properties ->> 'liik', '') ILIKE p.liik
 

@@ -32,6 +32,7 @@ DECLARE
     a_MuudTegevusTulud             TEXT[]    = ARRAY ['38250', '38251', '38252', '38254', '3880', '3882', '3823', '3818', '3888'];
     a_TuludInvesteerimistegevusest TEXT[]    = ARRAY ['381', '3502', '1502', '1512', '1532', '655','1032'];
     a_FinanseerimisTegevus         TEXT[]    = ARRAY ['2585'];
+    a_Tervisehoiust                TEXT[]    = ARRAY ['3223'];
     a_LikviidseteVaradeMuutus      TEXT[]    = ARRAY ['100'];
     kas_ainult_aktsepteeritud      BOOLEAN   = coalesce((l_params ->> 'taotlus_statusid')::BOOLEAN, FALSE);
     taotlus_statusid               INTEGER[] = CASE
@@ -62,6 +63,8 @@ BEGIN
                            SELECT unnest(a_FinanseerimisTegevus)
                            UNION ALL
                            SELECT unnest(a_LikviidseteVaradeMuutus)
+                           UNION ALL
+                           SELECT unnest(a_Tervisehoiust)
             )
         ),
              rekv_ids AS (SELECT r.rekv_id
@@ -175,7 +178,8 @@ BEGIN
                             AND qry.rekv_id <> 9
                       ) s
 
-                 GROUP BY s.tyyp, s.konto, s.tegev, s.allikas, s.rahavoog, s.artikkel, s.tunnus, s.proj, s.uritus, s.objekt,
+                 GROUP BY s.tyyp, s.konto, s.tegev, s.allikas, s.rahavoog, s.artikkel, s.tunnus, s.proj, s.uritus,
+                          s.objekt,
                           s.rekv_id
                  UNION ALL
 --  текущий год
@@ -1660,6 +1664,7 @@ BEGIN
                         CASE
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_maksud THEN 100
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_tuluMuugist THEN 200
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_Tervisehoiust THEN 250
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_SaadetudToetused THEN 300
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_MuudTegevusTulud THEN 400
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_TuludInvesteerimistegevusest THEN 500
@@ -1861,7 +1866,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou_pikk(DATE, INTEGER, INTEGER, JSON
 
 
 SELECT *
-FROM eelarve.tulud_eelnou_pikk('2023-12-31'::DATE, 63:: INTEGER, 1, jsonb_build_object('kas_aktsepteeritud', 0))
---WHERE aasta_2_oodatav_taitmine > 0
+FROM eelarve.tulud_eelnou_pikk('2024-12-31'::DATE, 64:: INTEGER, 1, jsonb_build_object('kas_aktsepteeritud', 0))
+WHERE artikkel = '3223'
 
 

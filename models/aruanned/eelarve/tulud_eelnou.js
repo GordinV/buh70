@@ -65,7 +65,7 @@ module.exports = {
                          sum(eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                          sum(eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud
                   FROM report qry
-                  WHERE idx = 200
+                  WHERE idx in (200, 250)
                   GROUP BY qry.rekv_id, qry.idx, qry.artikkel
                   UNION ALL
                   SELECT qry.rekv_id,

@@ -163,7 +163,7 @@ module.exports = {
         select: ['arvestaja'],
         add: ['kasutaja'],
         edit: ['kasutaja'],
-        delete: ['kasutaja'],
+        delete: ['kasutaja','tabeli_korraldaja'],
         importTaabel: ['admin'],
         importAsendusTaable: ['kasutaja']
     },
