@@ -30,6 +30,7 @@ DECLARE
     a_TuludInvesteerimistegevusest TEXT[]    = ARRAY ['381', '3502', '1502', '1512', '1532', '655','1032'];
     a_FinanseerimisTegevus         TEXT[]    = ARRAY ['2585'];
     a_LikviidseteVaradeMuutus      TEXT[]    = ARRAY ['100'];
+    a_Tervisehoiust                TEXT[]    = ARRAY ['3223'];
     a_OmaTulud                     TEXT[]    = ARRAY ['3044','3045','3047','320','3220','3221','3222','3224','3229','3232','3233','3237','3238',
         '3880','3823','3818','3888','381','1532','655'];
     kas_ainult_aktsepteeritud      BOOLEAN   = coalesce((l_params ->> 'taotlus_statusid')::BOOLEAN, FALSE);
@@ -61,6 +62,8 @@ BEGIN
                            SELECT unnest(a_FinanseerimisTegevus)
                            UNION ALL
                            SELECT unnest(a_LikviidseteVaradeMuutus)
+                           UNION ALL
+                           SELECT unnest(a_Tervisehoiust)
             )
         ),
              rekv_ids AS (SELECT r.rekv_id
@@ -1423,6 +1426,7 @@ BEGIN
                         CASE
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_maksud THEN 100
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_tuluMuugist THEN 200
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_Tervisehoiust THEN 250
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_SaadetudToetused THEN 300
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_MuudTegevusTulud THEN 400
                             WHEN ARRAY [S.artikkel::TEXT] <@ a_TuludInvesteerimistegevusest THEN 500
@@ -1598,8 +1602,8 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO
 GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
 /*
-SELECT *
-FROM eelarve.tulud_eelnou('2022-12-31'::DATE, 88:: INTEGER, 0, jsonb_build_object('taotlus_statusid', 1))
+SELECT sum(
+FROM eelarve.tulud_eelnou('2024-12-31'::DATE, 64:: INTEGER, 1, jsonb_build_object('taotlus_statusid', 1))
 WHERE artikkel = '3500'
 */
 

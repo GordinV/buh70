@@ -87,6 +87,13 @@ FROM (
                     AND d.doc_type_id IN
                         (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('ARV')
                         )
+                    and a.properties->>'alus_arve_id' is null -- кредитовые счета убираем
+                    AND CASE
+                            WHEN a.properties ->> 'doc_kreedit_arved' IS NOT NULL AND a.summa > 0 THEN TRUE
+                            WHEN a.properties ->> 'doc_kreedit_arved' IS NULL THEN TRUE
+                            ELSE FALSE END
+--                    and a.properties->>'doc_kreedit_arved' is null -- убираем переносы долгов
+
 --                    AND coalesce(r.properties ->> 'liik', '') ILIKE p.liik
                     AND left((a1.properties ->> 'yksus'), 8) ILIKE p.tyyp
               ),

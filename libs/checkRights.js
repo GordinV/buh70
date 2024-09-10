@@ -16,6 +16,11 @@ const checkRights = (userRoles, docRights, action) => {
                 is_accepted = userRoles && userRoles.is_arvestaja && role == 'arvestaja' ? true : is_accepted;
             }
 
+            // tabeli korraldajad
+            if (!is_accepted) {
+                is_accepted = userRoles && userRoles.is_tabeli_korraldaja && role == 'tabeli_korraldaja' ? true : is_accepted;
+            }
+
             // adminid
             if (!is_accepted) {
                 is_accepted = userRoles && userRoles.is_admin && role == 'admin' ? true : is_accepted;

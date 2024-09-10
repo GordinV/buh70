@@ -97,7 +97,17 @@ module.exports = {
             multiple: false,
             alias: 'kulum_umber_arvestamine',
             data: []
-        }
+        },
+        {
+            sql: `SELECT d.*
+                  FROM docs.get_relative_docs($1::INTEGER) d
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER`,
+            query: null,
+            multiple: true,
+            alias: 'relations',
+            data: []
+        },
+
     ],
     returnData: {
         row: {}

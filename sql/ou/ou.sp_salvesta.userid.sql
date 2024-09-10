@@ -51,6 +51,8 @@ DECLARE
                                                   FALSE)                                              AS is_ladu_kasutaja,
                                          coalesce((doc_data ->> 'is_arvestaja') :: BOOLEAN,
                                                   FALSE)                                              AS is_arvestaja,
+                                         coalesce((doc_data ->> 'is_tabeli_korraldaja') :: BOOLEAN,
+                                                  FALSE)                                              AS is_tabeli_korraldaja,
                                          coalesce((doc_data ->> 'is_palga_kasutaja') :: BOOLEAN,
                                                   FALSE)                                              AS is_palga_kasutaja,
                                          coalesce((doc_data ->> 'is_pohivara_kasutaja') :: BOOLEAN,

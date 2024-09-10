@@ -150,7 +150,24 @@ module.exports = {
             multiple: true,
             alias: 'oodatav_taitmine',
             data: []
-        }
+        },
+        {
+            sql: `select eelarve.sp_kooperi_taotlus($1::integer, $2::INTEGER) as id`, //$1 - user_id, $2 doc_id
+            query: null,
+            multiple: true,
+            alias: 'kooperi_taotlus',
+            data: []
+
+        },
+        {
+            sql: `select eelarve.koosta_eelarve_eelmise_aasta_alusel($1::integer, $2::JSONB) as id`, //$1 - user_id, $2 params
+            query: null,
+            multiple: true,
+            alias: 'koosta_taotlus',
+            data: []
+
+        },
+
     ],
     returnData: {
         row: {}

@@ -38,24 +38,26 @@ BEGIN
                n.uhik::TEXT,
                n.properties ->> 'tunnus'              AS tunnus,
                (n.properties ->> 'kas_inf3')::BOOLEAN AS kas_inf3,
-               ltrim(rtrim(l.kood))                                 AS yksus
+               ltrim(rtrim(l.kood))                   AS yksus
 
         FROM jsonb_to_recordset((SELECT properties::JSONB -> 'teenused'
                                  FROM libs.library
                                  WHERE id = l_grupp_id)) AS x(hind NUMERIC(12, 2), kogus NUMERIC(12, 2), nomid INTEGER)
                  INNER JOIN libs.nomenklatuur n ON n.id = x.nomid AND n.status <> 3
                  INNER JOIN libs.library l ON l.id = l_grupp_id
+        WHERE n.nimetus NOT ILIKE '%Ümberarvestus%'
         LOOP
             -- готовим параметры
 
             -- ищем услуги с такими же параметрами
-            SELECT id INTO l_kaart_id
+            SELECT id
+            INTO l_kaart_id
             FROM lapsed.lapse_kaart lk
             WHERE parentid = l_id
               AND nomid = v_kaart.nom_id
               AND coalesce(lk.properties ->> 'yksus', '') = v_kaart.yksus
 -- различаются по срокам
-              and (lk.properties->>'lopp_kpv')::date > l_alates
+              AND (lk.properties ->> 'lopp_kpv')::DATE > l_alates
               AND lk.staatus <> 3
               AND lk.rekvid = l_rekvid
             LIMIT 1;
@@ -76,7 +78,8 @@ BEGIN
                     );
 
                 -- подготавливаем параметры для сохранения
-                SELECT row_to_json(row) INTO params
+                SELECT row_to_json(row)
+                INTO params
                 FROM (SELECT 0      AS id,
                              params AS data) row;
                 -- сохраняем

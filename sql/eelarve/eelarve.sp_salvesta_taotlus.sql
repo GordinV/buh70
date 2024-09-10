@@ -40,6 +40,8 @@ DECLARE
     is_import      BOOLEAN = data ->> 'import';
 BEGIN
 
+    raise notice 'start salvestamine';
+
     SELECT kasutaja
     INTO userName
     FROM ou.userid u
@@ -55,6 +57,8 @@ BEGIN
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
+
+    raise notice 'doc_id %, user_rekvid %, doc_kpv %', doc_id, user_rekvid, doc_kpv;
 
     -- проверка на символы
     PERFORM check_text(doc_muud);

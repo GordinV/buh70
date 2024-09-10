@@ -14,13 +14,16 @@ DECLARE
     v_doc        RECORD;
     json_ajalugu JSONB;
     DOC_STATUS   INTEGER = 3; -- документ удален
+    is_ok        BOOLEAN = FALSE;
 BEGIN
 
     SELECT l.*,
-           u.ametnik::TEXT                           AS kasutaja,
-           (u.roles ->> 'is_arvestaja')::BOOLEAN     AS is_arvestaja,
-           (l.properties ->> 'kas_asendus')::BOOLEAN AS kas_asendus,
-           (l.properties ->> 'asendus_id')::INTEGER  AS asendus_id
+           u.ametnik::TEXT                               AS kasutaja,
+           (u.roles ->> 'is_arvestaja')::BOOLEAN         AS is_arvestaja,
+           (u.roles ->> 'is_tabeli_korraldaja')::BOOLEAN AS is_tabeli_korraldaja,
+           (u.roles ->> 'is_kasutaja')::BOOLEAN          AS is_kasutaja,
+           (l.properties ->> 'kas_asendus')::BOOLEAN     AS kas_asendus,
+           (l.properties ->> 'asendus_id')::INTEGER      AS asendus_id
     INTO v_doc
     FROM lapsed.lapse_taabel l
              JOIN ou.userid u ON u.id = user_id
@@ -38,7 +41,7 @@ BEGIN
 
     END IF;
 
-    IF (v_doc.kasutaja IS NULL
+    IF (coalesce(v_doc.kasutaja, FALSE) IS NULL OR v_doc.is_tabeli_korraldaja
         )
     THEN
 
@@ -52,9 +55,14 @@ BEGIN
 
     -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
-
     --	ids =  v_doc.rigths->'delete';
-    IF (v_doc.is_arvestaja IS NULL OR NOT v_doc.is_arvestaja)
+
+    is_ok = CASE
+                WHEN coalesce(v_doc.is_tabeli_korraldaja, FALSE) THEN TRUE
+                WHEN coalesce(v_doc.is_kasutaja, FALSE) THEN TRUE
+                ELSE FALSE END;
+    
+    IF NOT is_ok
     THEN
         RAISE NOTICE 'У пользователя нет прав на удаление ';
         error_code = 4;
