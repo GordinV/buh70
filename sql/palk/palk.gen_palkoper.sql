@@ -70,6 +70,13 @@ BEGIN
     -- контроль периода для модуля ЗП
     IF NOT (ou.fnc_aasta_palk_kontrol(v_user.rekvid, l_kpv))
     THEN
+        error_code = 6;
+        error_message = 'Viga, periodi kontrol. palk kinni';
+        result = 0;
+        SELECT error_message, error_code INTO v_tulemus;
+        l_params = to_jsonb(v_tulemus);
+        data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+        RETURN;
         RAISE EXCEPTION 'Viga, periodi kontrol. palk kinni';
     END IF;
 
@@ -129,6 +136,9 @@ BEGIN
           AND t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
         ORDER BY t.pohikoht DESC, t.koormus DESC
         LOOP
+            raise notice 'leping %', v_tooleping.id;
+
+
             -- инициализируем
             l_arv_kogus = 0;
             l_kasutatud_umardamine = FALSE;
@@ -166,6 +176,7 @@ BEGIN
                         , (CASE WHEN pk.summa < 0 THEN 1 ELSE 0 END) DESC, pk.summa DESC
                 LOOP
 
+                raise notice 'lib %', v_lib.id;
                     -- umardamine
                     IF v_lib.liik > 1 AND l_viimane_summa <> 0
                     THEN
