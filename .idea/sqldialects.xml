@@ -2,6 +2,7 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/sql/aruanned/eelproj/tulud_eelnou_pikk.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/sql/aruanned/lapsed/lapsed.kuu_taabel.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/palk/palk.gen_palkoper.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/scripts/uhenda_asutus_kaart.sql" dialect="PostgreSQL" />
     <file url="PROJECT" dialect="PostgreSQL" />

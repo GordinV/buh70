@@ -184,7 +184,9 @@ module.exports = {
                                 day_29,
                                 day_30,
                                 day_31,
-                                week_ends::INTEGER[] AS week_ends
+                                week_ends::INTEGER[] AS week_ends,
+                                hind,
+                                summa
                          FROM lapsed.kuu_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER, $4::date, $5::date) qryReport
                          order by tyyp, yksus, nom_id desc
                      )
@@ -233,7 +235,9 @@ module.exports = {
                          sum(day_29) AS day_29,
                          sum(day_30) AS day_30,
                          sum(day_31) AS day_31,
-                         NULL::INTEGER [] AS week_ends
+                         NULL::INTEGER [] AS week_ends,
+                         max(hind)::numeric(12,2) as hind,
+                         sum(summa)::numeric(12,2) as summa
                      FROM kuu_taabel kt
                      GROUP BY tyyp,
                          nom_id,
