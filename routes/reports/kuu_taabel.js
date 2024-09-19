@@ -48,6 +48,8 @@ exports.get = async (req, res) => {
                 teenus: row.teenus,
                 kuu: row.kuu,
                 aasta: row.aasta,
+                hind: row.hind,
+                summa: row.summa,
                 paev_01: row.day_1,
                 paev_02: row.day_2,
                 paev_03: row.day_3,
