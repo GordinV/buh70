@@ -28,7 +28,8 @@ class Documents extends React.PureComponent {
             summa: 0,
             soodustus: 0,
             vahe: 0,
-            kor_summa: 0
+            kor_summa: 0,
+            read_kokku: 0
         };
         this.renderer = this.renderer.bind(this);
         this.onClickHandler = this.onClickHandler.bind(this);
@@ -44,6 +45,12 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read_kokku) || 0}
+                             disabled={true}/>
                 <InputNumber title="Summa kokku:"
                              name='summa_kokku'
                              style={styles.total}
@@ -79,12 +86,13 @@ class Documents extends React.PureComponent {
     renderer(self) {
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
+        let read = self.gridData && self.gridData.length ? self.gridData.length : 0;
         let summa = self.gridData && self.gridData.length ? self.gridData[0].summa_kokku : 0;
         let soodustus = self.gridData && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
         let vahe = self.gridData && self.gridData.length ? self.gridData[0].vahe_kokku : 0;
         let kor_summa = self.gridData && self.gridData.length ? self.gridData[0].kor_summa_kokku : 0;
 
-        this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus, vahe: vahe, kor_summa: kor_summa});
+        this.setState({summa: summa, read_kokku:read, soodustus: soodustus, vahe: vahe, kor_summa: kor_summa});
 
         return (
             <ToolbarContainer>
