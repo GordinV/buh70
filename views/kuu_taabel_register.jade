@@ -68,8 +68,6 @@ block content
                         th.th_yksus Nr.
                         th.th_yksus Üksus
                         th.th Teenus
-                        th.th Hind
-                        th.th Summa
                         th.th(style={color: tyyp[Object.keys(tyyp)[0]][0].week_ends.indexOf(1) > -1 ? 'red': 'none' }) 1
                         th.th(style={color: tyyp[Object.keys(tyyp)[0]][0].week_ends.indexOf(2) > -1 ? 'red': 'none' }) 2
                         th.th(style={color: tyyp[Object.keys(tyyp)[0]][0].week_ends.indexOf(3) > -1 ? 'red': 'none' }) 3
@@ -102,6 +100,9 @@ block content
                         th.th(style={color: tyyp[Object.keys(tyyp)[0]][0].week_ends.indexOf(30) > -1 ? 'red': 'none' }) 30
                         th.th(style={color: tyyp[Object.keys(tyyp)[0]][0].week_ends.indexOf(31) > -1 ? 'red': 'none' }) 31
                         th.th Kokku
+                        th.th Hind
+                        th.th Summa
+
                 tbody
                     -var id = 1;
                     each rea in tyyp[Object.keys(tyyp)[0]]
@@ -110,8 +111,6 @@ block content
                                 td.doc_grouped_data(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})=rea.rea_count == rea.min_rea_count ? id++: id
                                 td.doc_grouped_data(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})=rea.yksus
                                 td.td=rea.teenus
-                                td.td=(rea.rea_count == rea.min_rea_count ? null: Number(rea.hind).toFixed(2))
-                                td.td=(rea.rea_count == rea.min_rea_count ? null: Number(rea.summa).toFixed(2))
                                 td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink': null)})= rea.day_1
                                 td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink': null)})=rea.day_2
                                 td.td(align='center' style={"background-color": rea.day_3 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_3 > 0 ? 'lightgreen': 'pink': null)})=rea.day_3
@@ -144,13 +143,13 @@ block content
                                 td.td(align='center' style={"background-color": rea.day_30 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_30 > 0 ? 'lightgreen': 'pink': null)})=rea.day_30
                                 td.td(align='center' style={"background-color": rea.day_31 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_31 > 0 ? 'lightgreen': 'pink': null)})=rea.day_31
                                 td.td(align='center')=rea.kogus
+                                td.td=(rea.rea_count == rea.min_rea_count ? null : Number(rea.hind).toFixed(2))
+                                td.td=(rea.rea_count == rea.min_rea_count ? null : Number(rea.summa).toFixed(2))
                         else
                             tr
                                 td(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})
                                 td.doc_grouped_data(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})=rea.yksus
                                 td.doc_grouped_data.td=rea.teenus
-                                td.doc_grouped_data.td=(rea.rea_count == rea.min_rea_count ? null: Number(rea.hind).toFixed(2))
-                                td.doc_grouped_data.td=(rea.rea_count == rea.min_rea_count ? null: Number(rea.summa).toFixed(2))
                                 td.doc_grouped_data.td(align='center' style={"border-left":rea.day_1 == null || rea.day_1 == '' ? '1px solid black': null, "background-color": rea.day_1 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink' : null)})= rea.day_1
                                 td.doc_grouped_data.td(align='center' style={"border-left":rea.day_2 == null || rea.day_1 == '' ? '1px solid black': null, "background-color": rea.day_2 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink' : null)})=rea.day_2
                                 td.doc_grouped_data.td(align='center' style={"border-left":rea.day_3 == null || rea.day_1 == '' ? '1px solid black': null,"background-color": rea.day_3 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_3 > 0 ? 'lightgreen': 'pink' : null)})=rea.day_3
@@ -183,4 +182,6 @@ block content
                                 td.doc_grouped_data.td(align='center' style={"border-left":rea.day_30 == null ? '1px solid black': null,"background-color": rea.day_30 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_30 > 0 ? 'lightgreen': 'pink' : null)})=rea.day_30
                                 td.doc_grouped_data.td(align='center' style={"border-left":rea.day_31 == null ? '1px solid black': null,"background-color": rea.day_31 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_31 > 0 ? 'lightgreen': 'pink' : null)})=rea.day_31
                                 td.doc_grouped_data.td(align='center')=rea.kogus
+                                td.doc_grouped_data.td=(rea.rea_count == rea.min_rea_count ? null : Number(rea.hind).toFixed(2))
+                                td.doc_grouped_data.td=(rea.rea_count == rea.min_rea_count ? null : Number(rea.summa).toFixed(2))
 
