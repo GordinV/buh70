@@ -58,6 +58,7 @@ block content
                     th Isikukood
                     th Teenuste saaja nimi
                     th Viitenumber
+                    th INF3
 
             tbody
                 each mk in data
@@ -71,11 +72,14 @@ block content
                         td=mk.isikukood
                         td=mk.nimi
                         td=mk.viitenr
+                        td=Number(mk.inf3_summa).toFixed(2)
         - var total = 0
         - var read = 0
+        - var inf3 = 0
         each mk in data
             - total += Number(mk.deebet)
+            - inf3 += Number(mk.inf3_summa)
             - read += 1
         div.row_wrapper
             p.label_subtotal Kokku:
-            p.input #{`${Number(total).toFixed(2)}, read kokku: ${read}`}
+            p.input #{`${Number(total).toFixed(2)}, s.h. inf3:  ${Number(inf3).toFixed(2)},  read kokku: ${read}`}

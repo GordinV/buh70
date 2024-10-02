@@ -206,57 +206,70 @@ const Smk = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
-            {id: "kpv", name: "Maksepäev", width: "9%", type: "date", interval: true},
+            {id: "kpv", name: "Maksepäev", width: "7%", type: "date", interval: true},
             {id: "number", name: "Number", width: "5%"},
-            {id: "asutus", name: "Maksja", width: "12%"},
+            {id: "asutus", name: "Maksja", width: "10%"},
             {id: "vanem_isikukood", name: "Maksja IK", width: "7%"},
             {id: "deebet", name: "Summa", width: "7%", type: "number", interval: true},
             {id: "jaak", name: "Ettemaks", width: "7%", type: "number", interval: true},
-            {id: "aa", name: "Arveldus arve", width: "12%"},
+            {id: "aa", name: "Arveldus arve", width: "14%"},
             {id: "viitenr", name: "Viite number", width: "7%"},
             {id: "vana_vn", name: "Vana VN", width: "5%"},
-            {id: "nimi", name: "Nimi", width: "12%"},
+            {id: "nimi", name: "Nimi", width: "10%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},
             {id: "yksused", name: "Yksus", width: "7%"},
+            {id: "inf3_summa", name: "INF3", width: "7%",type: "number", interval: true},
 
         ],
-        sqlString: `SELECT mk.id,
-                           to_char(mk.kpv, 'DD.MM.YYYY')::TEXT       AS kpv,
-                           to_char(mk.maksepaev, 'DD.MM.YYYY')::TEXT AS maksepaev,
-                           mk.selg,
-                           mk.asutus,
-                           mk.kood,
-                           mk.rekvid,
-                           mk.deebet::NUMERIC(12, 2),
-                           mk.kreedit::NUMERIC(12, 2),
-                           mk.jaak::NUMERIC(12, 2)                   AS jaak,
-                           mk.number,
-                           mk.journalid,
-                           mk.aa,
-                           mk.journalnr,
-                           mk.opt,
-                           mk.vanem_isikukood,
-                           0                                         AS valitud,
-                           mk.isikukood,
-                           mk.nimi,
-                           $2                                        AS userid,
-                           mk.viitenr::TEXT,
-                           mk.yksused::TEXT,
-                           vn.vn                                     AS vana_vn
-                    FROM lapsed.cur_lapsed_mk mk
-                             LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
-                                              FROM lapsed.viitenr vn
-                                              WHERE vn.rekv_id IN (SELECT rekv_id
-                                                                   FROM get_asutuse_struktuur($1))
-                                              GROUP BY vn.isikukood
-                    ) vn
-                                             ON vn.isikukood = mk.isikukood
-                    WHERE mk.opt = 2
-                      AND mk.rekvId = $1`,
+        sqlString: `
+            with docs as (SELECT mk.id,
+                                 to_char(mk.kpv, 'DD.MM.YYYY')::TEXT       AS kpv,
+                                 to_char(mk.maksepaev, 'DD.MM.YYYY')::TEXT AS maksepaev,
+                                 mk.selg,
+                                 mk.asutus,
+                                 mk.kood,
+                                 mk.rekvid,
+                                 mk.deebet::NUMERIC(12, 2),
+                                 mk.kreedit::NUMERIC(12, 2),
+                                 mk.jaak::NUMERIC(12, 2)                   AS jaak,
+                                 mk.number,
+                                 mk.journalid,
+                                 mk.aa,
+                                 mk.journalnr,
+                                 mk.opt,
+                                 mk.vanem_isikukood,
+                                 0                                         AS valitud,
+                                 mk.isikukood,
+                                 mk.nimi,
+                                 $2                                        AS userid,
+                                 mk.viitenr::TEXT,
+                                 mk.yksused::TEXT,
+                                 vn.vn                                     AS vana_vn
+                          FROM lapsed.cur_lapsed_mk mk
+                                   LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                                                    FROM lapsed.viitenr vn
+                                                    WHERE vn.rekv_id IN (SELECT rekv_id
+                                                                         FROM get_asutuse_struktuur($1))
+                                                    GROUP BY vn.isikukood) vn
+                                                   ON vn.isikukood = mk.isikukood
+                          WHERE mk.opt = 2
+                            AND mk.rekvId = $1),
+                 tasud as (select doc_tasu_id, sum(lapsed.get_inf3_summa(t.doc_arv_id, t.doc_tasu_id)) as inf3_summa
+                           from docs.arvtasu t
+                                    inner join docs d on d.id = t.doc_tasu_id
+                               and t.status < 3
+                           group by doc_tasu_id)
+
+            select t.inf3_summa, d.*
+            from docs d
+                     left outer join tasud t on t.doc_tasu_id = d.id
+
+        `,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         totals: `sum(deebet) over() as deebet_total,
-                sum(kreedit) over() as kreedit_total`,
+                sum(kreedit) over() as kreedit_total,
+                sum(inf3_summa) over() as inf3_total`,
         alias: 'curLasteMk'
     },
 

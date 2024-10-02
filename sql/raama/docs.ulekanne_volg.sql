@@ -19,7 +19,6 @@ DECLARE
     doc_id_new      INTEGER;
     l_dok           TEXT    = 'ARV';
     l_dokprop_id    INTEGER;
-
     l_rekvId_new    INTEGER = (SELECT rekv_id
                                FROM lapsed.get_rekv_id_from_viitenumber(l_viitenumber)); -- ид учреждения, куда отписываем долг
 
@@ -48,9 +47,7 @@ DECLARE
                                  AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                                  AND l.kood = 'ARV'
                                ORDER BY dp.id DESC
-                               LIMIT 1
-    );
-
+                               LIMIT 1);
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanem_arveldus v
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
@@ -59,7 +56,6 @@ DECLARE
                                  AND arveldus
                                ORDER BY v.id DESC
                                LIMIT 1);
-
     l_aa            TEXT    = (SELECT arve
                                FROM ou.aa
                                WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
@@ -67,7 +63,6 @@ DECLARE
                                ORDER BY default_ DESC
                                LIMIT 1);
     l_yksus         TEXT;
-
     v_arved         RECORD;
     l_selg          TEXT; -- строка пояснение в новый счет
     a_kreedit_arved JSONB   = '[]'; -- массив кредитовых счетов
@@ -96,6 +91,23 @@ BEGIN
         RAISE EXCEPTION '%', error_message;
 
     END IF;
+
+    -- проверим не распределенные платежи
+    if exists (select m.id
+               from docs.mk m
+                        inner join lapsed.liidestamine l on m.parentid = l.docid
+               where m.opt = 2
+                 and m.jaak <> 0
+                 and l.parentid = l_laps_id
+                 and m.maksepaev <= coalesce(l_kpv, current_date)
+                 and m.rekvid = l_rekvId) then
+        result = 0;
+        error_message = 'Leidnud ebajaotatud maksed';
+        error_code = 1;
+        RAISE EXCEPTION '%', error_message;
+
+    end if;
+
 
     -- считаем сумму долга, вкл. сумму INF3
     SELECT coalesce(qry.jaak, 0), coalesce(qry.jaak_inf3, 0)
@@ -128,13 +140,13 @@ BEGIN
     THEN
 
         FOR v_arved IN
-            WITH docs AS (
-                SELECT coalesce(a.jaak, 0) AS volg, coalesce(lapsed.get_inf3_jaak(a.id, l_kpv), 0) AS inf3_jaak, a.kpv
-                FROM lapsed.cur_laste_arved a
-                WHERE a.laps_id = l_laps_id
-                  AND rekvid = l_rekvId
-                  AND a.jaak > 0
-            )
+            WITH docs AS (SELECT coalesce(a.jaak, 0)                            AS volg,
+                                 coalesce(lapsed.get_inf3_jaak(a.id, l_kpv), 0) AS inf3_jaak,
+                                 a.kpv
+                          FROM lapsed.cur_laste_arved a
+                          WHERE a.laps_id = l_laps_id
+                            AND rekvid = l_rekvId
+                            AND a.jaak > 0)
             SELECT volg - inf3_jaak AS jaak, inf3_jaak, volg
             FROM docs
             ORDER BY kpv
@@ -230,21 +242,21 @@ BEGIN
 
 
                 json_object = (SELECT to_jsonb(row)
-                               FROM (SELECT 0                                AS id,
-                                            NULL::TEXT                       AS number,
-                                            l_doklausend_id                  AS doklausid,
-                                            0                                AS liik,
-                                            l_kpv                            AS kpv,
+                               FROM (SELECT 0                            AS id,
+                                            NULL::TEXT                   AS number,
+                                            l_doklausend_id              AS doklausid,
+                                            0                            AS liik,
+                                            l_kpv                        AS kpv,
                                             (l_kpv +
                                              coalesce(
-                                                         (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
-                                                         20)::INTEGER)::DATE AS tahtaeg,
-                                            l_asutus_id                      AS asutusid,
-                                            l_aa                             AS aa,
-                                            l_laps_id                        AS lapsid,
-                                            l_selg                           AS muud,
-                                            TRUE                             AS kas_peata_saatmine, -- счет не отправляется автоматически
-                                            json_rea                         AS "gridData") row);
+                                                     (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
+                                                     20)::INTEGER)::DATE AS tahtaeg,
+                                            l_asutus_id                  AS asutusid,
+                                            l_aa                         AS aa,
+                                            l_laps_id                    AS lapsid,
+                                            l_selg                       AS muud,
+                                            TRUE                         AS kas_peata_saatmine, -- счет не отправляется автоматически
+                                            json_rea                     AS "gridData") row);
 
                 -- подготавливаем параметры для создания счета
 
@@ -434,31 +446,30 @@ BEGIN
                          AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                          AND l.kood = 'ARV'
                        ORDER BY dp.id DESC
-                       LIMIT 1
-    );
+                       LIMIT 1);
 
     -- создаем строку пояснение
     l_selg = 'SALDO ÜLEKANNE, ' || lapsed.get_viitenumber(l_rekvid, l_laps_id) || ',' ||
              (SELECT ltrim(rtrim(nimetus)) AS nimetus FROM ou.rekv WHERE id = l_rekvId LIMIT 1);
 
     json_object = (SELECT to_jsonb(row)
-                   FROM (SELECT 0                                AS id,
-                                NULL::TEXT                       AS number,
-                                l_doklausend_id                  AS doklausid,
-                                0                                AS liik,
-                                l_kpv                            AS kpv,
+                   FROM (SELECT 0                            AS id,
+                                NULL::TEXT                   AS number,
+                                l_doklausend_id              AS doklausid,
+                                0                            AS liik,
+                                l_kpv                        AS kpv,
                                 (l_kpv +
                                  coalesce(
-                                             (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid_new LIMIT 1),
-                                             20)::INTEGER)::DATE AS tahtaeg,
-                                l_asutus_id                      AS asutusid,
-                                l_aa                             AS aa,
-                                l_laps_id                        AS lapsid,
-                                l_selg                           AS muud,
-                                a_kreedit_arved                  AS kreedit_arved,      -- сылка на кредитовый счет
-                                TRUE                             AS kas_peata_saatmine, -- счет не отправляется автоматически
-                                json_rea                         AS
-                                                                    "gridData") row);
+                                         (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid_new LIMIT 1),
+                                         20)::INTEGER)::DATE AS tahtaeg,
+                                l_asutus_id                  AS asutusid,
+                                l_aa                         AS aa,
+                                l_laps_id                    AS lapsid,
+                                l_selg                       AS muud,
+                                a_kreedit_arved              AS kreedit_arved,      -- сылка на кредитовый счет
+                                TRUE                         AS kas_peata_saatmine, -- счет не отправляется автоматически
+                                json_rea                     AS
+                                                                "gridData") row);
 
     -- подготавливаем параметры для создания счета
 

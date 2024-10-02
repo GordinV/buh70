@@ -79,7 +79,7 @@ GRANT EXECUTE ON FUNCTION docs.makse_umber_jaotada(INTEGER, INTEGER, INTEGER) TO
 
 
 /*
-SELECT * from docs.makse_umber_jaotada(5419, 5711303, 0)
+SELECT * from docs.makse_umber_jaotada(5422, 5956146, 1)
 
 select * FROM docs.arvtasu WHERE doc_tasu_id in( 5426570)
 or doc_arv_id in ( 5157151, 5213784)

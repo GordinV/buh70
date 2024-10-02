@@ -27,6 +27,7 @@ class Documents extends React.PureComponent {
         this.handleClick = this.handleClick.bind(this);
         this.state = {
             summa: 0,
+            inf3_summa: 0,
             read: 0,
             isReport: false,
             txtReport:[]
@@ -56,6 +57,12 @@ class Documents extends React.PureComponent {
                              ref="input-summa"
                              value={Number(this.state.summa).toFixed(2) || 0}
                              disabled={true}/>
+                <InputNumber title="S.h inf3 summa:"
+                             name='inf3_summa'
+                             style={styles.total}
+                             ref="input-inf3_summa"
+                             value={Number(this.state.inf3_summa).toFixed(2) || 0}
+                             disabled={true}/>
             </div>
         )
     }
@@ -69,7 +76,8 @@ class Documents extends React.PureComponent {
         const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
         let deebet = self.gridData && self.gridData.length ? self.gridData[0].deebet_total : 0;
-        this.setState({summa: deebet, read: self.gridData.length});
+        let inf3 = self.gridData && self.gridData.length ? self.gridData[0].inf3_total : 0;
+        this.setState({summa: deebet, read: self.gridData.length, inf3_summa: inf3});
 
         return (
             <ToolbarContainer>
