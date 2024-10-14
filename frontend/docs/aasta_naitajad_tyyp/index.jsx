@@ -48,7 +48,7 @@ class Documents extends React.PureComponent {
     }
 
     render() {
-        let ristKasutuswarning = this.state.ristKasutus ? `See aruanne sisaldab ${this.state.ristKasutus} isik/isikut, kes saavad korraga teenuseid erinevates osakondades` : null;
+        let ristKasutuswarning = this.state.ristKasutus ? `See aruanne sisaldab ${this.state.ristKasutus} isik/isikut, kes saavad korraga teenuseid erinevates üksustes` : null;
 
         return (
             <div>
