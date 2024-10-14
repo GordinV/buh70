@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS eelarve.lisa1_lisa5_kontrol_(DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION eelarve.lisa1_lisa5_kontrol(l_kpv DATE,
                                                        l_rekvid INTEGER,

@@ -31,25 +31,41 @@ DECLARE
     kas_saldo_ulekkane BOOLEAN        = FALSE; -- если счет "оплачен" через перенос, то проводка иная плюс перенос маловероятных
     l_lisa_selg        TEXT           = '';
     l_kreedit_arve_id  INTEGER; -- кредитовый счет переноса сальдо
-
+    l_aasta            integer        = year(l_seisuga);
 BEGIN
+
+    if month(l_seisuga) = 1 then
+        l_aasta = l_aasta - 1; -- а январе считаем за прошлый год
+    end if;
+
+    if month(l_seisuga) not in (4, 7, 10, 1) then
+        raise exception 'Viga, vale period %', l_seisuga;
+    end if;
+
+    l_seisuga = (select case
+                            when month(l_seisuga) >= 1 and month(l_seisuga) < 3 then date(l_aasta, 12, 31)
+                            when month(l_seisuga) >= 3 and month(l_seisuga) < 6 then date(l_aasta, 3, 31)
+                            when month(l_seisuga) >= 6 and month(l_seisuga) < 9 then date(l_aasta, 6, 30)
+                            when month(l_seisuga) >= 9 and month(l_seisuga) < 12 then date(l_aasta, 09, 30)
+                            end);
+
+    l_lausendi_period = get_last_day(l_aasta, month(l_seisuga));
 
     -- формируем список просроченных счетов (50%)
     -- формируем отчет и сравниваем со начислениями по счетам
     FOR v_aruanne IN
-        WITH reports AS (
-            SELECT r.*,
-                   (a.properties ->> 'ebatoenaolised_1_id')::INTEGER              AS arv_noude_50,
-                   (a.properties ->> 'ebatoenaolised_2_id')::INTEGER              AS arv_noude_100,
-                   a.id                                                           AS arv_id,
-                   a.asutusid,
-                   coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) AS ebatoenaolised_1_id,
-                   coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) AS ebatoenaolised_2_id,
-                   d.docs_ids
+        WITH reports AS (SELECT r.*,
+                                (a.properties ->> 'ebatoenaolised_1_id')::INTEGER              AS arv_noude_50,
+                                (a.properties ->> 'ebatoenaolised_2_id')::INTEGER              AS arv_noude_100,
+                                a.id                                                           AS arv_id,
+                                a.asutusid,
+                                coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) AS ebatoenaolised_1_id,
+                                coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) AS ebatoenaolised_2_id,
+                                d.docs_ids
 
-            FROM lapsed.ebatoenaolised(l_rekv_id::INTEGER, l_seisuga) r
-                     LEFT OUTER JOIN docs.arv a ON a.parentid = r.doc_id
-                     INNER JOIN docs.doc d ON d.id = a.parentid
+                         FROM lapsed.ebatoenaolised(l_rekv_id::INTEGER, l_seisuga) r
+                                  LEFT OUTER JOIN docs.arv a ON a.parentid = r.doc_id
+                                  INNER JOIN docs.doc d ON d.id = a.parentid
 --            WHERE r.konto = '10300929'
 --            WHERE (l_arv_id IS NULL
 --                OR r.doc_id = l_arv_id)
@@ -62,30 +78,30 @@ BEGIN
                 WHEN (coalesce(r.noude_50, 0) + coalesce(r.noude_100, 0)) > 0 THEN TRUE
                 WHEN (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0) THEN TRUE
                 WHEN (
-                        r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
-                        exists(SELECT j.id
-                               FROM docs.journal j,
-                                    docs.journal1 j1
-                               WHERE j.id = j1.parentid
-                                 AND j.parentid IN (SELECT unnest(r.docs_ids))
-                                 AND left(j1.kreedit, 6) = left('103009', 6))
+                    r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
+                    exists(SELECT j.id
+                           FROM docs.journal j,
+                                docs.journal1 j1
+                           WHERE j.id = j1.parentid
+                             AND j.parentid IN (SELECT unnest(r.docs_ids))
+                             AND left(j1.kreedit, 6) = left('103009', 6))
                     ) THEN TRUE
                 ELSE FALSE END)
-    /*
+        /*
 
 
-                  (l_arv_id IS NULL
-                OR r.doc_id = l_arv_id)
-              AND ((r.noude_50 + r.noude_100) > 0
-                OR (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0)
-                OR (
-                           r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
-                           exists(SELECT id
-                                  FROM cur_journal
-                                  WHERE id IN (SELECT unnest(r.docs_ids))
-                                    AND left(kreedit, 6) = left(l_kr_konto, 6))
-                       ))
-    */--        order by id desc limit 100
+                      (l_arv_id IS NULL
+                    OR r.doc_id = l_arv_id)
+                  AND ((r.noude_50 + r.noude_100) > 0
+                    OR (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0)
+                    OR (
+                               r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
+                               exists(SELECT id
+                                      FROM cur_journal
+                                      WHERE id IN (SELECT unnest(r.docs_ids))
+                                        AND left(kreedit, 6) = left(l_kr_konto, 6))
+                           ))
+        */--        order by id desc limit 100
         LOOP
             RAISE NOTICE 'loop v_aruanne.arv_id %', v_aruanne.arv_id;
 
@@ -162,8 +178,7 @@ BEGIN
                     IF l_kreedit_arve_id IS NOT NULL AND exists(SELECT id
                                                                 FROM docs.arv
                                                                 WHERE properties -> 'doc_kreedit_arved' @> to_jsonb(l_kreedit_arve_id)
-                                                                  AND rekvid = 9
-                        )
+                                                                  AND rekvid = 9)
                     THEN
 
 
@@ -178,7 +193,8 @@ BEGIN
                          */
                         l_db_konto = '888888';
                     END IF;
-                    l_kr_konto = v_aruanne.konto; -- берем из отчета
+                    l_kr_konto = v_aruanne.konto;
+                    -- берем из отчета
 
                     -- делаем проводку
                     l_json_details = '[]'::JSONB; -- инициализируем массив под проводку
@@ -204,8 +220,7 @@ BEGIN
                                            FROM docs.arv1 a1
                                            WHERE a1.parentid = v_aruanne.arv_id
                                            ORDER BY summa DESC
-                                           LIMIT 1
-                                          ) row;
+                                           LIMIT 1) row;
 
 
                     SELECT 0                                                                             AS id,
@@ -230,12 +245,10 @@ BEGIN
                         IF NOT kas_noude_100
                         THEN
                             l_json = to_json(row)
-                                     FROM (SELECT l_journal_id AS ebatoenaolised_1_id
-                                          ) row;
+                                     FROM (SELECT l_journal_id AS ebatoenaolised_1_id) row;
                         ELSE
                             l_json = to_json(row)
-                                     FROM (SELECT l_journal_id AS ebatoenaolised_2_id
-                                          ) row;
+                                     FROM (SELECT l_journal_id AS ebatoenaolised_2_id) row;
                         END IF;
 
                         UPDATE docs.arv
@@ -246,8 +259,7 @@ BEGIN
                                  FROM (SELECT now()            AS updated,
                                               userName         AS user,
                                               'ebatoenaolised' AS task,
-                                              l_journal_id     AS result
-                                      ) row;
+                                              l_journal_id     AS result) row;
 
                         -- связываем документы
                         UPDATE docs.doc
@@ -308,7 +320,7 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(, '2024-06-30'::DATE, 4523834)
+SELECT docs.ebatoenaolised(id)
 from ou.rekv
 where parentid = 119
 and id  in (94)

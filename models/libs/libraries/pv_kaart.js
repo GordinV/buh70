@@ -24,7 +24,7 @@ module.exports = {
                      (l.properties :: JSONB ->> 'korr_konto') :: VARCHAR(20)                               AS korr_konto,
                      coalesce((l.properties :: JSONB ->> 'soetkpv') :: DATE, now() :: DATE)                AS soetkpv,
                      (l.properties :: JSONB ->> 'kulum') :: NUMERIC(12, 4)                                 AS kulum,
-                     (l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 4)                              AS algkulum,
+                     coalesce((l.properties :: JSONB ->> 'algkulum'), 0) :: NUMERIC(12, 4)                  AS algkulum,
                      coalesce(jaak.kulum, 0) :: NUMERIC(12, 4)                                             AS kulum_kokku,
                      (l.properties :: JSONB ->> 'soetmaks') :: NUMERIC(12, 2)                              AS soetmaks,
                      (jaak.soetmaks) :: NUMERIC(12, 2)                                                     AS parhind,

@@ -53,6 +53,7 @@ block content
                         th.th Koolituse tüüp
                         th.th Üksuste arv
                         th.th Laste arv nimekirjas
+                        th.th s.h. rist kasutus
                         th.th Tegelik külastatavus
                         th.th Lastepäevade arv
 
@@ -63,6 +64,7 @@ block content
                             td.td=rea.koolituse_tyyp
                             td.td(align='center')=rea.yksuse_kogus
                             td.td(align='center')=rea.nimekirje_kogus
+                            td.td(align='center')=rea.rist_kasutus
                             td.td(align='center')=rea.faktiline_kogus
                             td.td(align='center')=rea.kogus
 
@@ -71,6 +73,7 @@ block content
                     td.td.group(align='center')='Kokku:'
                     td.td(align='center').group=asutus[Object.keys(asutus)[0]][0].yksuse_kogus_kokku
                     td.td(align='center').group=asutus[Object.keys(asutus)[0]][0].nimekirje_kogus_kokku
+                    td.td(align='center').group=asutus[Object.keys(asutus)[0]][0].rist_kasutus_kokku
                     td.td(align='center').group=asutus[Object.keys(asutus)[0]][0].faktiline_kogus_kokku
                     td.td(align='center').group=asutus[Object.keys(asutus)[0]][0].kogus_kokku
 

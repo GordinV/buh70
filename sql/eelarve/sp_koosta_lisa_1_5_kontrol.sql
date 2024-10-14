@@ -67,8 +67,7 @@ BEGIN
                                    INNER JOIN docs.journal j ON j.parentid = d.id
                                    INNER JOIN ou.rekv r ON r.id = d.rekvid,
                                params p
-                          WHERE d.lastupdate >= current_date - INTERVAL '1 day'
-                            AND j.kpv >= make_date(year(p.kpv), month(p.kpv), 01)
+                          WHERE j.kpv >= make_date(year(p.kpv), month(p.kpv), 01)
                             AND j.kpv <= p.kpv
                             AND r.id NOT IN (SELECT id FROM ou.rekv WHERE parentid IN (63, 0))
                       ) qry,
@@ -83,12 +82,12 @@ BEGIN
         FROM ou.rekv,
              params p
         WHERE parentid = 63
-          AND id IN (
+/*          AND id IN (
             SELECT r.parentid
             FROM rekv_ids
                      INNER JOIN ou.rekv r ON r.id = rekv_ids.id
         )
-
+*/
         UNION ALL
 -- город , независимые
         SELECT id
@@ -141,7 +140,7 @@ GRANT EXECUTE ON FUNCTION eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER
 
 
 /*
-SELECT eelarve.koosta_lisa_1_5_kontrol(2477, '2024-03-31'::date)
+SELECT eelarve.koosta_lisa_1_5_kontrol_(2477, '2024-08-31'::date)
 
 
 */

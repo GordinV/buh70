@@ -99,6 +99,7 @@ block content
                             th.column Oktoober
                             th.column November
                             th.column detsember
+                            th.column Rist kasutus
 
                     tbody
                         -var jaanuar = 0;
@@ -141,6 +142,7 @@ block content
                                 td(align='right')=rea.oktoober
                                 td(align='right')=rea.november
                                 td(align='right')=rea.detsember
+                                td(align='center')=rea.toppelt_kogus
                         tr.group.sub_total
                             td.grouo.sub_total='Read ' + liik[Liik].length
                             td.group.sub_total=Liik + ' kokku:'
@@ -156,6 +158,7 @@ block content
                             td.group.sub_total(align='right')=Number(oktoober)
                             td.group.sub_total(align='right')=Number(november)
                             td.group.sub_total(align='right')=Number(detsember)
+                            td.group.sub_total=''
                         -jaanuar_asutus += Number(jaanuar);
                         -veebruar_asutus += Number(veebruar);
                         -marts_asutus += Number(marts);

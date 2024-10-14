@@ -22,7 +22,7 @@ DECLARE
                                                  THEN NULL
                                              ELSE (doc_data ->> 'soetkpv') END) :: DATE;
     doc_kulum          NUMERIC(12, 4) = doc_data ->> 'kulum';
-    doc_algkulum       NUMERIC(12, 2) = doc_data ->> 'algkulum';
+    doc_algkulum       NUMERIC(12, 2) = coalesce((doc_data ->> 'algkulum')::numeric,0);
     doc_soetmaks       NUMERIC(12, 2) = doc_data ->> 'soetmaks';
     doc_selg           TEXT           = doc_data ->> 'selg';
     doc_vastisikid     INTEGER        = doc_data ->> 'vastisikid';
