@@ -76,6 +76,7 @@ block content
             -var oktoober_asutus = 0;
             -var november_asutus = 0;
             -var detsember_asutus = 0;
+            -var rist_kasutus = 0;
 
             p.total #{Asutus}
             each liik in asutus[Asutus]
@@ -99,7 +100,6 @@ block content
                             th.column Oktoober
                             th.column November
                             th.column detsember
-                            th.column Rist kasutus
 
                     tbody
                         -var jaanuar = 0;
@@ -127,6 +127,7 @@ block content
                             -september += Number(rea.september);
                             -november += Number(rea.november);
                             -detsember += Number(rea.detsember);
+                            -rist_kasutus = Number(rea.rist_kasutus);
                             tr
                                 td=rea.tyyp
                                 td=rea.tyyp_nimi
@@ -142,7 +143,6 @@ block content
                                 td(align='right')=rea.oktoober
                                 td(align='right')=rea.november
                                 td(align='right')=rea.detsember
-                                td(align='center')=rea.toppelt_kogus
                         tr.group.sub_total
                             td.grouo.sub_total='Read ' + liik[Liik].length
                             td.group.sub_total=Liik + ' kokku:'
@@ -187,4 +187,6 @@ block content
                     td.group.sub_total.column(align='right')=Number(oktoober_asutus)
                     td.group.sub_total.column(align='right')=Number(november_asutus)
                     td.group.sub_total.column(align='right')=Number(detsember_asutus)
+
+            p.doc_header.doc_grupp See aruanne sisaldab #{rist_kasutus}  isik/isikut, kes saavad korraga teenuseid erinevates osakondades
 
