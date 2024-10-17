@@ -65,7 +65,6 @@ WITH report AS (SELECT rekvid,
                                LEFT OUTER JOIN arvtasu at ON d.id = at.arv_id
                       WHERE a.tahtaeg <= l_kpv
                         and a.liik = 0
---           AND coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) > 0
                         AND d.rekvid IN (SELECT rekv_id
                                          FROM get_asutuse_struktuur(l_rekvid))
 --               AND a.jaak >= 0
@@ -112,7 +111,8 @@ GRANT EXECUTE ON FUNCTION lapsed.ebatoenaolised(INTEGER, DATE) TO dbvaatleja;
 
 
 /*
-select * from lapsed.ebatoenaolised(119, '2024-06-30')
+select * from lapsed.ebatoenaolised(77, '2024-09-30')
+where number = '82020123041'
 -- 167309 rows retrieved starting from 1 in 30 s 906 ms (execution: 25 s 666 ms, fetching: 5 s 240 ms)
 
 where konto = '10300928'

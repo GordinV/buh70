@@ -1,9 +1,11 @@
 DROP FUNCTION IF EXISTS lapsed.kohaoleku_aruanne(INTEGER, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER, jsonb);
 
 CREATE OR REPLACE FUNCTION lapsed.kohaloleku_aruanne(l_rekvid INTEGER,
                                                      l_kuu INTEGER DEFAULT month(current_date),
-                                                     l_aasta INTEGER DEFAULT year(current_date))
+                                                     l_aasta INTEGER DEFAULT year(current_date),
+                                                     l_params jsonb default null::jsonb)
     RETURNS TABLE
             (
                 asutus          TEXT,
@@ -24,15 +26,41 @@ $BODY$
 WITH
     params AS (
                   SELECT
-                      l_kuu    AS kuu,
-                      l_aasta  AS aasta,
-                      l_rekvid AS rekvid
+                      l_kuu                                                     AS kuu,
+                      l_aasta                                                   AS aasta,
+                      l_rekvid                                                  AS rekvid,
+                      '%' || coalesce(l_params ->> 'koolituse_tyyp', '') || '%' as koolituse_tyyp,
+                      '%' || coalesce(l_params ->> 'asutus', '') || '%'         as asutus
               ),
     rekv_ids AS (
                   SELECT
                       rekv_id
                   FROM
                       params p, public.get_asutuse_struktuur(p.rekvid)
+              ),
+    yksused as (
+                  select
+                      l.kood
+                  from
+                      params                           p,
+                      libs.library                     l
+                          LEFT OUTER JOIN libs.library t
+                                          ON (l.properties::JSONB ->> 'tyyp')::INTEGER = t.id
+                                              AND t.library = 'KOOLITUSE_TYYP'
+                  where
+                        l.rekvid in (
+                                        select
+                                            rekv_id
+                                        from
+                                            rekv_ids
+                                    )
+                    and t.rekvid in (
+                                        select
+                                            rekv_id
+                                        from
+                                            rekv_ids
+                                    )
+                    and t.nimetus ilike p.koolituse_tyyp
               )
 SELECT
     r.nimetus::TEXT                                       AS asutus,
@@ -51,8 +79,9 @@ FROM
             lk.rekvid,
             (lk.properties ->> 'yksus') AS yksus
         FROM
-            params             p,
-            lapsed.lapse_kaart lk
+            params                 p,
+            lapsed.lapse_kaart     lk
+                inner join ou.rekv r on r.id = lk.rekvid
         WHERE
               staatus <> 3
           AND ((lk.properties ->> 'alg_kpv')::DATE IS NULL OR
@@ -61,6 +90,13 @@ FROM
           AND ((lk.properties ->> 'lopp_kpv')::DATE IS NULL OR
                (lk.properties ->> 'lopp_kpv')::DATE >= (
                    MAKE_DATE(COALESCE(p.aasta, year(CURRENT_DATE)), COALESCE(p.kuu, month(CURRENT_DATE)), 1)))
+          and r.nimetus ilike p.asutus
+          and lk.properties ->> 'yksus' in (
+                                               select
+                                                   kood
+                                               from
+                                                   yksused
+                                           )
     )                                g
 --- списочная численность
         LEFT OUTER JOIN (
@@ -102,6 +138,12 @@ FROM
                                                                    FROM
                                                                        rekv_ids
                                                                )
+                                              and lk.properties ->> 'yksus' in (
+                                                                                   select
+                                                                                       kood
+                                                                                   from
+                                                                                       yksused
+                                                                               )
                                         ) qry
                                 ) lk
                             GROUP BY rekvid, yksus
@@ -129,6 +171,13 @@ FROM
                                       AND year(t.kpv) = COALESCE(p.aasta, year(CURRENT_DATE))
                                       AND t1.osalemine IS NOT NULL
                                       AND t1.osalemine > 0
+                                      and l.kood in (
+                                                        select
+                                                            kood
+                                                        from
+                                                            yksused
+                                                    )
+
                                 ) tab
                             GROUP BY rekv_id, yksus
                         )            tab ON tab.yksus = g.yksus AND tab.rekv_id = g.rekvid
@@ -156,6 +205,13 @@ FROM
                                       AND t.staatus <> 3
                                       AND t1.osalemine IS NOT NULL
                                       AND t1.osalemine > 0
+                                      and l.kood in (
+                                                        select
+                                                            kood
+                                                        from
+                                                            yksused
+                                                    )
+
                                 ) qry
                             GROUP BY yksus, rekv_id
                         )            qry_kogus
@@ -175,6 +231,7 @@ WHERE
                   )
   AND COALESCE(l.status, 1) <> 3
   AND COALESCE(t.status, 1) <> 3
+  and t.nimetus ilike p.koolituse_tyyp
 GROUP BY
     t.nimetus
   , r.nimetus;
@@ -186,14 +243,18 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER) TO arvestaja;
-GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER, jsonb) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER, jsonb) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER, jsonb) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER, jsonb) TO dbvaatleja;
 
 
 /*
 SELECT *
 FROM lapsed.kohaloleku_aruanne(84, 9, 2024)
+
+SELECT *
+FROM lapsed.kohaloleku_aruanne(119, 9, 2024,'{"asutus":"%%","koolituse_tyyp":"laste"}'::jsonb)
+
 
 */

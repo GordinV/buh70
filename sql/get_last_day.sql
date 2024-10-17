@@ -1,6 +1,6 @@
-DROP FUNCTION IF EXISTS public.get_last_day(kpv DATE);
+DROP FUNCTION IF EXISTS get_last_day(kpv DATE);
 
-CREATE FUNCTION public.get_last_day(kpv DATE)
+CREATE FUNCTION get_last_day(kpv DATE)
     RETURNS DATE
     LANGUAGE plpgsql
 AS
@@ -12,4 +12,4 @@ END
 $$;
 
 
-SELECT public.get_last_day(current_date);
+SELECT get_last_day(current_date);

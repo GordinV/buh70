@@ -837,9 +837,23 @@ const Arv = {
             type: 'manual',
             hideDate: false,
             action: 'arvestaEbatoenaolised',
+        },
+        {
+            name: 'Koosta kreedit arve',
+            task: 'koostaKreeditArve',
+            type: 'manual',
+            hideDate: true,
+            action: 'koostaKreeditArve',
         }
 
     ],
+    koostaKreeditArve: {
+        command: `SELECT error_code, result, error_message,  'ARV' AS doc_type_id
+                  FROM docs.koosta_kreedit_arve($2::INTEGER, $1::INTEGER)`, //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'koostaKreeditArve'
+    },
+
     generateJournal: {
         command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($1::INTEGER, $2::INTEGER)", //$1 - docs.doc.id, $2 - userId
         type: "sql",

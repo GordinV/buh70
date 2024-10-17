@@ -396,6 +396,15 @@ const Arv = {
             data: []
         },
         {
+            sql: `SELECT error_code, result, error_message,  'ARV' AS doc_type_id
+                  FROM docs.koosta_kreedit_arve($2::INTEGER, $1::INTEGER)`, //$1 - docs.doc.id, $2 - userId
+            query: null,
+            multuple: false,
+            alias: 'koostaKreeditArve',
+            data: [],
+            not_initial_load: true
+        },
+        {
             sql: `SELECT $1::INTEGER                                                   AS rekv_id,
                          coalesce(error_code, 0)                                       AS error_code,
                          result,

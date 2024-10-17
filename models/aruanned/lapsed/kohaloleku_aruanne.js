@@ -18,7 +18,7 @@ module.exports = {
                            sum(nimekirje_kogus) OVER (PARTITION BY asutus) AS nimekirje_kogus_kokku,
                            sum(faktiline_kogus) OVER (PARTITION BY asutus) AS faktiline_kogus_kokku,
                            sum(kogus) OVER (PARTITION BY asutus)           AS kogus_kokku,
-                           max(rist_kasutus) over(partition by asutus) as rist_kasutus                           
+                           sum(rist_kasutus) over(partition by asutus) as rist_kasutus                           
                     FROM lapsed.kohaloleku_aruanne($1::INTEGER, CASE
                                                                     WHEN $2::INTEGER < 1 OR $2::INTEGER > 12 THEN NULL
                                                                     ELSE $2::INTEGER END,
@@ -26,10 +26,10 @@ module.exports = {
                                                        WHEN $3::INTEGER < year(current_date) - 10 OR
                                                             $3::INTEGER > year(current_date) + 1
                                                            THEN NULL
-                                                       ELSE $3::INTEGER END) qryReport
+                                                       ELSE $3::INTEGER END, jsonb_build_object('asutus',$4::text,'koolituse_tyyp',$5::text)) qryReport
                     ORDER BY asutus, koolituse_tyyp
         `,     // $1 - rekvid, $2-KUU $3 - aasta
-        params: ['rekvid', 'kuu', 'aasta'],
+        params: ['rekvid', 'kuu', 'aasta','asutus','koolituse_tyyp'],
         min_params: 1,
         alias: 'kohaloleku_report',
         subtotals: ['yksuse_kogus', 'nimekirje_kogus', 'faktiline_kogus', 'kogus'],

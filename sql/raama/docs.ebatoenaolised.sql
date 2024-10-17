@@ -49,7 +49,7 @@ BEGIN
                             when month(l_seisuga) >= 9 and month(l_seisuga) < 12 then date(l_aasta, 09, 30)
                             end);
 
-    l_lausendi_period = get_last_day(l_aasta, month(l_seisuga));
+    l_lausendi_period = l_seisuga;
 
     -- формируем список просроченных счетов (50%)
     -- формируем отчет и сравниваем со начислениями по счетам
@@ -117,7 +117,7 @@ BEGIN
             FROM cur_journal j
             WHERE deebet = l_db_konto
               AND left(kreedit, 6) = left(l_kr_konto, 6)
-              and j.selg ilike '%Ebatõenäolised%'
+              and (j.selg ilike '%Ebatõenäolised%' or j.selg ilike 'Ebatoenaolised%')
               AND j.id IN (SELECT unnest(d.docs_ids)
                            FROM docs.doc d
                            WHERE d.id = v_aruanne.doc_id
@@ -320,7 +320,7 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(id)
+SELECT docs.ebatoenaolised(77, '2024-10-06',4784987)
 from ou.rekv
 where parentid = 119
 and id  in (94)
