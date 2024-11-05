@@ -36,6 +36,7 @@ module.exports = {
                           WHERE coalesce(doc_id,0) = 0 
                             and coalesce(vv.selg,'') not ilike '%intres%'
                             AND coalesce(vv.isikukood,'') NOT in ('75024260')
+                            and vv.maksja not in ('AS SEB PANK')
                             AND kpv >= '2022-01-01'
                             AND NOT left(coalesce(markused, ''), 4) = 'Kuni'
                          )
