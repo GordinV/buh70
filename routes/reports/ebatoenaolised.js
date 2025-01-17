@@ -37,6 +37,7 @@ exports.get = async (req, res) => {
             gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
 
+        res.setTimeout(400000);
         const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
 
         // get xml
