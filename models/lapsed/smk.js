@@ -185,7 +185,7 @@ const Smk = {
                                   mk.jaak,
                                   params.user_id                AS user_id
                            FROM docs.arvtasu t
-                                    INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                                    INNER JOIN docs.doc d ON d.id = t.doc_tasu_id
                                     INNER JOIN docs.mk mk ON mk.parentid = d.id
                                     INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
                                     INNER JOIN libs.asutus asutus ON asutus.id = mk1.asutusid,

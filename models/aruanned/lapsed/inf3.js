@@ -2,25 +2,37 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "maksja_nimi", name: "Maksja nimi", width: "20%", show: false, filter: "not"},
-            {id: "maksja_isikukood", name: "Maksja isikukood", width: "15%"},
+            {id: "maksja_isikukood", name: "Maksja isikukood", width: "12%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
-            {id: "lapse_isikukood", name: "Lapse isikukood", width: "15%"},
+            {id: "lapse_isikukood", name: "Lapse isikukood", width: "12%"},
             {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
             {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
-            {id: "liik_name", name: "Liik", width: "10%", type: 'select', data: ['', 'LASTEAED', 'HUVIKOOL']},
+            {id: "liik_name", name: "Liik", width: "7%", type: 'select', data: ['', 'LASTEAED', 'HUVIKOOL']},
+            {id: "kas_ik_kehtiv", name: "kas IK kehtiv ", width: "7%", type: 'select', data: ['', 'JAH', 'EI']},
         ],
-        sqlString: `SELECT sum(summa)::NUMERIC(12, 2) AS summa,
-                           lapse_nimi,
-                           lapse_isikukood,
+        sqlString: `with
+                        inf3 as (
+                                    SELECT
+                                        sum(summa)::NUMERIC(12, 2)                             AS summa,
+                                        lapse_nimi,
+                                        lapse_isikukood,
 --                           maksja_nimi,
-                           maksja_isikukood,
-                           aasta,
-                           liik                       AS liik,
-                           case when liik = 1 then 'LASTEAED' else 'HUVIKOOL' end as liik_name,
-                           $2                         AS user_id
-                    FROM lapsed.inf3($1::INTEGER, $3::TEXT) qryReport
-                    GROUP BY lapse_nimi, lapse_isikukood, maksja_isikukood, aasta, liik
-                    ORDER BY lapse_nimi
+                                        maksja_isikukood,
+                                        aasta,
+                                        liik                                                   AS liik,
+                                        case when liik = 1 then 'LASTEAED' else 'HUVIKOOL' end as liik_name,
+                                        $2                                                     AS user_id
+                                    FROM
+                                        lapsed.inf3($1::INTEGER, $3::TEXT) qryReport
+                                    GROUP BY lapse_nimi, lapse_isikukood, maksja_isikukood, aasta, liik
+                                    ORDER BY lapse_nimi
+                        )
+                    select *,
+                           case 
+                               when libs.is_valid_ik(maksja_isikukood::text) and  libs.is_valid_ik(lapse_isikukood::text) then 'JAH'
+                               else 'EI' end as kas_ik_kehtiv
+                    from
+                        inf3
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'aasta'],
         min_params: 3,
