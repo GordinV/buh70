@@ -18,9 +18,10 @@ exports.post = async (req, res) => {
         return res.status(401).end();
     }
 
+
     const doc = new Doc(docTypeId, null, user.userId, user.asutusId, module);
 
-    // ищем таску
+    // ищем таску.
     if (!taskName || !doc.config[taskName]) {
         return res.send({status: 500, result: null, error_message: `Task ${taskName ? taskName : ''} ei leidnud`});
     }
