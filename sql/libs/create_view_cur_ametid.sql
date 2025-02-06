@@ -10,6 +10,8 @@ SELECT a.id,
        coalesce((a.properties::JSONB ->> 'kogus'::TEXT)::NUMERIC, 0)     AS kogus,
        coalesce((a.properties::JSONB ->> 'vaba'::TEXT)::NUMERIC, 0)      AS vaba,
        coalesce((a.properties::JSONB ->> 'palgamaar'::TEXT)::INTEGER, 0) AS palgamaar,
+       coalesce((a.properties::JSONB ->> 'ameti_klassif'), '')::varchar(20) AS ameti_klassif,
+
        (a.properties::JSONB ->> 'valid')::DATE                           AS valid
 FROM libs.library a
          JOIN libs.library o ON ((a.properties::JSONB ->> 'osakondid'::TEXT)::INTEGER) = o.id

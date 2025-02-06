@@ -16,13 +16,16 @@ DECLARE
     DOC_STATUS   INTEGER = 3; -- документ удален
 BEGIN
 
-    SELECT v.*,
-           u.ametnik::TEXT                       AS kasutaja,
-           (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
-           INTO v_doc
-    FROM lapsed.vanemad v
-             JOIN ou.userid u ON u.id = user_id
-        WHERE v.id = doc_id;
+    SELECT
+        v.*,
+        u.ametnik::TEXT                       AS kasutaja,
+        (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
+    INTO v_doc
+    FROM
+        lapsed.vanemad     v
+            JOIN ou.userid u ON u.id = user_id
+    WHERE
+        v.id = doc_id;
 
     -- проверка на пользователя и его соответствие учреждению
 
@@ -60,13 +63,37 @@ BEGIN
         RETURN;
 
     END IF;
+    -- нельзя удалять, если есть документы (счета)
+    if exists
+    (
+        select
+            id
+        from
+            lapsed.cur_laste_arved a
+        where
+              a.asutusid = v_doc.asutusid
+          and a.laps_id = v_doc.parentid
+    ) then
+        RAISE NOTICE 'нельзя удалять, если есть документы (счета)';
+        error_code = 4;
+        error_message = 'Ei saa kustuta dokument. Seotatud dokumendid olemas';
+        result = 0;
+        RETURN;
+
+    end if;
 
     -- проверка на ответственного за расчеты
-    IF exists(SELECT id
-              FROM lapsed.vanem_arveldus
-                  WHERE parentid = v_doc.parentid
-                       AND asutusid = v_doc.asutusid
-                       AND arveldus)
+    IF exists
+    (
+        SELECT
+            id
+        FROM
+            lapsed.vanem_arveldus
+        WHERE
+              parentid = v_doc.parentid
+          AND asutusid = v_doc.asutusid
+          AND arveldus
+    )
     THEN
         RAISE NOTICE 'Удаление запрещено, ответственный';
         error_code = 4;
@@ -79,20 +106,30 @@ BEGIN
 
     -- Логгирование удаленного документа
 
-    SELECT to_jsonb(row) INTO json_ajalugu
-    FROM (SELECT now()          AS deleted,
-                 v_doc.kasutaja AS user) row;
+    SELECT
+        to_jsonb(row)
+    INTO json_ajalugu
+    FROM
+        (
+            SELECT
+                now()          AS deleted,
+                v_doc.kasutaja AS user
+        ) row;
 
     UPDATE lapsed.vanemad
-    SET staatus = DOC_STATUS,
+    SET
+        staatus = DOC_STATUS,
         ajalugu = coalesce(ajalugu, '[]')::JSONB || json_ajalugu
-    WHERE id = doc_id;
+    WHERE
+        id = doc_id;
 
     -- удаляем связь с учреждением
     DELETE
-    FROM lapsed.vanem_arveldus
-        WHERE parentid = v_doc.parentid
-             AND asutusid = v_doc.asutusid;
+    FROM
+        lapsed.vanem_arveldus
+    WHERE
+          parentid = v_doc.parentid
+      AND asutusid = v_doc.asutusid;
 
 
     result = 1;

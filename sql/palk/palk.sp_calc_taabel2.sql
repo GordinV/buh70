@@ -59,6 +59,7 @@ BEGIN
         l_lopp_paev = day(v_Tooleping.lopp);
     END IF;
 
+    raise notice 'l_alg_paev %, l_lopp_paev %', l_alg_paev, l_lopp_paev;
 
     -- arv puhkuse paevad
     SELECT row_to_json(row)
@@ -162,6 +163,8 @@ BEGIN
         l_toopaevad = (SELECT palk.get_work_days(l_params::JSON));
 
         l_hours = l_toopaevad * v_Tooleping.toopaev - l_tahtpaeva_tunnid;
+
+        raise notice 'sp_calc_taabel2 l_params %, l_hours %, l_toopaevad %', l_params, l_hours, l_toopaevad;
 
         IF l_hours < 0
         THEN

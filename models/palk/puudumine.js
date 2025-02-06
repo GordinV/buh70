@@ -46,7 +46,26 @@ module.exports = {
             alias: 'com_puudumised',
             data: []
 
-        }],
+        },
+        {
+            sql: `SELECT *
+                  FROM
+                      jsonb_to_recordset((
+                                             SELECT
+                                                 p.data
+                                             from
+                                                 palk.sp_import_puudumine_from_virosoft($2::integer,$3::integer, $1::JSONB) p
+                                         )
+                      )
+                          AS x (error_message TEXT, error_code INTEGER, result INTEGER)`,
+            query: null,
+            multiple: false,
+            alias: 'importDok',
+            data: [],
+            not_initial_load: true
+        },
+
+    ],
     returnData: {
         row: {},
         comPuudumised: []
@@ -111,6 +130,13 @@ module.exports = {
         `,
         type: "sql",
         alias: "getLogs"
+    },
+    importDoc: {
+        comment: 'import from virosoft',
+        command: `SELECT result AS id, result, error_message, $2::integer as userId, $3::integer as rekvId
+                  FROM palk.sp_import_puudumine_from_virosoft($2::integer,$3::integer, $1::JSONB)`, // $1 - data json, $2 - userid, $3 - rekvid
+        type: 'sql',
+        alias: 'importRaama'
     },
 
 };

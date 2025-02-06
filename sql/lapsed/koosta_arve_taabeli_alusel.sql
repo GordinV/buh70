@@ -76,7 +76,7 @@ DECLARE
     l_db_konto           TEXT    = '10300029'; -- согдасно описанию отдела культуры
     v_laps               RECORD;
     l_arve_kogus         NUMERIC = 0; -- для проверки кол-ва услуг в счете
-    l_selg               TEXT; -- доп. пояснение
+    l_selg               TEXT    = ''; -- доп. пояснение
     l_kas_saldo_ulekanne BOOLEAN = FALSE; -- тип счета (перенос сальдо)
 
 BEGIN
@@ -224,7 +224,7 @@ BEGIN
         LOOP
 
             -- если украинец, то ставим признак 3008
-            IF NOT empty(coalesce(v_laps.eritunnus, ''))
+            IF NOT empty(coalesce(v_laps.eritunnus, '')) and coalesce(v_laps.eritunnus, '') <> '0'
             THEN
                 v_taabel.tunnus = v_laps.eritunnus;
             END IF;
@@ -381,6 +381,9 @@ BEGIN
                     IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus <> 0 OR l_arve_kogus <> 0
                     THEN
                         SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+                        -- контируем
+                        PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
+
                     ELSE
                         l_arve_kogus = 0; -- обнулим кол-во услуг
                     END IF;
@@ -532,7 +535,9 @@ BEGIN
                                              ) row
                                      ) :: JSONB;
 
-        json_arvread = json_arvread || json_arvrea;
+        if json_arvrea is not null then
+            json_arvread = json_arvread || json_arvrea;
+        end if;
 
         json_arvrea = '[]'::JSONB || (
                                          SELECT
@@ -582,8 +587,9 @@ BEGIN
                                              ) row
                                      ) :: JSONB;
 
-        json_arvread = json_arvread || json_arvrea;
-
+        if json_arvrea is not null then
+            json_arvread = json_arvread || json_arvrea;
+        end if;
 
     END IF;
 
@@ -622,7 +628,6 @@ BEGIN
                                   json_arvread                                            AS "gridData"
                           ) row
                   );
-
 
     IF (jsonb_array_length(json_arvread) > 0)
     THEN

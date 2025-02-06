@@ -38,12 +38,14 @@ DECLARE
     new_properties JSONB;
     new_history    JSONB;
     v_tooleping    RECORD;
+    doc_ameti_klassif      TEXT           = doc_data ->> 'ameti_klassif';
+
     l_status       INTEGER        = CASE
                                         WHEN doc_lopp IS NOT NULL AND doc_lopp < current_date
                                             THEN array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
                                         ELSE array_position((enum_range(NULL :: DOK_STATUS)), 'active') END;
     is_import      BOOLEAN        = data ->> 'import';
-    l_json         JSONB          = jsonb_build_object('kuupalk', doc_kuupalk);
+    l_json         JSONB          = jsonb_build_object('kuupalk', doc_kuupalk, 'ameti_klassif', doc_ameti_klassif);
 BEGIN
 
 

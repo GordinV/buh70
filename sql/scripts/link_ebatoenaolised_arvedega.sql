@@ -1,4 +1,5 @@
 DROP FUNCTION IF EXISTS lapsed.link_ebatoenaolised();
+DROP FUNCTION IF EXISTS lapsed.link_ebatoenaolised(integer);
 
 CREATE FUNCTION lapsed.link_ebatoenaolised(rekv_id integer)
     RETURNS INTEGER
@@ -32,10 +33,12 @@ BEGIN
                                    lapsed.ebatoenaolised(l_rekv_id, '2024-09-30') qry
                            )                       qry
                                inner join docs.doc d on d.id = qry.doc_id
+                       inner join  lapsed.liidestamine l on l.docid = d.id
 
                        where
-                           vahe < 0
---                       and qry.doc_id = 4539722
+                           maksja_isikukood = '60102203741'
+--                          vahe = 0
+--                        qry.doc_id in (4589619)
 
                    )
         loop
@@ -47,17 +50,19 @@ BEGIN
                                      cur_journal
                                  WHERE
                                        rekvid = l_rekv_id
-                                   and kpv < '2024-09-30'
-                                   AND deebet = '605030'
+                                   and kpv < '2024-10-31'
+                                   AND deebet in ('605030','888888')
                                    AND kreedit like '103009%'
-                                   and (selg like 'Ebatõenäolised nõuded%' or selg like 'Ebatoenaolised nouded%')
                                    and dok = 'Arve nr.' || v_arved.number::text
                                    and id not in (
                                                      select unnest(v_arved.docs_ids)
                                                  )
+                                 and asutusid in (select id from libs.asutus where regkood = v_arved.maksja_isikukood)
                              )
 
                 LOOP
+
+                    raise notice 'found %',  v_arved.number;
 
 
                     UPDATE docs.doc
@@ -65,6 +70,10 @@ BEGIN
                     WHERE id = v_arved.doc_id;
 
                 END LOOP;
+
+            -- дорасчет
+            perform docs.ebatoenaolised(l_rekv_id, '2024-10-06'::date, v_arved.doc_id);
+
 
         end loop;
 
@@ -78,7 +87,9 @@ $$;
 SELECT lapsed.link_ebatoenaolised(id)
 from ou.rekv
 where parentid = 119
+  and id = 99
 and id not in (66,67);
 
 DROP FUNCTION IF EXISTS lapsed.link_ebatoenaolised();
+DROP FUNCTION IF EXISTS lapsed.link_ebatoenaolised(integer);
 

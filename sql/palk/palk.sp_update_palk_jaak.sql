@@ -128,4 +128,4 @@ GRANT EXECUTE ON FUNCTION palk.sp_update_palk_jaak(DATE, INTEGER) TO dbpeakasuta
 GRANT EXECUTE ON FUNCTION palk.sp_update_palk_jaak(DATE, INTEGER) TO taabel;
 
 
-SELECT palk.sp_update_palk_jaak('2021-01-31', 34873);
+SELECT palk.sp_update_palk_jaak('2024-11-30', 35497);

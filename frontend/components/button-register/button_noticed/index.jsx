@@ -48,9 +48,12 @@ class ButtonTeatised extends React.PureComponent {
         Будет запрашивать извещения
      */
     fetchNoticed() {
-        setInterval(() => {
+        const interval = setInterval(() => {
             this.fetchData('select')
         }, 1000 * 60);
+
+        return clearInterval(interval);
+
     }
 
     /**

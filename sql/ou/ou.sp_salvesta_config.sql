@@ -22,27 +22,45 @@ DECLARE
     doc_earved      TEXT    = doc_data ->> 'earved';
     doc_limiit      NUMERIC = doc_data ->> 'limiit';
     doc_pdf         TEXT    = doc_data ->> 'pdf';
-
-    doc_json        JSON    = ((SELECT row_to_json(row)
-                                FROM (SELECT doc_keel  AS keel,
-                                             doc_port  AS port,
-                                             doc_smtp  AS smtp,
-                                             doc_user  AS user,
-                                             doc_pass  AS pass,
-                                             doc_email AS email) ROW));
-
-    doc_config_json JSONB   = ((SELECT row_to_json(row)
-                                FROM (SELECT doc_earved AS earved,
-                                             doc_pdf    AS pdf,
-                                             doc_limiit AS limiit
-                                     ) ROW));
+    doc_round_arve  integer = coalesce((doc_data ->> 'round_arve')::integer, 0);
+    doc_json        JSON    = ((
+                                   SELECT
+                                       row_to_json(row)
+                                   FROM
+                                       (
+                                           SELECT
+                                               doc_keel  AS keel,
+                                               doc_port  AS port,
+                                               doc_smtp  AS smtp,
+                                               doc_user  AS user,
+                                               doc_pass  AS pass,
+                                               doc_email AS email
+                                       ) ROW
+                               )
+                              );
+    doc_config_json JSONB   = ((
+                                   SELECT
+                                       row_to_json(row)
+                                   FROM
+                                       (
+                                           SELECT
+                                               doc_earved AS earved,
+                                               doc_pdf    AS pdf,
+                                               doc_limiit AS limiit,
+                                               doc_round_arve as round_arve
+                                       ) ROW
+                               )
+                              );
 
 BEGIN
 
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
       AND u.id = user_id;
 
     IF userName IS NULL
@@ -51,23 +69,32 @@ BEGIN
         RETURN 0;
     END IF;
 
-    doc_id = (SELECT id FROM ou.config WHERE rekvid = user_rekvid LIMIT 1);
+    doc_id = (
+                 SELECT id
+                 FROM ou.config
+                 WHERE rekvid = user_rekvid
+                 LIMIT 1
+             );
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
         INSERT INTO ou.config (rekvid, number, tahtpaev, keel, properties)
-        VALUES (user_rekvid, doc_number, doc_tahtpaev, doc_keel, doc_config_json) RETURNING id
+        VALUES (user_rekvid, doc_number, doc_tahtpaev, doc_keel, doc_config_json)
+        RETURNING id
             INTO config_id;
 
     ELSE
 
         UPDATE ou.config
-        SET number     = doc_number,
+        SET
+            number     = doc_number,
             tahtpaev   = doc_tahtpaev::INTEGER,
             keel       = doc_keel,
             properties = properties || doc_config_json
-        WHERE rekvid = user_rekvid RETURNING id
+        WHERE
+            rekvid = user_rekvid
+        RETURNING id
             INTO config_id;
 
     END IF;

@@ -24,7 +24,7 @@ module.exports = {
                      (l.properties :: JSONB ->> 'korr_konto') :: VARCHAR(20)                               AS korr_konto,
                      coalesce((l.properties :: JSONB ->> 'soetkpv') :: DATE, now() :: DATE)                AS soetkpv,
                      (l.properties :: JSONB ->> 'kulum') :: NUMERIC(12, 4)                                 AS kulum,
-                     coalesce((l.properties :: JSONB ->> 'algkulum'), 0) :: NUMERIC(12, 4)                  AS algkulum,
+                     coalesce((l.properties :: JSONB ->> 'algkulum'):: NUMERIC(12, 4), 0) :: NUMERIC(12, 4)                  AS algkulum,
                      coalesce(jaak.kulum, 0) :: NUMERIC(12, 4)                                             AS kulum_kokku,
                      (l.properties :: JSONB ->> 'soetmaks') :: NUMERIC(12, 2)                              AS soetmaks,
                      (jaak.soetmaks) :: NUMERIC(12, 2)                                                     AS parhind,
@@ -125,7 +125,16 @@ module.exports = {
             multiple: false,
             alias: 'pv_jaak',
             data: []
-        }
+        },
+        {
+            sql: `SELECT docs.sp_kooperi_pv_kaart($1::integer, $2::integer, 0::integer) as result`,
+            query: null,
+            multiple: false,
+            alias: 'kooperi',
+            data: [],
+            not_initial_load: true
+        },
+
     ],
     returnData: {
         row: {},
@@ -194,5 +203,4 @@ module.exports = {
         type: 'sql',
         alias: 'executeTask'
     },
-
 };

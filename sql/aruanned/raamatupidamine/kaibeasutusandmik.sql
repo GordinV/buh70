@@ -71,8 +71,8 @@ WITH params AS (
                     AND CASE
                             WHEN (j1.kreedit = '650100' OR j1.deebet = '650100') THEN j.asutusid IS NOT NULL
                             ELSE TRUE END
-                    AND j.asutusid >= p.asutus_1
-                    AND j.asutusid <= p.asutus_2
+                    AND coalesce(j.asutusid,0) >= p.asutus_1
+                    AND  coalesce(j.asutusid,0) <= p.asutus_2
                     AND j1.deebet LIKE p.konto
                     AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     -- поправка Калле 10.10.2022
@@ -108,8 +108,8 @@ WITH params AS (
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
 --           AND j.asutusid IS NOT NULL
-                    AND j.asutusid >= p.asutus_1
-                    AND j.asutusid <= p.asutus_2
+                    AND coalesce(j.asutusid,0) >= p.asutus_1
+                    AND coalesce(j.asutusid,0) <= p.asutus_2
                     AND j1.kreedit LIKE p.konto
                     -- поправка Калле 10.10.2022
                     AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv1::DATE) OR
@@ -146,8 +146,8 @@ WITH params AS (
 
 --           AND j.asutusid IS NOT NULL
                     AND j1.deebet LIKE p.konto
-                    AND j.asutusid >= p.asutus_1
-                    AND j.asutusid <= p.asutus_2
+                    AND coalesce(j.asutusid,0) >= p.asutus_1
+                    AND coalesce(j.asutusid,0) <= p.asutus_2
                   UNION ALL
 -- kr kaibed
                   SELECT j.rekvid                                                                          AS rekv_id,
@@ -171,8 +171,8 @@ WITH params AS (
                     AND d.status <> 3
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND j1.kreedit LIKE p.konto
-                    AND j.asutusid >= p.asutus_1
-                    AND j.asutusid <= p.asutus_2
+                    AND coalesce(j.asutusid,0) >= p.asutus_1
+                    AND coalesce(j.asutusid,0) <= p.asutus_2
               ) qry,
               params p
          WHERE qry.tunnus ILIKE p.tunnus
@@ -216,7 +216,7 @@ select * from (
 
 SELECT  sum(alg_saldo) over() as alg, sum(deebet) over() as db, sum(kreedit) over() as kr,
 a.nimetus, a.id, a.staatus, a.properties->>'kehtivus' as kehtivus, a.tp, rep.*
-FROM docs.kaibeasutusandmik('201000%',0,'2024-01-01','2024-01-31', 119,'%',0,null::jsonb) rep
+FROM docs.kaibeasutusandmik('203900%',0,'2023-01-01','2023-04-30', 3,'%',0,null::jsonb) rep
 left outer join libs.asutus a on a.id = rep.asutus_id
 --where kreedit = 37.90
 alg;db;kr

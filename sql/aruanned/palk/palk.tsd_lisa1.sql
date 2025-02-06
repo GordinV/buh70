@@ -296,9 +296,8 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1( DATE, DATE, INTEGER, INTEGER ) TO dbk
 SELECT sum(qry.sm_kokku) as sm, sum(sm_kokku_1) as sm_1
 FROM
 (
-select * from
-palk.tsd_lisa_1('2023-01-01', '2023-01-31', 63, 0 :: INTEGER)
---where isikukood in ('46408083713','37502100015')
+
+isikukood in ('46408083713','37502100015')
 
 
 ) qry

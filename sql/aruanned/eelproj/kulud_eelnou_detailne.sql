@@ -424,7 +424,7 @@ BEGIN
                         coalesce(s.objekt, '')                                                            AS objekt,
                         sum(S.tegelik)                                                                    AS summa,
                         1                                                                                 AS idx,
-                        NULL::TEXT                                                                        AS selg
+                        ''::TEXT                                                                        AS selg
                  FROM tmp_andmik S,
                       params
                  WHERE aasta = YEAR(params.kpv) - 1
@@ -448,7 +448,7 @@ BEGIN
                         coalesce(s.objekt, '') AS objekt,
                         sum(S.tegelik)         AS summa,
                         1                      AS idx,
-                        NULL::TEXT             AS selg
+                        ''::TEXT             AS selg
                  FROM tmp_andmik S,
                       params
                  WHERE aasta = YEAR(params.kpv)
@@ -550,7 +550,7 @@ BEGIN
                         coalesce(t1.kood4, '')  AS uritus,
                         coalesce(t1.objekt, '') AS objekt,
                         sum(e.summa)            AS summa,
-                        NULL::TEXT              AS selg
+                        ''::TEXT              AS selg
                  FROM eelarve.eelarve e
                           INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
                       params
@@ -583,7 +583,7 @@ BEGIN
                         coalesce(t1.kood4, '')  AS uritus,
                         coalesce(t1.objekt, '') AS objekt,
                         sum(e.summa)            AS summa,
-                        NULL::TEXT              AS selg
+                        ''::TEXT              AS selg
                  FROM eelarve.eelarve e
                           INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
                       params
@@ -992,7 +992,7 @@ BEGIN
                rep.aasta_3_prognoos ::NUMERIC(14, 2),
                rep.eelarve_tekkepohine_kinnitatud ::NUMERIC(14, 2),
                rep.eelarve_tekkepohine_tapsustatud ::NUMERIC(14, 2),
-               rep.selg
+               ltrim(rep.selg,',') as selg
         FROM report rep
         WHERE rep.artikkel <> ''
           AND (rep.aasta_1_tekke_taitmine <> 0
@@ -1017,8 +1017,8 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou_detailne(DATE, INTEGER, INTEGER,J
 
 /*
 SELECT  *
-FROM eelarve.kulud_eelnou_detailne('2023-12-31'::DATE, 132:: INTEGER, 0,NULL::JSONB )
-where artikkel = '4500'
+FROM eelarve.kulud_eelnou_detailne('2024-12-31'::DATE, 132:: INTEGER, 0,'{"taotlus_statusid":false}'::JSONB )
+where artikkel = '5511'
 and tegev = '07600'
 
 */--where idx = 100

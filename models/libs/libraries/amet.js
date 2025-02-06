@@ -3,22 +3,26 @@ module.exports = {
                    FROM com_ametid l
                    WHERE l.rekvId = $1`,
     select: [{
-        sql: `SELECT l.id,
-                     l.rekvid,
-                     l.kood::VARCHAR(20)                                  AS kood,
-                     l.nimetus::VARCHAR(254)                              AS nimetus,
-                     l.muud,
-                     l.status,
-                     l.library::VARCHAR(20)                               AS library,
-                     $2::INTEGER                                          AS userid,
-                     'AMET'                                               AS doc_type_id,
-                     (l.properties:: JSONB ->> 'osakondid') :: INTEGER    AS osakondId,
-                     (l.properties:: JSONB ->> 'kogus') :: NUMERIC(18, 2) AS kogus,
-                     (l.properties:: JSONB ->> 'palgamaar') ::INTEGER     AS palgamaar,
-                     (l.properties:: JSONB ->> 'tunnusid') ::INTEGER      AS tunnusId,
-                     (l.properties::JSONB ->> 'valid')::DATE              AS valid
-              FROM libs.library l
-              WHERE l.id = $1`,
+        sql: `SELECT
+                  l.id,
+                  l.rekvid,
+                  l.kood::VARCHAR(20)                                      AS kood,
+                  l.nimetus::VARCHAR(254)                                  AS nimetus,
+                  l.muud,
+                  l.status,
+                  l.library::VARCHAR(20)                                   AS library,
+                  $2::INTEGER                                              AS userid,
+                  'AMET'                                                   AS doc_type_id,
+                  (l.properties:: JSONB ->> 'osakondid') :: INTEGER        AS osakondId,
+                  (l.properties:: JSONB ->> 'kogus') :: NUMERIC(18, 2)     AS kogus,
+                  (l.properties:: JSONB ->> 'ameti_klassif') ::varchar(20) AS ameti_klassif,
+                  (l.properties:: JSONB ->> 'palgamaar') ::INTEGER         AS palgamaar,
+                  (l.properties:: JSONB ->> 'tunnusid') ::INTEGER          AS tunnusId,
+                  (l.properties::JSONB ->> 'valid')::DATE                  AS valid
+              FROM
+                  libs.library l
+              WHERE
+                  l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
             $2::integer as userid, 
             'AMET' as doc_type_id,
@@ -29,6 +33,7 @@ module.exports = {
             0::integer as status,
             null::integer as osakondId,
             null::numeric(18,2) as kogus,
+            null::varchar(20) as ameti_klassif,
             null::integer as palgamaar,
             null::integer as tunnusId,
             null::date as valid,
@@ -93,7 +98,28 @@ module.exports = {
             alias: 'validate_lib_usage',
             data: []
 
-        }
+        },
+        {
+          sql:`select *
+               from
+                   (
+                       SELECT
+                           (jsonb_array_elements(properties::jsonb -> 'palgaastmed') ->> 'summa')::numeric(12, 2) AS summa,
+                           (jsonb_array_elements(properties::jsonb -> 'palgaastmed') ->>
+                            'palgamaar')::integer                                                                 AS palgamaar
+                       FROM
+                           libs.library l
+                       WHERE
+                           l.id = $1
+                   ) qry
+               order by
+                   palgamaar `,
+            query: null,
+            multiple: true,
+            alias: 'comPalgamaar',
+            data: []
+
+        },
 
     ],
     returnData: {
@@ -116,8 +142,11 @@ module.exports = {
             {id: "kogus", name: "Kogus", width: "20%"},
             {id: "palgamaar", name: "Palgamaar", width: "20%"},
         ],
-        sqlString: `SELECT *
+        sqlString: `SELECT a.*,
+                           l.kood as ameti_kood,
+                           l.muud
                     FROM cur_ametid a
+                             inner join libs.library l on l.id = a.id
                     WHERE (a.rekvId = $1 OR a.rekvid IS NULL)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curAmetid'

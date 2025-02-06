@@ -31,7 +31,7 @@ DECLARE
     a_FinanseerimisTegevus         TEXT[]    = ARRAY ['2585'];
     a_LikviidseteVaradeMuutus      TEXT[]    = ARRAY ['100'];
     a_Tervisehoiust                TEXT[]    = ARRAY ['3223'];
-    a_OmaTulud                     TEXT[]    = ARRAY ['3044','3045','3047','320','3220','3221','3222','3224','3229','3232','3233','3237','3238',
+    a_OmaTulud                     TEXT[]    = ARRAY ['3044','3045','3047','320','3220','3221','3222','3223', '3224','3229','3232','3233','3237','3238',
         '3880','3823','3818','3888','381','1532','655'];
     kas_ainult_aktsepteeritud      BOOLEAN   = coalesce((l_params ->> 'taotlus_statusid')::BOOLEAN, FALSE);
     taotlus_statusid               INTEGER[] = CASE
@@ -1602,9 +1602,9 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO
 GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
 /*
-SELECT sum(
-FROM eelarve.tulud_eelnou('2024-12-31'::DATE, 64:: INTEGER, 1, jsonb_build_object('taotlus_statusid', 1))
-WHERE artikkel = '3500'
+SELECT *
+FROM eelarve.tulud_eelnou('2024-11-30'::DATE, 130:: INTEGER, 1, jsonb_build_object('taotlus_statusid', 0))
+WHERE artikkel in ('3045', '3047')
 */
 
 

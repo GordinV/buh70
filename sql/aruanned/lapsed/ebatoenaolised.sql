@@ -90,6 +90,8 @@ WITH
                                                 FROM
                                                     get_asutuse_struktuur(l_rekvid)
                                             )
+                          and m.tp not in ('18510139')
+                          and a.properties->>'alus_arve_id' is null -- убрал кредитовые счета
 --               AND a.jaak >= 0
                       ) qry
 --    WHERE qry.jaak > 0
@@ -192,8 +194,8 @@ GRANT EXECUTE ON FUNCTION lapsed.ebatoenaolised(INTEGER, DATE) TO dbvaatleja;
 
 
 /*
-select * from lapsed.ebatoenaolised(69, '2024-09-30')
-where number = '8884'
+select * from lapsed.ebatoenaolised(101, '2024-09-30')
+where number = '167'
 -- 167309 rows retrieved starting from 1 in 30 s 906 ms (execution: 25 s 666 ms, fetching: 5 s 240 ms)
 
 where konto = '10300928'

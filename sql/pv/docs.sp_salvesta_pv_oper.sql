@@ -50,8 +50,7 @@ BEGIN
       AND u.id = userId;
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
-        RETURN 0;
+        RAISE exception  'Viga: User not found %', user;
     END IF;
 
     IF (doc_id IS NULL)
@@ -152,7 +151,7 @@ BEGIN
             PERFORM docs.sp_pv_oper_paigutus(doc_id);
         ELSEIF doc_liik = array_position(a_pv_opers, 'parandus')
         THEN
-            PERFORM docs.sp_pv_oper_parandus(doc_pv_kaart_id); --will calculate parhind
+            PERFORM docs.sp_pv_oper_parandus(doc_pv_kaart_id, doc_id, userid); --will calculate parhind
         ELSEIF doc_liik = array_position(a_pv_opers, 'umberhindamine')
         THEN
             PERFORM docs.sp_pv_oper_umberhindamine(doc_pv_kaart_id); --will calculate parhind

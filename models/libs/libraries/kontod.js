@@ -42,7 +42,7 @@ module.exports = {
             0 as status,
             0 as kas_virtual,
             null::text as muud,
-            null::date as valid
+            null::date as valid,
             ''::char(1) AS tp_req,
             ''::char(1) AS tt_req,
             ''::char(1) AS a_req,

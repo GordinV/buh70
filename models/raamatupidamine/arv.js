@@ -24,77 +24,90 @@ const Arv = {
                    WHERE (a.rekvId = $1::INTEGER)`, //$1 - rekvid, $2 userid
     select: [
         {
-            sql: `SELECT d.id,
-                         $2 :: INTEGER                                                     AS userid,
-                         to_char(created, 'DD.MM.YYYY HH:MI:SS') :: TEXT                   AS created,
-                         to_char(lastupdate, 'DD.MM.YYYY HH:MI:SS') :: TEXT                AS lastupdate,
-                         d.bpm,
-                         trim(l.nimetus)                                                   AS doc,
-                         trim(l.kood)                                                      AS doc_type_id,
-                         trim(s.nimetus)                                                   AS status,
-                         d.status                                                          AS doc_status,
-                         trim(a.number) :: VARCHAR(20)                                     AS number,
-                         a.rekvId,
-                         a.liik,
-                         a.operid,
-                         a.kpv                                                             AS kpv,
-                         a.asutusid,
-                         a.arvId,
-                         trim(coalesce(a.lisa, '')) :: VARCHAR(120)                        AS lisa,
-                         a.tahtaeg                                                         AS tahtaeg,
-                         a.kbmta,
-                         a.kbm,
-                         a.summa,
-                         a.tasud,
-                         trim(a.tasudok)                                                   AS tasudok,
-                         a.muud,
-                         a.jaak,
-                         coalesce(a.objektId, 0)::INTEGER                                  AS objektId,
-                         trim(a.objekt)                                                    AS objekt,
-                         asutus.regkood,
-                         trim(asutus.nimetus)                                              AS asutus,
-                         asutus.aadress,
-                         (asutus.properties ->> 'kmkr') :: VARCHAR(20)                     AS kmkr,
-                         a.doklausid,
-                         a.journalid,
-                         coalesce(jid.number, 0) :: INTEGER                                AS laus_nr,
-                         coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS konto,
-                         coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
-                         dp.selg :: VARCHAR(120)                                           AS dokprop,
-                         dp.vaatalaus                                                      AS is_show_journal,
-                         (d.history -> 0 ->> 'user') :: VARCHAR(120)                       AS koostaja,
-                         coalesce((a.properties ->> 'aa')::TEXT, qry_aa.arve)::VARCHAR(20) AS aa,
-                         coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120)    AS viitenr,
-                         coalesce((a.properties ->> 'tyyp')::TEXT, '')::VARCHAR(20)        AS tyyp,
-                         coalesce((a.properties ->> 'taskuraha_kov')::NUMERIC, 0)          AS taskuraha_kov,
-                         (SELECT arv.number
-                          FROM docs.arvtasu at
-                                   INNER JOIN docs.arv arv ON arv.parentid = at.doc_arv_id
-                          WHERE at.pankkassa = 4 -- kreeditarve
+            sql: `SELECT
+                      d.id,
+                      $2 :: INTEGER                                                         AS userid,
+                      to_char(created, 'DD.MM.YYYY HH:MI:SS') :: TEXT                       AS created,
+                      to_char(lastupdate, 'DD.MM.YYYY HH:MI:SS') :: TEXT                    AS lastupdate,
+                      d.bpm,
+                      trim(l.nimetus)                                                       AS doc,
+                      trim(l.kood)                                                          AS doc_type_id,
+                      trim(s.nimetus)                                                       AS status,
+                      d.status                                                              AS doc_status,
+                      trim(a.number) :: VARCHAR(20)                                         AS number,
+                      a.rekvId,
+                      a.liik,
+                      a.operid,
+                      a.kpv                                                                 AS kpv,
+                      a.asutusid,
+                      a.arvId,
+                      trim(coalesce(a.lisa, '')) :: VARCHAR(120)                            AS lisa,
+                      a.tahtaeg                                                             AS tahtaeg,
+                      a.kbmta,
+                      a.kbm,
+                      a.summa,
+                      a.tasud,
+                      trim(a.tasudok)                                                       AS tasudok,
+                      a.muud,
+                      a.jaak,
+                      coalesce(a.objektId, 0)::INTEGER                                      AS objektId,
+                      trim(a.objekt)                                                        AS objekt,
+                      asutus.regkood,
+                      trim(asutus.nimetus)                                                  AS asutus,
+                      asutus.aadress,
+                      (asutus.properties ->> 'kmkr') :: VARCHAR(20)                         AS kmkr,
+                      a.doklausid,
+                      a.journalid,
+                      coalesce(jid.number, 0) :: INTEGER                                    AS laus_nr,
+                      coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)        AS konto,
+                      coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20)     AS kbmkonto,
+                      dp.selg :: VARCHAR(120)                                               AS dokprop,
+                      dp.vaatalaus                                                          AS is_show_journal,
+                      (d.history -> 0 ->> 'user') :: VARCHAR(120)                           AS koostaja,
+                      coalesce((a.properties ->> 'aa')::TEXT, qry_aa.arve)::VARCHAR(20)     AS aa,
+                      coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120)        AS viitenr,
+                      coalesce((a.properties ->> 'tyyp')::TEXT, '')::VARCHAR(20)            AS tyyp,
+                      coalesce((a.properties ->> 'taskuraha_kov')::NUMERIC, 0)              AS taskuraha_kov,
+                      (
+                          SELECT
+                              arv.number
+                          FROM
+                              docs.arvtasu            at
+                                  INNER JOIN docs.arv arv ON arv.parentid = at.doc_arv_id
+                          WHERE
+                                at.pankkassa = 4 -- kreeditarve
                             AND at.doc_tasu_id = a.parentid
                             AND at.status < 3
                           LIMIT 1
-                         )                                                                 AS kr_number,
-                         (a.properties ->> 'alus_arve_id')::INTEGER                        AS alus_arve_id,
-                         (a.properties ->> 'raha_saaja')::VARCHAR(254)                     AS raha_saaja
-                  FROM docs.doc d
-                           INNER JOIN libs.library l ON l.id = d.doc_type_id
-                           INNER JOIN docs.arv a ON a.parentId = d.id
-                           INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
-                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                           LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
-                           LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
-                           LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
-                           LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id,
-                       (SELECT arve
-                        FROM ou.aa aa
-                                 INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                        WHERE aa.parentid = u.rekvid
-                          AND NOT empty(default_::INTEGER)
-                          AND NOT empty(kassa::INTEGER)
-                          AND kassa = 1
-                        LIMIT 1) qry_aa
-                  WHERE d.id = $1`,
+                      )                                                                     AS kr_number,
+                      (a.properties ->> 'alus_arve_id')::INTEGER                            AS alus_arve_id,
+                      (a.properties ->> 'raha_saaja')::VARCHAR(254)                         AS raha_saaja,
+                      coalesce((a.properties ->> 'umardamine')::numeric, 0)::numeric(12, 2) as umardamine
+                  FROM
+                      docs.doc                           d
+                          INNER JOIN      libs.library   l ON l.id = d.doc_type_id
+                          INNER JOIN      docs.arv       a ON a.parentId = d.id
+                          INNER JOIN      libs.asutus AS asutus ON asutus.id = a.asutusId
+                          INNER JOIN      ou.userid      u ON u.id = $2 :: INTEGER
+                          LEFT OUTER JOIN libs.library   s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                          LEFT OUTER JOIN libs.dokprop   dp ON dp.id = a.doklausid
+                          LEFT OUTER JOIN docs.journal   j ON j.parentid = a.journalid
+                          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id,
+                      (
+                          SELECT
+                              arve
+                          FROM
+                              ou.aa                    aa
+                                  INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                          WHERE
+                                aa.parentid = u.rekvid
+                            AND NOT empty(default_::INTEGER)
+                            AND NOT empty(kassa::INTEGER)
+                            AND kassa = 1
+                          LIMIT 1
+                      )                                  qry_aa
+                  WHERE
+                      d.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
                               to_char(now(), 'DD.MM.YYYY HH:MI:SS') :: TEXT                          AS created,
@@ -479,6 +492,8 @@ const Arv = {
                                     rekvid,
                                     kpv,
                                     summa,
+                                    kbm,
+                                    kbmta,
                                     tahtaeg,
                                     jaak,
                                     lisa,

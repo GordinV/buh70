@@ -1,25 +1,29 @@
 module.exports = {
     select: [{
-        sql: `SELECT 'CONFIG'                                                          AS doc_type_id,
-                     $2::INTEGER                                                       AS userid,
-                     c.id                                                              AS docId,
-                     c.rekvid                                                          AS id,
-                     c.rekvid,
-                     coalesce(c.number, '')::VARCHAR(20)                               AS number,
-                     coalesce((c.properties ->> 'limiit')::NUMERIC, 0)::NUMERIC(12, 2) AS limiit,
-                     coalesce((u.properties ->> 'keel')::INTEGER, 2)::INTEGER          AS keel,
-                     coalesce((u.properties ->> 'port')::VARCHAR(100))::VARCHAR(100)   AS port,
-                     coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(100)   AS smtp,
-                     coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(100)   AS user,
-                     coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(100)   AS pass,
-                     coalesce((u.properties ->> 'email')::VARCHAR(254))::VARCHAR(254)  AS email,
-                     coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
-                     c.tahtpaev,
-                     coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf
+        sql: `SELECT
+                  'CONFIG'                                                          AS doc_type_id,
+                  $2::INTEGER                                                       AS userid,
+                  c.id                                                              AS docId,
+                  c.rekvid                                                          AS id,
+                  c.rekvid,
+                  coalesce(c.number, '')::VARCHAR(20)                               AS number,
+                  coalesce((c.properties ->> 'limiit')::NUMERIC, 0)::NUMERIC(12, 2) AS limiit,
+                  coalesce((u.properties ->> 'keel')::INTEGER, 2)::INTEGER          AS keel,
+                  coalesce((u.properties ->> 'port')::VARCHAR(100))::VARCHAR(100)   AS port,
+                  coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(100)   AS smtp,
+                  coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(100)   AS user,
+                  coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(100)   AS pass,
+                  coalesce((u.properties ->> 'email')::VARCHAR(254))::VARCHAR(254)  AS email,
+                  coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
+                  c.tahtpaev,
+                  coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf,
+                  coalesce((c.properties ->> 'round_arve')::integer, 0)::integer    as round_arve
 
-              FROM ou.config c,
-                   ou.userid u
-              WHERE c.rekvid = $1
+              FROM
+                  ou.config c,
+                  ou.userid u
+              WHERE
+                    c.rekvid = $1
                 AND u.id = $2`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER         AS id,
@@ -36,6 +40,7 @@ module.exports = {
                       ''::varchar(254) as email,
                       ''::varchar(254) as earved,
                       5::integer as tahtpaev,
+                      0::integer as round_arve,
                       ''::::VARCHAR(254) as pdf`,
         query: null,
         multiple: false,

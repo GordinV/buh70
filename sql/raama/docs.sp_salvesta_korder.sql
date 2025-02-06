@@ -44,6 +44,8 @@ DECLARE
   previous_arv_id   INTEGER;
   DOC_STATUS_ACTIVE INTEGER = 1; -- документ открыт для редактирования
   is_import         BOOLEAN = data ->> 'import';
+  l_umardamine           numeric        = 0; -- округление
+
 BEGIN
 
   SELECT kasutaja
@@ -260,6 +262,8 @@ BEGIN
 
 
     END LOOP;
+
+
 
   IF doc_arvid IS NOT NULL
   THEN

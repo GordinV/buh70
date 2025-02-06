@@ -58,6 +58,7 @@ FROM (
                          coalesce((SELECT sum(summa)
                                    FROM docs.pv_oper po
                                    WHERE pv_kaart_id = p.id
+--                                     and po.pv_kaart_id not in (200934) -- убрать карточку из ваналинна
                                      AND liik = 2
                                      AND kpv <= l_kpv), 0) +
                          CASE WHEN p.soet_kpv > l_kpv THEN 0 ELSE 1 END * p.algkulum
@@ -70,6 +71,7 @@ FROM (
                          coalesce((SELECT sum(summa)
                                    FROM docs.pv_oper po
                                    WHERE pv_kaart_id = p.id
+--                                     and po.pv_kaart_id not in (200934) -- убрать карточку из ваналинна
                                      AND liik = 3
                                      AND kpv <= l_kpv
                                      AND kpv >=
@@ -102,7 +104,10 @@ GRANT EXECUTE ON FUNCTION libs.get_pv_kaart_jaak(l_id INTEGER, l_kpv DATE) TO db
 
 
 /*
-SELECT * from libs.library where kood = '02291-08R' and library = 'POHIVARA'
+SELECT * from libs.library
+where kood = '155100-001-02'
+and library = 'POHIVARA'
+and rekvid in (select id from ou.rekv where nimetus ilike '%paas%')
 
-select * from libs.get_pv_kaart_jaak(273574, '2024-01-01'::date)
+select * from libs.get_pv_kaart_jaak(200606, '2024-12-01'::date)
 */

@@ -40,6 +40,7 @@ BEGIN
             FROM palk.sp_calc_taabel2(l_json::JSONB) t;
             result = result + l_tunnid;
             tahtpaeva_tunnid = tahtpaeva_tunnid + l_tahtpaeva_tunnid;
+
         END LOOP;
     RETURN;
 
@@ -49,16 +50,6 @@ $$;
 GRANT EXECUTE ON FUNCTION palk.get_taabel2( JSONB ) TO dbvaatleja;
 GRANT EXECUTE ON FUNCTION palk.get_taabel2( JSONB ) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION palk.get_taabel2( JSONB ) TO dbpeakasutaja;
-
-SELECT *
-FROM palk.get_taabel2('{
-  "kuu": 3,
-  "aasta": 2021,
-  "lepingid": 31867,
-  "alg_kpv": "2021-03-12",
-  "lopp_kpv": "2021-03-12",
-  "toograf": 1
-}' :: JSONB);
 
 /*
 SELECT result palk.get_taabel('{"kuu":8,"aasta":2021,"lepingid":30951, "alg_kpv":"2021-08-01", "lopp_kpv":"2021-08-31"}' :: JSONB);

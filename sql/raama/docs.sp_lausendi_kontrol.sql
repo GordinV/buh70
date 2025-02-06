@@ -16,7 +16,6 @@ DECLARE
     l_rahavoog TEXT = params ->> 'rahavoog';
     l_oma_tp   TEXT = params ->> 'oma_tp';
     l_kpv      DATE = coalesce((params ->> 'kpv')::DATE, current_date);
-
     lnTPD      INT  = 0;
     lnTPK      INT  = 0;
     lnTT       INT  = 0;
@@ -92,10 +91,19 @@ BEGIN
     END IF;
 
     -- контроль ТП кода
-    IF not empty(coalesce(l_tp_k,'')) and not exists (select id from libs.library
-        where kood =  l_tp_k  and library.library = 'TP' and status < 3 ) then
+    IF not empty(coalesce(l_tp_k, '')) and not exists
+    (
+        select
+            id
+        from
+            libs.library
+        where
+              kood = l_tp_k
+          and library.library = 'TP'
+          and status < 3
+    ) then
 
-        lcMsg1 = 'TP-K, kood (' || coalesce(l_tp_k,'') || ') registris puudub; ';
+        lcMsg1 = 'TP-K, kood (' || coalesce(l_tp_k, '') || ') registris puudub; ';
         l_msg = l_msg + lcMsg1;
 
     END IF;
@@ -112,8 +120,17 @@ BEGIN
     END IF;
 
     -- контроль ТП кода
-    IF not empty(coalesce(l_tp_d,'')) and not exists (select id from libs.library
-                                                      where kood =  l_tp_d  and library.library = 'TP' and status < 3 ) then
+    IF not empty(coalesce(l_tp_d, '')) and not exists
+    (
+        select
+            id
+        from
+            libs.library
+        where
+              kood = l_tp_d
+          and library.library = 'TP'
+          and status < 3
+    ) then
 
         lcMsg1 = 'TP-D, kood (' || l_tp_d || ') registris puudub;';
         l_msg = l_msg + lcMsg1;
@@ -121,24 +138,26 @@ BEGIN
     END IF;
 
 
-
 -- konto kehtivus (D)
-    SELECT l.kood,
-           l.nimetus,
-           l.muud,
-           l.tun1                                                             AS tp,
-           l.tun2                                                             AS tegev,
-           l.tun3                                                             AS allikas,
-           l.tun4                                                             AS rahavoog,
-           l.tun5                                                             AS tyyp,
-           l.properties::JSONB ->> 'valid'                                    AS valid,
-           coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1), '')::CHAR(1) AS tp_req,
-           coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1), '')::CHAR(1) AS tt_req,
-           coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1), '')::CHAR(1)  AS a_req,
-           coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1), '')::CHAR(1) AS rv_req
+    SELECT
+        l.kood,
+        l.nimetus,
+        l.muud,
+        l.tun1                                                             AS tp,
+        l.tun2                                                             AS tegev,
+        l.tun3                                                             AS allikas,
+        l.tun4                                                             AS rahavoog,
+        l.tun5                                                             AS tyyp,
+        l.properties::JSONB ->> 'valid'                                    AS valid,
+        coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1), '')::CHAR(1) AS tp_req,
+        coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1), '')::CHAR(1) AS tt_req,
+        coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1), '')::CHAR(1)  AS a_req,
+        coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1), '')::CHAR(1) AS rv_req
     INTO v_konto_d
-    FROM libs.library l
-    WHERE l.library = 'KONTOD'
+    FROM
+        libs.library l
+    WHERE
+          l.library = 'KONTOD'
       AND l.kood::TEXT = l_db::TEXT
       AND status <> 3
     LIMIT 1;
@@ -164,23 +183,26 @@ BEGIN
 
     -- kontod
 -- konto kehtivus (K)
-    SELECT l.kood,
-           l.nimetus,
-           l.muud,
-           l.tun1                                                             AS tp,
-           l.tun2                                                             AS tegev,
-           l.tun3                                                             AS allikas,
-           l.tun4                                                             AS rahavoog,
-           l.properties::JSONB ->> 'tyyp'                                     AS tyyp,
-           l.properties::JSONB ->> 'valid'                                    AS valid,
-           coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1), '')::CHAR(1) AS tp_req,
-           coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1), '')::CHAR(1) AS tt_req,
-           coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1), '')::CHAR(1)  AS a_req,
-           coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1), '')::CHAR(1) AS rv_req
+    SELECT
+        l.kood,
+        l.nimetus,
+        l.muud,
+        l.tun1                                                             AS tp,
+        l.tun2                                                             AS tegev,
+        l.tun3                                                             AS allikas,
+        l.tun4                                                             AS rahavoog,
+        l.properties::JSONB ->> 'tyyp'                                     AS tyyp,
+        l.properties::JSONB ->> 'valid'                                    AS valid,
+        coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1), '')::CHAR(1) AS tp_req,
+        coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1), '')::CHAR(1) AS tt_req,
+        coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1), '')::CHAR(1)  AS a_req,
+        coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1), '')::CHAR(1) AS rv_req
 
     INTO v_konto_k
-    FROM libs.library l
-    WHERE l.library = 'KONTOD'
+    FROM
+        libs.library l
+    WHERE
+          l.library = 'KONTOD'
       AND l.kood::TEXT = l_kr::TEXT
       AND status <> 3
     LIMIT 1;
@@ -353,7 +375,6 @@ BEGIN
         END IF;
     END IF;
 
-
     -- Kreedit
 
     IF v_konto_k.kood IS NULL OR public.empty(l_kr) OR char_length(l_kr) < 6
@@ -399,8 +420,17 @@ BEGIN
     END IF;
 
     -- контроль TT кода
-    IF not empty(coalesce(l_tt,'')) and not exists (select id from libs.library
-                                                      where kood =  l_tt  and library.library = 'TEGEV' and status < 3 ) then
+    IF not empty(coalesce(l_tt, '')) and not exists
+    (
+        select
+            id
+        from
+            libs.library
+        where
+              kood = l_tt
+          and library.library = 'TEGEV'
+          and status < 3
+    ) then
 
         lcMsg1 = 'TEGEVUSALA, kood (' || l_tt || ') registris puudub;';
         l_msg = l_msg + lcMsg1;
@@ -422,8 +452,17 @@ BEGIN
     END IF;
 
     -- контроль Allikas кода
-    IF not empty(coalesce(l_allikas,'')) and not exists (select id from libs.library
-                                                    where kood =  l_allikas  and library.library = 'ALLIKAD' and status < 3 ) then
+    IF not empty(coalesce(l_allikas, '')) and not exists
+    (
+        select
+            id
+        from
+            libs.library
+        where
+              kood = l_allikas
+          and library.library = 'ALLIKAD'
+          and status < 3
+    ) then
 
         lcMsg1 = 'Allikas, kood (' || l_allikas || ') registris puudub;';
         l_msg = l_msg + lcMsg1;
@@ -533,6 +572,7 @@ BEGIN
         END IF;
     END IF;
 
+
     IF lnTPD = 1
     THEN
         l_msg = l_msg + 'TP-D ';
@@ -591,6 +631,11 @@ BEGIN
         THEN
             is_error = 0;
         END IF;
+
+        if (left(l_db, 6) = '888888' or left(l_kr, 6) = '888888' ) and l_rahavoog = '12' then
+            -- частичное списание
+            is_error = 0;
+        end if;
         IF is_error = 1
         THEN
             l_msg = l_msg + ' DB konto on vale, see peab olema vordne kontodega 61xxx  ';
@@ -598,11 +643,14 @@ BEGIN
     END IF;
 
 -- allikas, kehtivus
-    SELECT l.kood,
-           (l.properties::JSONB ->> 'valid')::DATE AS valid
+    SELECT
+        l.kood,
+        (l.properties::JSONB ->> 'valid')::DATE AS valid
     INTO v_lib
-    FROM libs.library l
-    WHERE l.library = 'ALLIKAD'
+    FROM
+        libs.library l
+    WHERE
+          l.library = 'ALLIKAD'
       AND l.kood::TEXT = l_allikas::TEXT
       AND l.status <> 3
     LIMIT 1;
@@ -616,11 +664,14 @@ BEGIN
     END IF;
 
 -- artikkel, kehtivus
-    SELECT l.kood,
-           (l.properties::JSONB ->> 'valid')::DATE AS valid
+    SELECT
+        l.kood,
+        (l.properties::JSONB ->> 'valid')::DATE AS valid
     INTO v_lib
-    FROM libs.library l
-    WHERE l.library = 'TULUDEALLIKAD'
+    FROM
+        libs.library l
+    WHERE
+          l.library = 'TULUDEALLIKAD'
       AND l.kood::TEXT = l_eelarve::TEXT
       AND l.status <> 3
     LIMIT 1;
@@ -634,8 +685,17 @@ BEGIN
     END IF;
 
     -- контроль Artikkel кода
-    IF not empty(coalesce(l_eelarve,'')) and not exists (select id from libs.library
-                                                         where kood =  l_eelarve  and library.library = 'TULUDEALLIKAD' and status < 3 ) then
+    IF not empty(coalesce(l_eelarve, '')) and not exists
+    (
+        select
+            id
+        from
+            libs.library
+        where
+              kood = l_eelarve
+          and library.library = 'TULUDEALLIKAD'
+          and status < 3
+    ) then
 
         lcMsg1 = 'Artikkel, kood (' || l_eelarve || ') registris puudub;';
         l_msg = l_msg + lcMsg1;
@@ -644,11 +704,14 @@ BEGIN
 
 
 -- tegev, kehtivus
-    SELECT l.kood,
-           (l.properties::JSONB ->> 'valid')::DATE AS valid
+    SELECT
+        l.kood,
+        (l.properties::JSONB ->> 'valid')::DATE AS valid
     INTO v_lib
-    FROM libs.library l
-    WHERE l.library = 'TEGEV'
+    FROM
+        libs.library l
+    WHERE
+          l.library = 'TEGEV'
       AND l.kood::TEXT = l_tt::TEXT
       AND l.status <> 3
     LIMIT 1;
@@ -662,11 +725,14 @@ BEGIN
     END IF;
 
 -- Rahavoog, kehtivus
-    SELECT l.kood,
-           (l.properties::JSONB ->> 'valid')::DATE AS valid
+    SELECT
+        l.kood,
+        (l.properties::JSONB ->> 'valid')::DATE AS valid
     INTO v_lib
-    FROM libs.library l
-    WHERE l.library = 'RAHA'
+    FROM
+        libs.library l
+    WHERE
+          l.library = 'RAHA'
       AND l.kood::TEXT = l_rahavoog::TEXT
       AND l.status <> 3
     LIMIT 1;

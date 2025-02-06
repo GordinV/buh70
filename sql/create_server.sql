@@ -2,49 +2,65 @@ drop EXTENSION postgres_fdw  CASCADE ;
 
 CREATE EXTENSION postgres_fdw;
 
-CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '213.184.47.198', dbname 'narvalv', port '5436');
+CREATE SERVER dbuus_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '80.235.127.119', dbname 'db', port '5438');
 
-CREATE SERVER test_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '213.184.47.198', dbname 'narvalv', port '5436');
+--CREATE SERVER test_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '213.184.47.198', dbname 'narvalv', port '5436');
 
 
 CREATE USER MAPPING FOR vlad
-SERVER db_narva_ee
+SERVER dbuus_narva_ee
 OPTIONS (user 'vlad', password 'Vlad490710');
 
-CREATE USER MAPPING FOR vlad
+/*CREATE USER MAPPING FOR vlad
   SERVER dbarch_narva_ee
   OPTIONS (user 'vlad', password 'Vlad490710');
+*/
 
 
-/*
-CREATE FOREIGN TABLE remote_objekt (
-  id serial NOT NULL,
-  libid integer NOT NULL,
-  asutusid integer NOT NULL,
-  parentid integer NOT NULL,
-  nait01 numeric(14,4) NOT NULL DEFAULT 0,
-  nait02 numeric(14,4) NOT NULL DEFAULT 0,
-  nait03 numeric(14,4) NOT NULL DEFAULT 0,
-  nait04 numeric(14,4) NOT NULL DEFAULT 0,
-  nait05 numeric(14,4) NOT NULL DEFAULT 0,
-  nait06 numeric(14,4) NOT NULL DEFAULT 0,
-  nait07 numeric(14,4) NOT NULL DEFAULT 0,
-  nait08 numeric(14,4) NOT NULL DEFAULT 0,
-  nait09 numeric(14,4) NOT NULL DEFAULT 0,
-  nait10 numeric(14,4) NOT NULL DEFAULT 0,
-  nait11 numeric(14,4) NOT NULL DEFAULT 0,
-  nait12 numeric(14,4) NOT NULL DEFAULT 0,
-  nait13 numeric(14,4) NOT NULL DEFAULT 0,
-  nait14 numeric(14,4) NOT NULL DEFAULT 0,
-  nait15 numeric(14,4) NOT NULL DEFAULT 0,
-  muud text
+CREATE FOREIGN TABLE remote_doc (
+    id integer ,
+    created timestamp,
+    lastupdate timestamp,
+    doc_type_id integer,
+    bpm jsonb,
+    history jsonb,
+    status integer DEFAULT 0,
+    docs_ids integer[],
+    rigths jsonb,
+    rekvid integer
 )
-SERVER db_narva_ee
-OPTIONS (schema_name 'public', table_name 'objekt');
+SERVER dbuus_narva_ee
+OPTIONS (schema_name 'docs', table_name 'doc');
+
+CREATE FOREIGN TABLE remote_pv_oper (
+    id integer ,
+    parentid integer ,
+    pv_kaart_id integer,
+    nomid integer,
+    liik integer,
+    kpv date,
+    summa numeric(12,4),
+    muud text ,
+    kood1 character varying(20) ,
+    kood2 character varying(20) ,
+    kood3 character varying(20) ,
+    kood4 character varying(20),
+    kood5 character varying(20),
+    konto character varying(20),
+    tp character varying(20),
+    asutusid integer ,
+    tunnus character varying(20),
+    proj character varying(20),
+    journalid integer,
+    doklausid integer,
+    properties jsonb
+    )
+    SERVER dbuus_narva_ee
+    OPTIONS (schema_name 'docs', table_name 'pv_oper');
 
 
 
-
-select * from remote_objekt
-
+/*select * from remote_pv_oper
+         where pv_kaart_id =203305
+         limit 10
 */

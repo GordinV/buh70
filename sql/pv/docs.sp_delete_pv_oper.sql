@@ -16,6 +16,7 @@ DECLARE
     DOC_STATUS      INTEGER = 3; -- документ удален
     l_prev_grupp_id INTEGER; -- вернем обратно прежнее значение группы и конто
     l_prev_konto    TEXT;
+    l_seotud_pv_oper integer;
 
 BEGIN
 
@@ -25,7 +26,10 @@ BEGIN
            po.pv_kaart_id,
            (l.properties :: JSONB ->> 'gruppid') :: INTEGER AS grupp_id,
            po.properties ->> 'konto'                        AS prev_po_konto,
-           po.properties ->> 'prev_grupp_id'                AS prev_po_grupp_id
+           po.properties ->> 'prev_grupp_id'                AS prev_po_grupp_id,
+           po.liik,
+           po.kood3 as rv,
+           po.kpv
     INTO v_doc
     FROM docs.doc d
              INNER JOIN docs.pv_oper po ON po.parentid = d.id
@@ -65,12 +69,7 @@ BEGIN
     --	ids =  v_doc.rigths->'delete';
     IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
     THEN
-        RAISE NOTICE 'У пользователя нет прав на удаление';
-        error_code = 4;
-        error_message = 'Ei saa kustuta dokument. Puudub õigused';
-        result = 0;
-        RETURN;
-
+        RAISE exception 'Viga: Ei saa kustuta dokument. Puudub õigused';
     END IF;
 
     -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
@@ -168,6 +167,22 @@ BEGIN
 
     -- перерасчет сальдо
     PERFORM docs.sp_recalc_pv_jaak(v_doc.pv_kaart_id);
+
+    -- если это операция частичного списания, то удалем связанный износ
+    if v_doc.liik = 3 and coalesce(v_doc.rv,'') = '12' then
+        -- ищем операцию
+        l_seotud_pv_oper  = (select po.parentid
+        from docs.pv_oper po
+        where parentid in (select unnest(v_doc.docs_ids))
+        and po.liik = 2
+        and po.kood3  = '12'
+        and po.kpv = v_doc.kpv limit 1);
+
+        if l_seotud_pv_oper is not null then
+            -- удаляем
+            PERFORM docs.sp_delete_pv_oper(user_id, l_seotud_pv_oper);
+        end if;
+    end if;
 
     result = 1;
     RETURN;

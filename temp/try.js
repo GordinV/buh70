@@ -1,7 +1,19 @@
-let today =   new Date();
-let aasta = '2023';
-let kuu = '01';
-let paev = '01';
-let kpv_start =
+const _ = require('lodash');
+const obj = [{
+    isikukood: '36708052213',
+    nimi:'Ivanov Deniss',
+    tululiik:'10'
+},{
+    isikukood: '36708052213',
+    nimi:'Ivanov Deniss',
+    tululiik:'10'
+}];
 
-console.log(today, aasta, kpv_start);
+let tuluLiigid = ['10','17','33'];
+
+let tl = obj.filter(kiri => {
+
+    return tuluLiigid.indexOf(kiri.tululiik) !== -1;
+})
+
+console.log(tl)

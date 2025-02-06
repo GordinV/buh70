@@ -56,9 +56,10 @@ BEGIN
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
+
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
+        RAISE exception 'Viga: User not found %', user;
         RETURN 0;
     END IF;
 
@@ -121,13 +122,6 @@ BEGIN
     END IF;
 
     RETURN lib_id;
-
-EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            RETURN 0;
-
 
 END;
 $BODY$

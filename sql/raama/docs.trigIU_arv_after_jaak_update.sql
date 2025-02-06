@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION docs.trigIU_arv_after_jaak_update()
   RETURNS trigger AS
 $BODY$
 begin
-	perform docs.sp_update_arv_jaak(new.id);
+--	perform docs.sp_update_arv_jaak(new.id);
 	return null;
 end; 
 $BODY$

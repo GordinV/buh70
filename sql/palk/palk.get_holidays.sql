@@ -7,7 +7,19 @@ $$
 DECLARE
     l_kpv_alg  DATE = params ->> 'alg_kpv';
     l_kpv_lopp DATE = params ->> 'lopp_kpv';
+    l_aasta integer = params ->> 'aasta';
+    l_kuu integer = params ->>'kuu';
 BEGIN
+    -- если не передан параметер alg_kpv
+    if l_kpv_alg is null then
+        l_kpv_alg = date(l_aasta, l_kuu, 01);
+    end if;
+
+    -- если не передан параметер lopp_kpv
+    if l_kpv_lopp is null then
+        l_kpv_lopp = gomonth(l_kpv_alg,1) - 1;
+    end if;
+
 
     result = coalesce((SELECT count(id)
                        FROM cur_tahtpaevad t

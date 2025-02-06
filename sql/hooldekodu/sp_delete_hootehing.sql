@@ -13,13 +13,16 @@ DECLARE
     v_doc   RECORD;
     l_mk_id INTEGER;
 BEGIN
-    SELECT l.*,
-           u.ametnik AS user_name,
-           u.rekvid  AS kasutaja_rekvid
+    SELECT
+        l.*,
+        u.ametnik AS user_name,
+        u.rekvid  AS kasutaja_rekvid
     INTO v_doc
-    FROM hooldekodu.hootehingud l
-             LEFT OUTER JOIN ou.userid u ON u.id = userid
-    WHERE l.id = doc_id;
+    FROM
+        hooldekodu.hootehingud        l
+            LEFT OUTER JOIN ou.userid u ON u.id = userid
+    WHERE
+        l.id = doc_id;
 
     IF v_doc IS NULL
     THEN
@@ -30,11 +33,21 @@ BEGIN
 
     END IF;
 
-    IF NOT exists(SELECT id
-                  FROM ou.userid u
-                  WHERE id = userid
-                    AND (u.rekvid = v_doc.kasutaja_rekvid OR v_doc.kasutaja_rekvid IS NULL OR v_doc.kasutaja_rekvid = 0)
-        )
+    if not ou.fnc_aasta_kontrol(v_doc.rekvid, v_doc.kpv) then
+        raise exception 'Viga, period on kinni';
+    end if;
+
+
+    IF NOT exists
+    (
+        SELECT
+            id
+        FROM
+            ou.userid u
+        WHERE
+              id = userid
+          AND (u.rekvid = v_doc.kasutaja_rekvid OR v_doc.kasutaja_rekvid IS NULL OR v_doc.kasutaja_rekvid = 0)
+    )
     THEN
 
         error_code = 5;
@@ -47,27 +60,35 @@ BEGIN
 
 
     UPDATE hooldekodu.hootehingud
-    SET status = 3
-    WHERE id = doc_id;
+    SET
+        status = 3
+    WHERE
+        id = doc_id;
 
     -- удаляем связанные документы
     IF v_doc.allikas = 'TASKURAHA' AND v_doc.summa < 0
     THEN
-        SELECT mk.parentid
+        SELECT
+            mk.parentid
         INTO l_mk_id
-        FROM docs.mk1 mk1
-                 INNER JOIN docs.mk mk ON mk.id = mk1.parentid
-        WHERE mk1.journalid = v_doc.journalid
+        FROM
+            docs.mk1               mk1
+                INNER JOIN docs.mk mk ON mk.id = mk1.parentid
+        WHERE
+            mk1.journalid = v_doc.journalid
         LIMIT 1;
 
         IF l_mk_id IS NOT NULL
         THEN
             PERFORM docs.sp_delete_mk(userid, l_mk_id);
         ELSE
-            SELECT k1.parentid
+            SELECT
+                k1.parentid
             INTO l_mk_id
-            FROM docs.korder1 k1
-            WHERE k1.journalid = v_doc.journalid
+            FROM
+                docs.korder1 k1
+            WHERE
+                k1.journalid = v_doc.journalid
             LIMIT 1;
 
             PERFORM docs.sp_delete_korder(userid, l_mk_id);

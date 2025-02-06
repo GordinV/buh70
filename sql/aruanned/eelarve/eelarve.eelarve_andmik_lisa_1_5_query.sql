@@ -15,7 +15,7 @@ DECLARE
     l_rekv_id INTEGER = CASE WHEN l_rekvid = 63 AND coalesce(l_kond, 0) = 1 THEN 999 ELSE l_rekvid END;
 BEGIN
 
---    DROP TABLE IF EXISTS tmp_andmik;
+    DROP TABLE IF EXISTS tmp_andmik;
 
     CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik (
         idx                TEXT,
@@ -462,16 +462,16 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, I
 
 /*
 select * from (
-    SELECT * from eelarve.eelarve_andmik_lisa_1_5_query(DATE(2024, 01, 31), 132, 0)
+    SELECT * from eelarve.eelarve_andmik_lisa_1_5_query(DATE(2024, 09, 30), 63, 0)
     ) qry
-where artikkel like  '3223%'
+where artikkel like  '38253%'
 or tegev like '07240%'
 
 1413729.28
 
 SELECT *
 FROM tmp_andmik
-WHERE artikkel like '3223%'
+WHERE artikkel like '38253%'
 and aasta = 2024
   AND tyyp = 2;
 

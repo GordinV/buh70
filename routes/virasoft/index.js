@@ -9,6 +9,7 @@ module.exports = async (req, res) => {
     let rows = [];
     let file = req.body;
 
+
     // контроль структуры
     let error = '';
 
@@ -56,6 +57,7 @@ module.exports = async (req, res) => {
             result: 0,
             data: []
         };
+
         if (rows.length && !returnObject.error_message) {
             // сохраняем
 

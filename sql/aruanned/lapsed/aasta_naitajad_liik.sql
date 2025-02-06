@@ -86,6 +86,7 @@ FROM (WITH rekv_ids AS (SELECT r.rekv_id
                               (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('ARV'))
                           and a.properties ->> 'alus_arve_id' is null -- кредитовые счета убираем
                           AND CASE
+                                  when a.properties ->> 'kreedit_arve_id' is not null then false -- выкинуть аннулированный счет
                                   WHEN a.properties ->> 'doc_kreedit_arved' IS NOT NULL AND a.summa > 0 THEN TRUE
                                   WHEN a.properties ->> 'doc_kreedit_arved' IS NULL THEN TRUE
                                   ELSE FALSE END
@@ -139,7 +140,7 @@ GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad_liik(INTEGER, DATE, TEXT, TEXT, 
 
 /*
 SELECT *
-FROM lapsed.aasta_naitajad_liik(84, '2024-09-30'::date, '', '',0) a
+FROM lapsed.aasta_naitajad_liik(72, '2024-10-31'::date, '', '',0) a
 left outer join libs.library l on l.kood = a.tyyp and l.rekvid = a.rekvid and l.library = 'KOOLITUSE_TYYP' and status <> 3
 where liik = 'Muud'
 order by tyyp, liik

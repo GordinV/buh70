@@ -91,6 +91,9 @@ BEGIN
         RETURN;
     END IF;
 
+    if not ou.fnc_aasta_kontrol(l_rekvid, l_kpv) then
+        raise exception 'Viga, period on kinni';
+    end if;
 
     SELECT j.pension_85, j.vara, j.muud
     INTO l_isiku_jaak_85, l_isiku_jaak_vara, l_isiku_jaak_muud

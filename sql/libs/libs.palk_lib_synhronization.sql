@@ -55,7 +55,8 @@ BEGIN
                       FROM libs.library l
                       WHERE rekvid = v_all_asutus.childid
                         AND l.kood = v_lib.kood
-                        AND l.library = v_lib.library);
+                        and l.status < 3
+                        AND l.library = v_lib.library limit 1);
 
       SELECT coalesce(l_all_lib_id, 0)::INTEGER AS id,
              v_lib.kood,

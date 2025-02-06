@@ -44,7 +44,6 @@ DECLARE
     l_SM_maksustav        INTEGER         = coalesce((params ->> 'sm_maksustav') :: INTEGER, 1); -- облагается соц. налогом
     l_tasuliik            INTEGER         = array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK');
     l_koormus             NUMERIC         = 100;
-
     tdperiod              DATE;
     l_hours               NUMERIC(20, 10) = 0;
     l_rate                NUMERIC(20, 10); -- bruttopalk
@@ -55,7 +54,7 @@ DECLARE
     l_kasutatud_mvt       NUMERIC(14, 4)  = 0;
     l_isiku_mvt           NUMERIC(14, 4)  = 0; -- isiku kasutatud mvt
 
-    l_PM_maar             NUMERIC(8, 2)   = 2;
+    l_PM_maar             NUMERIC(8, 2)   = 2; -- isiku PM määr, võib 0, 2,  4, 6%
     l_TKI_maar            NUMERIC(8, 2)   = 1.6;
     l_TKA_maar            NUMERIC(8, 2)   = 0.8;
     l_SM_maar             NUMERIC(8, 2)   = 33;
@@ -69,11 +68,17 @@ DECLARE
     l_tulubaas            NUMERIC         = 0;
     l_pensionari_tulubaas NUMERIC         = 0;
     l_toopaev             NUMERIC         = 8;
-    l_rekvid              INTEGER;
+    l_rekvid              INTEGER         = (
+                                                select tl.rekvid
+                                                from
+                                                    palk.tooleping tl
+                                                where
+                                                    id = l_lepingid
+                                                limit 1
+                                            );
     l_isik_id             INTEGER;
     l_isikukood           TEXT;
     l_kuupalk             INTEGER;
-
     l_tulud_kokku         NUMERIC; -- temp
     is_pm                 NUMERIC         = 1;
     is_tki                NUMERIC         = 1;
@@ -81,95 +86,122 @@ DECLARE
     l_tahtpaeva_tunnid    NUMERIC         = 0;
     l_work_days           INTEGER;
     kas_pensionar         BOOLEAN         = FALSE;
+    v_palk_config         record;
 
 BEGIN
+    -- уточняем ставки налогов
 
     IF l_lepingid IS NOT NULL
     THEN
-        SELECT t.toopaev,
-               pc.minpalk,
-               pc.tulubaas,
-               pc.pensionari_tulubaas,
-               t.rekvid,
-               CASE
-                   WHEN t.algab > l_kuu_alg AND month(t.algab) = month(l_kpv) AND
-                        year(t.algab) = year(l_kpv)
-                       THEN t.algab
-                   ELSE l_kuu_alg END,
-               CASE
-                   WHEN t.lopp IS NOT NULL AND t.lopp < l_kuu_lopp AND month(t.lopp) = month(l_kpv) AND
-                        year(t.lopp) = year(l_kpv)
-                       THEN t.lopp
-                   ELSE l_kuu_lopp END,
-               t.tasuliik,
-               t.koormus,
-               t.palk,
-               t.parentid,
-               t.kuupalk,
-               t.isikukood
-        INTO l_toopaev, l_min_palk, l_tulubaas, l_pensionari_tulubaas, l_rekvid, l_kuu_alg, l_kuu_lopp, l_tasuliik, l_koormus, l_palk_summa, l_isik_id, l_kuupalk, l_isikukood
-        FROM palk.com_toolepingud t
-                 LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
-        WHERE t.id = l_lepingid;
+        SELECT
+            t.toopaev,
+            pc.minpalk,
+            pc.tulubaas,
+            pc.pensionari_tulubaas,
+            coalesce(pc.tki, l_TKI_maar),
+            coalesce(pc.tka, l_TKA_maar),
+            coalesce(pc.tm, l_TM_maar),
+            coalesce(pc.sm, l_SM_maar),
+            t.rekvid,
+            CASE
+                WHEN t.algab > l_kuu_alg AND month(t.algab) = month(l_kpv) AND
+                     year(t.algab) = year(l_kpv)
+                    THEN t.algab
+                ELSE l_kuu_alg END,
+            CASE
+                WHEN t.lopp IS NOT NULL AND t.lopp < l_kuu_lopp AND month(t.lopp) = month(l_kpv) AND
+                     year(t.lopp) = year(l_kpv)
+                    THEN t.lopp
+                ELSE l_kuu_lopp END,
+            t.tasuliik,
+            t.koormus,
+            t.palk,
+            t.parentid,
+            t.kuupalk,
+            t.isikukood
+        INTO l_toopaev, l_min_palk, l_tulubaas, l_pensionari_tulubaas, l_TKI_maar, l_TKA_maar,l_TM_maar,l_SM_maar, l_rekvid, l_kuu_alg, l_kuu_lopp, l_tasuliik, l_koormus, l_palk_summa, l_isik_id, l_kuupalk, l_isikukood
+        FROM
+            palk.com_toolepingud                 t
+                LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
+        WHERE
+            t.id = l_lepingid;
 
         -- parametrid puuduvad, võttame kõik andmebaasist
         -- palk kaart
-        SELECT pk.percent_,
-               pk.summa,
-               NOT empty(pk.alimentid),
-               pk.round,
-               pk.tund,
-               pk.tululiik,
-               pk.liik
+        SELECT
+            pk.percent_,
+            pk.summa,
+            NOT empty(pk.alimentid),
+            pk.round,
+            pk.tund,
+            pk.tululiik,
+            pk.liik
         INTO is_percent, l_pk_summa, is_alimentid, l_round, l_tund, l_tululiik
-        FROM palk.cur_palk_kaart pk
-        WHERE pk.lepingid = l_lepingid
+        FROM
+            palk.cur_palk_kaart pk
+        WHERE
+              pk.lepingid = l_lepingid
           AND pk.libId = l_libId;
 
-        SELECT CASE l_tund
-                   WHEN 1 --'KÕIK'
-                       THEN kokku
-                   WHEN 2 --'PÄEVAD'
-                       THEN paev
-                   WHEN 3 -- 'ÕHTUL'
-                       THEN ohtu
-                   WHEN 4 --'ÖÖSEL'
-                       THEN oo
-                   WHEN 5 --'PUHKUS'
-                       THEN tahtpaev
-                   WHEN 6 --'PÜHAPAEVAL'
-                       THEN puhapaev
-                   WHEN 7 --'ÜLEAJATÖÖ'
-                       THEN uleajatoo
-                   END AS tunnid,
-               t.tahtpaeva_tunnid
+        SELECT
+            CASE l_tund
+                WHEN 1 --'KÕIK'
+                    THEN kokku
+                WHEN 2 --'PÄEVAD'
+                    THEN paev
+                WHEN 3 -- 'ÕHTUL'
+                    THEN ohtu
+                WHEN 4 --'ÖÖSEL'
+                    THEN oo
+                WHEN 5 --'PUHKUS'
+                    THEN tahtpaev
+                WHEN 6 --'PÜHAPAEVAL'
+                    THEN puhapaev
+                WHEN 7 --'ÜLEAJATÖÖ'
+                    THEN uleajatoo
+                END AS tunnid,
+            t.tahtpaeva_tunnid
         INTO l_tunnid_kokku, l_tahtpaeva_tunnid
-        FROM palk.cur_palk_taabel t
-        WHERE lepingId = l_lepingid
+        FROM
+            palk.cur_palk_taabel t
+        WHERE
+              lepingId = l_lepingid
           AND kuu = month(l_kpv)
           AND aasta = year(l_kpv);
 
     END IF;
 
     -- проверим на наличие в карте ПН
-    IF NOT exists(SELECT 1
-                  FROM palk.palk_kaart pk
-                           INNER JOIN com_palklib l ON l.id = pk.libid
-                  WHERE pk.lepingid = l_lepingid
-                    AND pk.status = 1
-                    AND l.liik = 8)
+    IF NOT exists
+    (
+        SELECT
+            1
+        FROM
+            palk.palk_kaart            pk
+                INNER JOIN com_palklib l ON l.id = pk.libid
+        WHERE
+              pk.lepingid = l_lepingid
+          AND pk.status = 1
+          AND l.liik = 8
+    )
     THEN
         is_pm = 0;
     END IF;
 
     -- проверим на наличие в карте TKI
-    IF NOT exists(SELECT 1
-                  FROM palk.palk_kaart pk
-                           INNER JOIN com_palklib l ON l.id = pk.libid
-                  WHERE pk.lepingid = l_lepingid
-                    AND pk.status = 1
-                    AND l.liik = 7
-                    AND (l.asutusest IS NULL OR empty(l.asutusest) OR l.asutusest::TEXT = '0'))
+    IF NOT exists
+    (
+        SELECT
+            1
+        FROM
+            palk.palk_kaart            pk
+                INNER JOIN com_palklib l ON l.id = pk.libid
+        WHERE
+              pk.lepingid = l_lepingid
+          AND pk.status = 1
+          AND l.liik = 7
+          AND (l.asutusest IS NULL OR empty(l.asutusest) OR l.asutusest::TEXT = '0')
+    )
     THEN
         is_tki = 0;
 --    l_TKA_maar = 0;
@@ -182,8 +214,10 @@ BEGIN
         l.tun4 * l_TKI_maar AS tki_maar,
         l.tun5              AS pm_maksustav
     INTO l_TM_maar, l_SM_maksustav, l_TKI_maar, l_PM_maksustav
-    FROM libs.library l
-    WHERE LIBRARY = 'MAKSUKOOD'
+    FROM
+        libs.library l
+    WHERE
+          LIBRARY = 'MAKSUKOOD'
       AND l.kood = l_tululiik
       AND l.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
@@ -202,16 +236,21 @@ BEGIN
             -- установим 1 день для получения часов в месяц
             l_kuu_alg = make_date(year(l_kuu_alg), month(l_kuu_alg), 1);
 
-            SELECT row_to_json(row)
+            SELECT
+                row_to_json(row)
             INTO l_params
-            FROM (SELECT l_kpv           AS kpv,
-                         month(l_kpv)    AS kuu,
-                         year(l_kpv)     AS aasta,
-                         l_lepingid      AS lepingid,
-                         TRUE            AS kas_tahtpaevad,
-                         l_toopaev       AS toopaev,
-                         day(l_kuu_alg)  AS paev,
-                         day(l_kuu_lopp) AS lopp) row;
+            FROM
+                (
+                    SELECT
+                        l_kpv           AS kpv,
+                        month(l_kpv)    AS kuu,
+                        year(l_kpv)     AS aasta,
+                        l_lepingid      AS lepingid,
+                        TRUE            AS kas_tahtpaevad,
+                        l_toopaev       AS toopaev,
+                        day(l_kuu_alg)  AS paev,
+                        day(l_kuu_lopp) AS lopp
+                ) row;
 
 
             l_hours = palk.get_work_hours(l_params :: JSONB);
@@ -264,41 +303,86 @@ BEGIN
     END IF;
 
     --TKI arvestus
-    SELECT row_to_json(row)
+    SELECT
+        row_to_json(row)
     INTO l_params
-    FROM (SELECT summa      AS alus_summa,
-                 l_TKI_maar AS summa,
-                 7          AS liik) row;
+    FROM
+        (
+            SELECT
+                summa      AS alus_summa,
+                l_TKI_maar AS summa,
+                7          AS liik
+        ) row;
 
-    tki = is_tki * f_round((SELECT qry.summa
-                            FROM palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry), l_round);
+    tki = is_tki * f_round((
+                               SELECT
+                                   qry.summa
+                               FROM
+                                   palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry
+                           ), l_round);
 
     selg = coalesce(selg, '') + 'TKI arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_TKI_maar) :: TEXT + '*' +
            l_TKI_maar :: TEXT + '*' + is_tki::TEXT + ltEnter;
 
     -- PM arvestus
-    SELECT row_to_json(row)
-    INTO l_params
-    FROM (SELECT summa     AS alus_summa,
-                 l_PM_maar AS summa,
-                 8         AS liik) row;
+    -- уточняем ставку PM
+    select
+        max(pk.summa) as maar
+    into l_PM_maar
+    from
+        palk.palk_kaart             pk
+            inner join libs.library l on l.id = pk.libid
+    where
+          pk.lepingid = l_lepingid
+      and l.properties::jsonb ->> 'liik' = '8'
+    limit 1;
 
-    pm = is_pm * f_round(coalesce((SELECT qry_pm.summa
-                                   FROM palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry_pm), 0), l_round) *
+    if (l_PM_maar is null or l_PM_maar not in (0, 2, 4, 6)) then
+        -- ошибка, ставим дефолт
+        l_PM_maar = 2;
+    end if;
+
+    SELECT
+        row_to_json(row)
+    INTO l_params
+    FROM
+        (
+            SELECT
+                l_lepingid as lepingid,
+                summa     AS alus_summa,
+                l_PM_maar AS summa,
+                8         AS liik
+        ) row;
+
+    pm = is_pm * f_round(coalesce((
+                                      SELECT
+                                          qry_pm.summa
+                                      FROM
+                                          palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry_pm
+                                  ), 0), l_round) *
          coalesce(l_PM_maksustav, 0);
 
     selg = coalesce(selg, '') + 'PM arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_PM_maar) :: TEXT + '*' +
            coalesce(l_PM_maksustav, 0) :: TEXT + '*' + is_pm:: TEXT + ltEnter;
 
     --SM arvestus
-    SELECT row_to_json(row)
+    SELECT
+        row_to_json(row)
     INTO l_params
-    FROM (SELECT summa      AS alus_summa,
-                 l_SM_maar  AS summa,
-                 l_min_sots AS minsots) row;
+    FROM
+        (
+            SELECT
+                summa      AS alus_summa,
+                l_SM_maar  AS summa,
+                l_min_sots AS minsots
+        ) row;
 
-    sm = f_round(coalesce((SELECT qry.summa
-                           FROM palk.sp_calc_sots(user_id, l_params :: JSON) AS qry), 0), l_round) *
+    sm = f_round(coalesce((
+                              SELECT
+                                  qry.summa
+                              FROM
+                                  palk.sp_calc_sots(user_id, l_params :: JSON) AS qry
+                          ), 0), l_round) *
          coalesce(l_SM_maksustav, 0);
 
     selg = coalesce(selg, '') + 'SM arvestus: ' + (CASE
@@ -308,15 +392,24 @@ BEGIN
            '*' + (0.01 * l_SM_maar) :: TEXT + '*' + coalesce(l_SM_maksustav, 0) :: TEXT + ltEnter;
 
     -- TKA arvestus
-    SELECT row_to_json(row)
+    SELECT
+        row_to_json(row)
     INTO l_params
-    FROM (SELECT summa      AS alus_summa,
-                 7          AS liik,
-                 0          AS asutusest,
-                 l_TKA_maar AS summa) row;
+    FROM
+        (
+            SELECT
+                summa      AS alus_summa,
+                7          AS liik,
+                0          AS asutusest,
+                l_TKA_maar AS summa
+        ) row;
 
-    tka = f_round(coalesce((SELECT qry.summa
-                            FROM palk.sp_calc_muuda(user_id, l_params :: JSON) AS qry), 0), l_round);
+    tka = f_round(coalesce((
+                               SELECT
+                                   qry.summa
+                               FROM
+                                   palk.sp_calc_muuda(user_id, l_params :: JSON) AS qry
+                           ), 0), l_round);
     selg = coalesce(selg, '') + 'TKA arvestus:' + round(summa, 2) :: TEXT +
            '*' + (0.01 * l_TKA_maar) :: TEXT + ltEnter;
 
@@ -324,14 +417,19 @@ BEGIN
     IF l_lepingid IS NOT NULL AND l_libid IS NOT NULL
     THEN
         -- get taotluse_summa
-        l_mvt_kokku = coalesce((SELECT sum(mvt.summa)
-                                FROM palk.taotlus_mvt mvt
-                                         INNER JOIN palk.com_toolepingud t ON t.id = mvt.lepingId
-                                WHERE t.parentId = l_isik_id
-                                  AND mvt.status <> 'deleted'
-                                  AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
-                                  AND alg_kpv <= l_kpv
-                                  AND lopp_kpv >= l_kpv), 0);
+        l_mvt_kokku = coalesce((
+                                   SELECT
+                                       sum(mvt.summa)
+                                   FROM
+                                       palk.taotlus_mvt                    mvt
+                                           INNER JOIN palk.com_toolepingud t ON t.id = mvt.lepingId
+                                   WHERE
+                                         t.parentId = l_isik_id
+                                     AND mvt.status <> 'deleted'
+                                     AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
+                                     AND alg_kpv <= l_kpv
+                                     AND lopp_kpv >= l_kpv
+                               ), 0);
 
         l_isiku_mvt = 0;
         l_kasutatud_mvt = 0;
@@ -339,32 +437,47 @@ BEGIN
 
         IF (l_mvt_kokku > 0)
         THEN
-            SELECT sum(po.tulubaas)                                   AS isiku_tulubaas,
-                   sum(po.tulubaas)
-                   FILTER (WHERE po.tululiik :: TEXT IN (l_tululiik)) AS kasutatud_mvt,
-                   sum(po.summa)                                      AS tulud_kokku,
-                   array_agg(po.id)
+            SELECT
+                sum(po.tulubaas)                                   AS isiku_tulubaas,
+                sum(po.tulubaas)
+                FILTER (WHERE po.tululiik :: TEXT IN (l_tululiik)) AS kasutatud_mvt,
+                sum(po.summa)                                      AS tulud_kokku,
+                array_agg(po.id)
             INTO l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku, doc_ids
-            FROM (SELECT p.summa,
-                         p.sotsmaks,
-                         p.konto,
-                         p.kpv,
-                         p.tulubaas,
-                         (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                           AS tululiik,
-                         p.period,
-                         (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks,
-                         ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
-                         p.lepingid,
-                         p.id
-                  FROM docs.doc d
-                           INNER JOIN palk.palk_oper p ON p.parentid = d.id
-                           INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
-                           INNER JOIN palk.tooleping t ON p.lepingid = t.id
-                  WHERE d.status < 3
-                    AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'PALK_OPER')
-                 ) po
-                     INNER JOIN palk.com_toolepingud t ON t.id = po.lepingId
-            WHERE t.parentid = l_isik_id
+            FROM
+                (
+                    SELECT
+                        p.summa,
+                        p.sotsmaks,
+                        p.konto,
+                        p.kpv,
+                        p.tulubaas,
+                        (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                           AS tululiik,
+                        p.period,
+                        (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks,
+                        ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                        p.lepingid,
+                        p.id
+                    FROM
+                        docs.doc                      d
+                            INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                            INNER JOIN libs.library   lib ON p.libid = lib.id AND lib.library = 'PALK'
+                            INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                    WHERE
+                          d.status < 3
+                      AND d.doc_type_id IN (
+                                               SELECT
+                                                   id
+                                               FROM
+                                                   libs.library
+                                               WHERE
+                                                     library = 'DOK'
+                                                 AND kood = 'PALK_OPER'
+                                           )
+                )                                   po
+                    INNER JOIN palk.com_toolepingud t ON t.id = po.lepingId
+            WHERE
+                t.parentid = l_isik_id
               AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
               AND po.period IS NULL
               AND po.palk_liik = 'ARVESTUSED'
@@ -373,11 +486,16 @@ BEGIN
               -- calculate only 1 tululiik
               AND year(po.kpv) = year(l_kpv)
               AND month(po.kpv) = month(l_kpv)
-              AND (l_alus_summa IS NOT NULL OR po.id NOT IN (SELECT id
-                                                             FROM palk.palk_oper
-                                                             WHERE kpv = l_kpv
-                                                               AND lepingid = l_lepingid
-                                                               AND libid = l_libId));
+              AND (l_alus_summa IS NOT NULL OR po.id NOT IN (
+                                                                SELECT
+                                                                    id
+                                                                FROM
+                                                                    palk.palk_oper
+                                                                WHERE
+                                                                      kpv = l_kpv
+                                                                  AND lepingid = l_lepingid
+                                                                  AND libid = l_libId
+                                                            ));
 
 
             -- если пенсионер, то не уменьшаем его необлагаемый миниум (применяем повышенную льготу)
@@ -416,18 +534,23 @@ BEGIN
         IF l_mvt_kokku > 0
         THEN
 
-            SELECT row_to_json(row)
+            SELECT
+                row_to_json(row)
             INTO l_params
-            FROM (SELECT summa                      AS summa,
-                         coalesce(l_mvt_kokku, 0)   AS mvt_kokku,
-                         -- should select from taotlused
-                         coalesce(l_isiku_mvt, 0)   AS kokku_kasutatud_mvt,
-                         coalesce(l_tulud_kokku, 0) AS tulud_kokku,
-                         -- enne arvestatud isiku tulud
-                         -- should select from palk.palk_oper
-                         coalesce(tki, 0)           AS tki,
-                         kas_pensionar              AS kas_pensionar,
-                         coalesce(pm, 0)            AS pm) row;
+            FROM
+                (
+                    SELECT
+                        summa                      AS summa,
+                        coalesce(l_mvt_kokku, 0)   AS mvt_kokku,
+                        -- should select from taotlused
+                        coalesce(l_isiku_mvt, 0)   AS kokku_kasutatud_mvt,
+                        coalesce(l_tulud_kokku, 0) AS tulud_kokku,
+                        -- enne arvestatud isiku tulud
+                        -- should select from palk.palk_oper
+                        coalesce(tki, 0)           AS tki,
+                        kas_pensionar              AS kas_pensionar,
+                        coalesce(pm, 0)            AS pm
+                ) row;
 
             mvt = palk.fnc_calc_mvt(l_params :: JSONB);
 
@@ -457,19 +580,21 @@ BEGIN
     summa = coalesce(summa, 0);
     -- empty result
     l_params = to_jsonb(row.*)
-               FROM (
-                        SELECT NULL                    AS doc_id,
-                               'Kehtiv makseid ei ole' AS error_message,
-                               0::INTEGER              AS error_code,
-                               summa                   AS summa,
-                               selg                    AS selg,
-                               tki:: NUMERIC           AS tki,
-                               tka::NUMERIC            AS tka,
-                               tm:: NUMERIC            AS tm,
-                               pm::NUMERIC             AS pm,
-                               sm:: NUMERIC            AS sm,
-                               mvt::NUMERIC            AS mvt
-                    ) row;
+               FROM
+                   (
+                       SELECT
+                           NULL                    AS doc_id,
+                           'Kehtiv makseid ei ole' AS error_message,
+                           0::INTEGER              AS error_code,
+                           summa                   AS summa,
+                           selg                    AS selg,
+                           tki:: NUMERIC           AS tki,
+                           tka::NUMERIC            AS tka,
+                           tm:: NUMERIC            AS tm,
+                           pm::NUMERIC             AS pm,
+                           sm:: NUMERIC            AS sm,
+                           mvt::NUMERIC            AS mvt
+                   ) row;
     data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
 
 

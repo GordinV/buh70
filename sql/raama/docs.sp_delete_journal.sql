@@ -79,6 +79,7 @@ BEGIN
         error_code = 4;
         error_message = 'Ei saa kustuta dokument. Period on kinni';
         result = 0;
+        raise exception 'Ei saa kustuta dokument. Period on kinni';
         RETURN;
     END IF;
 

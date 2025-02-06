@@ -34,6 +34,10 @@ DECLARE
     l_aasta            integer        = year(l_seisuga);
 BEGIN
 
+    if l_rekv_id is null then
+        l_rekv_id  = 119;
+    end if;
+
     if month(l_seisuga) = 1 then
         l_aasta = l_aasta - 1; -- а январе считаем за прошлый год
     end if;
@@ -50,6 +54,8 @@ BEGIN
                             end);
 
     l_lausendi_period = l_seisuga;
+    raise notice 'l_seisuga  %, l_lausendi_period %, l_rekv_id %',l_seisuga, l_lausendi_period, l_rekv_id;
+
 
     -- формируем список просроченных счетов (50%)
     -- формируем отчет и сравниваем со начислениями по счетам
@@ -115,13 +121,15 @@ BEGIN
             SELECT sum(summa)
             INTO l_summa
             FROM cur_journal j
-            WHERE deebet = l_db_konto
+            WHERE deebet in ('605030','888888')
               AND left(kreedit, 6) = left(l_kr_konto, 6)
-              and (j.selg ilike '%Ebatõenäolised%' or j.selg ilike 'Ebatoenaolised%')
+--              and (j.selg ilike '%Ebatõenäolis%' or j.selg ilike 'Ebatoenaolised%')
               AND j.id IN (SELECT unnest(d.docs_ids)
                            FROM docs.doc d
                            WHERE d.id = v_aruanne.doc_id
-                             AND j.kpv > '2023-09-01'::DATE -- с момента аннулирования маловероятных
+                             AND (j.kpv > '2023-09-01'::DATE
+                                 or j.kpv in ('2022-02-01','2022-03-01','2022-05-01','2022-01-20') and j.asutusid in (7788,49077,7617, 43278)
+                                 ) -- с момента аннулирования маловероятных
             );
 
             RAISE NOTICE 'l_summa %, v_aruanne.noude_50 %, v_aruanne.noude_100 %', l_summa, v_aruanne.noude_50, v_aruanne.noude_100;
@@ -142,8 +150,8 @@ BEGIN
                     IF exists(SELECT id
                               FROM ou.aasta
                               WHERE rekvid = v_aruanne.rekvid
-                                AND kuu = month(l_kpv)
-                                AND aasta = year(l_kpv)
+                                AND kuu = month(l_lausendi_period)
+                                AND aasta = year(l_lausendi_period)
                                 AND kinni = 1)
                     THEN
                         -- То есть тогда, если вдруг по каким-то причинам период закрыт, то алгоритм должен это учитывать и делать проводки в первом месяце открытого периода.
@@ -151,7 +159,7 @@ BEGIN
                         INTO v_aasta
                         FROM ou.aasta
                         WHERE rekvid = v_aruanne.rekvid
-                          AND aasta = year(l_kpv)
+                          AND aasta = year(l_lausendi_period)
                           AND kinni = 1
                         ORDER BY make_date(aasta, kuu, 1) DESC
                         LIMIT 1;
@@ -173,7 +181,7 @@ BEGIN
                                          WHERE parentid = v_aruanne.doc_id
                                          LIMIT 1);
 
-                    RAISE NOTICE 'kas ulekanne l_kreedit_arve_id %, v_aruanne.doc_id %, kas_saldo_ulekkane %',l_kreedit_arve_id, v_aruanne.doc_id, kas_saldo_ulekkane;
+                    RAISE NOTICE 'kas ulekanne l_kreedit_arve_id %, v_aruanne.doc_id %, kas_saldo_ulekkane %б l_lausendi_period %',l_kreedit_arve_id, v_aruanne.doc_id, kas_saldo_ulekkane, l_lausendi_period;
 
                     IF l_kreedit_arve_id IS NOT NULL AND exists(SELECT id
                                                                 FROM docs.arv
@@ -219,7 +227,8 @@ BEGIN
                                                   CASE WHEN a1.tp IS NULL OR empty(a1.tp) THEN '800699' ELSE a1.tp END AS lisa_k
                                            FROM docs.arv1 a1
                                            WHERE a1.parentid = v_aruanne.arv_id
-                                           ORDER BY summa DESC
+
+                                           ORDER BY (case when a1.tp like '014%' then 0 else 1 end * summa) DESC
                                            LIMIT 1) row;
 
 
@@ -320,7 +329,11 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.ebatoenaolised(77, '2024-10-06',4784987)
+
+
+select * from ou.rekv where id = 66
+
+SELECT docs.ebatoenaolised(66, '2024-10-06')
 from ou.rekv
 where parentid = 119
 and id  in (94)

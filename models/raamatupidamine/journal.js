@@ -122,7 +122,25 @@ const Journal = {
             not_initial_load: true
 
         },
-
+        {
+            sql: `SELECT result AS id, result, error_message, $2::integer as userId, $3::integer as rekvId
+                   FROM docs.sp_import_from_virasoft($1::JSONB)`,
+            query: null,
+            multiple: false,
+            alias: 'importDok',
+            data: [],
+            not_initial_load: true
+        },
+        //docs.updateDocLinks (2477, 6403584, '[]'::JSONB, '[6403583]'::JSONB)
+        {
+            sql: `SELECT result AS id, result, error_message
+                  FROM docs.updateDocLinks($1::integer, $2::integer,$3::JSONB, $4::JSONB)`,
+            query: null,
+            multiple: false,
+            alias: 'updateDocLinks',
+            data: [],
+            not_initial_load: true
+        },
     ],
     grid: {
         gridConfiguration: [
@@ -308,8 +326,8 @@ const Journal = {
         type: "sql",
         alias: "getLogs"
     },
-    // import from virasoft
     importDoc: {
+        comment: 'import from virasoft',
         command: `SELECT result AS id, result, error_message, $2::integer as userId, $3::integer as rekvId
                   FROM docs.sp_import_from_virasoft($1::JSONB)`, // $1 - data json, $2 - userid, $3 - rekvid
         type: 'sql',
