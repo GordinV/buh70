@@ -21,9 +21,11 @@ module.exports = function (app) {
     app.post('/print/TAOTLUS/:hash/:id', require('./eelproj/taotlus').post); //checkAuth
 
 
-// virasoft
+// virosoft
+    app.post('/virosoft/import_puudumine/', require('./virasoft/import_hl')); //checkAuth
+    app.post('/virosoft/import_tabel/', require('./virasoft/import_taabel')); //checkAuth
+    app.post('/virosoft/import_taabel/', require('./virasoft/import_taabel')); //checkAuth
     app.post('/virasoft/import/', require('./virasoft')); //checkAuth
-    app.post('/virosoft/import/', require('./virasoft')); //checkAuth
 
     // same as main
     app.get('/', require('./login').get);
@@ -131,6 +133,9 @@ module.exports = function (app) {
     app.post('/calc/loe_makse', checkAuth, require('./lapsed/loe_makse').post); //checkAuth
     app.post('/calc/ebatoenaolised', checkAuth, require('./raama/ebatoenaolised').post); //checkAuth
     app.post('/calc/importAsendusTaabel', checkAuth, require('./lapsed/importAsendusTaabel').post); //checkAuth
+    app.post('/calc/TuhistaMakseJaotamine', checkAuth, require('./lapsed/TuhistaMakseJaotamine').post); //checkAuth
+
+    //
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth
 
     app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа

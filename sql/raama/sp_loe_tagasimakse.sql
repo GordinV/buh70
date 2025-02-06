@@ -20,7 +20,6 @@ BEGIN
     -- расчет сальдо платежа
     l_tasu_jaak = docs.sp_update_mk_jaak(l_tasu_id);
 
-    RAISE NOTICE 'loe tagasi l_tasu_jaak %',l_tasu_jaak;
     IF coalesce(l_tasu_jaak, 0) <> 0
     THEN
 
@@ -58,6 +57,7 @@ BEGIN
             ORDER BY CASE WHEN mk.jaak = v_tasu.jaak THEN 0 ELSE 1 END,
                      CASE WHEN mk.maksepaev <= v_tasu.maksepaev THEN 0 ELSE 1 END, mk.maksepaev DESC, mk.id DESC
             LOOP
+                raise notice 'v_mk.id %', v_mk.id;
 
                 IF (v_mk.ettemaks + (CASE WHEN v_tasu.liik = 'VM' THEN -1 ELSE 1 END * l_tasu_jaak) > 0)
                 THEN
@@ -67,8 +67,10 @@ BEGIN
                     --в оплату пошел сальдо счета
                     l_tasu = -1 * v_mk.ettemaks;
                 END IF;
-
-                RAISE NOTICE 'ищем предоплаты l_tasu_id %,  v_mk.id %.l_tasu %',l_tasu_id, v_mk.id, l_tasu;
+                -- второй платеж меняет знак для возвратов, поправим
+                if v_tasu.liik = 'VM' and l_tasu > 0 then
+                    l_tasu = -1 * l_tasu;
+                end if;
 
                 -- вызывает оплату
                 result = docs.sp_ulekanne_ettemaks(l_tasu_id, v_mk.id, l_user_id, l_tasu);
@@ -84,13 +86,10 @@ BEGIN
                     ELSIF v_tasu.liik = 'SM' AND l_tasu < 0
                     THEN
                         -- -50 - (-50)
-                        raise notice '-50 - (-50) l_tasu_jaak %, l_tasu %', l_tasu_jaak, l_tasu;
                         l_tasu_jaak = l_tasu_jaak - l_tasu;
                     ELSE
                         l_tasu_jaak = l_tasu_jaak + l_tasu;
                     END IF;
-                    RAISE NOTICE 'l_tasu_jaak %, l_tasu %, v_tasu.liik %',l_tasu_jaak, l_tasu, v_tasu.liik;
-
                 END IF;
 
                 IF l_tasu_jaak = 0
@@ -174,7 +173,7 @@ COMMENT ON FUNCTION docs.sp_loe_tagasimakse(INTEGER, INTEGER) IS 'произво
 
 /*
 SELECT *
-FROM docs.sp_loe_tagasimakse_(5711303, 5419)
+FROM docs.sp_loe_tagasimakse_(5797021, 5397)
 
 
 DELETE

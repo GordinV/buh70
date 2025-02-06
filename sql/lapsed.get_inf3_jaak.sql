@@ -17,17 +17,19 @@ WITH arve AS (
     GROUP BY a.parentid, a.summa
 ),
      tasud AS (
-         SELECT sum(summa) AS summa
+         SELECT sum(summa) AS summa,
+                sum(case when at.pankkassa = 4 then 0 else 1 end * summa) as ilma_kreedit_arvedeta
          FROM docs.arvtasu at
          WHERE at.doc_arv_id = l_arv_id
            AND at.kpv <= l_kpv
            AND at.status < 3),
      pre_arv AS (
          SELECT (a.a_kokku - coalesce(t.summa, 0)) AS jaak,
+                (a.a_kokku - coalesce(t.ilma_kreedit_arvedeta, 0)) as jaak_ilma_kreedit_arvedeta,
                 a.a1_summa / a.a_kokku             AS inf3_osa
          FROM arve a,
               tasud t)
-SELECT round(jaak * inf3_osa, 2) AS inf3_jaak
+SELECT round(jaak_ilma_kreedit_arvedeta * inf3_osa, 2) AS inf3_jaak
 FROM pre_arv
 $BODY$ LANGUAGE SQL
     VOLATILE

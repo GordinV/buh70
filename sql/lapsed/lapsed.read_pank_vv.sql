@@ -21,10 +21,15 @@ DECLARE
     l_db_konto       TEXT    = '100100'; -- дебетовая (банк) сторона
     l_dokprop_id     INTEGER;
     l_target_user_id INTEGER = user_id;
-    l_user_kood      TEXT    = (SELECT kasutaja
-                                FROM ou.userid
-                                WHERE id = user_id
-                                LIMIT 1);
+    l_user_kood      TEXT    = (
+                                   SELECT
+                                       kasutaja
+                                   FROM
+                                       ou.userid
+                                   WHERE
+                                       id = user_id
+                                   LIMIT 1
+                               );
     l_maksja_id      INTEGER;
     l_laps_id        INTEGER;
     v_vanem          RECORD;
@@ -42,12 +47,15 @@ BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
         SELECT *
-        FROM lapsed.pank_vv v
-        WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
+        FROM
+            lapsed.pank_vv v
+        WHERE
+              timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
           AND isikukood IS NOT NULL
-        ORDER BY kpv
-                , id
+        ORDER BY
+            kpv
+          , id
         LOOP
             l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
                         ',Maksja:' || ltrim(rtrim(v_pank_vv.maksja));
@@ -57,14 +65,21 @@ BEGIN
             l_target_user_id = NULL;
             l_new_viitenr = v_pank_vv.viitenumber;
             -- ишем плательшика
-            SELECT row_to_json(row)
+            SELECT
+                row_to_json(row)
             INTO json_object
-            FROM (SELECT v_pank_vv.isikukood AS regkood,
-                         v_pank_vv.maksja    AS nimetus,
-                         v_pank_vv.iban      AS aa,
-                         'ISIK'::TEXT        AS omvorm) row;
+            FROM
+                (
+                    SELECT
+                        v_pank_vv.isikukood AS regkood,
+                        v_pank_vv.maksja    AS nimetus,
+                        v_pank_vv.iban      AS aa,
+                        'ISIK'::TEXT        AS omvorm
+                ) row;
 
-            l_maksja_id = (SELECT a.result FROM libs.create_new_asutus(user_id, json_object::JSONB) a);
+            l_maksja_id = (
+                              SELECT a.result FROM libs.create_new_asutus(user_id, json_object::JSONB) a
+                          );
 
             -- проверяем viitenumber
             -- если длина ссылки меньше 9, то это старый  номер
@@ -76,14 +91,18 @@ BEGIN
                 l_new_viitenr = ltrim(rtrim(v_pank_vv.viitenumber));
             END IF;
 
-            -- контроль на закрытые учреждения
-            IF left(l_new_viitenr, 3) IN ('081', '082', '085')
-            THEN
-                -- платеж в закрытое учреждение, перенаправляем в TP18510139
-                --'009'
-                l_new_viitenr = overlay(l_new_viitenr PLACING '009' FROM 1 FOR 3);
 
-            END IF;
+            /*            -- контроль на закрытые учреждения
+
+                        IF left(l_new_viitenr, 3) IN ('081', '082', '085')
+                        THEN
+                            -- платеж в закрытое учреждение, перенаправляем в TP18510139
+                            --'009'
+                            l_new_viitenr = overlay(l_new_viitenr PLACING '009' FROM 1 FOR 3);
+
+                        END IF;
+            */
+
 
             -- контроль длины
             IF len(l_new_viitenr) <> 10
@@ -96,22 +115,41 @@ BEGIN
             l_rekvid = left(l_new_viitenr, 3)::INTEGER;
 
             -- проверка на закрытые учреждения
-            IF l_rekvid IN (SELECT id FROM ou.rekv WHERE parentid > 999)
+            IF l_rekvid IN (
+                               SELECT id
+                               FROM ou.rekv
+                               WHERE parentid > 999
+                           )
             THEN
                 l_new_viitenr = NULL;
             END IF;
 
+            -- контроль на ошибочные ВН
+            IF left(l_new_viitenr, 3) IN ('080', '083', '081', '082', '085', '099', '094')
+            THEN
+                l_new_viitenr = NULL;
+                l_laps_id = NULL;
+            end if;
 
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
             -- проверим на наличие этого ид в бд
-            IF NOT exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
+            IF NOT exists
+            (
+                SELECT id
+                FROM lapsed.laps
+                WHERE id = l_laps_id AND staatus < 3
+            )
             THEN
                 l_laps_id = NULL;
             END IF;
 
             -- задаем признак
-            l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvid);
+            l_tunnus = (
+                           SELECT left(nimetus, 7)
+                           FROM ou.rekv
+                           WHERE id = l_rekvid
+                       );
 
 
             -- признак для закрытых учреждений
@@ -121,11 +159,18 @@ BEGIN
                 l_tunnus = '0911088';
             END IF;
 
-            IF NOT empty(coalesce((SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id), ''))
+            IF NOT empty(coalesce((
+                                      SELECT properties ->> 'eritunnus'
+                                      FROM lapsed.laps
+                                      WHERE id = l_laps_id
+                                  ), ''))
             THEN
-                l_tunnus = (SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id);
+                l_tunnus = (
+                               SELECT properties ->> 'eritunnus'
+                               FROM lapsed.laps
+                               WHERE id = l_laps_id
+                           );
             END IF;
-
 
 
 /*
@@ -138,40 +183,64 @@ BEGIN
             IF v_pank_vv.kpv::DATE < '2023-01-01'::DATE
             THEN
                 UPDATE lapsed.pank_vv v
-                SET markused = 'Kuni 01.01.2023'
-                WHERE id = v_pank_vv.id;
+                SET
+                    markused = 'Kuni 01.01.2023'
+                WHERE
+                    id = v_pank_vv.id;
 
                 l_message = coalesce(l_message, '') || ', Kuni 01.01.2023 ';
+                l_mk_id = NULL;
+            elseif l_laps_id is null then
+                UPDATE lapsed.pank_vv v
+                SET
+                    markused = 'Vale vittenumber'
+                WHERE
+                    id = v_pank_vv.id;
+                l_message = coalesce(l_message, '') || ', Vale vittenumber ';
                 l_mk_id = NULL;
 
             ELSE
 
                 -- ищем пользователя в целевом цчреждении
-                SELECT id
+                SELECT
+                    id
                 INTO l_target_user_id
-                FROM ou.userid
-                WHERE rekvid = l_rekvid
+                FROM
+                    ou.userid
+                WHERE
+                      rekvid = l_rekvid
                   AND kasutaja::TEXT = l_user_kood::TEXT
                 LIMIT 1;
 
 
                 -- ищем родителя
-                IF l_laps_id IS NOT NULL AND l_rekvid IS NOT NULL AND NOT exists(
-                        SELECT id
-                        FROM lapsed.vanemad v
-                        WHERE v.asutusid = l_maksja_id
-                          AND parentid = l_laps_id
-                    )
+                IF l_laps_id IS NOT NULL AND l_rekvid IS NOT NULL AND NOT exists
+                (
+                    SELECT
+                        id
+                    FROM
+                        lapsed.vanemad v
+                    WHERE
+                          v.asutusid = l_maksja_id
+                      AND parentid = l_laps_id
+                )
                 THEN
                     -- сохраним плательзика как родителя
                     SELECT l_laps_id AS parentid, l_maksja_id AS asutusid INTO v_vanem;
 
-                    SELECT row_to_json(row)
+                    SELECT
+                        row_to_json(row)
                     INTO json_object
-                    FROM (SELECT 0       AS id,
-                                 v_vanem AS data) row;
+                    FROM
+                        (
+                            SELECT
+                                0       AS id,
+                                v_vanem AS data
+                        ) row;
 
-                    l_vanem = (SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, l_target_user_id, l_rekvid));
+                    l_vanem = (
+                                  SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, l_target_user_id, l_rekvid)
+                              );
 
                     -- в лог о создании нового плательщика
                     IF (l_vanem IS NOT NULL AND l_vanem > 0)
@@ -196,25 +265,34 @@ BEGIN
                     l_db_konto = '10010002';
                 END IF;
 
-                l_dokprop_id = (SELECT dp.id
-                                FROM libs.dokprop dp
-                                         INNER JOIN libs.library l ON l.id = dp.parentid
-                                WHERE dp.rekvid = l_rekvid
-                                  AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                                ORDER BY registr DESC
-                                        , dp.id DESC
-                                LIMIT 1
-                );
+                l_dokprop_id = (
+                                   SELECT
+                                       dp.id
+                                   FROM
+                                       libs.dokprop                dp
+                                           INNER JOIN libs.library l ON l.id = dp.parentid
+                                   WHERE
+                                         dp.rekvid = l_rekvid
+                                     AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                                   ORDER BY
+                                       registr DESC
+                                     , dp.id DESC
+                                   LIMIT 1
+                               );
 
                 IF l_dokprop_id IS NULL
                 THEN
-                    l_dokprop_id = (SELECT id
-                                    FROM com_dokprop l
-                                    WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
-                                      AND kood LIKE 'SMK'
-                                    ORDER BY id DESC
-                                    LIMIT 1
-                    );
+                    l_dokprop_id = (
+                                       SELECT
+                                           id
+                                       FROM
+                                           com_dokprop l
+                                       WHERE
+                                             (l.rekvId = l_rekvId OR l.rekvid IS NULL)
+                                         AND kood LIKE 'SMK'
+                                       ORDER BY id DESC
+                                       LIMIT 1
+                                   );
                 END IF;
 
                 -- обнуляем счетчик найденных счетов
@@ -225,24 +303,32 @@ BEGIN
                 THEN
 
                     -- создаем параметры для расчета платежкм
-                    SELECT row_to_json(row)
+                    SELECT
+                        row_to_json(row)
                     INTO json_object
-                    FROM (SELECT l_maksja_id      AS maksja_id,
-                                 l_dokprop_id     AS dokprop_id,
-                                 l_new_viitenr    AS viitenumber,
-                                 v_pank_vv.selg   AS selg,
-                                 v_pank_vv.number AS number,
-                                 v_pank_vv.kpv    AS kpv,
-                                 v_pank_vv.aa     AS aa,
-                                 v_pank_vv.iban   AS maksja_arve,
-                                 v_pank_vv.summa  AS summa,
-                                 l_tunnus         AS tunnus) row;
+                    FROM
+                        (
+                            SELECT
+                                l_maksja_id      AS maksja_id,
+                                l_dokprop_id     AS dokprop_id,
+                                l_new_viitenr    AS viitenumber,
+                                v_pank_vv.selg   AS selg,
+                                v_pank_vv.number AS number,
+                                v_pank_vv.kpv    AS kpv,
+                                v_pank_vv.aa     AS aa,
+                                v_pank_vv.iban   AS maksja_arve,
+                                v_pank_vv.summa  AS summa,
+                                l_tunnus         AS tunnus
+                        ) row;
 
                     -- создаем платежку
 
-                    SELECT fnc.result, fnc.error_message
+                    SELECT
+                        fnc.result,
+                        fnc.error_message
                     INTO l_mk_id, l_error
-                    FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
+                    FROM
+                        docs.create_new_mk(l_target_user_id, json_object) fnc;
 
                     IF l_mk_id IS NOT NULL AND l_mk_id > 0
                     THEN
@@ -257,9 +343,11 @@ BEGIN
 
                         -- сохраняем полученную информаци.
                         UPDATE lapsed.pank_vv v
-                        SET doc_id   = l_mk_id,
+                        SET
+                            doc_id   = l_mk_id,
                             markused = l_error
-                        WHERE id = v_pank_vv.id;
+                        WHERE
+                            id = v_pank_vv.id;
 
                     ELSE
 
@@ -269,8 +357,10 @@ BEGIN
                         l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message);
                         -- сохраняем полученную информаци.
                         UPDATE lapsed.pank_vv v
-                        SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
-                        WHERE id = v_pank_vv.id;
+                        SET
+                            properties = coalesce(properties, '{}'::JSONB) || l_jsonb
+                        WHERE
+                            id = v_pank_vv.id;
 
                     END IF;
                 ELSE
@@ -278,8 +368,10 @@ BEGIN
                     l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', 'Puudub maksja');
                     -- сохраняем полученную информаци.
                     UPDATE lapsed.pank_vv v
-                    SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
-                    WHERE id = v_pank_vv.id;
+                    SET
+                        properties = coalesce(properties, '{}'::JSONB) || l_jsonb
+                    WHERE
+                        id = v_pank_vv.id;
 
                 END IF;
 
@@ -287,13 +379,15 @@ BEGIN
 
             -- report
             json_object = to_jsonb(row.*)
-                          FROM (
-                                   SELECT l_mk_id               AS doc_id,
-                                          l_message             AS error_message,
-                                          l_viitenr             AS viitenr,
-                                          l_kas_vigane          AS kas_vigane,
-                                          l_error_code::INTEGER AS error_code
-                               ) row;
+                          FROM
+                              (
+                                  SELECT
+                                      l_mk_id               AS doc_id,
+                                      l_message             AS error_message,
+                                      l_viitenr             AS viitenr,
+                                      l_kas_vigane          AS kas_vigane,
+                                      l_error_code::INTEGER AS error_code
+                              ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
             l_viimane_rea = NULL;
         END LOOP;

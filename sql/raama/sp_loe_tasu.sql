@@ -23,18 +23,28 @@ BEGIN
     THEN
 
         -- load tasu data
-        SELECT mk.id,
-               d.rekvid,
-               (regexp_replace(viitenr, '[^0-9]', ''))::TEXT                    AS viitenr,
-               (SELECT sum(summa) FROM docs.mk1 mk1 WHERE mk1.parentid = mk.id) AS summa,
-               jaak,
-               CASE WHEN mk.opt = 1 THEN 'VM' ELSE 'SM' END                     AS liik,
-               mk.maksepaev
+        SELECT
+            mk.id,
+            d.rekvid,
+            (regexp_replace(viitenr, '[^0-9]', ''))::TEXT AS viitenr,
+            (
+                SELECT
+                    sum(summa)
+                FROM
+                    docs.mk1 mk1
+                WHERE
+                    mk1.parentid = mk.id
+            )                                             AS summa,
+            jaak,
+            CASE WHEN mk.opt = 1 THEN 'VM' ELSE 'SM' END  AS liik,
+            mk.maksepaev
         INTO v_tasu
-        FROM docs.doc D
-                 INNER JOIN docs.mk mk ON mk.parentid = D.id
-                 INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-        WHERE d.id = l_tasu_id;
+        FROM
+            docs.doc                           D
+                INNER JOIN docs.mk             mk ON mk.parentid = D.id
+                INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+        WHERE
+            d.id = l_tasu_id;
 
         IF v_tasu IS NULL
         THEN
@@ -49,20 +59,25 @@ BEGIN
 
         -- ищем неоплаченные счета (по аналогии с выпиской)
         FOR v_arv IN
-            SELECT a.id,
-                   a.jaak,
-                   a.rekvid,
-                   a.asutusid,
-                   a.asutus AS maksja
-            FROM lapsed.cur_laste_arved a
-                     INNER JOIN docs.arv arv ON a.id = arv.parentid
-            WHERE a.rekvid = v_tasu.rekvid
-              AND ltrim(rtrim((regexp_replace(a.viitenr, '[^0-9]', ''))))::TEXT =
-                  ltrim(rtrim((regexp_replace(v_tasu.viitenr, '[^0-9]', ''))))::TEXT
+            SELECT
+                a.id,
+                a.jaak,
+                a.rekvid,
+                a.asutusid,
+                a.asutus AS maksja
+            FROM
+                lapsed.cur_laste_arved  a
+                    INNER JOIN docs.arv arv ON a.id = arv.parentid
+            WHERE
+                a.rekvid = v_tasu.rekvid
+              AND (ltrim(rtrim((regexp_replace(a.viitenr, '[^0-9]', ''))))::TEXT =
+                   ltrim(rtrim((regexp_replace(v_tasu.viitenr, '[^0-9]', ''))))::TEXT
+                or lapsed.get_viitenumber(a.rekvid, a.laps_id) =
+                   ltrim(rtrim((regexp_replace(v_tasu.viitenr, '[^0-9]', ''))))::TEXT)
               AND a.jaak > 0
 --      AND a.jaak = v_tasu.summa
               AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
-                   arv.properties ->> 'tyyp' = 'ETTEMAKS')              -- только обычные счета или предоплаты
+                   arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
               AND liik = CASE WHEN v_tasu.liik = 'VM' THEN 1 ELSE 0 END -- при выплате ищем входящие счета или наоборот
             ORDER BY a.kpv, a.id
             LOOP
@@ -97,7 +112,15 @@ BEGIN
         -- ищем оплаченные счета для возвратных платежей
         -- при условии переплаты
 
-        l_laps_id = (SELECT parentid FROM lapsed.liidestamine WHERE docid = l_tasu_id LIMIT 1);
+        l_laps_id = (
+                        SELECT
+                            parentid
+                        FROM
+                            lapsed.liidestamine
+                        WHERE
+                            docid = l_tasu_id
+                        LIMIT 1
+                    );
 
 /*        SELECT jaak
         INTO l_tasu_jaak
@@ -109,20 +132,23 @@ BEGIN
         THEN
 
             FOR v_arv IN
-                SELECT a.id,
-                       a.jaak,
-                       a.summa,
-                       a.rekvid,
-                       a.asutusid,
-                       a.asutus AS maksja
-                FROM lapsed.cur_laste_arved a
-                         INNER JOIN docs.arv arv ON a.id = arv.parentid
-                WHERE a.rekvid = v_tasu.rekvid
+                SELECT
+                    a.id,
+                    a.jaak,
+                    a.summa,
+                    a.rekvid,
+                    a.asutusid,
+                    a.asutus AS maksja
+                FROM
+                    lapsed.cur_laste_arved  a
+                        INNER JOIN docs.arv arv ON a.id = arv.parentid
+                WHERE
+                    a.rekvid = v_tasu.rekvid
                   AND a.laps_id = l_laps_id
                   AND a.jaak < a.summa
                   AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
                        arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
-                  AND liik = 0                                 -- при возврате ищем исходящие счета
+                  AND liik = 0 -- при возврате ищем исходящие счета
                 ORDER BY a.kpv DESC, a.id DESC -- последние счета
                 LOOP
                     -- списываем в оплату сальдо счета (только остаток счета)

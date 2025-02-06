@@ -15,8 +15,11 @@ DECLARE
     v_tasud   RECORD;
     l_summa   NUMERIC = 0;
     l_opt     INTEGER;
+    l_array integer[];
 BEGIN
     doc_type_id = 'SMK';
+
+    l_array = (select docs_ids from docs.doc where id = doc_id);
 
     -- удаляем старые оплаты
     FOR v_tasud IN
@@ -28,7 +31,10 @@ BEGIN
                 -- пересчет сальдо платежа возврата
                 PERFORM docs.sp_update_mk_jaak(v_tasud.doc_arv_id);
             END IF;
+            -- удаляем ссылки на документы
+            l_array = array_remove(l_array, v_tasud.doc_arv_id);
         END LOOP;
+        update docs.doc set docs_ids = l_array where id = doc_id;
 
     IF empty(liik)
     THEN
@@ -44,17 +50,21 @@ BEGIN
         IF coalesce(l_summa, 0) < 0 AND l_opt <> 1
         THEN
             -- перенос платежа
-raise notice 'start перенос платежа l_summa %, l_opt %', l_summa, l_opt;
+            raise notice 'перенос платежа , doc_id %',doc_id;
             SELECT *
             INTO v_tulemus
             FROM docs.sp_loe_tagasimakse(doc_id, user_id);
         ELSIF l_opt = 1 AND coalesce(l_summa, 0) > 0
         THEN
             -- возврат
+            raise notice 'возврат платежа , doc_id %',doc_id;
+
             SELECT *
             INTO v_tulemus
             FROM docs.sp_loe_tagasimakse(doc_id, user_id);
         ELSE
+            raise notice 'else , doc_id %',doc_id;
+
             SELECT *
             INTO v_tulemus
             FROM docs.sp_loe_tasu(doc_id, user_id) t;
@@ -65,8 +75,6 @@ raise notice 'start перенос платежа l_summa %, l_opt %', l_summa, 
     ELSE
         result = 1;
     END IF;
-    RAISE NOTICE 'error_code %, result %, error_message %',error_code,result, error_message;
-
     RETURN;
 END;
 $BODY$
@@ -79,7 +87,7 @@ GRANT EXECUTE ON FUNCTION docs.makse_umber_jaotada(INTEGER, INTEGER, INTEGER) TO
 
 
 /*
-SELECT * from docs.makse_umber_jaotada(5422, 5956146, 1)
+SELECT * from docs.makse_umber_jaotada(5397, 5797021, 0)
 
 select * FROM docs.arvtasu WHERE doc_tasu_id in( 5426570)
 or doc_arv_id in ( 5157151, 5213784)

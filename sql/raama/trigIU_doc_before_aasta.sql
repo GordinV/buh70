@@ -11,10 +11,17 @@ $$
 DECLARE
 
 BEGIN
+
+    -- запрет на работу в учреждениях Kalle 23.01.2024
+    if new.rekvid in (80, 81, 82, 83, 85,94, 99, 107, 112, 114) then
+        RAISE EXCEPTION 'Viga, parandused selles asutuses keelatud %, id %', new.rekvid, new.id;
+    end if;
+
+
     -- проверка на тип документа
 
 -- 39,  - taotlus, убрал В.Б. 08.01.2024
-    IF exists(SELECT doc_type_id FROM docs.doc WHERE id = new.id AND doc_type_id IN (46, 17, 23, 213988))
+    IF exists(SELECT doc_type_id FROM docs.doc WHERE id = new.id AND doc_type_id IN (46,17, 23, 213988))
     THEN
         -- 0 = открыт
         -- 1 закрыт
@@ -24,6 +31,8 @@ BEGIN
         END IF;
 
     END IF;
+
+
     RETURN new;
 END;
 $$;

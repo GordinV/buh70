@@ -22,7 +22,8 @@ module.exports = {
         delete: ['kasutaja', 'peakasutaja'],
         import: ['admin'],
         KoostaTagasimakse: ['kasutaja', 'peakasutaja'],
-        KoostaUlekanneMakse: ['kasutaja', 'peakasutaja']
+        KoostaUlekanneMakse: ['kasutaja', 'peakasutaja'],
+        TuhistaMakseteJaotamine: ['admin']
     },
     PANK_VV: {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],

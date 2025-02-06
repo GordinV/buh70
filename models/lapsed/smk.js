@@ -206,19 +206,20 @@ const Smk = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
-            {id: "kpv", name: "Maksepäev", width: "7%", type: "date", interval: true},
+            {id: "kpv", name: "Maksepäev", width: "5%", type: "date", interval: true},
             {id: "number", name: "Number", width: "5%"},
             {id: "asutus", name: "Maksja", width: "10%"},
             {id: "vanem_isikukood", name: "Maksja IK", width: "7%"},
-            {id: "deebet", name: "Summa", width: "7%", type: "number", interval: true},
-            {id: "jaak", name: "Ettemaks", width: "7%", type: "number", interval: true},
+            {id: "deebet", name: "Summa", width: "5%", type: "number", interval: true},
+            {id: "jaak", name: "Ettemaks", width: "5%", type: "number", interval: true},
             {id: "aa", name: "Arveldus arve", width: "14%"},
-            {id: "viitenr", name: "Viite number", width: "7%"},
-            {id: "vana_vn", name: "Vana VN", width: "5%"},
+            {id: "viitenr", name: "Viitenumber", width: "7%"},
+            {id: "vana_vn", name: "Vana VN", width: "1%", show: false},
             {id: "nimi", name: "Nimi", width: "10%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},
-            {id: "yksused", name: "Yksus", width: "7%"},
-            {id: "inf3_summa", name: "INF3", width: "7%",type: "number", interval: true},
+            {id: "yksused", name: "Yksus", width: "5%"},
+            {id: "inf3_summa", name: "INF3", width: "5%",type: "number", interval: true},
+            {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
 
         ],
         sqlString: `
@@ -454,6 +455,30 @@ const Smk = {
                   FROM docs.makse_umber_jaotada( $2::INTEGER, $1::INTEGER, 1)`, //$2 - docs.doc.id, $1 - userId, $3 - maksepaev
         type: "sql",
         alias: 'TuhistaMakseJaotamine'
+    },
+    TuhistaMakseteJaotamine: {
+        command: `
+            SELECT
+                row_number() OVER ()                                          AS id,
+                tulemus -> 'result'                                           AS result,
+                tulemus -> 'error_code'                                       AS error_code,
+                coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
+                tulemus -> 'error_message'                                    AS error_message
+            FROM
+                (
+                    SELECT
+                        to_jsonb(docs.makse_umber_jaotada($1::INTEGER, id::INTEGER, 1)) as tulemus
+                    from
+                        lapsed.cur_lapsed_mk mk
+                    WHERE
+                          id IN (
+                                    SELECT unnest(string_to_array($3::TEXT, ','::TEXT))::INTEGER
+                                )
+                      and mk.rekvid = $2
+                ) qry
+        `, //$2 - rekvid, $1 - userId, $3 - ids
+        type: "sql",
+        alias: 'TuhistaMakseteJaotamin'
     },
     KoostaTagasimakse: {
         command: `SELECT error_code, result, error_message, doc_type_id
