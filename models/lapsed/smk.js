@@ -225,6 +225,7 @@ const Smk = {
             with docs as (SELECT mk.id,
                                  to_char(mk.kpv, 'DD.MM.YYYY')::TEXT       AS kpv,
                                  to_char(mk.maksepaev, 'DD.MM.YYYY')::TEXT AS maksepaev,
+                                 mk.maksepaev as doc_maksepaev,
                                  mk.selg,
                                  mk.asutus,
                                  mk.kood,
@@ -263,6 +264,7 @@ const Smk = {
             select t.inf3_summa, d.*
             from docs d
                      left outer join tasud t on t.doc_tasu_id = d.id
+            order by d.doc_maksepaev
 
         `,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
