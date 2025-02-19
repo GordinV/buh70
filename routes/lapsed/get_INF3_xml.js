@@ -2,14 +2,15 @@ const builder = require('xmlbuilder');
 
 module.exports = async (data, user) => {
     // data - sql data got from model
-let aasta = data[0].aasta;
+    let aasta = data[0].aasta;
+    let asutuseRegkood = data[0].asutuse_regkood;
     const obj = {
         deklaratsioon: {
             '@xmlns': 'http://www.emta.ee/inf3',
             '@xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
             '@tyyp': "inf3",
             '@xsi:schemaLocation': "http://www.emta.ee/inf3 inf3.xsd",
-            saatja_regkood: user.regkood,
+            saatja_regkood: asutuseRegkood,
             periood: {
                 aasta: aasta
             },

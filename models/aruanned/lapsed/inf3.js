@@ -21,10 +21,11 @@ module.exports = {
                                         aasta,
                                         liik                                                   AS liik,
                                         case when liik = 1 then 'LASTEAED' else 'HUVIKOOL' end as liik_name,
-                                        $2                                                     AS user_id
+                                        $2                                                     AS user_id,
+                                        asutuse_regkood
                                     FROM
                                         lapsed.inf3($1::INTEGER, $3::TEXT) qryReport
-                                    GROUP BY lapse_nimi, lapse_isikukood, maksja_isikukood, aasta, liik
+                                    GROUP BY lapse_nimi, lapse_isikukood, maksja_isikukood, aasta, liik,asutuse_regkood
                                     ORDER BY lapse_nimi
                         )
                     select *,
