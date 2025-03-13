@@ -125,6 +125,8 @@ class Laps extends React.PureComponent {
             });
 
         }
+        console.log('self.docData', self.docData)
+
         return (
             <div style={styles.doc}>
                 {self.docData && self.docData.isikukood && !Number(self.docData.arveldus) ? (<div style={styles.docRow}>
@@ -170,6 +172,7 @@ class Laps extends React.PureComponent {
                                 ref="select-eritunnus"
                                 btnDelete={isEditMode}
                                 onChange={self.handleInputChange}
+                                style={styles.eritunnus}
                                 readOnly={!isEditMode}/>
                         <CheckBox title="Teiste KOVide lapsed:"
                                   name='kas_teiste_kov'
@@ -199,6 +202,19 @@ class Laps extends React.PureComponent {
                         </div>
                     </div>
                 </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <InputDate title='Arvesta INF3 kuni:'
+                                   name='inf3_kpv'
+                                   value={self.docData.inf3_kpv || ''}
+                                   ref='input-inf3_kpv'
+                                   readOnly={!isEditMode}
+                                   styles={styles.inf3_kpv}
+                                   onChange={self.handleInputChange}/>
+                    </div>
+
+                </div>
+
                 <div style={styles.docRow}>
                     <TextArea title="Märkused"
                               name='muud'

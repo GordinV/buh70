@@ -17,6 +17,7 @@ DECLARE
     doc_vanemId        INTEGER = doc_data ->> 'vanemid';
     doc_muud           TEXT    = doc_data ->> 'muud';
     doc_eritunnus      TEXT    = doc_data ->> 'eritunnus';
+    doc_inf3_kpv       DATE    = doc_data ->> 'inf3_kpv';
     doc_kas_teiste_kov BOOLEAN = doc_data ->> 'kas_teiste_kov';
     is_import          BOOLEAN = coalesce((doc_data ->> 'import')::BOOLEAN, FALSE);
     v_vanem            RECORD;
@@ -31,10 +32,13 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
       AND u.id = userId;
 
     IF userName IS NULL
@@ -50,16 +54,28 @@ BEGIN
     END IF;
 
     json_props = to_jsonb(row)
-                 FROM (SELECT doc_viitenr                         AS viitenumber,
-                              doc_eritunnus                       AS eritunnus,
-                              coalesce(doc_kas_teiste_kov, FALSE) AS kas_teiste_kov
-                      ) row;
+                 FROM
+                     (
+                         SELECT
+                             doc_viitenr                         AS viitenumber,
+                             doc_eritunnus                       AS eritunnus,
+                             doc_inf3_kpv                        as inf3_kpv,
+                             coalesce(doc_kas_teiste_kov, FALSE) AS kas_teiste_kov
+                     ) row;
 
 
     -- поиск на наличие в регистре
     IF doc_id IS NULL
     THEN
-        doc_id = (SELECT id FROM lapsed.laps l WHERE l.isikukood = doc_isikukood LIMIT 1);
+        doc_id = (
+                     SELECT
+                         id
+                     FROM
+                         lapsed.laps l
+                     WHERE
+                         l.isikukood = doc_isikukood
+                     LIMIT 1
+                 );
         IF doc_id IS NOT NULL AND is_import = TRUE
         THEN
             RETURN 0;
@@ -72,11 +88,16 @@ BEGIN
         -- логгирование
 
         json_ajalugu = to_jsonb(row)
-                       FROM (SELECT now()    AS created,
-                                    userName AS user) row;
+                       FROM
+                           (
+                               SELECT
+                                   now()    AS created,
+                                   userName AS user
+                           ) row;
 
         INSERT INTO lapsed.laps (isikukood, nimi, muud, properties, ajalugu)
-        VALUES (doc_isikukood, doc_nimi, doc_muud, json_props, '[]' :: JSONB || json_ajalugu) RETURNING id
+        VALUES (doc_isikukood, doc_nimi, doc_muud, json_props, '[]' :: JSONB || json_ajalugu)
+        RETURNING id
             INTO doc_id;
 
 
@@ -84,17 +105,23 @@ BEGIN
         THEN
             -- will save parents
 
-            SELECT 0                          AS id,
-                   doc_id                     AS parentid,
-                   asutusId,
-                   properties ->> 'arved'     AS arved,
-                   properties ->> 'suhtumine' AS suhtumine
+            SELECT
+                0                          AS id,
+                doc_id                     AS parentid,
+                asutusId,
+                properties ->> 'arved'     AS arved,
+                properties ->> 'suhtumine' AS suhtumine
             INTO v_vanem
-            FROM lapsed.vanemad v
-            WHERE id = doc_vanemId;
+            FROM
+                lapsed.vanemad v
+            WHERE
+                id = doc_vanemId;
 
             json_props_vanem = to_jsonb(row)
-                               FROM (SELECT v_vanem AS data) row;
+                               FROM
+                                   (
+                                       SELECT v_vanem AS data
+                                   ) row;
 
             PERFORM lapsed.sp_salvesta_vanem(json_props_vanem::JSONB, userid::INTEGER, user_rekvid::INTEGER) AS id;
 
@@ -106,20 +133,34 @@ BEGIN
         -- логгирование
 
         json_ajalugu = to_jsonb(row)
-                       FROM (SELECT now()    AS updated,
-                                    userName AS user
-                            ) row;
+                       FROM
+                           (
+                               SELECT
+                                   now()    AS updated,
+                                   userName AS user
+                           ) row;
 
-        l_vana_ik = (SELECT isikukood FROM lapsed.laps WHERE id = doc_id LIMIT 1);
+        l_vana_ik = (
+                        SELECT
+                            isikukood
+                        FROM
+                            lapsed.laps
+                        WHERE
+                            id = doc_id
+                        LIMIT 1
+                    );
 
         UPDATE lapsed.laps
-        SET isikukood  = doc_isikukood,
+        SET
+            isikukood  = doc_isikukood,
             nimi       = doc_nimi,
             properties = properties || json_props,
             muud       = doc_muud,
             ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
             staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END
-        WHERE id = doc_id RETURNING id
+        WHERE
+            id = doc_id
+        RETURNING id
             INTO doc_id;
 
         -- обновим ик в связанном справочнике

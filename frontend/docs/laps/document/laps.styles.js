@@ -61,6 +61,13 @@ module.exports = {
         margin: '0px',
         marginTop: '5px',
         marginLeft: '-5px'
+    },
+    eritunnus: {
+        marginLeft: '-5px',
+    },
+    inf3_kpv: {
+        width: 'auto',
+        marginLeft:'-5px'
     }
 
 };

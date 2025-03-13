@@ -27,9 +27,12 @@ WITH
                           ELSE l_aasta END::INTEGER AS aasta
               ),
     asutuse_rekv as (
-                  select regkood
-                  from ou.rekv r
-                  where r.id = l_rekvid
+                  select
+                      regkood
+                  from
+                      ou.rekv r
+                  where
+                      r.id = l_rekvid
                   limit 1
               )
 SELECT
@@ -149,6 +152,7 @@ FROM
                     AT.rekvid                                             AS rekvid,
                     l.nimi                                                AS lapse_nimi,
                     l.isikukood                                           AS lapse_isikukood,
+                    (l.properties ->> 'inf3_kpv')::date                   as inf3_kpv,
                     round((arved.a1_summa / arved.a_kokku) * AT.summa, 2) AS summa,
                     tasud.asutusid                                        AS asutusId,
                     YEAR(AT.kpv)                                          AS aasta,
@@ -177,9 +181,11 @@ FROM
         WHERE
             qry.summa IS NOT NULL
           AND len(ltrim(rtrim(a.regkood))) >= 11 -- только частники
-          AND extract('year' FROM
-                      age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(qry.lapse_isikukood))) <
-              18 -- только до 18 лет
+          AND (coalesce(qry.inf3_kpv::date,
+                        make_date(params.aasta, 01, 01)) >= make_date(params.aasta, 12, 31) or
+               extract('year' FROM
+                       age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(qry.lapse_isikukood))) <
+               18) -- только до 18 лет или если указана дата в карточке ребенка
         GROUP BY
             lapse_isikukood,
             lapse_nimi,
@@ -191,9 +197,13 @@ FROM
     )            report,
     asutuse_rekv r
 WHERE
-      summa <> 0
-  AND left(lapse_isikukood, 1) NOT IN ('9') -- А. Варгунин, 01.02.2024
-  AND maksja_isikukood NOT IN ('19701028-00172') -- А. Варгунин, 01.02.2024
+    summa <> 0
+  AND left(
+              lapse_isikukood
+          , 1) NOT IN (
+          '9') -- А. Варгунин, 01.02.2024
+  AND maksja_isikukood NOT IN (
+    '19701028-00172') -- А. Варгунин, 01.02.2024
 --  AND (left(lapse_isikukood, 1) IN ('3', '4', '5', '6') AND len(lapse_isikukood) = 11)
     ;
 
@@ -214,9 +224,9 @@ GRANT EXECUTE ON FUNCTION lapsed.inf3(INTEGER, TEXT) TO arvestaja;
 
 select * from (
                   SELECT *
-                  FROM lapsed.inf3(119, '2024')
+                  FROM lapsed.inf3(66, '2025')
               ) qry
-where  maksja_isikukood ilike '%48004230084%'
+where  lapse_isikukood ilike '%50305170213%'
 
 
 -- execution: 12 s 27 ms, fetching: 185 ms)
