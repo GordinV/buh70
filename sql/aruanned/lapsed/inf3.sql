@@ -15,7 +15,8 @@ CREATE OR REPLACE FUNCTION lapsed.inf3(l_rekvid INTEGER, l_aasta TEXT DEFAULT ye
                 docs_arv_ids       TEXT,
                 docs_tasu_ids      TEXT,
                 doc_tagastused_ids TEXT,
-                asutuse_regkood    text
+                asutuse_regkood    text,
+                kas_18             boolean
             )
 AS
 $BODY$
@@ -39,16 +40,18 @@ SELECT
     report.summa,
     --CASE WHEN report.summa < 0 THEN 0 ELSE report.summa END::NUMERIC(14, 2) AS summa,
     report.maksja_nimi,
-    ltrim(rtrim(report.maksja_isikukood)) AS maksja_isikukood,
+    ltrim(rtrim(report.maksja_isikukood))                                                     AS maksja_isikukood,
     report.lapse_nimi,
-    ltrim(rtrim(report.lapse_isikukood))  AS lapse_isikukood,
+    ltrim(rtrim(report.lapse_isikukood))                                                      AS lapse_isikukood,
     report.aasta::INTEGER,
     report.rekvid::INTEGER,
     report.liik::INTEGER,
     report.docs_arv_ids::TEXT,
     report.docs_tasu_ids::TEXT,
     report.doc_tagastused_ids::TEXT,
-    r.regkood::text                       as asutuse_regkood
+    r.regkood::text                                                                           as asutuse_regkood,
+    extract('year' FROM
+            age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(report.lapse_isikukood))) < 18 as kas_18
 FROM
     (
         SELECT
@@ -195,13 +198,11 @@ FROM
             qry.rekvid,
             r.properties ->> 'liik'
     )            report,
-    asutuse_rekv r
+    asutuse_rekv r,
+    params
 WHERE
-    summa <> 0
-  AND left(
-              lapse_isikukood
-          , 1) NOT IN (
-          '9') -- А. Варгунин, 01.02.2024
+      summa <> 0
+  AND left(lapse_isikukood, 1) NOT IN ('9') -- А. Варгунин, 01.02.2024
   AND maksja_isikukood NOT IN (
     '19701028-00172') -- А. Варгунин, 01.02.2024
 --  AND (left(lapse_isikukood, 1) IN ('3', '4', '5', '6') AND len(lapse_isikukood) = 11)

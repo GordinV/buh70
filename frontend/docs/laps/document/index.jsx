@@ -7,6 +7,9 @@ const React = require('react');
 const fetchData = require('./../../../../libs/fetchData');
 const createEmptyFilterData = require('./../../../../libs/createEmptyFilterData');
 const compareDate = require('./../../../../libs/compareDates');
+const DOC_TYPE_ID = 'LAPS';
+const DocRights = require('./../../../../config/doc_rights');
+const checkRights = require('./../../../../libs/checkRights');
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -96,6 +99,13 @@ class Laps extends React.PureComponent {
             gridViitenumbersData = self.docData.viitenumbers,
             gridViitenumbersColumns = self.docData.gridViitenumberConfig;
 
+        // для роли бухгалтер можно установить дату инф3 декаларации
+        let docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
+        let kas_lubatud = checkRights(userRoles, docRights, 'koostaArve');
+
+
         let gridSoodustusteData = [];
 
 
@@ -125,7 +135,6 @@ class Laps extends React.PureComponent {
             });
 
         }
-        console.log('self.docData', self.docData)
 
         return (
             <div style={styles.doc}>
@@ -208,6 +217,7 @@ class Laps extends React.PureComponent {
                                    name='inf3_kpv'
                                    value={self.docData.inf3_kpv || ''}
                                    ref='input-inf3_kpv'
+                                   disabled = {!kas_lubatud}
                                    readOnly={!isEditMode}
                                    styles={styles.inf3_kpv}
                                    onChange={self.handleInputChange}/>
