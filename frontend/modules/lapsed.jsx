@@ -100,6 +100,7 @@ const Kuutabeli_aruanne = require('./../docs/kuutabeli_aruanne/index.jsx');
 const Selgemata_maksed = require('./../docs/selgemata_maksed/index.jsx');
 const PankEarve = require('./../docs/pank_earve/index.jsx');
 const SaldodAsutustes = require('./../docs/saldod_asutustes/index.jsx');
+const SaldoAruanne = require('./../docs/saldo_aruanne/index.jsx');
 const ArvedEmailiga = require('./../docs/arved_emailiga/index.jsx');
 
 const {Route, Redirect} = require('react-router-dom');
@@ -320,6 +321,12 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/laps_kv_kaibed"
                        render={(props) => <ChildSummaryKaibedReport
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+
+                <Route exact path="/lapsed/saldo_aruanne"
+                       render={(props) => <SaldoAruanne
                            module={MODULE}
                            history={props.history}
                            initData={props.initData}/>}/>

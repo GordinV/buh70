@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+        .kulastavus {
+            width: 100px
+        }
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SALDO ARUANNE
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Lapse nimi
+                    th Lapse IK
+                    th Viitenumber
+                    th Jääk
+                    th Vastutav isikute arv
+                    th Asutuse nimetus
+
+            tbody
+                each rea in data
+                    tr
+                        td(align='center')=rea.lapse_nimi
+                        td(align='center')=rea.lapse_isikukood
+                        td(align='center')=rea.viitenumber
+                        td(align='center')=Number(rea.jaak).toFixed(2)
+                        td(align='center')=Number(rea.vanemate_jaak_kogus).toFixed(0)
+                        td(align='center')=rea.asutus
+

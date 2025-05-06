@@ -61,6 +61,7 @@ module.exports = {
     arvete_saatmine:'/ou/arvete_saatmine',
     arved_emailiga:'/aruanned/lapsed/arved_emailiga',
     saldod_asutustes:'/aruanned/lapsed/saldod_asutustes',
+    saldo_aruanne:'/aruanned/lapsed/saldo_aruanne',
     asendus_taabel:'/lapsed/asendus_taabel',
 
 };
