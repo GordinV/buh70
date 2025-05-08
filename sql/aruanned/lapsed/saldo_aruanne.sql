@@ -9,10 +9,11 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_aruanne(l_rekvid INTEGER,
                 lapse_nimi          TEXT,
                 lapse_isikukood     TEXT,
                 viitenumber         TEXT,
+                isiku_nimi          TEXT,
+                isiku_IK            TEXT,
                 jaak                NUMERIC(14, 2),
                 raamatu_jaak        numeric(14, 2),
                 vanemate_jaak_kogus integer,
-                vanemate_ids        integer[],
                 rekvid              INTEGER,
                 kas_viga            boolean,
                 vea_selgitus        text
@@ -22,11 +23,11 @@ $BODY$
 WITH
     raamatu_jaak as (
                         SELECT
-                            sum(rep.alg_saldo + deebet - kreedit) as laps_jaak_kokku,
-                            count(*)                              as laps_vastisik_jaak_kogus,
+                            (rep.alg_saldo + rep.deebet - rep.kreedit)          as laps_jaak_kokku,
+                            count(*) over (partition by va.parentid, va.rekvid) as laps_vastisik_jaak_kogus,
                             rep.rekv_id,
-                            array_agg(rep.asutus_id)              as isik_ids,
-                            va.parentid                           as laps_id
+                            va.parentid                                         as laps_id,
+                            va.asutusid                                         as isik_id
                         FROM
                             docs.kaibeasutusandmik('10300029', null::integer, l_kpv::date, l_kpv::date,
                                                    l_rekvid, '%', 1) rep
@@ -35,7 +36,6 @@ WITH
                         where
                               (rep.alg_saldo + deebet - kreedit) <> 0
                           and rep.rekv_id not in (999999)
-                        group by va.parentid, va.rekvid, rep.rekv_id
                     ),
     laste_jaak as (
                         select
@@ -52,10 +52,11 @@ SELECT
     l.nimi::text                                                                  as lapse_nimi,
     l.isikukood::text                                                             as lapse_isikukood,
     lapsed.get_viitenumber(lj.rekvid, lj.laps_id)::text                           as viitenumber,
+    a.nimetus::text                                                               as isiku_nimi,
+    a.regkood::text                                                               as isiku_IK,
     lj.jaak::NUMERIC(14, 2)                                                       as jaak,
     rj.laps_jaak_kokku::NUMERIC(14, 2)                                            as raamatu_jaak,
     rj.laps_vastisik_jaak_kogus::integer                                          as vanemate_jaak_kogus,
-    rj.isik_ids::integer[]                                                        as vanemate_ids,
     lj.rekvid::integer,
     case when lj.jaak <> coalesce(rj.laps_jaak_kokku, 0) then true else false end as kas_viga,
     null::text
@@ -63,6 +64,8 @@ from
     laste_jaak                       lj
         inner join      lapsed.laps  l on l.id = lj.laps_id
         left outer join raamatu_jaak rj on rj.laps_id = lj.laps_id and lj.rekvid = rj.rekv_id
+        inner join      libs.asutus  a on a.id = rj.isik_id
+
 where
       lj.jaak <> 0
   and coalesce(rj.laps_jaak_kokku, 0) <> 0

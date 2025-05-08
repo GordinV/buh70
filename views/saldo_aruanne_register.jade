@@ -57,7 +57,10 @@ block content
                     th Lapse nimi
                     th Lapse IK
                     th Viitenumber
+                    th Vastutava isiku nimi
+                    th Vastutava IK
                     th Jääk
+                    th Vastutava isiku jääk
                     th Vastutav isikute arv
                     th Asutuse nimetus
 
@@ -67,7 +70,10 @@ block content
                         td(align='center')=rea.lapse_nimi
                         td(align='center')=rea.lapse_isikukood
                         td(align='center')=rea.viitenumber
+                        td(align='center')=rea.isiku_nimi
+                        td(align='center')=rea.isiku_ik
                         td(align='center')=Number(rea.jaak).toFixed(2)
+                        td(align='center')=Number(rea.raamatu_jaak).toFixed(2)
                         td(align='center')=Number(rea.vanemate_jaak_kogus).toFixed(0)
                         td(align='center')=rea.asutus
 
