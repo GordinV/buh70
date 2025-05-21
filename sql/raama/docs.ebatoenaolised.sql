@@ -32,10 +32,12 @@ DECLARE
     l_lisa_selg        TEXT           = '';
     l_kreedit_arve_id  INTEGER; -- кредитовый счет переноса сальдо
     l_aasta            integer        = year(l_seisuga);
+    l_laps_id          integer;
+    l_vn               text;
 BEGIN
 
     if l_rekv_id is null then
-        l_rekv_id  = 119;
+        l_rekv_id = 119;
     end if;
 
     if month(l_seisuga) = 1 then
@@ -46,70 +48,71 @@ BEGIN
         raise exception 'Viga, vale period %', l_seisuga;
     end if;
 
-    l_seisuga = (select case
+    l_seisuga = (
+                    select
+                        case
                             when month(l_seisuga) >= 1 and month(l_seisuga) < 3 then date(l_aasta, 12, 31)
                             when month(l_seisuga) >= 3 and month(l_seisuga) < 6 then date(l_aasta, 3, 31)
                             when month(l_seisuga) >= 6 and month(l_seisuga) < 9 then date(l_aasta, 6, 30)
                             when month(l_seisuga) >= 9 and month(l_seisuga) < 12 then date(l_aasta, 09, 30)
-                            end);
+                            end
+                );
 
     l_lausendi_period = l_seisuga;
-    raise notice 'l_seisuga  %, l_lausendi_period %, l_rekv_id %',l_seisuga, l_lausendi_period, l_rekv_id;
-
 
     -- формируем список просроченных счетов (50%)
     -- формируем отчет и сравниваем со начислениями по счетам
     FOR v_aruanne IN
-        WITH reports AS (SELECT r.*,
-                                (a.properties ->> 'ebatoenaolised_1_id')::INTEGER              AS arv_noude_50,
-                                (a.properties ->> 'ebatoenaolised_2_id')::INTEGER              AS arv_noude_100,
-                                a.id                                                           AS arv_id,
-                                a.asutusid,
-                                coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) AS ebatoenaolised_1_id,
-                                coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) AS ebatoenaolised_2_id,
-                                d.docs_ids
+        WITH
+            reports AS (
+                           SELECT
+                               r.*,
+                               (a.properties ->> 'ebatoenaolised_1_id')::INTEGER              AS arv_noude_50,
+                               (a.properties ->> 'ebatoenaolised_2_id')::INTEGER              AS arv_noude_100,
+                               a.id                                                           AS arv_id,
+                               a.asutusid,
+                               coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) AS ebatoenaolised_1_id,
+                               coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) AS ebatoenaolised_2_id,
+                               d.docs_ids
 
-                         FROM lapsed.ebatoenaolised(l_rekv_id::INTEGER, l_seisuga) r
-                                  LEFT OUTER JOIN docs.arv a ON a.parentid = r.doc_id
-                                  INNER JOIN docs.doc d ON d.id = a.parentid
---            WHERE r.konto = '10300929'
+                           FROM
+                               lapsed.ebatoenaolised(l_rekv_id::INTEGER, l_seisuga) r
+                                   LEFT OUTER JOIN docs.arv                         a ON a.parentid = r.doc_id
+                                   INNER JOIN      docs.doc                         d ON d.id = a.parentid
+                           WHERE
+                                 r.konto = '10300929'
+                             and r.rekvid not in (80, 81, 82, 83, 85, 94, 99, 107, 112, 114)
 --            WHERE (l_arv_id IS NULL
 --                OR r.doc_id = l_arv_id)
-        )
+            )
         SELECT *
-        FROM reports r
-        WHERE (CASE WHEN l_arv_id IS NULL THEN TRUE ELSE r.doc_id = l_arv_id END)
+        FROM
+            reports r
+        WHERE
+              (CASE WHEN l_arv_id IS NULL THEN TRUE ELSE r.doc_id = l_arv_id END)
           AND (
-            CASE
-                WHEN (coalesce(r.noude_50, 0) + coalesce(r.noude_100, 0)) > 0 THEN TRUE
-                WHEN (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0) THEN TRUE
-                WHEN (
-                    r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
-                    exists(SELECT j.id
-                           FROM docs.journal j,
-                                docs.journal1 j1
-                           WHERE j.id = j1.parentid
-                             AND j.parentid IN (SELECT unnest(r.docs_ids))
-                             AND left(j1.kreedit, 6) = left('103009', 6))
-                    ) THEN TRUE
-                ELSE FALSE END)
-        /*
-
-
-                      (l_arv_id IS NULL
-                    OR r.doc_id = l_arv_id)
-                  AND ((r.noude_50 + r.noude_100) > 0
-                    OR (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0)
-                    OR (
-                               r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
-                               exists(SELECT id
-                                      FROM cur_journal
-                                      WHERE id IN (SELECT unnest(r.docs_ids))
-                                        AND left(kreedit, 6) = left(l_kr_konto, 6))
-                           ))
-        */--        order by id desc limit 100
+                  CASE
+                      WHEN (coalesce(r.noude_50, 0) + coalesce(r.noude_100, 0)) > 0 THEN TRUE
+                      WHEN (r.ebatoenaolised_1_id + ebatoenaolised_2_id > 0) THEN TRUE
+                      WHEN (
+                          r.ebatoenaolised_1_id + ebatoenaolised_2_id = 0 AND
+                          exists
+                          (
+                              SELECT
+                                  j.id
+                              FROM
+                                  docs.journal  j,
+                                  docs.journal1 j1
+                              WHERE
+                                    j.id = j1.parentid
+                                AND j.parentid IN (
+                                                      SELECT unnest(r.docs_ids)
+                                                  )
+                                AND left(j1.kreedit, 6) = left('103009', 6)
+                          )
+                          ) THEN TRUE
+                      ELSE FALSE END)
         LOOP
-            RAISE NOTICE 'loop v_aruanne.arv_id %', v_aruanne.arv_id;
 
             l_journal_id = 0;
             l_lisa_selg = '';
@@ -118,21 +121,28 @@ BEGIN
 
             -- обнулим
             -- суммируем маловероятные для счетов в отчете
-            SELECT sum(summa)
+            SELECT
+                sum(summa)
             INTO l_summa
-            FROM cur_journal j
-            WHERE deebet in ('605030','888888')
+            FROM
+                cur_journal j
+            WHERE
+                  deebet in ('605030', '888888')
               AND left(kreedit, 6) = left(l_kr_konto, 6)
 --              and (j.selg ilike '%Ebatõenäolis%' or j.selg ilike 'Ebatoenaolised%')
-              AND j.id IN (SELECT unnest(d.docs_ids)
-                           FROM docs.doc d
-                           WHERE d.id = v_aruanne.doc_id
-                             AND (j.kpv > '2023-09-01'::DATE
-                                 or j.kpv in ('2022-02-01','2022-03-01','2022-05-01','2022-01-20') and j.asutusid in (7788,49077,7617, 43278)
-                                 ) -- с момента аннулирования маловероятных
-            );
+              AND j.id IN (
+                              SELECT
+                                  unnest(d.docs_ids)
+                              FROM
+                                  docs.doc d
+                              WHERE
+                                    d.id = v_aruanne.doc_id
+                                AND (j.kpv > '2023-09-01'::DATE
+                                  or j.kpv in ('2022-02-01', '2022-03-01', '2022-05-01', '2022-01-20') and
+                                     j.asutusid in (7788, 49077, 7617, 43278)
+                                        ) -- с момента аннулирования маловероятных
+                          );
 
-            RAISE NOTICE 'l_summa %, v_aruanne.noude_50 %, v_aruanne.noude_100 %', l_summa, v_aruanne.noude_50, v_aruanne.noude_100;
 -- сравниваем
             IF ((v_aruanne.noude_50 <> 0 OR v_aruanne.noude_100 <> 0) OR
                 (coalesce(l_summa, 0) <> 0 AND coalesce(l_summa, 0) <> (v_aruanne.noude_50 + v_aruanne.noude_100)))
@@ -141,24 +151,30 @@ BEGIN
                 l_noude_vahe = (v_aruanne.noude_50 + v_aruanne.noude_100) - coalesce(l_summa, 0);
                 kas_noude_100 = v_aruanne.noude_100 <> 0;
 
-                RAISE NOTICE 'Vahe l_noude_vahe %,kas_noude_100 %, (v_aruanne.noude_50 + v_aruanne.noude_100) %, l_summa %', l_noude_vahe, kas_noude_100, (v_aruanne.noude_50 + v_aruanne.noude_100),l_summa;
-
                 IF l_noude_vahe <> 0
                 THEN
 
                     -- проверяем период
-                    IF exists(SELECT id
-                              FROM ou.aasta
-                              WHERE rekvid = v_aruanne.rekvid
-                                AND kuu = month(l_lausendi_period)
-                                AND aasta = year(l_lausendi_period)
-                                AND kinni = 1)
+                    IF exists
+                    (
+                        SELECT
+                            id
+                        FROM
+                            ou.aasta
+                        WHERE
+                              rekvid = v_aruanne.rekvid
+                          AND kuu = month(l_lausendi_period)
+                          AND aasta = year(l_lausendi_period)
+                          AND kinni = 1
+                    )
                     THEN
                         -- То есть тогда, если вдруг по каким-то причинам период закрыт, то алгоритм должен это учитывать и делать проводки в первом месяце открытого периода.
                         SELECT *
                         INTO v_aasta
-                        FROM ou.aasta
-                        WHERE rekvid = v_aruanne.rekvid
+                        FROM
+                            ou.aasta
+                        WHERE
+                              rekvid = v_aruanne.rekvid
                           AND aasta = year(l_lausendi_period)
                           AND kinni = 1
                         ORDER BY make_date(aasta, kuu, 1) DESC
@@ -168,25 +184,39 @@ BEGIN
                     END IF;
 
                     -- ищем пользователя в этом учреждении
-                    l_user_id = (SELECT id
-                                 FROM ou.userid
-                                 WHERE kasutaja::TEXT = userName
-                                   AND rekvid = v_aruanne.rekvid
-                                 LIMIT 1);
+                    l_user_id = (
+                                    SELECT
+                                        id
+                                    FROM
+                                        ou.userid
+                                    WHERE
+                                          kasutaja::TEXT = userName
+                                      AND rekvid = v_aruanne.rekvid
+                                    LIMIT 1
+                                );
 
 
                     -- проверяем перенос ли это
-                    l_kreedit_arve_id = (SELECT (a.properties ->> 'kreedit_arve_id')::INTEGER
-                                         FROM docs.arv a
-                                         WHERE parentid = v_aruanne.doc_id
-                                         LIMIT 1);
+                    l_kreedit_arve_id = (
+                                            SELECT
+                                                (a.properties ->> 'kreedit_arve_id')::INTEGER
+                                            FROM
+                                                docs.arv a
+                                            WHERE
+                                                parentid = v_aruanne.doc_id
+                                            LIMIT 1
+                                        );
 
-                    RAISE NOTICE 'kas ulekanne l_kreedit_arve_id %, v_aruanne.doc_id %, kas_saldo_ulekkane %б l_lausendi_period %',l_kreedit_arve_id, v_aruanne.doc_id, kas_saldo_ulekkane, l_lausendi_period;
-
-                    IF l_kreedit_arve_id IS NOT NULL AND exists(SELECT id
-                                                                FROM docs.arv
-                                                                WHERE properties -> 'doc_kreedit_arved' @> to_jsonb(l_kreedit_arve_id)
-                                                                  AND rekvid = 9)
+                    IF l_kreedit_arve_id IS NOT NULL AND exists
+                    (
+                        SELECT
+                            id
+                        FROM
+                            docs.arv
+                        WHERE
+                              properties -> 'doc_kreedit_arved' @> to_jsonb(l_kreedit_arve_id)
+                          AND rekvid = 9
+                    )
                     THEN
 
 
@@ -207,80 +237,127 @@ BEGIN
                     -- делаем проводку
                     l_json_details = '[]'::JSONB; -- инициализируем массив под проводку
                     l_json_details = l_json_details || to_jsonb(row)
-                                     FROM (SELECT 0                                                                    AS id,
-                                                  l_noude_vahe                                                         AS summa,
-                                                  l_db_konto                                                           AS deebet,
-                                                  l_kr_konto                                                           AS kreedit,
-                                                  CASE
-                                                      WHEN a1.kood1 IS NULL OR empty(a1.kood1) THEN '01112'
-                                                      ELSE a1.kood1 END                                                AS kood1,
-                                                  CASE
-                                                      WHEN a1.kood2 IS NULL OR empty(a1.kood2) THEN '80'
-                                                      ELSE a1.kood2 END                                                AS kood2,
-                                                  a1.kood3,
-                                                  a1.tunnus,
-                                                  CASE
-                                                      WHEN a1.konto IS NULL OR empty(a1.konto) THEN '322000'
-                                                      ELSE a1.konto END                                                AS konto,
-                                                  '608'                                                                AS kood5,
-                                                  CASE WHEN a1.tp IS NULL OR empty(a1.tp) THEN '800699' ELSE a1.tp END AS lisa_d,
-                                                  CASE WHEN a1.tp IS NULL OR empty(a1.tp) THEN '800699' ELSE a1.tp END AS lisa_k
-                                           FROM docs.arv1 a1
-                                           WHERE a1.parentid = v_aruanne.arv_id
+                                     FROM
+                                         (
+                                             SELECT
+                                                 0                                                                    AS id,
+                                                 l_noude_vahe                                                         AS summa,
+                                                 l_db_konto                                                           AS deebet,
+                                                 l_kr_konto                                                           AS kreedit,
+                                                 CASE
+                                                     WHEN a1.kood1 IS NULL OR empty(a1.kood1) THEN '01112'
+                                                     ELSE a1.kood1 END                                                AS kood1,
+                                                 CASE
+                                                     WHEN a1.kood2 IS NULL OR empty(a1.kood2) THEN '80'
+                                                     ELSE a1.kood2 END                                                AS kood2,
+                                                 a1.kood3,
+                                                 a1.tunnus,
+                                                 CASE
+                                                     WHEN a1.konto IS NULL OR empty(a1.konto) THEN '322000'
+                                                     ELSE a1.konto END                                                AS konto,
+                                                 '608'                                                                AS kood5,
+                                                 CASE WHEN a1.tp IS NULL OR empty(a1.tp) THEN '800699' ELSE a1.tp END AS lisa_d,
+                                                 CASE WHEN a1.tp IS NULL OR empty(a1.tp) THEN '800699' ELSE a1.tp END AS lisa_k
+                                             FROM
+                                                 docs.arv1 a1
+                                             WHERE
+                                                 a1.parentid = v_aruanne.arv_id
 
-                                           ORDER BY (case when a1.tp like '014%' then 0 else 1 end * summa) DESC
-                                           LIMIT 1) row;
+                                             ORDER BY (case when a1.tp like '014%' then 0 else 1 end * summa) DESC
+                                             LIMIT 1
+                                         ) row;
+                    -- ищем ребенка, если есть, то добавляем в проводку
+                    l_laps_id = (
+                                    select
+                                        l.parentid
+                                    from
+                                        lapsed.liidestamine l
+                                    where
+                                        l.docid = v_aruanne.doc_id
+                                    limit 1
+                                );
+                    if l_laps_id is not null then
+                        l_vn = lapsed.get_viitenumber(l_rekv_id, l_laps_id);
+                    else
+                        l_vn = null;
+                    end if;
 
-
-                    SELECT 0                                                                             AS id,
-                           'JOURNAL'                                                                     AS doc_type_id,
-                           l_lausendi_period                                                             AS kpv,
-                           l_selg || CASE WHEN kas_noude_100 THEN '(100)' ELSE '(50)' END || l_lisa_selg AS selg,
-                           v_aruanne.Asutusid,
-                           'Arve nr.' || v_aruanne.number::TEXT                                          AS dok,
-                           l_json_details                                                                AS "gridData"
+                    SELECT
+                        0                                                                             AS id,
+                        'JOURNAL'                                                                     AS doc_type_id,
+                        l_lausendi_period                                                             AS kpv,
+                        l_selg || CASE WHEN kas_noude_100 THEN '(100)' ELSE '(50)' END || l_lisa_selg AS selg,
+                        v_aruanne.Asutusid,
+                        'Arve nr.' || v_aruanne.number::TEXT                                          AS dok,
+                        l_vn                                                                          as vn,
+                        l_json_details                                                                AS "gridData"
                     INTO v_params;
 
                     l_json = to_json(row)
-                             FROM (SELECT 0        AS id,
-                                          v_params AS data) row;
+                             FROM
+                                 (
+                                     SELECT
+                                         0        AS id,
+                                         v_params AS data
+                                 ) row;
 
                     l_journal_id = docs.sp_salvesta_journal(l_json :: JSON, l_user_id, v_aruanne.rekvId);
 
                     IF (l_journal_id IS NOT NULL AND l_journal_id > 0 AND
-                        exists(SELECT id FROM cur_journal WHERE id = l_journal_id))
+                        exists
+                        (
+                            SELECT
+                                id
+                            FROM
+                                cur_journal
+                            WHERE
+                                id = l_journal_id
+                        ))
                     THEN
                         -- проводка создана, сохраняем ссылку
                         IF NOT kas_noude_100
                         THEN
                             l_json = to_json(row)
-                                     FROM (SELECT l_journal_id AS ebatoenaolised_1_id) row;
+                                     FROM
+                                         (
+                                             SELECT l_journal_id AS ebatoenaolised_1_id
+                                         ) row;
                         ELSE
                             l_json = to_json(row)
-                                     FROM (SELECT l_journal_id AS ebatoenaolised_2_id) row;
+                                     FROM
+                                         (
+                                             SELECT l_journal_id AS ebatoenaolised_2_id
+                                         ) row;
                         END IF;
 
                         UPDATE docs.arv
-                        SET properties = properties::JSONB || l_json::JSONB
-                        WHERE id = v_aruanne.arv_id;
+                        SET
+                            properties = properties::JSONB || l_json::JSONB
+                        WHERE
+                            id = v_aruanne.arv_id;
 
                         l_json = to_json(row)
-                                 FROM (SELECT now()            AS updated,
-                                              userName         AS user,
-                                              'ebatoenaolised' AS task,
-                                              l_journal_id     AS result) row;
+                                 FROM
+                                     (
+                                         SELECT
+                                             now()            AS updated,
+                                             userName         AS user,
+                                             'ebatoenaolised' AS task,
+                                             l_journal_id     AS result
+                                     ) row;
 
                         -- связываем документы
                         UPDATE docs.doc
-                        SET docs_ids   = array_append(docs_ids, l_journal_id),
+                        SET
+                            docs_ids   = array_append(docs_ids, l_journal_id),
                             lastupdate = now(),
                             history    = coalesce(history, '[]') :: JSONB || l_json::JSONB
-                        WHERE id = v_aruanne.doc_id;
+                        WHERE
+                            id = v_aruanne.doc_id;
 
                         -- если перенос, то создаем параллельную проводку
                         IF kas_saldo_ulekkane
                         THEN
-                            RAISE NOTICE 'ebatoenaolised ulekanne';
                             l_json = json_build_object('arv_id', v_aruanne.doc_id, 'ebatoenaolised_id', l_journal_id);
                             PERFORM docs.ulekanne_ebatoenaolised(l_json);
                         END IF;
@@ -333,7 +410,7 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeaka
 
 select * from ou.rekv where id = 66
 
-SELECT docs.ebatoenaolised(66, '2024-10-06')
+SELECT docs.ebatoenaolised(119, '2025-10-05')
 from ou.rekv
 where parentid = 119
 and id  in (94)

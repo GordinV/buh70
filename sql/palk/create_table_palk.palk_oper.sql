@@ -38,6 +38,9 @@ CREATE TABLE palk.palk_oper
   properties  JSONB,
   TIMESTAMP   TIMESTAMP                            NOT NULL DEFAULT now() :: DATE
 );
+
+
+
 CREATE INDEX ix_palk_oper
   ON palk.palk_oper (rekvid);
 CREATE INDEX ix_palk_oper_1
@@ -48,6 +51,10 @@ CREATE INDEX ix_palk_oper_kpv
   ON palk.palk_oper (kpv);
 CREATE INDEX palk_oper_journalid
   ON palk.palk_oper (journalid);
+
+
+CREATE INDEX palk_oper_makse_kpv
+    ON palk.palk_oper (jsonb_extract_path_text(properties, 'maksekpv'));
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE palk.palk_oper TO dbpeakasutaja;
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE palk.palk_oper TO dbkasutaja;

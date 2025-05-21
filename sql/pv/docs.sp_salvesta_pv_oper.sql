@@ -69,6 +69,12 @@ BEGIN
         RAISE EXCEPTION 'Viga, Alates 01.01.2024 konteerimine on kohuslik';
     END IF;
 
+    -- контроль над двойной операцией постановке на учет
+        if doc_liik = 1 and exists (select id from docs.pv_oper po where po.liik = 1 and po.pv_kaart_id = doc_pv_kaart_id
+                                                                     and po.parentid <> coalesce(doc_id,0) ) then
+            RAISE EXCEPTION 'Viga, toppelt arvelevõit operatsioon on keelatud';
+        end if;
+
     -- вставка или апдейт docs.doc
 
     IF doc_id IS NULL OR doc_id = 0

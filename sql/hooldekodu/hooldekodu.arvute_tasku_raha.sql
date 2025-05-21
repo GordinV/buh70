@@ -220,8 +220,6 @@ BEGIN
 
     l_json = jsonb_build_object('id', coalesce(l_lausend_id, 0), 'data', l_json);
 
-    raise notice 'l_lausend_id %', l_lausend_id;
-
     result = docs.sp_salvesta_journal(l_json :: JSON, user_id, l_rekvid);
 
     IF result IS NOT NULL AND result > 0

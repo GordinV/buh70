@@ -69,7 +69,8 @@ DECLARE
     l_pensionari_tulubaas NUMERIC         = 0;
     l_toopaev             NUMERIC         = 8;
     l_rekvid              INTEGER         = (
-                                                select tl.rekvid
+                                                select
+                                                    tl.rekvid
                                                 from
                                                     palk.tooleping tl
                                                 where
@@ -87,12 +88,36 @@ DECLARE
     l_work_days           INTEGER;
     kas_pensionar         BOOLEAN         = FALSE;
     v_palk_config         record;
+    kas_projekt           BOOLEAN         = FALSE;
 
 BEGIN
     -- уточняем ставки налогов
 
     IF l_lepingid IS NOT NULL
-    THEN
+    then
+        with
+            projekted as (
+                             select
+                                 pl.*
+                             from
+                                 libs.proj_laiendus          pl
+                                     inner join libs.library p on p.id = pl.proj_id
+                             where
+                                   leping_id = l_lepingid
+                               and daterange((p.properties::JSONB ->> 'proj_alates')::DATE,
+                                             (p.properties::JSONB ->> 'proj_kuni')::DATE) @> (l_kpv - 1)
+                               and p.kood in (
+                                                 select
+                                                     l.properties::JSONB ->> 'proj'
+                                                 from
+                                                     palk.palk_kaart             pk
+                                                         inner join libs.library l on l.id = pk.libid
+                                                 where
+                                                       pk.lepingid = l_lepingid
+                                                   and pk.libid = l_libId
+                                                   and l.properties::JSONB ->> 'proj' is not null
+                                             )
+            )
         SELECT
             t.toopaev,
             pc.minpalk,
@@ -107,24 +132,115 @@ BEGIN
                 WHEN t.algab > l_kuu_alg AND month(t.algab) = month(l_kpv) AND
                      year(t.algab) = year(l_kpv)
                     THEN t.algab
-                ELSE l_kuu_alg END,
+                ELSE l_kuu_alg END as algab,
             CASE
                 WHEN t.lopp IS NOT NULL AND t.lopp < l_kuu_lopp AND month(t.lopp) = month(l_kpv) AND
                      year(t.lopp) = year(l_kpv)
                     THEN t.lopp
-                ELSE l_kuu_lopp END,
+                ELSE l_kuu_lopp END as lopp,
             t.tasuliik,
             t.koormus,
-            t.palk,
+--            t.palk,
+            case
+                when projekted.kuu_summa is not null then
+                    palk.get_isiku_pohipalk(jsonb_build_object('leping_id', t.id,
+                                                               'projekt_id', projekted.proj_id, 'seisuga', l_kpv))
+
+                when t.palgamaar is not null and t.ameti_klassif is not null
+                    and len(t.ameti_klassif) > 1 then
+                    palk.get_isiku_pohipalk(jsonb_build_object('ameti_klassif', t.ameti_klassif,
+                                                               'palgamaar', t.palgamaar, 'leping_id', t.id))
+                else t.palk
+                end::numeric(12, 2)            as palk,
+
             t.parentid,
             t.kuupalk,
-            t.isikukood
-        INTO l_toopaev, l_min_palk, l_tulubaas, l_pensionari_tulubaas, l_TKI_maar, l_TKA_maar,l_TM_maar,l_SM_maar, l_rekvid, l_kuu_alg, l_kuu_lopp, l_tasuliik, l_koormus, l_palk_summa, l_isik_id, l_kuupalk, l_isikukood
+            t.isikukood,
+            coalesce(projekted.proj_id, 0) > 0 as kas_projekt
+        INTO l_toopaev, l_min_palk, l_tulubaas, l_pensionari_tulubaas, l_TKI_maar, l_TKA_maar,l_TM_maar,l_SM_maar, l_rekvid, l_kuu_alg, l_kuu_lopp, l_tasuliik, l_koormus, l_palk_summa, l_isik_id, l_kuupalk, l_isikukood, kas_projekt
         FROM
-            palk.com_toolepingud                 t
+            (
+                SELECT
+                    t.id,
+                    a.nimetus                                          AS isik,
+                    a.regkood                                          AS isikukood,
+                    osakonnad.kood                                     AS osakond,
+                    osakonnad.id                                       AS osakondid,
+                    ametid.kood                                        AS amet,
+                    ametid.id                                          AS ametid,
+                    t.algab,
+                    t.lopp,
+                    t.toopaev,
+                    t.palk,
+                    t.palgamaar,
+                    t.pohikoht,
+                    t.koormus,
+                    t.ametnik,
+                    t.pank,
+                    t.aa,
+                    t.rekvid,
+                    t.parentid,
+                    t.tasuliik,
+                    coalesce((t.properties ->> 'kuupalk')::INTEGER, 0) AS kuupalk,
+                    t.properties ->> 'ameti_klassif'                   as ameti_klassif,
+                    exists
+                    (
+                        select
+                            pk.id
+                        from
+                            palk.palk_kaart             pk
+                                inner join libs.library l on l.id = pk.libid
+                        where
+                              pk.lepingid = t.id
+                          and l.properties::jsonb ->> 'allikas' = '60'
+                    )                                                  as kas_60
+
+                FROM
+                    libs.asutus                   a
+                        INNER JOIN palk.tooleping t ON a.id = t.parentid
+                        INNER JOIN libs.library   osakonnad ON t.osakondid = osakonnad.id
+                        INNER JOIN libs.library   ametid ON t.ametid = ametid.id
+                WHERE
+                    t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
+            )                                    t
                 LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
+          , (
+                select *
+                from
+                    projekted
+                union all
+                (
+                    select
+                        null as id,
+                        null as rekvid,
+                        null as proj_id,
+                        null as leping_id,
+                        null as summa,
+                        null as kasutatud,
+                        null as korrigeerimine,
+                        null as jaak,
+                        null as properties,
+                        null as kuu_summa,
+                        null as sm,
+                        null as sm_kasutatud,
+                        null::text as selgitus
+                    where
+                        not exists
+                        (
+                            select *
+                            from
+                                projekted
+                        )
+                )
+            )                                    projekted
+
         WHERE
             t.id = l_lepingid;
+
+        -- если деньги проектыне, то поправка на нагрузку уже учтена
+        if kas_projekt then
+            l_koormus = 100;
+        end if;
 
         -- parametrid puuduvad, võttame kõik andmebaasist
         -- palk kaart
@@ -349,9 +465,9 @@ BEGIN
         (
             SELECT
                 l_lepingid as lepingid,
-                summa     AS alus_summa,
-                l_PM_maar AS summa,
-                8         AS liik
+                summa      AS alus_summa,
+                l_PM_maar  AS summa,
+                8          AS liik
         ) row;
 
     pm = is_pm * f_round(coalesce((
@@ -520,7 +636,6 @@ BEGIN
         IF (l_tulud_kokku < l_min_palk)
         THEN
             mvt = coalesce(l_tulud_kokku, 0) - coalesce(pm, 0) - coalesce(tki, 0);
-            RAISE NOTICE 'umar korr, mvt arv prev mvt %, l_mvt_kokku %',mvt, l_mvt_kokku;
             IF mvt > l_mvt_kokku
             THEN
                 -- поправка 24.03 на случай расчет с больничным листом

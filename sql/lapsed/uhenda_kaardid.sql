@@ -52,6 +52,9 @@ BEGIN
     -- документы
     UPDATE lapsed.liidestamine SET parentid = l_oige_laps_id WHERE parentid = l_vale_laps_id;
 
+    -- vana VN
+    update lapsed.viitenr set isikukood = l_oige_ik where isikukood = l_vale_ik;
+
     -- родители
     FOR v_vanem IN
         SELECT *

@@ -43,7 +43,7 @@ GRANT SELECT ON TABLE cur_tulude_kassa_taitmine TO eelkoostaja;
 
 SELECT *
 FROM cur_tulude_kassa_taitmine
-WHERE rekvid = 63
-  AND kuu <= 6
-  AND aasta = 2021
-  AND artikkel = '2585'
+WHERE rekvid = 28
+  AND kuu <= 12
+  AND aasta = 2024
+  AND artikkel = '3502'

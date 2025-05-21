@@ -20,18 +20,24 @@ DECLARE
     a_docs_ids     INTEGER[];
     rows_fetched   INTEGER = 0;
     v_journal      RECORD;
+    l_vn           text;
 
 BEGIN
 
     -- select dok data
-    SELECT d.docs_ids,
-           a.*,
-           asutus.tp AS asutus_tp
+    SELECT
+        d.docs_ids,
+        a.*,
+        asutus.tp  AS asutus_tp,
+        l.parentid as laps_id
     INTO v_arv
-    FROM docs.arv a
-             INNER JOIN docs.doc d ON d.id = a.parentId
-             INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
-    WHERE d.id = l_id;
+    FROM
+        docs.arv                                a
+            INNER JOIN      docs.doc            d ON d.id = a.parentId
+            INNER JOIN      libs.asutus         asutus ON asutus.id = a.asutusid
+            left outer join lapsed.liidestamine l on l.docid = d.id
+    WHERE
+        d.id = l_id;
 
     GET DIAGNOSTICS rows_fetched = ROW_COUNT;
 
@@ -51,10 +57,13 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = v_arv.rekvId
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = v_arv.rekvId
       AND u.id = l_user_id;
     IF userName IS NULL
     THEN
@@ -63,24 +72,33 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT library.kood,
-           dokprop.*,
-           details.*
+    SELECT
+        library.kood,
+        dokprop.*,
+        details.*
     INTO v_dokprop
-    FROM libs.dokprop dokprop
-             INNER JOIN libs.library library ON library.id = dokprop.parentid,
-         jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
-    WHERE dokprop.id = v_arv.doklausid
+    FROM
+        libs.dokprop                        dokprop
+            INNER JOIN libs.library         library ON library.id = dokprop.parentid,
+        jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
+    WHERE
+        dokprop.id = v_arv.doklausid
     LIMIT 1;
+
+    if v_arv.laps_id is not null then
+        l_vn = lapsed.get_viitenumber(v_arv.rekvid, v_arv.laps_id);
+    end if;
 
     -- lausend
 
-    SELECT 0,
-           'JOURNAL'                            AS doc_type_id,
-           l_kpv as kpv,
-           'Ebatõenäoliste nõuete mahakandmine' AS selg,
-           v_arv.Asutusid,
-           v_arv.number::TEXT                   AS dok
+    SELECT
+        0,
+        'JOURNAL'                            AS doc_type_id,
+        l_kpv                                as kpv,
+        'Ebatõenäoliste nõuete mahakandmine' AS selg,
+        v_arv.Asutusid,
+        v_arv.number::TEXT                   AS dok,
+        l_vn                                 as vn
     INTO v_journal;
 
     l_json = row_to_json(v_journal);
@@ -89,17 +107,18 @@ BEGIN
     l_kr_konto = coalesce(v_dokprop.konto, '103000');
     SELECT * INTO v_arv1 FROM docs.arv1 WHERE parentid = v_arv.id ORDER BY summa DESC LIMIT 1;
 
-    SELECT 0                               AS id,
-           v_arv.jaak                      AS summa,
-           '103009'                        AS deebet,
-           l_kr_konto                      AS kreedit,
-           '800699'                        AS lisa_d,
-           '800699'                        AS lisa_k,
-           coalesce(v_arv1.tunnus, '')     AS tunnus,
-           coalesce(v_arv1.kood1, '09110') AS kood1,
-           coalesce(v_arv1.kood2, '80')    AS kood2,
-           coalesce(v_arv1.kood3, '')      AS kood3,
-           coalesce(v_arv1.kood5, '3220')  AS kood5
+    SELECT
+        0                               AS id,
+        v_arv.jaak                      AS summa,
+        '103009'                        AS deebet,
+        l_kr_konto                      AS kreedit,
+        '800699'                        AS lisa_d,
+        '800699'                        AS lisa_k,
+        coalesce(v_arv1.tunnus, '')     AS tunnus,
+        coalesce(v_arv1.kood1, '09110') AS kood1,
+        coalesce(v_arv1.kood2, '80')    AS kood2,
+        coalesce(v_arv1.kood3, '')      AS kood3,
+        coalesce(v_arv1.kood5, '3220')  AS kood5
     INTO v_journal;
 
     l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
@@ -109,7 +128,6 @@ BEGIN
 
     l_json = ('{"id": 0' || ',"data":' ||
               trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::TEXT || '}}');
-    --    RAISE NOTICE 'l_json 2 %', l_json :: JSON;
 
     /* salvestan lausend */
 
@@ -127,32 +145,44 @@ BEGIN
         ajalugu
         */
 
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS updated,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS updated,
+                    userName AS user
+            ) row;
 
         -- will add docs into doc's pull
         -- arve
 
         UPDATE docs.doc
-        SET docs_ids   = array(SELECT DISTINCT unnest(array_append(v_arv.docs_ids, result))),
+        SET
+            docs_ids   = array(SELECT DISTINCT unnest(array_append(v_arv.docs_ids, result))),
             lastupdate = now(),
             history    = coalesce(history, '[]') :: JSONB || new_history
-        WHERE id = v_arv.parentId;
+        WHERE
+            id = v_arv.parentId;
 
         -- lausend
-        SELECT docs_ids
+        SELECT
+            docs_ids
         INTO a_docs_ids
-        FROM docs.doc
-        WHERE id = result;
+        FROM
+            docs.doc
+        WHERE
+            id = result;
 
         -- add new id into docs. ref. array
         a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, v_arv.parentId)));
 
         UPDATE docs.doc
-        SET docs_ids = a_docs_ids
-        WHERE id = result;
+        SET
+            docs_ids = a_docs_ids
+        WHERE
+            id = result;
 
 
         error_code = 0;

@@ -16,6 +16,7 @@ BEGIN
 
   SELECT
     t.*,
+    (t.properties->>'palk_oper_id')::integer as palk_oper_id,
     u.ametnik AS user_name
   INTO v_doc
   FROM palk.puudumine t
@@ -46,6 +47,15 @@ BEGIN
     RETURN;
 
   END IF;
+
+  -- проверим на связи с опрацией (отпусками или больничными)
+   if  v_doc.palk_oper_id is not null and exists (select id from palk.palk_oper where parentid = v_doc.palk_oper_id) then
+       error_code = 5;
+       error_message = 'Viga: Dokument ei saa kustutada, kuna on liitunud puhkuse ehk haiguslehe operatsiooniga';
+       result = 0;
+
+       raise exception '%',error_message;
+   end if;
 
   -- Логгирование удаленного документа
 

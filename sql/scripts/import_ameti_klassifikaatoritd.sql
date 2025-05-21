@@ -1,4 +1,5 @@
-/*drop table if exists tmp_libs;
+/*
+drop table if exists tmp_libs;
 create table if not EXISTS tmp_libs (kood text,  nimetus text);
 
 insert into  tmp_libs (kood, nimetus)

@@ -173,7 +173,7 @@ COMMENT ON FUNCTION docs.sp_loe_tagasimakse(INTEGER, INTEGER) IS 'произво
 
 /*
 SELECT *
-FROM docs.sp_loe_tagasimakse_(5797021, 5397)
+FROM docs.sp_loe_tagasimakse(7073962, 5397)
 
 
 DELETE

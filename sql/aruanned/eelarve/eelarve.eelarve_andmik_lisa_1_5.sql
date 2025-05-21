@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER);
 
-CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik
+CREATE TABLE IF NOT EXISTS tmp_andmik
 (
     idx         TEXT,
     tyyp        INTEGER,
@@ -1105,6 +1105,7 @@ BEGIN
                                               ,
                                           (get_saldo('DK', '100', NULL, NULL) -
                                            get_saldo('DK', '100080', NULL, NULL)) -
+
                                           (get_saldo('MDK', '100', NULL, NULL) -
                                            get_saldo('MDK', '100080', NULL, NULL))                    AS kassa
                                               ,
@@ -1645,7 +1646,7 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2024,09, 30),63, 0) qry
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2025,02, 28),63, 0) qry
          where artikkel like '3825%'
 tegev like '07%'
         where tegev is not null and tegev = '01114'

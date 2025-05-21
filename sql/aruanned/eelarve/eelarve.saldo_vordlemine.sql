@@ -1,4 +1,5 @@
 DROP FUNCTION IF EXISTS eelarve.saldo_vordlemine( DATE, INTEGER );
+DROP FUNCTION IF EXISTS eelarve.saldo_vordlemine_( DATE, INTEGER );
 
 CREATE OR REPLACE FUNCTION eelarve.saldo_vordlemine(l_kpv DATE, l_rekvid INTEGER)
   RETURNS TABLE(
@@ -175,7 +176,7 @@ GRANT EXECUTE ON FUNCTION eelarve.saldo_vordlemine(DATE, INTEGER) TO eelaktsepte
 GRANT EXECUTE ON FUNCTION eelarve.saldo_vordlemine(DATE, INTEGER) TO dbvaatleja;
 
 SELECT *
-FROM eelarve.saldo_vordlemine('2018-12-31', 63)
+FROM eelarve.saldo_vordlemine('2025-03-31', 63)
 
 /*
 select * from temp_saldoandmik_table

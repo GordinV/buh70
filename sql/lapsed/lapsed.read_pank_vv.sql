@@ -132,7 +132,7 @@ BEGIN
             end if;
 
             -- получим ид ребенка
-            l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
+/*            l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
             -- проверим на наличие этого ид в бд
             IF NOT exists
             (
@@ -143,6 +143,11 @@ BEGIN
             THEN
                 l_laps_id = NULL;
             END IF;
+*/
+            -- попробуем найти ребенка по ссылке
+            -- данный поиск включает проверку на услуги. Добавлено 12.05.2025 А. Варгунин
+            l_laps_id = lapsed.get_laps_from_viitenumber(l_new_viitenr);
+
 
             -- задаем признак
             l_tunnus = (

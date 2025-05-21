@@ -7,61 +7,69 @@ CREATE OR REPLACE FUNCTION palk.sp_salvesta_palk_oper(data JSON,
 $BODY$
 
 DECLARE
-    oper_id           INTEGER;
-    userName          TEXT;
-    doc_id            INTEGER = data ->> 'id';
-    doc_data          JSON    = data ->> 'data';
-    kas_lausend       BOOLEAN = coalesce((doc_data ->> 'kas_lausend') :: BOOLEAN, FALSE);
-    doc_type_kood     TEXT    = 'PALK_OPER';
-    doc_type_id       INTEGER = (
-                                    SELECT
-                                        id
-                                    FROM
-                                        libs.library
-                                    WHERE
-                                          ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
-                                      AND library = 'DOK'
-                                    LIMIT 1
-                                );
-    doc_libid         INTEGER = doc_data ->> 'libid';
-    doc_lepingid      INTEGER = doc_data ->> 'lepingid';
-    doc_kpv           DATE    = doc_data ->> 'kpv';
-    doc_summa         NUMERIC = doc_data ->> 'summa';
-    doc_dokpropid     INTEGER = doc_data ->> 'dokpropid';
-    doc_kood1         TEXT    = doc_data ->> 'kood1';
-    doc_kood2         TEXT    = doc_data ->> 'kood2';
-    doc_kood3         TEXT    = doc_data ->> 'kood3';
-    doc_kood4         TEXT    = doc_data ->> 'kood4';
-    doc_kood5         TEXT    = doc_data ->> 'kood5';
-    doc_konto         TEXT    = doc_data ->> 'konto';
-    doc_tp            TEXT    = doc_data ->> 'tp';
-    doc_tunnus        TEXT    = doc_data ->> 'tunnus';
-    doc_tunnus_id     INTEGER = doc_data ->> 'tunnusid';
-    doc_proj          TEXT    = doc_data ->> 'proj';
-    doc_objekt        TEXT    = doc_data ->> 'objekt';
-    doc_tulumaks      NUMERIC = doc_data ->> 'tulumaks';
-    doc_sotsmaks      NUMERIC = doc_data ->> 'sotsmaks';
-    doc_tootumaks     NUMERIC = doc_data ->> 'tootumaks';
-    doc_pensmaks      NUMERIC = doc_data ->> 'pensmaks';
-    doc_tulubaas      NUMERIC = doc_data ->> 'tulubaas';
-    doc_tka           NUMERIC = doc_data ->> 'tka';
-    doc_period        DATE    = doc_data ->> 'period';
-    doc_pohjus        TEXT    = doc_data ->> 'pohjus';
-    doc_pohjus_selg   TEXT    = doc_data ->> 'pohjus_selg'; -- пояснение к причине корректировки
-    doc_tululiik      TEXT    = doc_data ->> 'tululiik';
-    doc_muud          TEXT    = doc_data ->> 'muud';
-    kas_arvesta_saldo BOOLEAN = doc_data ->> 'kas_arvesta_saldo';
-    new_history       JSONB;
-    docs              INTEGER[];
-    l_params          JSON;
-    l_result          INTEGER;
-    is_import         BOOLEAN = data ->> 'import';
-    l_props           JSONB;
-    kas_arvestus      BOOLEAN = FALSE;
-    v_palk_oper       RECORD;
-    l_leping_ids      INTEGER[];
-    l_lib_ids         INTEGER[]; -- для перерасчета налогов
-    l_lib_id          INTEGER;
+    oper_id            INTEGER;
+    userName           TEXT;
+    doc_id             INTEGER = data ->> 'id';
+    doc_data           JSON    = data ->> 'data';
+    kas_lausend        BOOLEAN = coalesce((doc_data ->> 'kas_lausend') :: BOOLEAN, FALSE);
+    doc_type_kood      TEXT    = 'PALK_OPER';
+    doc_type_id        INTEGER = (
+                                     SELECT
+                                         id
+                                     FROM
+                                         libs.library
+                                     WHERE
+                                           ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
+                                       AND library = 'DOK'
+                                     LIMIT 1
+                                 );
+    doc_libid          INTEGER = doc_data ->> 'libid';
+    doc_lepingid       INTEGER = doc_data ->> 'lepingid';
+    doc_kpv            DATE    = doc_data ->> 'kpv';
+    doc_summa          NUMERIC = doc_data ->> 'summa';
+    doc_dokpropid      INTEGER = doc_data ->> 'dokpropid';
+    doc_kood1          TEXT    = doc_data ->> 'kood1';
+    doc_kood2          TEXT    = doc_data ->> 'kood2';
+    doc_kood3          TEXT    = doc_data ->> 'kood3';
+    doc_kood4          TEXT    = doc_data ->> 'kood4';
+    doc_kood5          TEXT    = doc_data ->> 'kood5';
+    doc_konto          TEXT    = doc_data ->> 'konto';
+    doc_tp             TEXT    = doc_data ->> 'tp';
+    doc_tunnus         TEXT    = doc_data ->> 'tunnus';
+    doc_tunnus_id      INTEGER = doc_data ->> 'tunnusid';
+    doc_proj           TEXT    = doc_data ->> 'proj';
+    doc_objekt         TEXT    = doc_data ->> 'objekt';
+    doc_tulumaks       NUMERIC = doc_data ->> 'tulumaks';
+    doc_sotsmaks       NUMERIC = doc_data ->> 'sotsmaks';
+    doc_tootumaks      NUMERIC = doc_data ->> 'tootumaks';
+    doc_pensmaks       NUMERIC = doc_data ->> 'pensmaks';
+    doc_tulubaas       NUMERIC = doc_data ->> 'tulubaas';
+    doc_tka            NUMERIC = doc_data ->> 'tka';
+    doc_period         DATE    = doc_data ->> 'period';
+    doc_pohjus         TEXT    = doc_data ->> 'pohjus';
+    doc_pohjus_selg    TEXT    = doc_data ->> 'pohjus_selg'; -- пояснение к причине корректировки
+    doc_paranduse_kpv  date    = doc_data ->> 'paranduse_kpv'; -- Корректирова (перерасчет , информация для расчета среднего)
+    doc_tululiik       TEXT    = doc_data ->> 'tululiik';
+    doc_muud           TEXT    = doc_data ->> 'muud';
+    kas_arvesta_saldo  BOOLEAN = doc_data ->> 'kas_arvesta_saldo';
+    doc_maksekpv_text  TEXT    = CASE
+                                     WHEN (trim(doc_data ->> 'maksekpv')::TEXT)::TEXT = '' THEN null::TEXT
+                                     ELSE ((doc_data ->> 'maksekpv')::TEXT) END;
+    doc_maksekpv       DATE    = doc_maksekpv_text::DATE; -- дата декларирования , если выплаты будут в ином от начислений периоде
+    doc_puudumise_id integer = doc_data ->> 'puudumise_id'; -- ссылка на запись в регистре отсутствий
+    l_parallel_lausend integer;
+    new_history        JSONB;
+    docs               INTEGER[];
+    l_params           JSON;
+    l_result           INTEGER;
+    is_import          BOOLEAN = data ->> 'import';
+    l_props            JSONB;
+    kas_arvestus       BOOLEAN = FALSE;
+    v_palk_oper        RECORD;
+    l_leping_ids       INTEGER[];
+    l_lib_ids          INTEGER[]; -- для перерасчета налогов
+    l_lib_id           INTEGER;
+
 BEGIN
 
     SELECT
@@ -89,9 +97,12 @@ BEGIN
     THEN
         -- передан ид признака
         doc_tunnus = (
-                         SELECT kood
-                         FROM libs.library
-                         WHERE id = doc_tunnus_id
+                         SELECT
+                             kood
+                         FROM
+                             libs.library
+                         WHERE
+                             id = doc_tunnus_id
                      );
     END IF;
 
@@ -148,14 +159,25 @@ BEGIN
         doc_pohjus = NULL;
     END IF;
 
+    if doc_maksekpv is not null then
+        -- проверим на соответствие периода
+        doc_maksekpv = case
+                           when date(year(doc_maksekpv), month(doc_maksekpv), 1) =
+                                date(year(doc_kpv), month(doc_kpv), 1) then null::date
+                           else doc_maksekpv end;
+    end if;
+
     l_props = (
                   SELECT
                       row_to_json(row)
                   FROM
                       (
                           SELECT
-                              doc_pohjus_selg AS pohjus_selg,
-                              doc_objekt      as objekt
+                              doc_pohjus_selg   AS pohjus_selg,
+                              doc_objekt        as objekt,
+                              doc_paranduse_kpv as paranduse_kpv,
+                              doc_maksekpv      as maksekpv,
+                              doc_puudumise_id  as puudumise_id
                       ) row
               );
 
@@ -476,7 +498,7 @@ BEGIN
             pohjus     = doc_pohjus,
             ajalugu    = new_history,
             muud       = doc_muud,
-            properties = l_props
+            properties = coalesce(properties, '{}'::jsonb) || l_props
         WHERE
             parentid = doc_id;
         --RETURNING id             INTO oper_id;

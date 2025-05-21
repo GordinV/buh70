@@ -353,8 +353,6 @@ BEGIN
 
     SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 
-    RAISE NOTICE 'new mk mk_id %, doc_type_id %',mk_id, doc_type_id;
-
     IF mk_id IS NOT NULL AND mk_id > 0 AND doc_type_id = 'VMK'
     THEN
         result = mk_id;

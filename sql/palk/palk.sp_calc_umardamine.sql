@@ -291,8 +291,6 @@ BEGIN
                                'Umardamine' :: TEXT || v_arv.selg                           AS selg
                         INTO v_palk_oper;
 
-                        raise notice 'v_tululiik.tululiigi_arv %, v_fakt_arv.mvt %, v_arv.mvt_kokku %',v_tululiik.tululiigi_arv, v_fakt_arv.mvt, v_arv.mvt_kokku;
-
                         l_save_params = row_to_json(v_palk_oper);
 
                         IF v_palk_oper.summa <> 0 OR v_palk_oper.tulumaks <> 0 OR v_palk_oper.sotsmaks <> 0 OR

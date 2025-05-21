@@ -1,27 +1,39 @@
 module.exports = {
     select: [{
-        sql: `SELECT $2 :: INTEGER                                                                 AS userid,
-                     'PALK_CONFIG'                                                                 AS doc_type_id,
-                     p.id,
-                     p.rekvid,
-                     coalesce(p.minpalk, 725)::NUMERIC(14, 2)                                      AS minpalk,
-                     coalesce(p.tulubaas, 654)::NUMERIC(14, 2)                                     AS tulubaas,
-                     coalesce(p.pensionari_tulubaas, 704)::NUMERIC(12, 2)                          AS pensionari_tulubaas,
-                     p.round::NUMERIC(14, 2)                                                       AS round,
-                     p.jaak::NUMERIC(14, 2)                                                        AS jaak,
-                     p.genlausend,
-                     p.suurasu,
-                     coalesce(p.tm, 20)                                                            AS tm,
-                     coalesce(p.pm, 2)                                                             AS pm,
-                     coalesce(p.tka, 0.80)                                                         AS tka,
-                     coalesce(p.tki, 1.6)                                                          AS tki,
-                     coalesce(p.sm, 33)                                                            AS sm,
-                     p.muud1,
-                     p.muud2,
-                     p.status,
-                     (coalesce((p.properties::JSONB ->> 'mmk')::BOOLEAN, FALSE)::BOOLEAN)::INTEGER AS mmk
-              FROM palk.palk_config p
-              WHERE p.rekvid = $1
+        sql: `SELECT
+                  $2 :: INTEGER                                                                         AS userid,
+                  'PALK_CONFIG'                                                                         AS doc_type_id,
+                  p.id,
+                  p.rekvid,
+                  coalesce(p.minpalk, 725)::NUMERIC(14, 2)                                              AS minpalk,
+                  coalesce(p.tulubaas, 654)::NUMERIC(14, 2)                                             AS tulubaas,
+                  coalesce(p.pensionari_tulubaas, 704)::NUMERIC(12, 2)                                  AS pensionari_tulubaas,
+                  p.round::NUMERIC(14, 2)                                                               AS round,
+                  p.jaak::NUMERIC(14, 2)                                                                AS jaak,
+                  p.genlausend,
+                  p.suurasu,
+                  coalesce(p.tm, 20)                                                                    AS tm,
+                  coalesce(p.pm, 2)                                                                     AS pm,
+                  coalesce(p.tka, 0.80)                                                                 AS tka,
+                  coalesce(p.tki, 1.6)                                                                  AS tki,
+                  coalesce(p.sm, 33)                                                                    AS sm,
+                  p.muud1,
+                  p.muud2,
+                  p.status,
+                  (coalesce((p.properties::JSONB ->> 'mmk')::BOOLEAN, FALSE)::BOOLEAN)::INTEGER         AS mmk,
+                  coalesce((p.properties -> 'projekt' ->> 'ped_palk_alus')::numeric,
+                           1820)::NUMERIC(12, 2)                                                        AS ped_palk_alus,
+                  coalesce((p.properties -> 'projekt' ->> 'ped_kooli_osa')::numeric,
+                           50)::NUMERIC(12, 2)                                                          AS ped_kooli_osa,
+                  coalesce((p.properties -> 'projekt' ->> 'ped_lasteaed_osa')::numeric,
+                           30)::NUMERIC(12, 2)                                                          AS ped_lasteaed_osa,
+                  coalesce((p.properties -> 'projekt' ->> 'dir_osa')::numeric, 100)::NUMERIC(12, 2)     AS dir_osa,
+                  coalesce((p.properties -> 'projekt' ->> 'all_juht_osa')::numeric, 85)::NUMERIC(12, 2) AS all_juht_osa
+
+              FROM
+                  palk.palk_config p
+              WHERE
+                    p.rekvid = $1
                 AND p.status <> 'deleted'`,
         sqlAsNew: `SELECT
                       0 :: INTEGER        AS id,
@@ -44,7 +56,12 @@ module.exports = {
                       0::numeric as muud2,
                       1 as status,
                       null::text as muud,
-                      0::integer as mmk`,
+                      0::integer as mmk,
+                      1820::NUMERIC(12, 2)                                                            AS ped_palk_alus,
+                      50::NUMERIC(12, 2)                                                              AS ped_kooli_osa,
+                      30::NUMERIC(12, 2)                                                              AS ped_lasteaed_osa,
+                      100::NUMERIC(12, 2)                                                             AS dir_osa,
+          85::NUMERIC(12, 2)                                                                          AS all_juht_osa`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -57,13 +74,20 @@ module.exports = {
         {name: 'rekvid', type: 'I'}
     ],
     saveDoc: `select palk.sp_salvesta_palk_config($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `SELECT error_code, result, error_message
-                FROM palk.sp_delete_palk_config($1, $2)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT
+                    error_code,
+                    result,
+                    error_message
+                FROM
+                    palk.sp_delete_palk_config($1, $2)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [],
-        sqlString: `SELECT *, $2::INTEGER AS userId
-                    FROM palk.palk_config
-                    WHERE rekvid = $1`, //$1 rekv_id, $2 - userid
+        sqlString: `SELECT *,
+                           $2::INTEGER AS userId
+                    FROM
+                        palk.palk_config
+                    WHERE
+                        rekvid = $1`, //$1 rekv_id, $2 - userid
         params: '',
         alias: 'curPalkConfig'
     },

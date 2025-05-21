@@ -25,14 +25,21 @@ DECLARE
     doc_muud1               NUMERIC = doc_data ->> 'muud1';
     doc_muud2               NUMERIC = doc_data ->> 'muud2';
     doc_mmk                 BOOLEAN = coalesce((doc_data ->> 'mmk')::BOOLEAN, FALSE);
-
+    doc_ped_palk_alus       NUMERIC = doc_data ->> 'ped_palk_alus';
+    doc_ped_kooli_osa       NUMERIC = doc_data ->> 'ped_kooli_osa';
+    doc_ped_lasteaed_osa    NUMERIC = doc_data ->> 'ped_lasteaed_osa';
+    doc_dir_osa             NUMERIC = doc_data ->> 'dir_osa';
+    doc_all_juht_osa        NUMERIC = doc_data ->> 'all_juht_osa';
     new_history             JSONB;
     l_jsonb                 JSONB;
 BEGIN
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
       AND u.id = user_id;
     IF userName IS NULL
     THEN
@@ -45,51 +52,77 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT row_to_json(row)
+    SELECT
+        row_to_json(row)
     INTO l_jsonb
-    FROM (SELECT (doc_mmk) AS mmk) row;
+    FROM
+        (
+            SELECT
+                (doc_mmk)                                            AS mmk,
+                jsonb_build_object('ped_palk_alus', doc_ped_palk_alus,
+                                   'ped_kooli_osa', doc_ped_kooli_osa,
+                                   'ped_lasteaed_osa', doc_ped_lasteaed_osa,
+                                   'dir_osa', doc_dir_osa,
+                                   'all_juht_osa', doc_all_juht_osa) as projekt
+        ) row;
 
 
     -- вставка или апдейт docs.doc
 
     IF doc_id IS NULL OR doc_id = 0
     THEN
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS created,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS created,
+                    userName AS user
+            ) row;
 
-        INSERT INTO palk.palk_config (rekvid, minpalk, tulubaas, round, jaak, genlausend, suurasu, tm,
-                                      pm, tka, tki, sm, muud1, muud2, ajalugu, properties, pensionari_tulubaas)
-        VALUES (user_rekvid, doc_minpalk, doc_tulubaas, doc_round, doc_jaak, doc_genlausend, doc_suurasu, doc_tm,
-                doc_pm, doc_tka, doc_tki, doc_sm, doc_muud1, doc_muud2, new_history, l_jsonb, doc_pensionari_tulubaas) RETURNING id
-                   INTO config_id;
+        INSERT INTO
+            palk.palk_config (rekvid, minpalk, tulubaas, round, jaak, genlausend, suurasu, tm,
+                              pm, tka, tki, sm, muud1, muud2, ajalugu, properties, pensionari_tulubaas)
+        VALUES
+            (user_rekvid, doc_minpalk, doc_tulubaas, doc_round, doc_jaak, doc_genlausend, doc_suurasu, doc_tm,
+             doc_pm, doc_tka, doc_tki, doc_sm, doc_muud1, doc_muud2, new_history, l_jsonb, doc_pensionari_tulubaas)
+        RETURNING id
+            INTO config_id;
 
     ELSE
 
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS updated,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS updated,
+                    userName AS user
+            ) row;
 
         UPDATE palk.palk_config
-        SET minpalk    = doc_minpalk,
-            tulubaas   = doc_tulubaas,
-            round      = doc_round,
-            jaak       = doc_jaak,
-            genlausend = doc_genlausend,
-            suurasu    = doc_suurasu,
-            tm         = doc_tm,
-            pm         = doc_pm,
-            tka        = doc_tka,
-            tki        = doc_tki,
-            sm         = doc_sm,
-            muud1      = doc_muud1,
-            muud2      = doc_muud2,
-            ajalugu    = new_history,
+        SET
+            minpalk             = doc_minpalk,
+            tulubaas            = doc_tulubaas,
+            round               = doc_round,
+            jaak                = doc_jaak,
+            genlausend          = doc_genlausend,
+            suurasu             = doc_suurasu,
+            tm                  = doc_tm,
+            pm                  = doc_pm,
+            tka                 = doc_tka,
+            tki                 = doc_tki,
+            sm                  = doc_sm,
+            muud1               = doc_muud1,
+            muud2               = doc_muud2,
+            ajalugu             = new_history,
             pensionari_tulubaas = doc_pensionari_tulubaas,
-            properties = l_jsonb
-        WHERE id = doc_id RETURNING id
+            properties          = l_jsonb
+        WHERE
+            id = doc_id
+        RETURNING id
             INTO config_id;
 
     END IF;

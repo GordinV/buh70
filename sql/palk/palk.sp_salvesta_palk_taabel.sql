@@ -24,17 +24,20 @@ DECLARE
     doc_tahtpaeva_tunnid NUMERIC(12, 4) = coalesce((doc_data ->> 'tahtpaeva_tunnid')::NUMERIC(14, 4), 0);
 -- tahtpaeva_tunnid
     doc_muud             TEXT           = doc_data ->> 'muud';
-
     new_history          JSONB;
     v_palk_taabel        RECORD;
+    v_leping             record;
     is_import            BOOLEAN        = data ->> 'import';
     l_props              JSONB          = jsonb_build_object('tahtpaeva_tunnid', doc_tahtpaeva_tunnid);
 BEGIN
 
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
       AND u.id = userId;
 
     IF is_import IS NULL AND userName IS NULL
@@ -50,6 +53,17 @@ BEGIN
     END IF;
 
 
+    -- контроль даты табеля и договоров
+    if not exists (
+        select t.id
+        from palk.tooleping t
+    where id = doc_lepingid
+    and t.algab <= get_last_day(make_date(doc_aasta, doc_kuu, 1))
+    and (t.lopp is null or get_last_day(t.lopp) >= get_last_day(make_date(doc_aasta, doc_kuu, 1)))
+    ) then
+        raise exception 'Viga: leping puudub või ei ole kehtiv';
+    end if;
+
 
     IF (doc_id IS NULL)
     THEN
@@ -60,33 +74,49 @@ BEGIN
 
     IF doc_id IS NULL OR doc_id = 0
     THEN
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS created,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS created,
+                    userName AS user
+            ) row;
 
-        INSERT INTO palk.palk_taabel1 (lepingid, kuu, aasta, kokku, too, paev, ohtu, oo, tahtpaev, puhapaev, uleajatoo,
-                                       status, ajalugu, muud, properties)
-        VALUES (doc_lepingid, doc_kuu, doc_aasta, doc_kokku, doc_too, doc_paev, doc_ohtu, doc_oo, doc_tahtpaev,
-                doc_puhapaev,
-                doc_uleajatoo,
-                'active', new_history, doc_muud, l_props) RETURNING id
-                   INTO taabel_id;
+        INSERT INTO
+            palk.palk_taabel1 (lepingid, kuu, aasta, kokku, too, paev, ohtu, oo, tahtpaev, puhapaev, uleajatoo,
+                               status, ajalugu, muud, properties)
+        VALUES
+            (doc_lepingid, doc_kuu, doc_aasta, doc_kokku, doc_too, doc_paev, doc_ohtu, doc_oo, doc_tahtpaev,
+             doc_puhapaev,
+             doc_uleajatoo,
+             'active', new_history, doc_muud, l_props)
+        RETURNING id
+            INTO taabel_id;
 
     ELSE
         -- history
         SELECT *
         INTO v_palk_taabel
-        FROM palk.palk_taabel1
-        WHERE id = doc_id;
+        FROM
+            palk.palk_taabel1
+        WHERE
+            id = doc_id;
 
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS updated,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS updated,
+                    userName AS user
+            ) row;
 
         UPDATE palk.palk_taabel1
-        SET kuu        = doc_kuu,
+        SET
+            kuu        = doc_kuu,
             aasta      = doc_aasta,
             kokku      = doc_kokku,
             too        = doc_too,
@@ -98,8 +128,10 @@ BEGIN
             uleajatoo  = doc_uleajatoo,
             ajalugu    = '[]' :: JSONB || coalesce(ajalugu, '[]') :: JSONB || new_history,
             muud       = doc_muud,
-            properties = coalesce(properties,'{}'::jsonb) || l_props::JSONB
-        WHERE id = doc_id RETURNING id
+            properties = coalesce(properties, '{}'::jsonb) || l_props::JSONB
+        WHERE
+            id = doc_id
+        RETURNING id
             INTO taabel_id;
 
     END IF;

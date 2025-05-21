@@ -184,8 +184,7 @@ FROM
         WHERE
             qry.summa IS NOT NULL
           AND len(ltrim(rtrim(a.regkood))) >= 11 -- только частники
-          AND (coalesce(qry.inf3_kpv::date,
-                        make_date(params.aasta, 01, 01)) >= make_date(params.aasta, 12, 31) or
+          AND (params.aasta <= coalesce(year(qry.inf3_kpv::date),params.aasta - 1)  or
                extract('year' FROM
                        age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(qry.lapse_isikukood))) <
                18) -- только до 18 лет или если указана дата в карточке ребенка

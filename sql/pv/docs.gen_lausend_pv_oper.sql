@@ -200,6 +200,7 @@ BEGIN
 
         WHEN v_pv_oper.liik = 2
             THEN
+
                 SELECT
                      0                              AS id,
                      coalesce(v_pv_oper.summa, 0)   AS summa,
@@ -215,14 +216,14 @@ BEGIN
                      coalesce(v_pv_oper.kood4, '')  AS kood4,
                      coalesce(v_pv_oper.kood5, '')  AS kood5
                  INTO v_journal1;
-                -- частичное списание
-                IF v_journal1.kood3 in ('12')
-                THEN
-                    -- В блоке parenduseKulum ja allahindlus запись D 155610 (кулум ОИ) К 888888   RV 12
-                    v_journal1.kreedit  = '888888';
-                    v_journal1.deebet = v_pv_oper.kulum_konto;
-                    v_journal1.summa = -1 * v_journal1.summa;
-                END IF;
+            -- частичное списание
+                 IF v_journal1.kood3 in ('12')
+                 THEN
+                     -- В блоке parenduseKulum ja allahindlus запись D 155610 (кулум ОИ) К 888888   RV 12
+                     v_journal1.kreedit = '888888';
+                     v_journal1.deebet = v_pv_oper.kulum_konto;
+                     v_journal1.summa = -1 * v_journal1.summa;
+                 END IF;
 
 
                  l_json_details = row_to_json(v_journal1);

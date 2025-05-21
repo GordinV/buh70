@@ -32,6 +32,7 @@ DECLARE
     doc_selg              TEXT    = doc_data ->> 'selg';
     doc_muud              TEXT    = doc_data ->> 'muud';
     doc_asendus_id        INTEGER = doc_data ->> 'asendus_id'; -- при создании проводки из счета , по замещающему табелю в другом учреждении
+    doc_vn                text    = doc_data ->> 'vn'; -- ВН ребенка из род. платы
     l_number              INTEGER = coalesce((
                                                  SELECT
                                                      max(number) + 1
@@ -75,6 +76,8 @@ DECLARE
     l_osaliselt_suletatud BOOLEAN = FALSE;
     l_suletatud           BOOLEAN = FALSE;
     l_exists              boolean = false;
+    l_laps_id             integer;
+
 BEGIN
 
     SELECT 0 AS asutusid, 0 AS id INTO v_prev_doc;
@@ -129,11 +132,10 @@ BEGIN
     PERFORM check_text(doc_selg);
 
     -- props
-    IF doc_asendus_id IS NOT NULL
+    IF doc_asendus_id IS NOT NULL or doc_vn is not null
     THEN
-        l_json_props = jsonb_build_object('asendus_id', doc_asendus_id);
+        l_json_props = jsonb_build_object('asendus_id', doc_asendus_id, 'vn', doc_vn);
     END IF;
-
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0 OR NOT exists
@@ -166,7 +168,6 @@ BEGIN
             ) row;
 
         -- will check and restore if neccessory
-        raise notice 'kas_taastamine %',kas_taastamine;
         if (not kas_taastamine) then
 
             INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
@@ -581,6 +582,31 @@ BEGIN
                        LIMIT 1
                    );
 
+        -- проверим не является ли эта проводка уже частью оплаты счета
+        if exists
+        (
+            select
+                id
+            from
+                docs.arvtasu at
+            where
+                  doc_arv_id = l_arv_id
+              and doc_tasu_id in (
+                                     select
+                                         mk.parentid
+                                     from
+                                         docs.mk1               mk1
+                                             inner join docs.mk mk on mk.id = mk1.parentid
+                                     where
+                                         mk1.journalid = doc_id
+                                 )
+              and status < 3
+        ) then
+            -- счет уже этим документом оплачен
+            l_arv_id = null;
+        end if;
+
+
         IF is_import IS NULL AND l_arv_id IS NOT NULL
         THEN
             PERFORM docs.sp_tasu_arv(
@@ -652,6 +678,19 @@ BEGIN
             PERFORM hooldekodu.sp_koosta_hootehing(userid, json_params::JSONB);
 
         END IF;
+
+        -- lapse modul
+        if doc_vn is not null and len(doc_vn) = 10 then
+            -- сделаем связь с карточкой ребенка
+            l_laps_id = lapsed.get_laps_from_viitenumber(doc_vn::TEXT);
+            if not exists
+            (
+                select id from lapsed.liidestamine where parentid = l_laps_id and docid = doc_id
+            ) then
+                insert into lapsed.liidestamine (parentid, docid)
+                values (l_laps_id, doc_id);
+            end if;
+        end if;
     END IF;
     RETURN doc_id;
 
@@ -668,9 +707,6 @@ GRANT ALL ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbadmi
 
 /*
 
-
-{"data":{"id":1436,"doc_type_id":"JOURNAL","kpv":"2018-05-17","selg":"Palk","muud":"test","asutusid":56},"gridData":[{"id":0,"summa":289.2000,"deebet":"2610","lisa_d":"800699","kreedit":"2530","lisa_k":"800699","tunnus":null,"proj":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":""}]}
-
-select * from docs.journal1 where parentid = 14
-
+select docs.sp_salvesta_journal('{"id":1217,"data": {"asutus":"Vladislav Gordin","asutusid":29518,"bpm":null,"created":"06.05.2025 03:14:01","doc":"Lausendid","docs_ids":null,"doc_status":1,"doc_type_id":"JOURNAL","dok":"","id":1217,"kasutaja":"Vladislav Gordin","koostaja":"Vladislav Gordin","kpv":"20250506","lastupdate":"18.05.2025 04:11:10","muud":null,"number":7,"objekt":"","regkood":"37303023721","rekvid":119,"selg":"test","status":"Aktiivne","summa":100,"userid":5435,"vn":"1190055744","gridData":[{"deebet":"10300029","dokument":null,"id":540,"kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kreedit":"300000","kuurs":1,"kuurs1":1,"lisa_d":"800699","lisa_k":"800699","muud":null,"objekt":"","parentid":531,"proj":"","summa":100,"tunnus":"","userid":5435,"valsumma":100,"valuuta":"EUR","valuuta1":"EUR"}]}}'::json,
+5435, 119)
 */

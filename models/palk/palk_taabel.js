@@ -81,6 +81,7 @@ module.exports = {
             {id: "id", name: "id", width: "1%", show: false},
             {id: "isik", name: "Isik", width: "25%"},
             {id: "osakond", name: "Osakond", width: "15%"},
+            {id: "ameti_kood", name: "Ameti kood", width: "15%"},
             {id: "amet", name: "Amet", width: "15%"},
             {id: "kokku", name: "Kokku", width: "15%"},
             {id: "paev", name: "Tööpäevas", width: "15%"},
@@ -88,7 +89,8 @@ module.exports = {
             {id: "kuu", name: "Kuu", width: "15%"},
             {id: "aasta", name: "Aasta", width: "15%"},
         ],
-        sqlString: `SELECT t.*, $2::INTEGER AS userId
+        sqlString: `SELECT t.*, t.ametikood as ameti_kood,
+                    $2::INTEGER AS userId
                     FROM palk.cur_palk_taabel t
                     WHERE (t.rekvid = $1 OR rekvid IS NULL)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

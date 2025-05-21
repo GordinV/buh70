@@ -10,8 +10,29 @@ module.exports = {
             {id: "lopp_db", name: "Lõpp deebet", width: "100px"},
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
-        sqlString: `select qry.*
-                    FROM palk.palk_kaart($1::date, $2::date, $3::integer, $4::integer) qry`,     //  $1 - kpv1, $2 - kpv2, $3 - rekvid, $4 svod (null)
+        sqlString: `        with
+                                params as (
+                                              select
+                                                  $1::date as kpv_1,
+                                                  $2::date as kpv_2,
+                                                  $3                 as rekv_id,
+                                                  $4                  as kond
+                                )
+                            select
+                                qry.*
+                            FROM
+                                params                                                                             p,
+                                palk.palk_kaart(p.kpv_1::date, p.kpv_2::date, p.rekv_id::integer, p.kond::integer) qry
+                            where
+                                p.kpv_2::date < '2025-01-01'::date
+                            union all
+                            select
+                                qry.*
+                            FROM
+                                params                                                                                  p,
+                                palk.palk_kaart_2025(p.kpv_1::date, p.kpv_2::date, p.rekv_id::integer, p.kond::integer) qry
+                            where
+                                p.kpv_1::date >= '2025-01-01'::date`,     //  $1 - kpv1, $2 - kpv2, $3 - rekvid, $4 svod (null)
         params: '',
         alias: 'palk_kaart'
     }

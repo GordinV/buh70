@@ -98,12 +98,12 @@ WITH
                                    (l.properties :: JSONB ->> 'mahakantud')::DATE >= l_kpv1)
                               AND (l.properties :: JSONB ->> 'soetkpv') :: DATE <= l_kpv2
                             UNION ALL
-                            -- обороты в периоде (без parendused)
+                            -- обороты в периоде (без parendused), поправил 06.02.2025 Вероника
                             SELECT
                                 po.pv_kaart_id                             AS pv_kaart_id,
                                 0::NUMERIC(12, 2)                          AS alg_soetmaks,
                                 0::NUMERIC(12, 2)                          AS alg_kulum,
-                                sum(summa) FILTER ( WHERE po.liik IN (1) ) AS db_soetmaks,
+                                sum(summa) FILTER ( WHERE po.liik IN (1, 3) and coalesce(po.kood3, '') <> '12' ) AS db_soetmaks,
                                 coalesce(sum(summa) FILTER ( WHERE po.liik = 2 and coalesce(po.kood3, '') <> '12'),
                                          0)                                AS db_kulum,
                                 0::NUMERIC(12, 2)                          AS kr_soetmaks,

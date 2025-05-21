@@ -15,13 +15,16 @@ DECLARE
 
 BEGIN
 
-    SELECT l.*,
-           u.ametnik AS user_name,
-           u.rekvid  AS kasutaja_rekvid
+    SELECT
+        l.*,
+        u.ametnik AS user_name,
+        u.rekvid  AS kasutaja_rekvid
     INTO v_doc
-    FROM libs.library l
-             LEFT OUTER JOIN ou.userid u ON u.id = userid
-    WHERE l.id = doc_id;
+    FROM
+        libs.library                  l
+            LEFT OUTER JOIN ou.userid u ON u.id = userid
+    WHERE
+        l.id = doc_id;
 
     IF v_doc IS NULL
     THEN
@@ -32,11 +35,16 @@ BEGIN
 
     END IF;
 
-    IF NOT exists(SELECT id
-                  FROM ou.userid u
-                  WHERE id = userid
-                    AND (u.rekvid = v_doc.kasutaja_rekvid OR v_doc.kasutaja_rekvid IS NULL OR v_doc.kasutaja_rekvid = 0)
-        )
+    IF NOT exists
+    (
+        SELECT
+            id
+        FROM
+            ou.userid u
+        WHERE
+              id = userid
+          AND (u.rekvid = v_doc.kasutaja_rekvid OR v_doc.kasutaja_rekvid IS NULL OR v_doc.kasutaja_rekvid = 0)
+    )
     THEN
 
         error_code = 5;
@@ -48,20 +56,38 @@ BEGIN
     END IF;
 
     -- проверим на использование кода в справочниках
-    IF (v_doc.library = 'KOOLITUSE_TYYP' AND exists(SELECT id
-                                                    FROM libs.library l
-                                                    WHERE l.library = 'LAPSE_GRUPP'
-                                                      AND status <> 3
-                                                      AND coalesce((l.properties::JSONB ->> 'tyyp')::INTEGER, 0)::INTEGER =
-                                                          v_doc.id))
-        OR (v_doc.library = 'KOOLITUSE_LIIK' AND exists(SELECT id
-                                                        FROM libs.nomenklatuur n
-                                                        WHERE status <> 3
-                                                          AND n.properties::JSONB ->> 'oppe_tyyp' = v_doc.kood))
-        OR (v_doc.library = 'ASUTUSE_LIIK' AND exists(SELECT id
-                                                      FROM ou.rekv r
-                                                      WHERE r.properties ->> 'liik' IS NOT NULL
-                                                        AND r.properties ->> 'liik' = v_doc.kood::TEXT))
+    IF (v_doc.library = 'KOOLITUSE_TYYP' AND exists
+    (
+        SELECT
+            id
+        FROM
+            libs.library l
+        WHERE
+              l.library = 'LAPSE_GRUPP'
+          AND status <> 3
+          AND coalesce((l.properties::JSONB ->> 'tyyp')::INTEGER, 0)::INTEGER =
+              v_doc.id
+    ))
+        OR (v_doc.library = 'KOOLITUSE_LIIK' AND exists
+        (
+            SELECT
+                id
+            FROM
+                libs.nomenklatuur n
+            WHERE
+                  status <> 3
+              AND n.properties::JSONB ->> 'oppe_tyyp' = v_doc.kood
+        ))
+        OR (v_doc.library = 'ASUTUSE_LIIK' AND exists
+        (
+            SELECT
+                id
+            FROM
+                ou.rekv r
+            WHERE
+                  r.properties ->> 'liik' IS NOT NULL
+              AND r.properties ->> 'liik' = v_doc.kood::TEXT
+        ))
     THEN
         error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
         error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
@@ -76,12 +102,15 @@ BEGIN
     IF v_doc.library IN ('TUNNUS', 'OBJEKT', 'PROJ', 'URITUS')
     THEN
         -- контроль за правами. Ограничен (В.Б)
-        SELECT kasutaja,
-               (u.roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
+        SELECT
+            kasutaja,
+            (u.roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
 
         INTO userName, is_peakasutaja
-        FROM ou.userid u
-        WHERE u.rekvid = v_doc.rekvid
+        FROM
+            ou.userid u
+        WHERE
+              u.rekvid = v_doc.rekvid
           AND u.id = userId;
 
         IF (userName IS NULL OR NOT is_peakasutaja)
@@ -93,8 +122,17 @@ BEGIN
     END IF;
 
     UPDATE libs.library
-    SET status = 3
-    WHERE id = doc_id;
+    SET
+        status = 3
+    WHERE
+        id = doc_id;
+
+    -- proj laiendus
+    if v_doc.library = 'PROJ' then
+        delete from libs.proj_laiendus where proj_id = doc_id;
+    end if;
+
+
     result = 1;
     RETURN;
 

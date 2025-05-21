@@ -22,6 +22,8 @@ BEGIN
         RAISE EXCEPTION 'Viga:,kreedit arve salvestamine ebaõnnestus';
     END IF;
 
+    raise notice 'koosta alus_arve_id %',alus_arve_id;
+
 -- увязываем со счетом основанием
     PERFORM docs.kas_kreedit_arve(doc_id_kreedit, user_id, alus_arve_id);
 
@@ -61,7 +63,7 @@ GRANT EXECUTE ON FUNCTION docs.koosta_kreedit_arve(INTEGER, INTEGER) TO dbpeakas
 
 /*
 -- 6475856
-SELECT docs.koosta_kreedit_arve(5302, 6475856)
+SELECT docs.koosta_kreedit_arve(5391, 6869491)
 -- 6526397
 
 SELECT * from docs.arv where parentid = 6526394

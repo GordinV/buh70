@@ -17,7 +17,10 @@ DECLARE
     doc_vanemId        INTEGER = doc_data ->> 'vanemid';
     doc_muud           TEXT    = doc_data ->> 'muud';
     doc_eritunnus      TEXT    = doc_data ->> 'eritunnus';
-    doc_inf3_kpv       DATE    = doc_data ->> 'inf3_kpv';
+    doc_inf3_kpv     DATE    = (CASE
+                                        WHEN (doc_data ->> 'inf3_kpv')::TEXT = '' THEN NULL
+                                        ELSE doc_data ->> 'inf3_kpv' END)::DATE;
+
     doc_kas_teiste_kov BOOLEAN = doc_data ->> 'kas_teiste_kov';
     is_import          BOOLEAN = coalesce((doc_data ->> 'import')::BOOLEAN, FALSE);
     v_vanem            RECORD;

@@ -21,7 +21,13 @@ SELECT t.id,
        t.rekvid,
        t.parentid,
        t.tasuliik,
-       coalesce((t.properties ->> 'kuupalk')::INTEGER, 0) AS kuupalk
+       coalesce((t.properties ->> 'kuupalk')::INTEGER, 0) AS kuupalk,
+       exists (select pk.id from palk.palk_kaart pk
+                                     inner join libs.library l on l.id = pk.libid
+               where pk.lepingid = t.id
+                 and  l.properties::jsonb->>'allikas' = '60'
+              ) as kas_60
+
 FROM libs.asutus a
          INNER JOIN palk.tooleping t ON a.id = t.parentid
          INNER JOIN libs.library osakonnad ON t.osakondid = osakonnad.id

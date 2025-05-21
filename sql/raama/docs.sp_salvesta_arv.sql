@@ -628,9 +628,12 @@ BEGIN
                 -- частное лицо, округляем
 
                 -- итоговую сумму правим на округление до 5 центов
-                doc_taskuraha_kov = coalesce(doc_taskuraha_kov,0);
+                doc_taskuraha_kov = coalesce(doc_taskuraha_kov, 0);
                 l_umardamine = fnc_round_5(doc_summa - doc_taskuraha_kov) - (doc_summa - doc_taskuraha_kov);
                 --doc_summa = doc_summa + coalesce(l_umardamine,0);
+
+                -- В.Б. 19.02.2025. снять округление со счетов
+                l_umardamine = 0;
 
                 UPDATE docs.arv
                 SET
@@ -693,9 +696,25 @@ BEGIN
 
         -- если счет отрицательный, то возможно это кредитоввый счет
         IF doc_id IS NOT NULL AND doc_id > 0 AND doc_summa < 0
+            and not exists
+           (
+               select
+                   at.id
+               from
+                   docs.arvtasu at
+               where
+                     at.doc_tasu_id = doc_id
+                 and at.status < 3
+           )
         THEN
             PERFORM docs.kas_kreedit_arve(doc_id, user_id, doc_alus_arve_id);
         END IF;
+
+        -- уточним дату счета в оплатах , если он кредитовый
+        IF doc_id IS NOT NULL AND doc_id > 0 AND doc_summa < 0 then
+            update docs.arvtasu set kpv = doc_kpv where doc_tasu_id = doc_id and status < 3;
+        end if;
+
 
         -- если это доходный счет, созданный на основе предоплатного
         IF doc_ettemaksu_arve_id IS NULL AND doc_ettemaksu_period IS NOT NULL
@@ -751,11 +770,9 @@ BEGIN
         END IF;
 
     END IF;
-
     RETURN doc_id;
 END ;
-$BODY$
-    LANGUAGE plpgsql
+$BODY$ LANGUAGE plpgsql
     VOLATILE
     COST 100;
 

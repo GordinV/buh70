@@ -1,30 +1,62 @@
 module.exports = {
     select: [{
-        sql: `SELECT $2 :: INTEGER                                      AS userid,
-                     t.id,
-                     t.parentid,
-                     'TOOLEPING'                                        AS doc_type_id,
-                     t.osakondid,
-                     t.ametid,
-                     t.algab,
-                     t.lopp,
-                     t.palk,
-                     t.palgamaar,
-                     t.pohikoht,
-                     t.ametnik,
-                     t.tasuliik,
-                     t.muud,
-                     t.rekvid,
-                     t.resident,
-                     t.riik,
-                     t.toend,
-                     t.koormus,
-                     t.toopaev,
-                     t.pank,
-                     coalesce((t.properties ->> 'kuupalk')::INTEGER, 0) AS kuupalk,
-                     coalesce((t.properties ->> 'ameti_klassif')::varchar(20), '') AS ameti_klassif                     
-              FROM palk.tooleping t
-              WHERE t.id = $1`,
+        sql: `SELECT
+                  $2 :: INTEGER                                                 AS userid,
+                  t.id,
+                  t.parentid,
+                  'TOOLEPING'                                                   AS doc_type_id,
+                  t.osakondid,
+                  t.ametid,
+                  t.algab,
+                  t.lopp,
+--                  t.palk,
+                  case
+                      when t.palgamaar is not null and t.properties ->> 'ameti_klassif' is not null
+                          and len(t.properties ->> 'ameti_klassif') > 1 then
+                          palk.get_isiku_pohipalk(jsonb_build_object('ameti_klassif', t.properties ->> 'ameti_klassif',
+                                                                     'palgamaar', t.palgamaar))
+                      else t.palk
+                      end::numeric(12, 2)                                       as palk,
+                  (
+                      select
+                          kuu_summa
+                      from
+                          libs.proj_laiendus          pl
+                              inner join libs.library p on p.id = pl.proj_id
+                      where
+                            leping_id = t.id
+                        and (p.properties::JSONB ->> 'proj_kuni')::DATE >= current_date
+                        and p.kood in (
+                                          select
+                                              l.properties::JSONB ->> 'proj'
+                                          from
+                                              palk.palk_kaart             pk
+                                                  inner join libs.library l on l.id = pk.libid
+                                          where
+                                                pk.lepingid = t.id
+                                            and l.properties::JSONB ->> 'proj' is not null
+                                      )
+                      order by (p.properties::jsonb ->> 'proj_alates')::date desc
+                      limit 1
+                  )                                                             as projekt_palk,
+                  t.palgamaar,
+                  t.pohikoht,
+                  t.ametnik,
+                  t.tasuliik,
+                  t.muud,
+                  t.rekvid,
+                  t.resident,
+                  t.riik,
+                  t.toend,
+                  t.koormus,
+                  t.toopaev,
+                  t.pank,
+                  coalesce((t.properties ->> 'kuupalk')::INTEGER, 0)            AS kuupalk,
+                  coalesce((t.properties ->> 'ameti_klassif')::varchar(20), '') AS ameti_klassif
+              FROM
+                  palk.tooleping t
+              WHERE
+                  t.id = $1`,
         sqlAsNew: `SELECT
                        $1::INTEGER           AS id,
                        $2 :: INTEGER         AS userid,
@@ -35,6 +67,7 @@ module.exports = {
                        now() :: DATE         AS algab,
                        NULL :: DATE          AS lopp,
                        0 :: NUMERIC(12, 4)   AS palk,
+                       null::numeric(12,2) as projekti_palk,
                        0 :: INTEGER          AS palgamaar,
                        1                     AS pohikoht,
                        0                     AS ametnik,
@@ -73,7 +106,6 @@ module.exports = {
     requiredFields: [
         {name: 'osakondid', type: 'I'},
         {name: 'tasuliik', type: 'I'},
-        {name: 'palk', type: 'N'},
         {name: 'algab', type: 'D'},
         {name: 'ametid', type: 'I'}
     ],

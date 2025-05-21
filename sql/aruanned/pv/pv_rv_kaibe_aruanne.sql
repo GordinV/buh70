@@ -459,36 +459,36 @@ WITH
                   UNION ALL
                   -- rv15
                   SELECT
-                      po.pv_kaart_id                                                                                 AS pv_kaart_id,
+                      po.pv_kaart_id                                   AS pv_kaart_id,
                       po.kpv,
-                      0:: NUMERIC(12, 2)                                                                             AS alg_soetmaks,
-                      0:: NUMERIC(12, 2)                                                                             AS alg_kulum,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv01,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv02,
-                      0 ::NUMERIC(12, 2)                                                                             AS kb_kulum_rv02,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv11,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv12,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv12,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv13,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv13,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv14,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv14,
-                      po.summa::NUMERIC(12, 2)                                                                       AS kb_pv_rv15,
+                      0:: NUMERIC(12, 2)                               AS alg_soetmaks,
+                      0:: NUMERIC(12, 2)                               AS alg_kulum,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv01,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv02,
+                      0 ::NUMERIC(12, 2)                               AS kb_kulum_rv02,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv11,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv12,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv12,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv13,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv13,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv14,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv14,
+                      po.summa::NUMERIC(12, 2)                         AS kb_pv_rv15,
                       (pk.alg_kulum + coalesce(k.kb_kulum_rv11, 0) +
-                       coalesce(k15.kb_kulum_rv15, 0))::NUMERIC(12, 2)                                               AS kb_kulum_rv15,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv16,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv16,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv17,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv17,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv19,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv21,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv23,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv24,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv24,
-                      0::NUMERIC(12, 2)                                                                              AS kb_pv_rv29,
-                      0::NUMERIC(12, 2)                                                                              AS kb_kulum_rv29,
-                      0                                                                                              as lopp_soetmaks,
-                      0                                                                                              as lopp_kulum
+                       coalesce(k15.kb_kulum_rv15, 0))::NUMERIC(12, 2) AS kb_kulum_rv15,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv16,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv16,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv17,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv17,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv19,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv21,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv23,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv24,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv24,
+                      0::NUMERIC(12, 2)                                AS kb_pv_rv29,
+                      0::NUMERIC(12, 2)                                AS kb_kulum_rv29,
+                      0                                                as lopp_soetmaks,
+                      0                                                as lopp_kulum
 
                   FROM
                       params                         p,
@@ -778,7 +778,7 @@ select
 
     (alg_soetmaks + kb_pv_rv01 - kb_pv_rv02 + kb_pv_rv12 + kb_pv_rv13 + kb_pv_rv14 + kb_pv_rv16 + kb_pv_rv19 +
      kb_pv_rv23 - kb_pv_rv15 + kb_pv_rv29 -
-     kb_pv_rv24):: NUMERIC(12, 2)                                                    as lopp_soetmaks, -- Soetusmaksumus perioodi lõpus
+     kb_pv_rv24 + kb_pv_rv21):: NUMERIC(12, 2)                                       as lopp_soetmaks, -- Soetusmaksumus perioodi lõpus
     -- kulum osa
     kb_kulum_rv11:: NUMERIC(12, 2),                                                                    -- Varade kulum ja allahindlus
     kb_kulum_rv02:: NUMERIC(12, 2),                                                                    -- Müüdud põhivara
@@ -1076,7 +1076,7 @@ from
             coalesce(kb.km00_summa, 0):: NUMERIC(12, 2) as alg_kulum,
             -- pv osa
             0:: NUMERIC(12, 2),                                           -- Soetused ja parendused
-            0:: NUMERIC(12, 2),                                           -- Saadud mitterahaline sihtfinantseerimine
+            coalesce(kb.rv19_summa, 0):: NUMERIC(12, 2),                  -- Saadud mitterahaline sihtfinantseerimine
             coalesce(kb.rv14_summa, 0):: NUMERIC(12, 2),                  -- Üleviimine kinnisvarainvesteeringute grupist materiaalse põhivara gruppi
             coalesce(kb.rv13_summa, 0):: NUMERIC(12, 2),                  -- Üleviimine materiaalse põhivara grupist kinnisvarainvesteeringute gruppi
             0:: NUMERIC(12, 2),                                           -- Varade mitterahalised siirded (üleandmine)
@@ -1363,7 +1363,9 @@ from
                                                                    0                                as rv23_summa,
                                                                    0                                as km23_summa,
                                                                    0                                as rv29_summa,
-                                                                   0                                as km29_summa
+                                                                   0                                as km29_summa,
+                                                                   0                                as rv19_summa,
+                                                                   0                                as km19_summa
                                                                from
                                                                    params p,
                                                                           po_
@@ -1396,7 +1398,11 @@ from
                                                                    0                                as rv23_summa,
                                                                    0                                as km23_summa,
                                                                    0                                as rv29_summa,
-                                                                   0                                as km29_summa
+                                                                   0                                as km29_summa,
+                                                                   0                                as rv19_summa,
+                                                                   0                                as km19_summa
+
+
                                                                from
                                                                    params p,
                                                                           po_
@@ -1431,7 +1437,11 @@ from
                                                                    0                                as km23_summa,
 
                                                                    0                                as rv29_summa,
-                                                                   0                                as km29_summa
+                                                                   0                                as km29_summa,
+                                                                   0                                as rv19_summa,
+                                                                   0                                as km19_summa
+
+
                                                                from
                                                                    params p,
                                                                           po_
@@ -1478,7 +1488,11 @@ from
                                                                            0                     as km23_summa,
 
                                                                            0                     as rv29_summa,
-                                                                           0                     as km29_summa
+                                                                           0                     as km29_summa,
+                                                                           0                     as rv19_summa,
+                                                                           0                     as km19_summa
+
+
                                                                        from
                                                                            po_
 
@@ -1511,7 +1525,11 @@ from
                                                                    0                                      as rv23_summa,
                                                                    0                                      as km23_summa,
                                                                    0                                      as rv29_summa,
-                                                                   0                                      as km29_summa
+                                                                   0                                      as km29_summa,
+                                                                   0                                      as rv19_summa,
+                                                                   0                                      as km19_summa
+
+
                                                                from
                                                                    po_
                                                                where
@@ -1554,7 +1572,11 @@ from
                                                                            0                              as rv23_summa,
                                                                            0                              as km23_summa,
                                                                            0                              as rv29_summa,
-                                                                           0                              as km29_summa
+                                                                           0                              as km29_summa,
+                                                                           0                              as rv19_summa,
+                                                                           0                              as km19_summa
+
+
                                                                        from
                                                                            po_
                                                                        where
@@ -1597,7 +1619,11 @@ from
                                                                            0                     as rv23_summa,
                                                                            0                     as km23_summa,
                                                                            0                     as rv29_summa,
-                                                                           0                     as km29_summa
+                                                                           0                     as km29_summa,
+                                                                           0                     as rv19_summa,
+                                                                           0                     as km19_summa
+
+
                                                                        from
                                                                            po_
                                                                        where
@@ -1635,7 +1661,11 @@ from
                                                                                    libs.library l
                                                                                where
                                                                                    id = po.pv_kaart_id
-                                                                           )               as km29_summa
+                                                                           )               as km29_summa,
+                                                                           0               as rv19_summa,
+                                                                           0               as km19_summa
+
+
                                                                        from
                                                                            po
                                                                        where
@@ -1667,13 +1697,61 @@ from
                                                                            CASE WHEN po.liik = 4 THEN -1 ELSE 1 END * po.summa as rv23_summa,
                                                                            0                                                   as km23_summa,
                                                                            0                                                   as rv29_summa,
-                                                                           0                                                   as km29_summa
+                                                                           0                                                   as km29_summa,
+                                                                           0                                                   as rv19_summa,
+                                                                           0                                                   as km19_summa
+
+
                                                                        from
                                                                            po
                                                                        where
                                                                              po.kood3 = '23'
                                                                          and liik in (1, 4, 3)
                                                                    ) rv23_
+                                                               union all
+-- ->19
+                                                               select *
+                                                               from
+                                                                   (
+                                                                       select
+                                                                           po.pv_kaart_id,
+                                                                           libs.get_pv_kaart_konto(
+                                                                                   po.pv_kaart_id,
+                                                                                   po.kpv) as konto,
+                                                                           '->19'          as selg,
+                                                                           0               as rv00_summa,
+                                                                           0               as km00_summa,
+                                                                           0               as rv11_summa,
+                                                                           0               as rv13_summa,
+                                                                           0               as km13_summa,
+                                                                           0               as rv02_summa,
+                                                                           0               as km02_summa,
+                                                                           0               as rv14_summa,
+                                                                           0               as km14_summa,
+                                                                           0               as rv16_summa,
+                                                                           0               as km16_summa,
+                                                                           0               as rv23_summa,
+                                                                           0               as km23_summa,
+                                                                           0               as rv29_summa,
+                                                                           0               as km29_summa,
+                                                                           po.summa        as rv19_summa,
+                                                                           (
+                                                                               select
+                                                                                   (l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 4)
+                                                                               from
+                                                                                   libs.library l
+                                                                               where
+                                                                                   id = po.pv_kaart_id
+                                                                           )               as km19_summa
+
+
+                                                                       from
+                                                                           po
+                                                                       where
+                                                                             po.kood3 = '19'
+                                                                         and liik in (1, 3)
+                                                                   ) rv19_
+
 
                                                            )                           rep
                                                                inner join cur_pohivara pv on pv.id = rep.pv_kaart_id
@@ -1683,26 +1761,28 @@ from
                                     select
                                         r.pv_kaart_id,
                                         r.konto,
-                                        string_agg(selg, ',')            as selg,
-                                        sum(r.rv00_summa)                as rv00_summa,
-                                        sum(r.km00_summa)                as km00_summa,
-                                        sum(r.rv02_summa)                as rv02_summa,
-                                        sum(r.km02_summa)                as km02_summa,
-                                        sum(r.rv11_summa)                as rv11_summa,
-                                        sum(r.rv13_summa)                as rv13_summa,
-                                        sum(r.km13_summa)                as km13_summa,
-                                        sum(r.rv14_summa)                as rv14_summa,
-                                        sum(r.km14_summa)                as km14_summa,
-                                        sum(r.rv16_summa)                as rv16_summa,
-                                        sum(r.km16_summa)                as km16_summa,
-                                        sum(r.rv23_summa)                as rv23_summa,
-                                        sum(r.km23_summa)                as km23_summa,
-                                        sum(r.rv29_summa)                as rv29_summa,
-                                        sum(r.km29_summa)                as km29_summa,
+                                        string_agg(selg, ',')                         as selg,
+                                        sum(r.rv00_summa)                             as rv00_summa,
+                                        sum(r.km00_summa)                             as km00_summa,
+                                        sum(r.rv02_summa)                             as rv02_summa,
+                                        sum(r.km02_summa)                             as km02_summa,
+                                        sum(r.rv11_summa)                             as rv11_summa,
+                                        sum(r.rv13_summa)                             as rv13_summa,
+                                        sum(r.km13_summa)                             as km13_summa,
+                                        sum(r.rv14_summa)                             as rv14_summa,
+                                        sum(r.km14_summa)                             as km14_summa,
+                                        sum(r.rv16_summa)                             as rv16_summa,
+                                        sum(r.km16_summa)                             as km16_summa,
+                                        sum(r.rv23_summa)                             as rv23_summa,
+                                        sum(r.km23_summa)                             as km23_summa,
+                                        sum(r.rv29_summa)                             as rv29_summa,
+                                        sum(r.km29_summa)                             as km29_summa,
+                                        sum(r.rv19_summa)                             as rv19_summa,
+                                        sum(r.km19_summa)                             as km19_summa,
                                         sum(r.rv00_summa + r.rv13_summa + r.rv14_summa + r.rv16_summa +
-                                            r.rv29_summa - r.rv23_summa) as rv_lopp_summa,
+                                            r.rv29_summa - r.rv23_summa + rv19_summa) as rv_lopp_summa,
                                         sum(r.km00_summa + r.rv11_summa + r.km16_summa + r.km29_summa -
-                                            r.km23_summa)                as rv_lopp_kulum
+                                            r.km23_summa + r.km19_summa)              as rv_lopp_kulum
 
                                     from
                                         report r

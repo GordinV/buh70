@@ -36,7 +36,8 @@ const Journal = {
                          (SELECT ametnik
                           FROM ou.userid
                           WHERE rekvid = j.rekvid
-                            AND kasutaja = (d.history -> 0 ->> 'user')::VARCHAR(120) LIMIT 1)::VARCHAR(120) AS koostaja
+                            AND kasutaja = (d.history -> 0 ->> 'user')::VARCHAR(120) LIMIT 1)::VARCHAR(120) AS koostaja,
+                        (j.properties->>'vn')::varchar(10) as vn
                   FROM docs.doc d
                            INNER JOIN libs.library l ON l.id = d.doc_type_id
                            INNER JOIN docs.journal j ON j.parentId = d.id
@@ -65,7 +66,8 @@ const Journal = {
                               '' :: VARCHAR(20)                           AS regkood,
                               '' :: VARCHAR(254)                          AS asutus,
                               '' :: VARCHAR(120)                          AS kasutaja,
-                              '' :: VARCHAR(120)                          AS koostaja`,
+                              '' :: VARCHAR(120)                          AS koostaja,
+                              null::varchar(10) as vn`,
             query: null,
             multiple: false,
             alias: 'row',
@@ -141,6 +143,41 @@ const Journal = {
             data: [],
             not_initial_load: true
         },
+        {
+            sql: `
+                with
+                    params as (
+                                  select
+                                      lapsed.get_laps_from_viitenumber($1::TEXT)     as laps_id,
+                                      lapsed.get_rekv_id_from_viitenumber($1:: TEXT) as rekv_id
+                    )
+                SELECT
+                    l.id,
+                    l.nimi::varchar(254) as lapse_nimi
+                FROM
+                    lapsed.laps l,
+                    params      p
+                where
+                      l.id = p.laps_id
+                  and exists
+                      (
+                          select
+                              id
+                          from
+                              lapsed.lapse_kaart lk,
+                              params             p
+                          where
+                                lk.parentid = p.laps_id
+                            and lk.rekvid = p.rekv_id
+                      )
+                  and l.staatus < 3`,
+            query: null,
+            multiple: false,
+            alias: 'validateLaps',
+            data: [],
+            not_initial_load: true
+        },
+
     ],
     grid: {
         gridConfiguration: [

@@ -51,9 +51,6 @@ BEGIN
       AND at.status <> 3
       AND (a.properties::JSONB ->> 'tyyp' IS NULL OR a.properties::JSONB ->> 'tyyp' <> 'ETTEMAKS');
 
-
-    raise notice 'l_mk_summa %, l_tasu_summa %, l_ulekanne_summa %, l_ettemaksu_summa %', l_mk_summa, l_tasu_summa, l_ulekanne_summa, l_ettemaksu_summa;
-
     -- сальдо
     l_jaak = coalesce(l_mk_summa, 0) - coalesce(l_tasu_summa, 0) + (CASE WHEN v_mk.opt = 1 THEN -1 ELSE 1 END * coalesce(l_ulekanne_summa, 0)) - coalesce(l_ettemaksu_summa, 0);
 

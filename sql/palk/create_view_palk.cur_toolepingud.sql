@@ -13,7 +13,15 @@ SELECT
     t.ametnik,
     t.koormus,
     t.palgamaar,
-    t.palk,
+--    t.palk,
+    case
+        when t.palgamaar is not null and t.properties ->> 'ameti_klassif' is not null
+            and len(t.properties ->> 'ameti_klassif') > 1 then
+            palk.get_isiku_pohipalk(jsonb_build_object('ameti_klassif', t.properties ->> 'ameti_klassif',
+                                                       'palgamaar', t.palgamaar))
+        else t.palk
+        end::numeric(12, 2)                                     as palk,
+
     t.pohikoht,
     t.resident,
     t.riik,

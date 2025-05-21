@@ -38,6 +38,7 @@ DECLARE
     l_parrallel_id         INTEGER; -- ид параллельной проводки
     v_asendus_taabel       RECORD;
     l_asendus_user_id      INTEGER;
+    l_vn                   text ; -- lapse VN
 BEGIN
 
     -- select dok data
@@ -189,6 +190,9 @@ BEGIN
         -- род. плата
         IF v_arv.laps_id IS NOT NULL
         THEN
+            -- поличим VN для ребенка
+            l_vn = lapsed.get_viitenumber(v_arv.rekvid, v_arv.laps_id);
+
             -- удалим если есть замещающие проводки
             IF v_arv.asendus_id IS NOT NULL
             THEN
@@ -296,7 +300,8 @@ BEGIN
             lcSelg                            AS selg,
             v_arv.muud,
             v_arv.Asutusid,
-            'Arve nr. ' || v_arv.number::TEXT AS dok
+            'Arve nr. ' || v_arv.number::TEXT AS dok,
+            l_vn                              as vn
         INTO v_journal;
 
         l_json = row_to_json(v_journal);
@@ -909,6 +914,7 @@ BEGIN
                             'Arve nr. ' || v_arv.number::TEXT                                             AS dok,
                             l_asutus_id                                                                   AS asutusid,
                             ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_id')::INTEGER AS asendus_id,
+                            l_vn                                                                          as vn,
                             '[]'::JSONB || (l_json_asendus_details::JSONB -> (i - 1))::JSONB              AS gridData
                         INTO v_journal;
                         -- создаем параметры
@@ -983,7 +989,8 @@ BEGIN
                     lcSelg             AS selg,
                     v_arv.muud,
                     v_arv.Asutusid,
-                    v_arv.number::TEXT AS dok
+                    v_arv.number::TEXT AS dok,
+                    l_vn               as vn
                 INTO v_journal;
 
                 l_json_tasu = row_to_json(v_journal);

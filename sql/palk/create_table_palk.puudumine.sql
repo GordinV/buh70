@@ -24,3 +24,4 @@ CREATE INDEX puudumine_libid
 CREATE INDEX puudumine_lepingid
   ON palk.puudumine (lepingid);
 
+alter table palk.puudumine add COLUMN if not exists puudumiste_liik PUUDUMISTE_LIIGID;

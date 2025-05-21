@@ -46,6 +46,8 @@ BEGIN
         error_code = 6;
         error_message = 'Eelarve projekt ei leidnud';
         result = 0;
+        RAISE exception 'Viga: %', error_message;
+
         RETURN;
     END IF;
 
@@ -58,6 +60,7 @@ BEGIN
         result = 1;
         error_code = 0;
         error_message = 'Eelarve pole kinnitatud';
+        RAISE exception 'Viga: %',error_message;
         RETURN;
     END IF;
 
@@ -145,7 +148,7 @@ BEGIN
                 result = 0;
                 error_code = 1;
                 error_message = 'Eelarve rida salvestamine ebaõnnestus';
-                RAISE NOTICE 'viga eelarve_json %', eelarve_json;
+                RAISE exception 'Viga: Eelarve rida salvestamine ebaõnnestus';
                 RETURN;
             END IF;
 

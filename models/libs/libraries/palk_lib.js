@@ -111,19 +111,24 @@ module.exports = {
             {id: "id", name: "id", width: "10%", show: false},
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"},
-            {id: "tululiik", name: "Maksukood", width: "25%"}
+            {id: "tululiik", name: "Maksukood", width: "15%"},
+            {id: "proj", name: "Projekt", width: "15%"}
         ],
-        sqlString: `SELECT l.id,
-                           l.kood,
-                           l.nimetus,
-                           l.tun5                                                          AS kehtiv,
-                           coalesce((l.properties::JSONB ->> 'tululiik'), '')::VARCHAR(20) AS tululiik,
-                           coalesce((l.properties::JSONB ->> 'liik')::INTEGER, 1)          AS liik,
-                           $2::INTEGER                                                     AS userId,
-                           l.tun5                                                          AS is_arhiiv,
-                           (l.properties::JSONB ->> 'valid')::DATE                         AS valid
-                    FROM libs.library l
-                    WHERE l.library = 'PALK'
+        sqlString: `SELECT
+                        l.id,
+                        l.kood,
+                        l.nimetus,
+                        l.tun5                                                          AS kehtiv,
+                        coalesce((l.properties::JSONB ->> 'tululiik'), '')::VARCHAR(20) AS tululiik,
+                        coalesce((l.properties::JSONB ->> 'liik')::INTEGER, 1)          AS liik,
+                        $2::INTEGER                                                     AS userId,
+                        l.tun5                                                          AS is_arhiiv,
+                        (l.properties::JSONB ->> 'proj')::varchar(20)                   AS proj,
+                        (l.properties::JSONB ->> 'valid')::DATE                         AS valid
+                    FROM
+                        libs.library l
+                    WHERE
+                          l.library = 'PALK'
                       AND l.status <> 3
                       AND (l.rekvId = $1 OR l.rekvid IS NULL)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

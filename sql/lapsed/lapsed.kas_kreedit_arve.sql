@@ -44,7 +44,8 @@ BEGIN
     LIMIT 1;
 
     -- ищем аналогичный
-    if l_alus_id is null then
+    if coalesce(l_alus_id,0) = 0 then
+        raise notice 'if l_alus_id %', l_alus_id;
         SELECT
             a.parentid                                                    AS id,
             asutusid,
@@ -102,6 +103,8 @@ BEGIN
                   when (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak, 0)) >= v_alus_arve.jaak
                       then v_alus_arve.jaak
                   else (-1 * v_kreedit_arve.summa - coalesce(l_kreedit_arve_jaak, 0)) end;
+
+    raise notice 'v_alus_arve %, l_summa %, v_kreedit_arve.summa %, l_kreedit_arve_jaak %', v_alus_arve.id, l_summa, v_kreedit_arve.summa, l_kreedit_arve_jaak;
 
     IF v_alus_arve.id IS NOT NULL and l_summa > 0
     THEN

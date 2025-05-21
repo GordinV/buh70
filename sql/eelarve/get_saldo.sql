@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS get_saldo(formula TEXT, konto TEXT, rv TEXT, tegev TEXT)
 DROP FUNCTION IF EXISTS get_saldo(formula TEXT, konto TEXT, rv TEXT, tegev TEXT, INTEGER);
 DROP FUNCTION IF EXISTS get_saldo(formula TEXT, konto TEXT, rv TEXT, tegev TEXT, INTEGER, INTEGER);
 
---DROP TABLE IF EXISTS tmp_andmik;
+/*--DROP TABLE IF EXISTS tmp_andmik;
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik (
     idx         TEXT,
     tyyp        INTEGER,
@@ -23,7 +23,7 @@ CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik (
     rekv_id     INTEGER,
     rekvid      INTEGER
 );
-
+*/
 CREATE OR REPLACE FUNCTION get_saldo(formula TEXT, konto TEXT, rv TEXT DEFAULT NULL, tegevus TEXT DEFAULT NULL,
                                      rekv_id INTEGER DEFAULT NULL,
                                      aasta INTEGER DEFAULT NULL)

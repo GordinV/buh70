@@ -1,0 +1,26 @@
+{
+  "port": 3000,
+  "https": 443,
+  "name": "app",
+  "pg": {
+    "host": "localhost",
+    "port": "5432",
+    "database":"db",
+    "connection": "postgres://vlad:password@localhost:5432/db",
+    "query_timeout": "600000",
+    "session_connection": "postgres://vlad:empty@localhost:5432/db"
+  },
+  "session": {
+    "secret": "Secrect",
+    "key": "vlad",
+    "resave": true,
+    "saveUninitialized": true,
+    "cookie": {
+      "path": "/",
+      "httpOnly": true,
+      "secure": true,
+      "maxAge":  86400000
+    }
+  }
+
+}

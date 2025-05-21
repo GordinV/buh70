@@ -99,14 +99,17 @@ BEGIN
             l_rekvid = left(l_new_viitenr, 3)::INTEGER;
 
             -- получим ид ребенка
-            l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
+--            l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
+            -- попробуем найти ребенка по ссылке
+            -- данный поиск включает проверку на услуги. Добавлено 12.05.2025 А. Варгунин
+            l_laps_id = lapsed.get_laps_from_viitenumber(l_new_viitenr);
 
             -- проверим на наличие этого ид в бд
-            IF NOT exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
+/*            IF NOT exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
             THEN
                 l_laps_id = NULL;
             END IF;
-
+*/
 
             -- задаем признак
             l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvid);
