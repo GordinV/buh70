@@ -58,7 +58,7 @@ let promise = new Promise((resolve, reject) => {
     var sqls = [];
     for (let i = 0; i < data.data.length; i++) {
         let row = data.data[i];
-        let sql = `SELECT eelarve.salvesta_lisa_1_5_kontrol(2477, '${row.kpv}',${row.rekvid})`;
+        let sql = `call eelarve.salvesta_lisa_1_5_kontrol(2477, '${row.kpv}',${row.rekvid})`;
         sqls.push(sql);
     }
     let result = db.executeQueries(sqls, null, null, config);
