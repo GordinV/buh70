@@ -179,7 +179,7 @@ BEGIN
 
     END IF;
 
-    IF doc_id IS NULL OR doc_id = 0
+    IF doc_id IS NULL OR doc_id::integer = 0
     THEN
 
         -- проверка на уникальность кода
@@ -190,7 +190,7 @@ BEGIN
                     AND status < 3)
         THEN
             -- такой код уже есть, возвращаем ошибку
-            RAISE EXCEPTION 'Viga, kood juba kasutusel: %', doc_dok;
+            RAISE EXCEPTION 'Viga, kood juba kasutusel: doc_id %, doc_kood %',doc_id, doc_kood;
         END IF;
 
         SELECT row_to_json(row)
@@ -218,11 +218,14 @@ BEGIN
                   FROM libs.nomenklatuur
                   WHERE rekvid = user_rekvid
                     AND kood = doc_kood
+                    and dok = doc_dok
                     AND id <> doc_id
                     AND status < 3)
         THEN
             -- такой код уже есть, возвращаем ошибку
-            RAISE EXCEPTION 'Viga, kood juba kasutusel: %', doc_dok;
+--            RAISE EXCEPTION 'Viga, kood juba kasutusel: %', doc_dok;
+            RAISE EXCEPTION 'Viga, kood juba kasutusel: doc_id %, doc_kood %',doc_id, doc_kood;
+
         END IF;
 
         -- muuda

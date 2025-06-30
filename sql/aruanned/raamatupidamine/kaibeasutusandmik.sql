@@ -5,188 +5,210 @@ DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGE
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION docs.kaibeasutusandmik(l_konto TEXT, l_asutus INTEGER, l_kpv1 DATE, l_kpv2 DATE,
-                                                   l_rekvid INTEGER, l_tunnus TEXT DEFAULT '%',
-                                                   l_kond INTEGER DEFAULT 0,
-                                                   l_params JSONB DEFAULT NULL::JSONB)
-    RETURNS TABLE (
-        alg_saldo NUMERIC(14, 2),
-        deebet    NUMERIC(14, 2),
-        kreedit   NUMERIC(14, 2),
-        konto     VARCHAR(20),
-        asutus_id INTEGER,
-        rekv_id   INTEGER
-    )
+                                                  l_rekvid INTEGER, l_tunnus TEXT DEFAULT '%',
+                                                  l_kond INTEGER DEFAULT 0,
+                                                  l_params JSONB DEFAULT NULL::JSONB)
+    RETURNS TABLE
+            (
+                alg_saldo NUMERIC(14, 2),
+                deebet    NUMERIC(14, 2),
+                kreedit   NUMERIC(14, 2),
+                konto     VARCHAR(20),
+                asutus_id INTEGER,
+                rekv_id   INTEGER,
+                laps_id   integer
+            )
 AS
 $BODY$
 
-WITH params AS (
-    SELECT coalesce(l_params::JSONB ->> 'tunnus', '')::TEXT || '%'  AS tunnus,
-           coalesce(l_params::JSONB ->> 'proj', '')::TEXT || '%'    AS proj,
-           coalesce(l_params::JSONB ->> 'uritus', '')::TEXT || '%'  AS uritus,
-           coalesce(l_params::JSONB ->> 'objekt', '')::TEXT || '%'  AS objekt,
-           coalesce(l_params::JSONB ->> 'tegevus', '')::TEXT || '%' AS tegevus,
-           CASE WHEN empty(l_asutus) THEN 0 ELSE l_asutus END       AS asutus_1,
-           CASE WHEN empty(l_asutus) THEN 999999 ELSE l_asutus END  AS asutus_2,
-           coalesce(ltrim(rtrim(l_konto)), '')::TEXT || '%'         AS konto
-),
-     rekv_ids AS (
-         SELECT rekv_id
-         FROM get_asutuse_struktuur(l_rekvid)
-         WHERE rekv_id = CASE
-                             WHEN l_kond = 1
-                                 -- kond
-                                 THEN rekv_id
-                             ELSE l_rekvid END
-     ),
-     docs_types AS (
-         SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')
-     ),
-     report AS (
-         SELECT sum(qry.alg_saldo)     AS alg_saldo,
-                sum(qry.deebet)        AS deebet,
-                sum(qry.kreedit)       AS kreedit,
-                qry.konto::VARCHAR(20) AS konto,
-                qry.asutus_id          AS asutus_id,
-                qry.rekv_id            AS rekv_id
-         FROM (
-                  -- alg.db
-                  SELECT D.rekvid                                                                         AS rekv_id,
-                         CASE WHEN left(j1.deebet, 4) IN ('1001') THEN NULL ELSE j.asutusid END:: INTEGER AS asutus_id,
-                         (j1.summa)                                                                       AS alg_saldo,
-                         0 :: NUMERIC(14, 2)                                                              AS deebet,
-                         0 :: NUMERIC(14, 2)                                                              AS kreedit,
-                         trim(j1.deebet)::VARCHAR(20)                                                     AS konto,
-                         coalesce(j1.tunnus, '')                                                          AS tunnus,
-                         coalesce(j1.proj, '')                                                            AS proj,
-                         coalesce(j1.kood4, '')                                                           AS uritus,
-                         coalesce(j1.objekt, '')                                                          AS objekt
-                  FROM docs.doc d
-                           INNER JOIN docs.journal j ON j.parentid = d.id
-                           LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-                           INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
-                       params p
-                  WHERE j.kpv < l_kpv1
-                    AND d.status <> 3
-                    AND d.doc_type_id IN (SELECT id FROM docs_types)
-                    AND CASE
-                            WHEN (j1.kreedit = '650100' OR j1.deebet = '650100') THEN j.asutusid IS NOT NULL
-                            ELSE TRUE END
-                    AND coalesce(j.asutusid,0) >= p.asutus_1
-                    AND  coalesce(j.asutusid,0) <= p.asutus_2
-                    AND j1.deebet LIKE p.konto
-                    AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                    -- поправка Калле 10.10.2022
-                    AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv1::DATE) OR
-                         ltrim(rtrim(j1.deebet)) IN (SELECT kood
-                                                     FROM com_kontoplaan
-                                                     WHERE tyyp IN (1, 2)
-                                                       -- J. Tsekanina 21.02.2023
-                                                       AND left(kood, 3) NOT IN ('100')
-                         )
-                      )
-                  UNION ALL
-                  -- alg.kr
-                  SELECT j.rekvid                          AS rekv_id,
-                         CASE
-                             WHEN left(j1.kreedit, 4) IN ('1001') THEN NULL
-                             ELSE j.asutusid END:: INTEGER AS asutus_id,
-                         -1 * (j1.summa)                   AS alg_saldo,
-                         0 :: NUMERIC                      AS deebet,
-                         0 :: NUMERIC                      AS kreedit,
-                         trim(j1.kreedit)::VARCHAR(20)     AS konto,
-                         coalesce(j1.tunnus, '')           AS tunnus,
-                         coalesce(j1.proj, '')             AS proj,
-                         coalesce(j1.kood4, '')            AS uritus,
-                         coalesce(j1.objekt, '')           AS objekt
-                  FROM docs.doc D
-                           INNER JOIN docs.journal j ON j.parentid = D.id
-                           LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-                           INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
-                       params p
-                  WHERE j.kpv < l_kpv1
-                    AND d.status <> 3
-                    AND d.doc_type_id IN (SELECT id FROM docs_types)
-                    AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
+WITH params AS (SELECT coalesce(l_params::JSONB ->> 'tunnus', '')::TEXT || '%'  AS tunnus,
+                       coalesce(l_params::JSONB ->> 'proj', '')::TEXT || '%'    AS proj,
+                       coalesce(l_params::JSONB ->> 'uritus', '')::TEXT || '%'  AS uritus,
+                       coalesce(l_params::JSONB ->> 'objekt', '')::TEXT || '%'  AS objekt,
+                       coalesce(l_params::JSONB ->> 'tegevus', '')::TEXT || '%' AS tegevus,
+                       (l_params::JSONB -> 'laps_id')                           AS laps_id,
+                       CASE WHEN empty(l_asutus) THEN 0 ELSE l_asutus END       AS asutus_1,
+                       CASE WHEN empty(l_asutus) THEN 999999 ELSE l_asutus END  AS asutus_2,
+                       coalesce(ltrim(rtrim(l_konto)), '')::TEXT || '%'         AS konto),
+     rekv_ids AS (SELECT rekv_id
+                  FROM get_asutuse_struktuur(l_rekvid)
+                  WHERE rekv_id = CASE
+                                      WHEN l_kond = 1
+                                          -- kond
+                                          THEN rekv_id
+                                      ELSE l_rekvid END),
+     docs_types AS (SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')),
+     lapsed as (SELECT elem::integer as id
+                FROM params p,
+                     jsonb_array_elements(p.laps_id -> 'laps_id') elem),
+     laste_docs as (select l.docid, l.parentid as laps_id
+                    from lapsed.liidestamine l,
+                         docs.journal j,
+                         lapsed,
+                         params p
+                    where p.laps_id is not null
+                      and l.docid = j.parentid
+                      and l.parentid = lapsed.id
+                      and j.rekvid in (select rekv_id from rekv_ids)
+                    ),
+     report AS (SELECT sum(qry.alg_saldo)     AS alg_saldo,
+                       sum(qry.deebet)        AS deebet,
+                       sum(qry.kreedit)       AS kreedit,
+                       qry.konto::VARCHAR(20) AS konto,
+                       qry.asutus_id          AS asutus_id,
+                       qry.rekv_id            AS rekv_id,
+                       qry.laps_id
+                FROM (
+                         -- alg.db
+                         SELECT D.rekvid                                                                         AS rekv_id,
+                                CASE WHEN left(j1.deebet, 4) IN ('1001') THEN NULL ELSE j.asutusid END:: INTEGER AS asutus_id,
+                                (j1.summa)                                                                       AS alg_saldo,
+                                0 :: NUMERIC(14, 2)                                                              AS deebet,
+                                0 :: NUMERIC(14, 2)                                                              AS kreedit,
+                                trim(j1.deebet)::VARCHAR(20)                                                     AS konto,
+                                coalesce(j1.tunnus, '')                                                          AS tunnus,
+                                coalesce(j1.proj, '')                                                            AS proj,
+                                coalesce(j1.kood4, '')                                                           AS uritus,
+                                coalesce(j1.objekt, '')                                                          AS objekt,
+                                l.laps_id
+                         FROM docs.doc d
+                                  INNER JOIN docs.journal j ON j.parentid = d.id
+                                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+                                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                  left outer join laste_docs l on l.docid = d.id,
+                              params p
+                         WHERE j.kpv < l_kpv1
+                           AND d.status <> 3
+                           AND d.doc_type_id IN (SELECT id FROM docs_types)
+                           AND CASE
+                                   WHEN (j1.kreedit = '650100' OR j1.deebet = '650100') THEN j.asutusid IS NOT NULL
+                                   ELSE TRUE END
+                           AND coalesce(j.asutusid, 0) >= p.asutus_1
+                           AND coalesce(j.asutusid, 0) <= p.asutus_2
+                           AND j1.deebet LIKE p.konto
+                           AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                           -- поправка Калле 10.10.2022
+                           AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv1::DATE) OR
+                                ltrim(rtrim(j1.deebet)) IN (SELECT kood
+                                                            FROM com_kontoplaan
+                                                            WHERE tyyp IN (1, 2)
+                                                              -- J. Tsekanina 21.02.2023
+                                                              AND left(kood, 3) NOT IN ('100'))
+                             )
+                           -- проводки только одношо ребенка
+                           and (p.laps_id is null or d.id in (select docid from lapsed))
+                         UNION ALL
+                         -- alg.kr
+                         SELECT j.rekvid                          AS rekv_id,
+                                CASE
+                                    WHEN left(j1.kreedit, 4) IN ('1001') THEN NULL
+                                    ELSE j.asutusid END:: INTEGER AS asutus_id,
+                                -1 * (j1.summa)                   AS alg_saldo,
+                                0 :: NUMERIC                      AS deebet,
+                                0 :: NUMERIC                      AS kreedit,
+                                trim(j1.kreedit)::VARCHAR(20)     AS konto,
+                                coalesce(j1.tunnus, '')           AS tunnus,
+                                coalesce(j1.proj, '')             AS proj,
+                                coalesce(j1.kood4, '')            AS uritus,
+                                coalesce(j1.objekt, '')           AS objekt,
+                                l.laps_id
+                         FROM docs.doc D
+                                  INNER JOIN docs.journal j ON j.parentid = D.id
+                                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+                                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                  left outer join laste_docs l on l.docid = d.id,
+                              params p
+                         WHERE j.kpv < l_kpv1
+                           AND d.status <> 3
+                           AND d.doc_type_id IN (SELECT id FROM docs_types)
+                           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
 --           AND j.asutusid IS NOT NULL
-                    AND coalesce(j.asutusid,0) >= p.asutus_1
-                    AND coalesce(j.asutusid,0) <= p.asutus_2
-                    AND j1.kreedit LIKE p.konto
-                    -- поправка Калле 10.10.2022
-                    AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv1::DATE) OR
-                         ltrim(rtrim(j1.kreedit)) IN (SELECT kood
-                                                      FROM com_kontoplaan
-                                                      WHERE tyyp IN (1, 2)
-                                                        -- J. Tsekanina 21.02.2023
-                                                        AND left(kood, 3) NOT IN ('100')
-                         ))
+                           AND coalesce(j.asutusid, 0) >= p.asutus_1
+                           AND coalesce(j.asutusid, 0) <= p.asutus_2
+                           AND j1.kreedit LIKE p.konto
+                           -- поправка Калле 10.10.2022
+                           AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv1::DATE) OR
+                                ltrim(rtrim(j1.kreedit)) IN (SELECT kood
+                                                             FROM com_kontoplaan
+                                                             WHERE tyyp IN (1, 2)
+                                                               -- J. Tsekanina 21.02.2023
+                                                               AND left(kood, 3) NOT IN ('100')))
+                           and (p.laps_id is null or d.id in (select docid from lapsed))
 
-                  UNION ALL
-                  -- db kaibed
-                  SELECT j.rekvid                                                                         AS rekv_id,
-                         CASE WHEN left(j1.deebet, 4) IN ('1001') THEN NULL ELSE j.asutusid END:: INTEGER AS asutus_id,
-                         0 :: NUMERIC(14, 2)                                                              AS alg_saldo,
-                         (j1.summa)                                                                       AS deebet,
-                         0 :: NUMERIC(14, 2)                                                              AS kreedit,
-                         trim(j1.deebet)                                                                  AS konto,
-                         coalesce(j1.tunnus, '')                                                          AS tunnus,
-                         coalesce(j1.proj, '')                                                            AS proj,
-                         coalesce(j1.kood4, '')                                                           AS uritus,
-                         coalesce(j1.objekt, '')                                                          AS objekt
-
-                  FROM docs.doc d
-                           INNER JOIN docs.journal j ON j.parentid = d.id
-                           LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-                           INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
-                       params p
-                  WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
-                    AND j.kpv <= l_kpv2
-                    AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                    AND d.status <> 3
-                    AND d.doc_type_id IN (SELECT id FROM docs_types)
+                         UNION ALL
+                         -- db kaibed
+                         SELECT j.rekvid                                                                         AS rekv_id,
+                                CASE WHEN left(j1.deebet, 4) IN ('1001') THEN NULL ELSE j.asutusid END:: INTEGER AS asutus_id,
+                                0 :: NUMERIC(14, 2)                                                              AS alg_saldo,
+                                (j1.summa)                                                                       AS deebet,
+                                0 :: NUMERIC(14, 2)                                                              AS kreedit,
+                                trim(j1.deebet)                                                                  AS konto,
+                                coalesce(j1.tunnus, '')                                                          AS tunnus,
+                                coalesce(j1.proj, '')                                                            AS proj,
+                                coalesce(j1.kood4, '')                                                           AS uritus,
+                                coalesce(j1.objekt, '')                                                          AS objekt,
+                                l.laps_id
+                         FROM docs.doc d
+                                  INNER JOIN docs.journal j ON j.parentid = d.id
+                                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+                                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                  left outer join laste_docs l on l.docid = d.id,
+                              params p
+                         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+                           AND j.kpv <= l_kpv2
+                           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                           AND d.status <> 3
+                           AND d.doc_type_id IN (SELECT id FROM docs_types)
 
 --           AND j.asutusid IS NOT NULL
-                    AND j1.deebet LIKE p.konto
-                    AND coalesce(j.asutusid,0) >= p.asutus_1
-                    AND coalesce(j.asutusid,0) <= p.asutus_2
-                  UNION ALL
+                           AND j1.deebet LIKE p.konto
+                           AND coalesce(j.asutusid, 0) >= p.asutus_1
+                           AND coalesce(j.asutusid, 0) <= p.asutus_2
+                           and (p.laps_id is null or d.id in (select docid from lapsed))
+
+                         UNION ALL
 -- kr kaibed
-                  SELECT j.rekvid                                                                          AS rekv_id,
-                         CASE WHEN left(j1.kreedit, 4) IN ('1001') THEN NULL ELSE j.asutusid END:: INTEGER AS asutus_id,
-                         0 :: NUMERIC(14, 2)                                                               AS alg_saldo,
-                         0 :: NUMERIC                                                                      AS deebet,
-                         (j1.summa)                                                                        AS kreedit,
-                         trim(j1.kreedit)                                                                  AS konto,
-                         coalesce(j1.tunnus, '')                                                           AS tunnus,
-                         coalesce(j1.proj, '')                                                             AS proj,
-                         coalesce(j1.kood4, '')                                                            AS uritus,
-                         coalesce(j1.objekt, '')                                                           AS objekt
-                  FROM docs.doc d
-                           INNER JOIN docs.journal j ON j.parentid = d.id
-                           LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-                           INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
-                       params p
-                  WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
-                    AND j.kpv <= l_kpv2
-                    AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                    AND d.status <> 3
-                    AND d.doc_type_id IN (SELECT id FROM docs_types)
-                    AND j1.kreedit LIKE p.konto
-                    AND coalesce(j.asutusid,0) >= p.asutus_1
-                    AND coalesce(j.asutusid,0) <= p.asutus_2
-              ) qry,
-              params p
-         WHERE qry.tunnus ILIKE p.tunnus
-           AND qry.proj ILIKE p.proj
-           AND qry.objekt ILIKE p.objekt
-           AND qry.uritus ILIKE p.uritus
-         GROUP BY qry.konto, qry.asutus_id, qry.rekv_id
-     )
+                         SELECT j.rekvid                          AS rekv_id,
+                                CASE
+                                    WHEN left(j1.kreedit, 4) IN ('1001') THEN NULL
+                                    ELSE j.asutusid END:: INTEGER AS asutus_id,
+                                0 :: NUMERIC(14, 2)               AS alg_saldo,
+                                0 :: NUMERIC                      AS deebet,
+                                (j1.summa)                        AS kreedit,
+                                trim(j1.kreedit)                  AS konto,
+                                coalesce(j1.tunnus, '')           AS tunnus,
+                                coalesce(j1.proj, '')             AS proj,
+                                coalesce(j1.kood4, '')            AS uritus,
+                                coalesce(j1.objekt, '')           AS objekt,
+                                l.laps_id
+                         FROM docs.doc d
+                                  INNER JOIN docs.journal j ON j.parentid = d.id
+                                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+                                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                  left outer join laste_docs l on l.docid = d.id,
+                              params p
+                         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+                           AND j.kpv <= l_kpv2
+                           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                           AND d.status <> 3
+                           AND d.doc_type_id IN (SELECT id FROM docs_types)
+                           AND j1.kreedit LIKE p.konto
+                           AND coalesce(j.asutusid, 0) >= p.asutus_1
+                           AND coalesce(j.asutusid, 0) <= p.asutus_2
+                           and (p.laps_id is null or d.id in (select docid from lapsed))) qry,
+                     params p
+                WHERE qry.tunnus ILIKE p.tunnus
+                  AND qry.proj ILIKE p.proj
+                  AND qry.objekt ILIKE p.objekt
+                  AND qry.uritus ILIKE p.uritus
+                GROUP BY qry.konto, qry.asutus_id, qry.rekv_id, qry.laps_id)
 SELECT r.alg_saldo,
        r.deebet,
        r.kreedit,
        r.konto,
        r.asutus_id,
-       r.rekv_id
+       r.rekv_id,
+       r.laps_id
 FROM report r
 UNION ALL
 SELECT sum(r.alg_saldo) AS alg_saldo,
@@ -194,10 +216,11 @@ SELECT sum(r.alg_saldo) AS alg_saldo,
        sum(r.kreedit)   AS kreedit,
        r.konto,
        r.asutus_id,
-       999999         AS rekv_id
+       999999           AS rekv_id,
+       r.laps_id
 FROM report r
 WHERE l_kond > 0
-GROUP BY r.konto, r.asutus_id;
+GROUP BY r.konto, r.asutus_id, r.laps_id;
 
 
 $BODY$
@@ -216,15 +239,11 @@ select * from (
 
 SELECT  sum(alg_saldo) over() as alg, sum(deebet) over() as db, sum(kreedit) over() as kr,
 a.nimetus, a.id, a.staatus, a.properties->>'kehtivus' as kehtivus, a.tp, rep.*
-FROM docs.kaibeasutusandmik('203900%',0,'2023-01-01','2023-04-30', 3,'%',0,null::jsonb) rep
+FROM docs.kaibeasutusandmik('103000%',48943,'2025-01-01','2025-05-31', 84,'%',0,'{"laps_id":[9388]}'::jsonb) rep
 left outer join libs.asutus a on a.id = rep.asutus_id
 --where kreedit = 37.90
-alg;db;kr
--1845.21;14750.08;35690.16
-alg;db;kr
--1845.21;14750.08;35690.16
-
-
+[2025-05-28 22:03:55] 1 row retrieved starting from 1 in 6 s 338 ms (execution: 5 s 934 ms, fetching: 404 ms)
+0,123.95,125.85,NOVIKOVA KARINA
 
 ) qry
 where kehtivus is not null

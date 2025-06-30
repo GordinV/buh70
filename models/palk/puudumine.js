@@ -1,41 +1,38 @@
 module.exports = {
     select: [{
-        sql: `SELECT
-                  $2 :: INTEGER                                      AS userid,
-                  'PUUDUMINE'                                        AS doc_type_id,
-                  p.id,
-                  p.lepingid,
-                  p.libid,
-                  p.summa,
-                  p.kpv1,
-                  p.kpv2,
-                  p.paevad,
-                  coalesce((p.properties->>'arvestatud_paevad')::integer,p.paevad) as arvestatud_paevad,
-                  p.puudumiste_liik::varchar(20),
-                  p.tyyp,
-                  p.status,
-                  p.muud,
-                  t.parentid,
-                  (p.properties ->> 'palk_oper_id')::integer         as palk_oper_id,
-                  (p.properties ->> 'algorithm')::varchar(100)       as algorithm,
-                  (p.properties ->> 'amet')::varchar(254)            as amet,
-                  (p.properties ->> 'avg_paeva_summa')::numeric      as avg_paeva_summa,
-                  (p.properties ->> 'arv_paevad_perioodis')::integer as arv_paevad_perioodis,
-                  p.properties ->> 'selg'                            as selg,
-                  (p.properties ->> 'allikas')::varchar(20)          as allikas,
-                  (p.properties ->> 'tegev')::varchar(20)            as tegev,
-                  (p.properties ->> 'artikkel')::varchar(20)         as artikkel,
-                  (p.properties ->> 'tunnus')::varchar(20)           as tunnus,
-                  (p.properties ->> 'kpv1')::date                    as params_kpv1,
-                  (p.properties ->> 'kpv2')::date                    as params_kpv2,
-                  pt.vs_kooded,
-                  pt.eesti as pt_nimetus                  
-              FROM
-                  palk.puudumine                p
-                      inner join palk.tooleping t on t.id = p.lepingid
-                      left outer join palk.com_puudumiste_tyyp pt on pt.liik = p.puudumiste_liik and pt.id = p.tyyp              
-              WHERE
-                  p.id = $1`,
+        sql: `SELECT $2 :: INTEGER                                                       AS userid,
+                     'PUUDUMINE'                                                         AS doc_type_id,
+                     p.id,
+                     p.lepingid,
+                     p.libid,
+                     p.summa,
+                     p.kpv1,
+                     p.kpv2,
+                     p.paevad,
+                     coalesce((p.properties ->> 'arvestatud_paevad')::integer, p.paevad) as arvestatud_paevad,
+                     p.puudumiste_liik::varchar(20),
+                     p.tyyp,
+                     p.status,
+                     p.muud,
+                     t.parentid,
+                     coalesce((p.properties ->> 'palk_oper_id')::integer, 0)::integer    as palk_oper_id,
+                     (p.properties ->> 'algorithm')::varchar(100)                        as algorithm,
+                     (p.properties ->> 'amet')::varchar(254)                             as amet,
+                     (p.properties ->> 'avg_paeva_summa')::numeric                       as avg_paeva_summa,
+                     (p.properties ->> 'arv_paevad_perioodis')::integer                  as arv_paevad_perioodis,
+                     p.properties ->> 'selg'                                             as selg,
+                     (p.properties ->> 'allikas')::varchar(20)                           as allikas,
+                     (p.properties ->> 'tegev')::varchar(20)                             as tegev,
+                     (p.properties ->> 'artikkel')::varchar(20)                          as artikkel,
+                     (p.properties ->> 'tunnus')::varchar(20)                            as tunnus,
+                     (p.properties ->> 'kpv1')::date                                     as params_kpv1,
+                     (p.properties ->> 'kpv2')::date                                     as params_kpv2,
+                     pt.vs_kooded,
+                     pt.eesti                                                            as pt_nimetus
+              FROM palk.puudumine p
+                       inner join palk.tooleping t on t.id = p.lepingid
+                       left outer join palk.com_puudumiste_tyyp pt on pt.liik = p.puudumiste_liik and pt.id = p.tyyp
+              WHERE p.id = $1`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER        AS id,
                       $2 :: INTEGER        AS userid,

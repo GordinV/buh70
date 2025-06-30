@@ -59,8 +59,6 @@ BEGIN
         l_lopp_paev = day(v_Tooleping.lopp);
     END IF;
 
-    raise notice 'l_alg_paev %, l_lopp_paev %', l_alg_paev, l_lopp_paev;
-
     -- arv puhkuse paevad
     SELECT row_to_json(row)
     INTO l_params
@@ -164,8 +162,6 @@ BEGIN
 
         l_hours = l_toopaevad * v_Tooleping.toopaev - l_tahtpaeva_tunnid;
 
-        raise notice 'sp_calc_taabel2 l_params %, l_hours %, l_toopaevad %', l_params, l_hours, l_toopaevad;
-
         IF l_hours < 0
         THEN
             l_hours = 0;
@@ -196,7 +192,7 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel2(JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT * from palk.sp_calc_taabel2('{"aasta":2021,"kuu":12,"lepingid":22376}'::JSONB);
+SELECT * from palk.sp_calc_taabel2('{"aasta":2025,"kuu":6,"lepingid":22376}'::JSONB);
 -- -> 145 ?
 -- lep 35222, 28609, 20026 (GZ)
 

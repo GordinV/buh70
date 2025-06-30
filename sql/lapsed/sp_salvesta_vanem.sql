@@ -37,13 +37,10 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT
-        kasutaja
+    SELECT kasutaja
     INTO userName
-    FROM
-        ou.userid u
-    WHERE
-          u.rekvid = user_rekvid
+    FROM ou.userid u
+    WHERE u.rekvid = user_rekvid
       AND u.id = userId;
     IF userName IS NULL
     THEN
@@ -58,35 +55,27 @@ BEGIN
     -- сохраняем ид прежнего ответственного
     IF doc_arved
     THEN
-        l_prev_arv_isik_id = (
-                                 SELECT
-                                     va.asutusid
-                                 FROM
-                                     lapsed.vanem_arveldus va
-                                 WHERE
-                                       va.parentid = doc_parentid
-                                   AND va.rekvid = user_rekvid
-                                   AND va.arveldus
-                                 LIMIT 1
-                             );
+        l_prev_arv_isik_id = (SELECT va.asutusid
+                              FROM lapsed.vanem_arveldus va
+                              WHERE va.parentid = doc_parentid
+                                AND va.rekvid = user_rekvid
+                                AND va.arveldus
+                              LIMIT 1);
     END IF;
 
     IF l_prev_arv_isik_id <> doc_asutusid
     THEN
         -- происходит смена ответственного, проверяем на не отправленные счета
         IF exists
-        (
-            SELECT
-                id
-            FROM
-                lapsed.cur_laste_arved a
-            WHERE
-                  asutusid = l_prev_arv_isik_id
-              AND a.rekvid = user_rekvid
-              and a.kpv >= '2023-01-01'::date -- A. Vargunin, 21.02.2024
-              and a.summa > 0 -- A. Vargunin, 12.05.2025
-              AND NOT a.kas_esitatud
-        )
+            (SELECT id
+             FROM lapsed.cur_laste_arved a
+             WHERE asutusid = l_prev_arv_isik_id
+               AND a.rekvid = user_rekvid
+               and a.kpv >= '2023-01-01'::date -- A. Vargunin, 21.02.2024
+               and a.summa > 0                 -- A. Vargunin, 12.05.2025
+               AND NOT a.kas_esitatud
+               and a.laps_id = doc_parentid -- A.Vargunin 05.06.2025 только одного ребенка
+            )
         THEN
             -- ошибка. нельзя менять ответственного, пока есть не отправленные счета
             RAISE EXCEPTION 'Viga: Olemas mitte saadetud arveid';
@@ -102,35 +91,26 @@ BEGIN
 
     --  проверяем на сальдо
     IF (l_prev_arv_isik_id IS NOT NULL AND doc_arved AND l_prev_arv_isik_id <> doc_asutusid
-        and (
-                SELECT
-                    sum(jaak) AS jaak
-                FROM
-                    lapsed.lapse_saldod(current_date, doc_parentid, user_rekvid)
-            ) <> 0)
+        and (SELECT sum(jaak) AS jaak
+             FROM
+                 lapsed.lapse_saldod(current_date, doc_parentid, user_rekvid)) <> 0)
     THEN
         -- проверяем на сальдо
-
-        SELECT
-            sum(rep.alg_saldo + deebet - kreedit)
+        json_props = jsonb_build_object('laps_id', jsonb_build_object('laps_id', array [doc_parentid]));
+        SELECT sum(rep.alg_saldo + deebet - kreedit)
         INTO l_jaak
-        FROM
-            docs.kaibeasutusandmik(l_konto, l_prev_arv_isik_id, current_date, current_date, user_rekvid, '%', 0) rep
-                INNER JOIN libs.asutus                                                                           a ON a.id = rep.asutus_id;
+        FROM docs.kaibeasutusandmik(l_konto, l_prev_arv_isik_id, current_date, current_date, user_rekvid, '%', 0,
+                                    json_props) rep
+                 INNER JOIN libs.asutus a ON a.id = rep.asutus_id;
 
         IF coalesce(l_jaak, 0) <> 0 AND NOT exists
-        (
-            SELECT
-                u.id
-            FROM
-                ou.userid u
-            WHERE
-                  u.id = userid
-              AND (coalesce((u.roles ->> 'is_kasutaja')::BOOLEAN, FALSE)
-                OR
-                   coalesce((u.roles ->> 'is_peakasutaja')::BOOLEAN, FALSE)
-                      )
-        )
+            (SELECT u.id
+             FROM ou.userid u
+             WHERE u.id = userid
+               AND (coalesce((u.roles ->> 'is_kasutaja')::BOOLEAN, FALSE)
+                 OR
+                    coalesce((u.roles ->> 'is_peakasutaja')::BOOLEAN, FALSE)
+                 ))
         THEN
             -- нет прав, запрет ((Каллеб 03.10.2023)
             RAISE EXCEPTION 'Viga: saldo <> 0, puudub vajaliku õigused %',l_jaak;
@@ -139,27 +119,20 @@ BEGIN
 
 
     json_props = to_jsonb(row)
-                 FROM
-                     (
-                         SELECT
-                             doc_suhtumine    AS suhtumine,
-                             doc_arved        AS arved,
-                             doc_kas_paberil  AS kas_paberil,
-                             doc_kas_email    AS kas_email,
-                             doc_email_alates AS email_alates,
-                             doc_kas_esindaja AS kas_esindaja
-                     ) row;
+                 FROM (SELECT doc_suhtumine    AS suhtumine,
+                              doc_arved        AS arved,
+                              doc_kas_paberil  AS kas_paberil,
+                              doc_kas_email    AS kas_email,
+                              doc_email_alates AS email_alates,
+                              doc_kas_esindaja AS kas_esindaja) row;
 
     -- ищем ранее удаленные записи
     IF doc_id IS NULL OR doc_id = 0
     THEN
-        SELECT
-            id
+        SELECT id
         INTO doc_id
-        FROM
-            lapsed.vanemad
-        WHERE
-              parentid = doc_parentid
+        FROM lapsed.vanemad
+        WHERE parentid = doc_parentid
           AND asutusid = doc_asutusid;
     END IF;
 
@@ -171,15 +144,10 @@ BEGIN
         -- логгирование
 
         json_ajalugu = to_jsonb(row)
-                       FROM
-                           (
-                               SELECT
-                                   now()    AS created,
-                                   userName AS user
-                           ) row;
+                       FROM (SELECT now()    AS created,
+                                    userName AS user) row;
 
-        INSERT INTO
-            lapsed.vanemad (parentid, asutusid, muud, properties, ajalugu)
+        INSERT INTO lapsed.vanemad (parentid, asutusid, muud, properties, ajalugu)
         VALUES (doc_parentid, doc_asutusid, doc_muud, json_props, '[]' :: JSONB || json_ajalugu)
         RETURNING id
             INTO doc_id;
@@ -189,22 +157,16 @@ BEGIN
         -- логгирование
 
         json_ajalugu = to_jsonb(row)
-                       FROM
-                           (
-                               SELECT
-                                   now()    AS updated,
-                                   userName AS user
-                           ) row;
+                       FROM (SELECT now()    AS updated,
+                                    userName AS user) row;
 
         UPDATE lapsed.vanemad
-        SET
-            asutusid   = doc_asutusid,
+        SET asutusid   = doc_asutusid,
             properties = coalesce(properties, '{}'::JSONB)::JSONB || json_props,
             muud       = doc_muud,
             ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
             staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END
-        WHERE
-            id = doc_id
+        WHERE id = doc_id
         RETURNING id
             INTO doc_id;
 
@@ -212,25 +174,18 @@ BEGIN
 
 -- проверим наличие статус ответственного у родителей
     IF doc_kas_esindaja AND exists
-    (
-        SELECT
-            id
-        FROM
-            lapsed.vanemad
-        WHERE
-              parentid = doc_parentid
-          AND (properties ->> 'kas_esindaja')::BOOLEAN
-          AND id <> doc_id
-    )
+        (SELECT id
+         FROM lapsed.vanemad
+         WHERE parentid = doc_parentid
+           AND (properties ->> 'kas_esindaja')::BOOLEAN
+           AND id <> doc_id)
     THEN
         -- убираем этот статус , если есть у других роделей ребенка
         UPDATE lapsed.vanemad
-        SET
-            properties = properties::JSONB || '{
-              "kas_esindaja": false
-            }'::JSONB
-        WHERE
-              parentid = doc_parentid
+        SET properties = properties::JSONB || '{
+          "kas_esindaja": false
+        }'::JSONB
+        WHERE parentid = doc_parentid
           AND id <> doc_id
           AND (properties ->> 'kas_esindaja')::BOOLEAN;
     END IF;
@@ -240,34 +195,25 @@ BEGIN
                                       doc_email_alates);
 
     IF exists
-    (
-        SELECT
-            id
-        FROM
-            lapsed.vanem_arveldus
-        WHERE
-              parentid = doc_parentid
-          AND asutusid = doc_asutusid
-          AND rekvid = user_rekvid
-    )
+        (SELECT id
+         FROM lapsed.vanem_arveldus
+         WHERE parentid = doc_parentid
+           AND asutusid = doc_asutusid
+           AND rekvid = user_rekvid)
     THEN
 
         UPDATE lapsed.vanem_arveldus
-        SET
-            arveldus    = doc_arved,
+        SET arveldus    = doc_arved,
             kas_email   = coalesce(doc_kas_email, FALSE),
             kas_paberil = coalesce(doc_kas_paberil, TRUE),
             properties  = coalesce(properties, '{}'::JSONB)::JSONB || json_va_props
-        WHERE
-              parentid = doc_parentid
+        WHERE parentid = doc_parentid
           AND asutusid = doc_asutusid
           AND rekvid = user_rekvid;
     ELSE
-        INSERT INTO
-            lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus, properties, kas_email, kas_paberil)
-        VALUES
-            (doc_parentid, doc_asutusid, user_rekvid, doc_arved, json_va_props, coalesce(doc_kas_email, FALSE),
-             coalesce(doc_kas_paberil, TRUE));
+        INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus, properties, kas_email, kas_paberil)
+        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved, json_va_props, coalesce(doc_kas_email, FALSE),
+                coalesce(doc_kas_paberil, TRUE));
 
     END IF;
 
@@ -275,10 +221,8 @@ BEGIN
     IF (doc_arved)
     THEN
         UPDATE lapsed.vanem_arveldus
-        SET
-            arveldus = FALSE
-        WHERE
-              parentid = doc_parentid
+        SET arveldus = FALSE
+        WHERE parentid = doc_parentid
           AND rekvid = user_rekvid
           AND asutusid <> doc_asutusid
           AND arveldus = TRUE;

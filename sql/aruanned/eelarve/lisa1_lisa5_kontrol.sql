@@ -21,6 +21,29 @@ CREATE OR REPLACE FUNCTION eelarve.lisa1_lisa5_kontrol(l_kpv DATE,
 AS
 $BODY$
 
+--    drop table if exists tmp_andmik;
+
+/*    CREATE TABLE IF NOT EXISTS tmp_andmik
+    (
+        idx         TEXT,
+        tyyp        INTEGER,
+        tegev       VARCHAR(20),
+        artikkel    VARCHAR(20),
+        rahavoog    VARCHAR(20),
+        nimetus     VARCHAR(254),
+        eelarve     NUMERIC(14, 2),
+        tegelik     NUMERIC(14, 2),
+        kassa       NUMERIC(14, 2),
+        saldoandmik NUMERIC(14, 2),
+        db          NUMERIC(14, 2),
+        kr          NUMERIC(14, 2),
+        aasta       INTEGER,
+        kuu         INTEGER,
+        rekv_id     INTEGER,
+        rekvid      INTEGER
+    ) ;
+
+*/
     -- ВЫЗОВ ОТЧЕТА
 WITH qryLisa1Lisa5 AS (
     SELECT *

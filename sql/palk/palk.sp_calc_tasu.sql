@@ -7,6 +7,7 @@ CREATE FUNCTION palk.sp_calc_tasu(user_id INTEGER, params JSON,
                                   OUT selg TEXT,
                                   OUT error_code INTEGER,
                                   OUT result INTEGER,
+                                  out alus_oper_ids jsonb,
                                   OUT error_message TEXT,
                                   OUT data JSONB)
     LANGUAGE plpgsql

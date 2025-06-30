@@ -15,7 +15,7 @@ DECLARE
     l_rekv_id INTEGER = CASE WHEN l_rekvid = 63 AND coalesce(l_kond, 0) = 1 THEN 999 ELSE l_rekvid END;
 BEGIN
 
-    DROP TABLE IF EXISTS tmp_andmik;
+--    DROP TABLE IF EXISTS tmp_andmik;
 
     CREATE TEMPORARY TABLE IF NOT EXISTS tmp_andmik (
         idx                TEXT,

@@ -1,8 +1,8 @@
 DROP FUNCTION IF EXISTS palk.sp_calc_umardamine(INTEGER, JSON);
-DROP FUNCTION IF EXISTS palk.sp_calc_umardamine_(INTEGER, JSON);
+DROP FUNCTION IF EXISTS palk.sp_calc_umardamine(INTEGER, JSON);
 
 CREATE OR REPLACE FUNCTION palk.sp_calc_umardamine(IN user_id INTEGER, params JSON, OUT result INTEGER,
-                                                    OUT error_code INTEGER, OUT error_message TEXT)
+                                                   OUT error_code INTEGER, OUT error_message TEXT, OUT alus_oper_ids jsonb)
     --tnisikid integer, tdkpv date, tnrekvid integer)
     RETURNS RECORD AS
 $BODY$
@@ -73,26 +73,21 @@ BEGIN
 
     DELETE
     FROM docs.doc
-    WHERE id IN (
-        SELECT parentid
-        FROM palk.palk_oper po
-        WHERE lepingId IN (
-            SELECT t.id
-            FROM palk.tooleping t
-            WHERE t.parentId = l_isikid
-        )
-          AND lepingid = l_lepingid -- поправка из-за ошибки на величину округдения
-          AND kpv = l_kpv
-          AND rekvId = l_rekvid
-          AND summa = 0);
+    WHERE id IN (SELECT parentid
+                 FROM palk.palk_oper po
+                 WHERE lepingId IN (SELECT t.id
+                                    FROM palk.tooleping t
+                                    WHERE t.parentId = l_isikid)
+                   AND lepingid = l_lepingid -- поправка из-за ошибки на величину округдения
+                   AND kpv = l_kpv
+                   AND rekvId = l_rekvid
+                   AND summa = 0);
 
     DELETE
     FROM palk.palk_oper po
-    WHERE lepingId IN (
-        SELECT t.id
-        FROM palk.tooleping t
-        WHERE t.parentId = l_isikid
-    )
+    WHERE lepingId IN (SELECT t.id
+                       FROM palk.tooleping t
+                       WHERE t.parentId = l_isikid)
       AND lepingid = l_lepingid -- поправка из-за ошибки на величину округдения
       AND kpv = l_kpv
       AND rekvId = l_rekvid
@@ -122,11 +117,9 @@ BEGIN
                                   WHERE LIBRARY = 'MAKSUKOOD'
                                     AND l.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')) l
                                  ON l.kood = po.tululiik
-        WHERE po.lepingId IN (
-            SELECT t.id
-            FROM palk.tooleping t
-            WHERE t.parentId = l_isikid
-        )
+        WHERE po.lepingId IN (SELECT t.id
+                              FROM palk.tooleping t
+                              WHERE t.parentId = l_isikid)
           AND po.kpv >= date(year(l_kpv), month(l_kpv), 1)
           AND po.kpv <= ldKpv
           AND po.period IS NULL
@@ -167,8 +160,7 @@ BEGIN
                                  v_leping.libId    AS libid,
                                  v_tululiik.summa  AS alus_summa,
                                  v_tululiik.mvt    AS mvt,
-                                 TRUE              AS umardamine
-                         ) row;
+                                 TRUE              AS umardamine) row;
 
                     -- вызов процедура расчета
 
@@ -205,11 +197,9 @@ BEGIN
 
                     INTO v_fakt_arv
                     FROM palk.cur_palkoper po
-                    WHERE po.lepingId IN (
-                        SELECT t.id
-                        FROM palk.tooleping t
-                        WHERE t.parentId = l_isikid
-                    )
+                    WHERE po.lepingId IN (SELECT t.id
+                                          FROM palk.tooleping t
+                                          WHERE t.parentId = l_isikid)
                       --	and po.kpv = tdKpv
                       AND po.kpv >= date(year(l_kpv), month(l_kpv), 1)
                       AND kpv <= ldKpv
@@ -288,7 +278,8 @@ BEGIN
                                    ELSE 0 END *
                                coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
                                v_tululiik.tululiik                                          AS tululiik,
-                               'Umardamine' :: TEXT || v_arv.selg                           AS selg
+                               'Umardamine' :: TEXT || v_arv.selg                           AS selg,
+                               v_arv.alus_oper_ids                                          as alus_oper_ids
                         INTO v_palk_oper;
 
                         l_save_params = row_to_json(v_palk_oper);

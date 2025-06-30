@@ -1,20 +1,17 @@
 DROP FUNCTION IF EXISTS eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER);
 DROP FUNCTION IF EXISTS eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE);
 
-CREATE OR REPLACE FUNCTION eelarve.salvesta_lisa_1_5_kontrol(IN user_id INTEGER,
-                                                             IN l_kpv DATE,
-                                                             IN l_rekv_id INTEGER DEFAULT NULL,
-                                                             OUT error_code INTEGER,
-                                                             OUT result INTEGER,
-                                                             OUT error_message TEXT)
-    RETURNS RECORD AS
-$BODY$
+CREATE OR REPLACE PROCEDURE eelarve.salvesta_lisa_1_5_kontrol(user_id INTEGER,
+                                                              l_kpv DATE,
+                                                               l_rekv_id INTEGER DEFAULT NULL)
+    LANGUAGE plpgsql
+    AS $$
 
 BEGIN
     raise notice 'start salvesta %',l_rekv_id;
 
-    DROP TABLE IF EXISTS tmp_andmik;
-    CREATE TABLE IF NOT EXISTS tmp_andmik
+--    DROP TABLE IF EXISTS tmp_andmik;
+    CREATE temporary TABLE IF NOT EXISTS tmp_andmik
     (
         idx                TEXT,
         tyyp               INTEGER,
@@ -37,10 +34,7 @@ BEGIN
         kuu                INTEGER,
         is_kulud           INTEGER DEFAULT 0,
         rekv_id            INTEGER NULL
-    );
-
-
---            TRUNCATE TABLE tmp_andmik;
+    ) ON COMMIT DROP;
 
 -- удаляем прежнюю версию
     DELETE
@@ -67,20 +61,19 @@ BEGIN
         l_rekv_id
     FROM
         eelarve.lisa1_lisa5_kontrol(l_kpv, l_rekv_id, 1 );
+    commit;
 
     RAISE NOTICE 'finished v_rekv.id %', l_rekv_id;
 
-    result = 1;
-    RETURN;
+--    result = 1;
+--    RETURN result;
 END;
-$BODY$
-    LANGUAGE plpgsql
-    VOLATILE
-    COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbkasutaja;
+$$;
+
+GRANT EXECUTE ON PROCEDURE eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON PROCEDURE eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON PROCEDURE eelarve.salvesta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbkasutaja;
 
 
 /*

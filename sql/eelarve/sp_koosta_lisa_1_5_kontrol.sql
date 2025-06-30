@@ -1,20 +1,19 @@
 DROP FUNCTION IF EXISTS eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER);
 DROP FUNCTION IF EXISTS eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE);
+DROP PROCEDURE IF EXISTS eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE);
 
-CREATE OR REPLACE FUNCTION eelarve.koosta_lisa_1_5_kontrol(IN user_id INTEGER,
-                                                           IN l_kpv DATE,
-                                                           IN rekv_id INTEGER DEFAULT NULL,
-                                                           OUT error_code INTEGER,
-                                                           OUT result INTEGER,
-                                                           OUT error_message TEXT)
-    RETURNS RECORD AS
-$BODY$
+CREATE OR REPLACE PROCEDURE eelarve.koosta_lisa_1_5_kontrol( user_id INTEGER,
+                                                            l_kpv DATE,
+                                                            rekv_id INTEGER)
+    LANGUAGE plpgsql
+ as
+$$
 
 DECLARE
     v_rekv RECORD;
 BEGIN
 
-    -- check for user_id
+/*    -- check for user_id
     IF NOT (
                SELECT
                    (roles ->> 'is_peakasutaja') :: BOOLEAN
@@ -24,16 +23,16 @@ BEGIN
                    id = user_id
            )
     THEN
+        result = 0;
         error_code = 5;
         error_message = 'Kasutaja ei leitud,  userId:' ||
                         coalesce(user_id, 0) :: TEXT;
-        result = 0;
 
         --        RAISE EXCEPTION 'eelarve.koosta_kond_saldoandmik, error_message %', error_message;
 --        RETURN;
     END IF;
 
-
+*/
 -- считаем только учреждение где были изменения и его вышестоящее + фин. департамент
     FOR v_rekv IN
 -- нижестоящие учреждения
@@ -117,24 +116,47 @@ BEGIN
                   kpv = l_kpv
               AND l.rekv_id = v_rekv.id;
 
-            perform eelarve.salvesta_lisa_1_5_kontrol(user_id, l_kpv, v_rekv.id::INTEGER);
-        END LOOP;
-    result = 1;
-    RETURN;
-END;
-$BODY$
-    LANGUAGE plpgsql
-    VOLATILE
-    COST 100;
+            CREATE temporary TABLE IF NOT EXISTS tmp_andmik
+            (
+                idx                TEXT,
+                tyyp               INTEGER,
+                rekvid             INTEGER,
+                tegev              VARCHAR(20),
+                allikas            VARCHAR(20),
+                artikkel           VARCHAR(20),
+                rahavoog           VARCHAR(20),
+                nimetus            VARCHAR(254),
+                eelarve            NUMERIC(14, 2),
+                eelarve_taps       NUMERIC(14, 2),
+                eelarve_kassa      NUMERIC(14, 2),
+                eelarve_kassa_taps NUMERIC(14, 2),
+                tegelik            NUMERIC(14, 2),
+                kassa              NUMERIC(14, 2),
+                saldoandmik        NUMERIC(14, 2),
+                db                 NUMERIC(14, 2),
+                kr                 NUMERIC(14, 2),
+                aasta              INTEGER,
+                kuu                INTEGER,
+                is_kulud           INTEGER DEFAULT 0,
+                rekv_id            INTEGER NULL
+            ) on commit drop;
 
-GRANT EXECUTE ON FUNCTION eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbkasutaja;
+            call eelarve.salvesta_lisa_1_5_kontrol(user_id, l_kpv, v_rekv.id::INTEGER);
+            COMMIT;
+            RAISE NOTICE 'finish, uuedatud + v_rekv.id %', v_rekv.id;
+
+        END LOOP;
+    END;
+$$;
+
+GRANT EXECUTE ON PROCEDURE eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON PROCEDURE eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON PROCEDURE eelarve.koosta_lisa_1_5_kontrol(INTEGER, DATE, INTEGER) TO dbkasutaja;
 
 
 /*
-SELECT eelarve.koosta_lisa_1_5_kontrol(2477, '2025-02-28'::date, 1)
 
+call eelarve.koosta_lisa_1_5_kontrol(2477, '2024-12-31'::DATE, 63)
 
 */
 

@@ -68,12 +68,9 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                           UNION ALL
-                          SELECT a1.summa AS summa
-                          ,
-                          ld.parentid AS laps_id
-                          ,
-                          D.rekvid AS rekv_id
-                          ,
+                          SELECT a1.summa AS summa,
+                          ld.parentid AS laps_id,
+                          D.rekvid AS rekv_id,
                           a.asutusid
                           FROM docs.doc D
                           INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id

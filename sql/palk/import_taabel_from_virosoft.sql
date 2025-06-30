@@ -23,7 +23,6 @@ DECLARE
     l_kokku_tunnid  numeric;
     l_paev          numeric;
     l_ohtu          numeric;
-    l_too           numeric;
     l_oo            numeric;
     l_tahtpaev      numeric;
     l_puhapaev      numeric;
@@ -32,18 +31,16 @@ DECLARE
     l_toograafik_id integer;
     count           integer = 0;
     l_ind_norm      numeric;
+    l_too           numeric = 0;
 BEGIN
     data = '[]'::jsonb;
     -- init
 
     -- check user
-    SELECT
-        kasutaja
+    SELECT kasutaja
     INTO userName
-    FROM
-        ou.userid u
-    WHERE
-          u.id = user_id
+    FROM ou.userid u
+    WHERE u.id = user_id
       and u.rekvid = rekv_id;
 
     IF userName IS NULL
@@ -71,15 +68,11 @@ BEGIN
 
             if not empty(coalesce(json_object ->> 'regkood', '')) then
                 -- указан рег. код
-                rekv_id = (
-                              select id
-                              from ou.rekv
-                              where regkood = json_object ->> 'regkood'
-                              limit 1
-                          );
-                user_id = (
-                              select id from ou.userid u where u.rekvid = rekv_id and u.kasutaja = userName limit 1
-                          );
+                rekv_id = (select id
+                           from ou.rekv
+                           where regkood = json_object ->> 'regkood'
+                           limit 1);
+                user_id = (select id from ou.userid u where u.rekvid = rekv_id and u.kasutaja = userName limit 1);
 
                 if rekv_id is null or user_id is null then
                     error_message = 'User not found: ' || json_object ->> 'regkood';
@@ -97,49 +90,39 @@ BEGIN
 
 
             -- работник
-            l_isik_id = (
-                            select
-                                id
-                            from
-                                palk.com_tootajad t
-                            where
-                                  t.isikukood = json_object ->> 'ik'
-                              and t.rekvid = rekv_id
-                            order by id desc
-                            limit 1
-                        );
+            l_isik_id = (select id
+                         from palk.com_tootajad t
+                         where t.isikukood = json_object ->> 'ik'
+                           and t.rekvid = rekv_id
+                         order by id desc
+                         limit 1);
             -- период
-            select
-                month(get_date_from_string(left(coalesce(json_object ->> 'period', ''), 10), 'DD.MM.YYYY')),
-                year(get_date_from_string(left(coalesce(json_object ->> 'period', ''), 10), 'DD.MM.YYYY'))
+            select month(get_date_from_string(left(coalesce(json_object ->> 'period', ''), 10), 'DD.MM.YYYY')),
+                   year(get_date_from_string(left(coalesce(json_object ->> 'period', ''), 10), 'DD.MM.YYYY'))
             into l_kuu, l_aasta;
 
             -- leping
 
-            l_Leping_id = (
-                              select
-                                  t.lepingId
-                              from
-                                  palk.com_tootajad           t
-                                      inner join libs.library l on l.id = t.ametid
-                              where
-                                    t.id = l_isik_id
+            l_Leping_id = (select t.lepingId
+                           from palk.com_tootajad t
+                                    inner join libs.library l on l.id = t.ametid
+                           where t.id = l_isik_id
 --                                and t.amet = json_object ->> 'amet'
-                                and upper(ltrim(rtrim(l.nimetus))) = upper(ltrim(rtrim(json_object ->> 'amet')))
-                              order by t.lepingid desc
-                              limit 1
-                          );
+                             and upper(ltrim(rtrim(l.nimetus))) = upper(ltrim(rtrim(json_object ->> 'amet')))
+                           order by t.lepingid desc
+                           limit 1);
 
-            select
-                coalesce((json_object ->> 'KokkuTunnid')::numeric, 0)::numeric            as kokku_tunnid,
-                coalesce((json_object ->> 'TootundideSum')::numeric, 0)::numeric          as paeva_tunnid,
-                coalesce((json_object ->> 'SumOhtutunnid')::numeric, 0)::numeric          as ohtu_tunnid,
-                coalesce((json_object ->> 'SumOotunnid')::numeric, 0)::numeric            as oo_tunnid,
-                coalesce((json_object ->> 'SumTooPuhapaevalTunnid')::numeric, 0)::numeric as puhapaevad_tunnid,
-                coalesce((json_object ->> 'SumRiigipuhadTunnid')::numeric, 0)::numeric    as tahtpaev_tunnid,
-                coalesce((json_object ->> 'SumUletunnid1')::numeric, 0)::numeric          as uleajatunnd_tunnid,
-                coalesce((json_object ->> 'IndNorm')::numeric, 0)::numeric                as ind_norm
+            select coalesce((json_object ->> 'KokkuTunnid')::numeric, 0)::numeric            as kokku_tunnid,
+                   coalesce((json_object ->> 'TootundideSum')::numeric, 0)::numeric          as paeva_tunnid,
+                   coalesce((json_object ->> 'SumOhtutunnid')::numeric, 0)::numeric          as ohtu_tunnid,
+                   coalesce((json_object ->> 'SumOotunnid')::numeric, 0)::numeric            as oo_tunnid,
+                   coalesce((json_object ->> 'SumTooPuhapaevalTunnid')::numeric, 0)::numeric as puhapaevad_tunnid,
+                   coalesce((json_object ->> 'SumRiigipuhadTunnid')::numeric, 0)::numeric    as tahtpaev_tunnid,
+                   coalesce((json_object ->> 'SumUletunnid1')::numeric, 0)::numeric          as uleajatunnd_tunnid,
+                   coalesce((json_object ->> 'IndNorm')::numeric, 0)::numeric                as ind_norm
             into l_kokku_tunnid, l_paev, l_ohtu, l_oo, l_puhapaev, l_tahtpaev, l_uleajatunnd, l_ind_norm;
+
+            l_paev = l_kokku_tunnid - l_oo - l_ohtu;
 
             if l_isik_id is null or l_Leping_id is null then
                 error_message = 'Vead failis';
@@ -169,18 +152,13 @@ BEGIN
                 -- tooaja graafik
 
                 -- otsin
-                l_toograafik_id = (
-                                      select
-                                          id
-                                      from
-                                          palk.toograf t
-                                      where
-                                            t.lepingid = l_Leping_id
-                                        and t.aasta = l_aasta
-                                        and t.kuu = l_kuu
-                                        and t.status = 'active'
-                                      limit 1
-                                  );
+                l_toograafik_id = (select id
+                                   from palk.toograf t
+                                   where t.lepingid = l_Leping_id
+                                     and t.aasta = l_aasta
+                                     and t.kuu = l_kuu
+                                     and t.status = 'active'
+                                   limit 1);
 
                 jsonb_params =
                         jsonb_build_object('id', l_toograafik_id,
@@ -209,20 +187,16 @@ BEGIN
                 end if;
 
             end if;
+            l_too = l_kokku_tunnid - l_tahtpaev - l_puhapaev;
 
             -- сохраняем
-            l_taabel_id = coalesce((
-                                       select
-                                           id
-                                       from
-                                           palk.palk_taabel1 pt
-                                       where
-                                             pt.lepingid = l_Leping_id
-                                         and pt.kuu = l_kuu
-                                         and pt.aasta = l_aasta
-                                         and pt.status = 'active'
-                                       limit 1
-                                   ), 0);
+            l_taabel_id = coalesce((select id
+                                    from palk.palk_taabel1 pt
+                                    where pt.lepingid = l_Leping_id
+                                      and pt.kuu = l_kuu
+                                      and pt.aasta = l_aasta
+                                      and pt.status = 'active'
+                                    limit 1), 0);
 
             jsonb_params =
                     jsonb_build_object('id', l_taabel_id,
@@ -231,6 +205,7 @@ BEGIN
                                        'lepingid', l_Leping_id,
                                        'ohtu', l_ohtu,
                                        'oo', l_oo,
+                                       'too', l_too,
                                        'tahtpaev', l_tahtpaev,
                                        'puhapaev', l_puhapaev,
                                        'uleajatoo', l_uleajatunnd,
@@ -263,9 +238,8 @@ BEGIN
     THEN
         -- успешно, сохраняем ид файла
         INSERT INTO ou.paringud (user_id, sql, params, tulemused, changes)
-        VALUES
-            (user_id, 'docs.sp_import_taabel_from_virosoft', import_data, jsonb_build_object('result', count),
-             jsonb_build_object('fileId', doc_file_id));
+        VALUES (user_id, 'docs.sp_import_taabel_from_virosoft', import_data, jsonb_build_object('result', count),
+                jsonb_build_object('fileId', doc_file_id));
 
     END IF;
 
@@ -291,13 +265,101 @@ SELECT *
                                    FROM (
                                             SELECT *
 from
-    palk.sp_import_taabel_from_virosoft(11578, 63, '{"file":[{"regkood":"75008485","asutus":"Narva Linnakantselei","yksus":"Kõrgemad ametnikud","period":"01.10.2025  -  31.10.2025","isik":
-"Kaljuste Üllar","ik":"36111132734","amet":"linnasekretär","Tookoormus":"1.0","IndNorm":40,"SumPaevad":5,"TootundideSum":40,"SumTTSTunnid":0,"KokkuTunnid":40,"SumOhtutunnid":0,"SumOotunnid":0,"SumTooPuhapaevalTunnid":0,"SumRiigipuhadTunnid":0,"SumUletunnid1":0}],"fileId":"1"}'::JSONB)
+    palk.sp_import_taabel_from_virosoft(5436, 121, '{
+"userId":"e81dd1f82d5d97419f16c20916ed822456b7a6a9",
+"fileId":"03.06.2025",
+"file":
+[		{"ik":"46709063713",
+		"regkood":"75008640",
+		"amet":"Kooli gümnaasiumi astme õpetajad nõuetele mittevastavad",
+		"period": "01.09.2025  -  30.09.2025",
+		"KokkuTunnid":28.00,
+		"TootundideSum":28.00,
+		"SumOhtutunnid":0,
+		"SumOotunnid":0.00,
+		"SumRiigipuhadTunnid":0.00,
+		"SumUletunnid1":0.00,
+		"IndNorm":28.00,
+		"Tookoormus":0.25
+}
+,
+		{"ik":"46709063713",
+		"regkood":"75008640",
+		"amet":"Põhikooli õpetaja kvalifikatsiooninõuetele vastav",
+		"period": "01.09.2025  -  30.09.2025",
+		"KokkuTunnid":84.00,
+		"TootundideSum":84.00,
+		"SumOhtutunnid":0,
+		"SumOotunnid":0.00,
+		"SumRiigipuhadTunnid":0.00,
+		"SumUletunnid1":0.00,
+		"IndNorm":84.00,
+		"Tookoormus":0.75
+}
+,
+		{"ik":"46304112226",
+		"regkood":"75008640",
+		"amet":"Põhikooli õpetaja kvalifikatsiooninõuetele vastav",
+		"period": "01.09.2025  -  30.09.2025",
+		"KokkuTunnid":47.88,
+		"TootundideSum":47.88,
+		"SumOhtutunnid":0,
+		"SumOotunnid":0.00,
+		"SumRiigipuhadTunnid":0.00,
+		"SumUletunnid1":0.00,
+		"IndNorm":47.88,
+		"Tookoormus":0.57
+}
+,
+		{"ik":"46304112226",
+		"regkood":"75008640",
+		"amet":"Kooli gümnaasiumi astme õpetajad nõuetele vastavad",
+		"period": "01.09.2025  -  30.09.2025",
+		"KokkuTunnid":36.12,
+		"TootundideSum":36.12,
+		"SumOhtutunnid":0,
+		"SumOotunnid":0.00,
+		"SumRiigipuhadTunnid":0.00,
+		"SumUletunnid1":0.00,
+		"IndNorm":36.12,
+		"Tookoormus":0.43
+}
+,
+		{"ik":"37201309511",
+		"regkood":"75008640",
+		"amet":"Kooli gümnaasiumi astme õpetajad nõuetele vastavad",
+		"period": "01.09.2025  -  30.09.2025",
+		"KokkuTunnid":33.25,
+		"TootundideSum":33.25,
+		"SumOhtutunnid":0,
+		"SumOotunnid":0.00,
+		"SumRiigipuhadTunnid":0.00,
+		"SumUletunnid1":0.00,
+		"IndNorm":33.25,
+		"Tookoormus":0.25
+}
+,
+		{"ik":"37201309511",
+		"regkood":"75008640",
+		"amet":"Põhikooli õpetaja kvalifikatsiooninõuetele vastav",
+		"period": "01.09.2025  -  30.09.2025",
+		"KokkuTunnid":33.25,
+		"TootundideSum":33.25,
+		"SumOhtutunnid":0,
+		"SumOotunnid":0.00,
+		"SumRiigipuhadTunnid":0.00,
+		"SumUletunnid1":0.00,
+		"IndNorm":33.25,
+		"Tookoormus":0.25
+}
+]}'::JSONB)
 
                                         ) qry
                                )
                            ) AS x (error_message TEXT, error_code INTEGER, result INTEGER)
 
 */
+
+--513331
 
 

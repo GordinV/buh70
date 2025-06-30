@@ -7,78 +7,74 @@ CREATE OR REPLACE FUNCTION palk.sp_salvesta_palk_oper(data JSON,
 $BODY$
 
 DECLARE
-    oper_id            INTEGER;
-    userName           TEXT;
-    doc_id             INTEGER = data ->> 'id';
-    doc_data           JSON    = data ->> 'data';
-    kas_lausend        BOOLEAN = coalesce((doc_data ->> 'kas_lausend') :: BOOLEAN, FALSE);
-    doc_type_kood      TEXT    = 'PALK_OPER';
-    doc_type_id        INTEGER = (
-                                     SELECT
-                                         id
-                                     FROM
-                                         libs.library
-                                     WHERE
-                                           ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
-                                       AND library = 'DOK'
-                                     LIMIT 1
-                                 );
-    doc_libid          INTEGER = doc_data ->> 'libid';
-    doc_lepingid       INTEGER = doc_data ->> 'lepingid';
-    doc_kpv            DATE    = doc_data ->> 'kpv';
-    doc_summa          NUMERIC = doc_data ->> 'summa';
-    doc_dokpropid      INTEGER = doc_data ->> 'dokpropid';
-    doc_kood1          TEXT    = doc_data ->> 'kood1';
-    doc_kood2          TEXT    = doc_data ->> 'kood2';
-    doc_kood3          TEXT    = doc_data ->> 'kood3';
-    doc_kood4          TEXT    = doc_data ->> 'kood4';
-    doc_kood5          TEXT    = doc_data ->> 'kood5';
-    doc_konto          TEXT    = doc_data ->> 'konto';
-    doc_tp             TEXT    = doc_data ->> 'tp';
-    doc_tunnus         TEXT    = doc_data ->> 'tunnus';
-    doc_tunnus_id      INTEGER = doc_data ->> 'tunnusid';
-    doc_proj           TEXT    = doc_data ->> 'proj';
-    doc_objekt         TEXT    = doc_data ->> 'objekt';
-    doc_tulumaks       NUMERIC = doc_data ->> 'tulumaks';
-    doc_sotsmaks       NUMERIC = doc_data ->> 'sotsmaks';
-    doc_tootumaks      NUMERIC = doc_data ->> 'tootumaks';
-    doc_pensmaks       NUMERIC = doc_data ->> 'pensmaks';
-    doc_tulubaas       NUMERIC = doc_data ->> 'tulubaas';
-    doc_tka            NUMERIC = doc_data ->> 'tka';
-    doc_period         DATE    = doc_data ->> 'period';
-    doc_pohjus         TEXT    = doc_data ->> 'pohjus';
-    doc_pohjus_selg    TEXT    = doc_data ->> 'pohjus_selg'; -- пояснение к причине корректировки
-    doc_paranduse_kpv  date    = doc_data ->> 'paranduse_kpv'; -- Корректирова (перерасчет , информация для расчета среднего)
-    doc_tululiik       TEXT    = doc_data ->> 'tululiik';
-    doc_muud           TEXT    = doc_data ->> 'muud';
-    kas_arvesta_saldo  BOOLEAN = doc_data ->> 'kas_arvesta_saldo';
-    doc_maksekpv_text  TEXT    = CASE
-                                     WHEN (trim(doc_data ->> 'maksekpv')::TEXT)::TEXT = '' THEN null::TEXT
-                                     ELSE ((doc_data ->> 'maksekpv')::TEXT) END;
-    doc_maksekpv       DATE    = doc_maksekpv_text::DATE; -- дата декларирования , если выплаты будут в ином от начислений периоде
-    doc_puudumise_id integer = doc_data ->> 'puudumise_id'; -- ссылка на запись в регистре отсутствий
-    l_parallel_lausend integer;
-    new_history        JSONB;
-    docs               INTEGER[];
-    l_params           JSON;
-    l_result           INTEGER;
-    is_import          BOOLEAN = data ->> 'import';
-    l_props            JSONB;
-    kas_arvestus       BOOLEAN = FALSE;
-    v_palk_oper        RECORD;
-    l_leping_ids       INTEGER[];
-    l_lib_ids          INTEGER[]; -- для перерасчета налогов
-    l_lib_id           INTEGER;
+    oper_id                INTEGER;
+    userName               TEXT;
+    doc_id                 INTEGER = data ->> 'id';
+    doc_data               JSON    = data ->> 'data';
+    kas_lausend            BOOLEAN = coalesce((doc_data ->> 'kas_lausend') :: BOOLEAN, FALSE);
+    doc_type_kood          TEXT    = 'PALK_OPER';
+    doc_type_id            INTEGER = (SELECT id
+                                      FROM libs.library
+                                      WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
+                                        AND library = 'DOK'
+                                      LIMIT 1);
+    doc_libid              INTEGER = doc_data ->> 'libid';
+    doc_lepingid           INTEGER = doc_data ->> 'lepingid';
+    doc_kpv                DATE    = doc_data ->> 'kpv';
+    doc_summa              NUMERIC = doc_data ->> 'summa';
+    doc_dokpropid          INTEGER = doc_data ->> 'dokpropid';
+    doc_kood1              TEXT    = doc_data ->> 'kood1';
+    doc_kood2              TEXT    = doc_data ->> 'kood2';
+    doc_kood3              TEXT    = doc_data ->> 'kood3';
+    doc_kood4              TEXT    = doc_data ->> 'kood4';
+    doc_kood5              TEXT    = doc_data ->> 'kood5';
+    doc_konto              TEXT    = doc_data ->> 'konto';
+    doc_tp                 TEXT    = doc_data ->> 'tp';
+    doc_tunnus             TEXT    = doc_data ->> 'tunnus';
+    doc_tunnus_id          INTEGER = doc_data ->> 'tunnusid';
+    doc_proj               TEXT    = doc_data ->> 'proj';
+    doc_objekt             TEXT    = doc_data ->> 'objekt';
+    doc_tulumaks           NUMERIC = doc_data ->> 'tulumaks';
+    doc_sotsmaks           NUMERIC = doc_data ->> 'sotsmaks';
+    doc_tootumaks          NUMERIC = doc_data ->> 'tootumaks';
+    doc_pensmaks           NUMERIC = doc_data ->> 'pensmaks';
+    doc_tulubaas           NUMERIC = doc_data ->> 'tulubaas';
+    doc_tka                NUMERIC = doc_data ->> 'tka';
+    doc_period             DATE    = doc_data ->> 'period';
+    doc_pohjus             TEXT    = doc_data ->> 'pohjus';
+    doc_pohjus_selg        TEXT    = doc_data ->> 'pohjus_selg'; -- пояснение к причине корректировки
+    doc_paranduse_kpv      date    = doc_data ->> 'paranduse_kpv'; -- Корректирова (перерасчет , информация для расчета среднего)
+    doc_tululiik           TEXT    = doc_data ->> 'tululiik';
+    doc_muud               TEXT    = doc_data ->> 'muud';
+    kas_arvesta_saldo      BOOLEAN = doc_data ->> 'kas_arvesta_saldo';
+    doc_maksekpv_text      TEXT    = CASE
+                                         WHEN (trim(doc_data ->> 'maksekpv')::TEXT)::TEXT = '' THEN null::TEXT
+                                         ELSE ((doc_data ->> 'maksekpv')::TEXT) END;
+    doc_maksekpv           DATE    = doc_maksekpv_text::DATE; -- дата декларирования , если выплаты будут в ином от начислений периоде
+    doc_puudumise_id       integer = doc_data ->> 'puudumise_id'; -- ссылка на запись в регистре отсутствий
+    doc_kas_ettemaks       boolean = coalesce((doc_data ->> 'kas_ettemaks')::boolean, false); -- для учета предоплат отпускных
+    doc_ettemaksu_periood  date    = doc_data ->> 'ettemaksu_periood';
+    doc_ettemaksu_oper_ids jsonb   = doc_data -> 'ettemaksu_oper_ids';
+    doc_alus_oper_ids      jsonb   = doc_data -> 'alus_oper_ids';
+    l_parallel_lausend     integer;
+    new_history            JSONB;
+    docs                   INTEGER[];
+    l_params               JSON;
+    l_result               INTEGER;
+    is_import              BOOLEAN = data ->> 'import';
+    l_props                JSONB;
+    kas_arvestus           BOOLEAN = FALSE;
+    v_palk_oper            RECORD;
+    l_leping_ids           INTEGER[];
+    l_lib_ids              INTEGER[]; -- для перерасчета налогов
+    l_lib_id               INTEGER;
 
 BEGIN
 
-    SELECT
-        kasutaja
+    SELECT kasutaja
     INTO userName
-    FROM
-        ou.userid u
-    WHERE
-          u.rekvid = user_rekvid
+    FROM ou.userid u
+    WHERE u.rekvid = user_rekvid
       AND u.id = userId;
 
     IF is_import IS NULL AND userName IS NULL
@@ -96,21 +92,14 @@ BEGIN
     IF doc_tunnus IS NULL AND doc_tunnus_id IS NOT NULL
     THEN
         -- передан ид признака
-        doc_tunnus = (
-                         SELECT
-                             kood
-                         FROM
-                             libs.library
-                         WHERE
-                             id = doc_tunnus_id
-                     );
+        doc_tunnus = (SELECT kood
+                      FROM libs.library
+                      WHERE id = doc_tunnus_id);
     END IF;
 
     -- проверка на срок или статус признака
     if not exists
-    (
-        select id from libs.library where kood = doc_tunnus and rekvid = user_rekvid and status < 3
-    ) then
+        (select id from libs.library where kood = doc_tunnus and rekvid = user_rekvid and status < 3) then
         doc_tunnus = '';
     end if;
 
@@ -127,27 +116,17 @@ BEGIN
     END IF;
 
 
-    IF doc_tululiik IS NULL AND doc_libid IN (
-                                                 SELECT
-                                                     id
-                                                 FROM
-                                                     com_palklib
-                                                 WHERE
-                                                       liik = 1
-                                                   AND rekvid = user_rekvid
-                                             )
+    IF doc_tululiik IS NULL AND doc_libid IN (SELECT id
+                                              FROM com_palklib
+                                              WHERE liik = 1
+                                                AND rekvid = user_rekvid)
     THEN
         -- не проставлен вид дохода
-        doc_tululiik = (
-                           SELECT
-                               properties::JSONB ->> 'tululiik'
-                           FROM
-                               libs.library
-                           WHERE
-                                 rekvid = user_rekvid
-                             AND id = doc_libid
-                           LIMIT 1
-                       );
+        doc_tululiik = (SELECT properties::JSONB ->> 'tululiik'
+                        FROM libs.library
+                        WHERE rekvid = user_rekvid
+                          AND id = doc_libid
+                        LIMIT 1);
 
     END IF;
 
@@ -167,19 +146,16 @@ BEGIN
                            else doc_maksekpv end;
     end if;
 
-    l_props = (
-                  SELECT
-                      row_to_json(row)
-                  FROM
-                      (
-                          SELECT
-                              doc_pohjus_selg   AS pohjus_selg,
-                              doc_objekt        as objekt,
-                              doc_paranduse_kpv as paranduse_kpv,
-                              doc_maksekpv      as maksekpv,
-                              doc_puudumise_id  as puudumise_id
-                      ) row
-              );
+    l_props = (SELECT row_to_json(row)
+               FROM (SELECT doc_pohjus_selg        AS pohjus_selg,
+                            doc_objekt             as objekt,
+                            doc_paranduse_kpv      as paranduse_kpv,
+                            doc_maksekpv           as maksekpv,
+                            doc_puudumise_id       as puudumise_id,
+                            doc_kas_ettemaks       as kas_ettemaks,
+                            doc_ettemaksu_periood  as ettemaksu_periood,
+                            doc_ettemaksu_oper_ids as ettemaksu_oper_ids,
+                            doc_alus_oper_ids      as alus_oper_ids) row);
 
 
     -- вставка или апдейт docs.doc
@@ -194,15 +170,10 @@ BEGIN
             RETURN 0;
         END IF;
 
-        SELECT
-            row_to_json(row)
+        SELECT row_to_json(row)
         INTO new_history
-        FROM
-            (
-                SELECT
-                    now()    AS created,
-                    userName AS user
-            ) row;
+        FROM (SELECT now()    AS created,
+                     userName AS user) row;
 
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
         VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1);
@@ -210,48 +181,36 @@ BEGIN
 
         SELECT currval('docs.doc_id_seq') INTO doc_id;
 
-        INSERT INTO
-            palk.palk_oper (parentid, rekvid, libid, lepingid, kpv, summa, doklausid,
-                            kood1, kood2, kood3, kood4, kood5, konto, tp, tunnus, proj,
-                            tulumaks, sotsmaks, tootumaks, pensmaks, tulubaas, tka, period, pohjus, tululiik,
-                            ajalugu, muud, properties)
+        INSERT INTO palk.palk_oper (parentid, rekvid, libid, lepingid, kpv, summa, doklausid,
+                                    kood1, kood2, kood3, kood4, kood5, konto, tp, tunnus, proj,
+                                    tulumaks, sotsmaks, tootumaks, pensmaks, tulubaas, tka, period, pohjus, tululiik,
+                                    ajalugu, muud, properties)
 
-        VALUES
-            (doc_id, user_rekvid, doc_libid, doc_lepingid, doc_kpv, doc_summa, doc_dokpropid,
-             doc_kood1, doc_kood2, doc_kood3, doc_kood4, doc_kood5, doc_konto, doc_tp, doc_tunnus, doc_proj,
-             doc_tulumaks, doc_sotsmaks, doc_tootumaks, doc_pensmaks,
-             doc_tulubaas, doc_tka, doc_period, doc_pohjus, doc_tululiik,
-             new_history, doc_muud, l_props);
+        VALUES (doc_id, user_rekvid, doc_libid, doc_lepingid, doc_kpv, doc_summa, doc_dokpropid,
+                doc_kood1, doc_kood2, doc_kood3, doc_kood4, doc_kood5, doc_konto, doc_tp, doc_tunnus, doc_proj,
+                doc_tulumaks, doc_sotsmaks, doc_tootumaks, doc_pensmaks,
+                doc_tulubaas, doc_tka, doc_period, doc_pohjus, doc_tululiik,
+                new_history, doc_muud, l_props);
 --                RETURNING id INTO oper_id;
 
     ELSE
         -- определим , это начисление или ?
         IF ((doc_tululiik IS NOT NULL AND NOT empty(doc_tululiik)) OR exists
-        (
-            SELECT
-                id
-            FROM
-                com_palklib
-            WHERE
-                  liik = 1
-              AND id = doc_libid
-              AND rekvid = user_rekvid
-        )
+            (SELECT id
+             FROM com_palklib
+             WHERE liik = 1
+               AND id = doc_libid
+               AND rekvid = user_rekvid)
             )
         THEN
             -- делаем копию
             SELECT * INTO v_palk_oper FROM palk.palk_oper po WHERE po.parentid = doc_id LIMIT 1;
             IF exists
-            (
-                SELECT
-                    id
-                FROM
-                    com_palklib
-                WHERE
-                      liik = 1
-                  AND id = doc_libid
-                  AND rekvid = user_rekvid
-            )
+                (SELECT id
+                 FROM com_palklib
+                 WHERE liik = 1
+                   AND id = doc_libid
+                   AND rekvid = user_rekvid)
             THEN
                 -- проверяем были ли изменения на налогах
                 -- tm
@@ -261,28 +220,19 @@ BEGIN
 
                     -- была правка ТМ
                     -- надо найти в карте ПН
-                    l_lib_id = (
-                                   SELECT
-                                       pk.libid
-                                   FROM
-                                       palk.palk_kaart pk
-                                   WHERE
-                                         lepingid = doc_lepingid
-                                     AND libid IN (
-                                                      SELECT
-                                                          id
-                                                      FROM
-                                                          libs.library l
-                                                      WHERE
-                                                            (l.properties::JSONB ->> 'liik')::INTEGER = 4
-                                                        AND l.library = 'PALK'
-                                                        AND l.rekvid = user_rekvid
-                                                        AND l.status = 1
-                                                      --id = 149054
-                                                  )
-                                     AND status = 1
-                                   LIMIT 1
-                               );
+                    l_lib_id = (SELECT pk.libid
+                                FROM palk.palk_kaart pk
+                                WHERE lepingid = doc_lepingid
+                                  AND libid IN (SELECT id
+                                                FROM libs.library l
+                                                WHERE (l.properties::JSONB ->> 'liik')::INTEGER = 4
+                                                  AND l.library = 'PALK'
+                                                  AND l.rekvid = user_rekvid
+                                                  AND l.status = 1
+                                    --id = 149054
+                                )
+                                  AND status = 1
+                                LIMIT 1);
 
                     IF l_lib_id IS NOT NULL
                     THEN
@@ -297,28 +247,19 @@ BEGIN
 
                     -- была правка ТМ
                     -- надо найти в карте ПН
-                    l_lib_id = (
-                                   SELECT
-                                       pk.libid
-                                   FROM
-                                       palk.palk_kaart pk
-                                   WHERE
-                                         lepingid = doc_lepingid
-                                     AND libid IN (
-                                                      SELECT
-                                                          id
-                                                      FROM
-                                                          libs.library l
-                                                      WHERE
-                                                            (l.properties::JSONB ->> 'liik')::INTEGER = 5 -- sm
-                                                        AND l.library = 'PALK'
-                                                        AND l.rekvid = user_rekvid
-                                                        AND l.status = 1
-                                                      --id = 149054
-                                                  )
-                                     AND status = 1
-                                   LIMIT 1
-                               );
+                    l_lib_id = (SELECT pk.libid
+                                FROM palk.palk_kaart pk
+                                WHERE lepingid = doc_lepingid
+                                  AND libid IN (SELECT id
+                                                FROM libs.library l
+                                                WHERE (l.properties::JSONB ->> 'liik')::INTEGER = 5 -- sm
+                                                  AND l.library = 'PALK'
+                                                  AND l.rekvid = user_rekvid
+                                                  AND l.status = 1
+                                    --id = 149054
+                                )
+                                  AND status = 1
+                                LIMIT 1);
 
                     IF l_lib_id IS NOT NULL
                     THEN
@@ -333,29 +274,20 @@ BEGIN
 
                     -- была правка ТKI
                     -- надо найти в карте ПН
-                    l_lib_id = (
-                                   SELECT
-                                       pk.libid
-                                   FROM
-                                       palk.palk_kaart pk
-                                   WHERE
-                                         lepingid = doc_lepingid
-                                     AND libid IN (
-                                                      SELECT
-                                                          id
-                                                      FROM
-                                                          libs.library l
-                                                      WHERE
-                                                            (l.properties::JSONB ->> 'liik')::INTEGER = 7 -- tk
-                                                        AND (l.properties::JSONB ->> 'asutusest')::INTEGER = 0 -- tki
-                                                        AND l.library = 'PALK'
-                                                        AND l.rekvid = user_rekvid
-                                                        AND l.status = 1
-                                                      --id = 149054
-                                                  )
-                                     AND status = 1
-                                   LIMIT 1
-                               );
+                    l_lib_id = (SELECT pk.libid
+                                FROM palk.palk_kaart pk
+                                WHERE lepingid = doc_lepingid
+                                  AND libid IN (SELECT id
+                                                FROM libs.library l
+                                                WHERE (l.properties::JSONB ->> 'liik')::INTEGER = 7      -- tk
+                                                  AND (l.properties::JSONB ->> 'asutusest')::INTEGER = 0 -- tki
+                                                  AND l.library = 'PALK'
+                                                  AND l.rekvid = user_rekvid
+                                                  AND l.status = 1
+                                    --id = 149054
+                                )
+                                  AND status = 1
+                                LIMIT 1);
 
                     IF l_lib_id IS NOT NULL
                     THEN
@@ -371,29 +303,20 @@ BEGIN
 
                     -- была правка ТKA
                     -- надо найти в карте ПН
-                    l_lib_id = (
-                                   SELECT
-                                       pk.libid
-                                   FROM
-                                       palk.palk_kaart pk
-                                   WHERE
-                                         lepingid = doc_lepingid
-                                     AND libid IN (
-                                                      SELECT
-                                                          id
-                                                      FROM
-                                                          libs.library l
-                                                      WHERE
-                                                            (l.properties::JSONB ->> 'liik')::INTEGER = 7 -- tk
-                                                        AND (l.properties::JSONB ->> 'asutusest')::INTEGER = 1 -- tka
-                                                        AND l.library = 'PALK'
-                                                        AND l.rekvid = user_rekvid
-                                                        AND l.status = 1
-                                                      --id = 149054
-                                                  )
-                                     AND status = 1
-                                   LIMIT 1
-                               );
+                    l_lib_id = (SELECT pk.libid
+                                FROM palk.palk_kaart pk
+                                WHERE lepingid = doc_lepingid
+                                  AND libid IN (SELECT id
+                                                FROM libs.library l
+                                                WHERE (l.properties::JSONB ->> 'liik')::INTEGER = 7      -- tk
+                                                  AND (l.properties::JSONB ->> 'asutusest')::INTEGER = 1 -- tka
+                                                  AND l.library = 'PALK'
+                                                  AND l.rekvid = user_rekvid
+                                                  AND l.status = 1
+                                    --id = 149054
+                                )
+                                  AND status = 1
+                                LIMIT 1);
 
                     IF l_lib_id IS NOT NULL
                     THEN
@@ -409,28 +332,19 @@ BEGIN
 
                     -- была правка PM
                     -- надо найти в карте ПН
-                    l_lib_id = (
-                                   SELECT
-                                       pk.libid
-                                   FROM
-                                       palk.palk_kaart pk
-                                   WHERE
-                                         lepingid = doc_lepingid
-                                     AND libid IN (
-                                                      SELECT
-                                                          id
-                                                      FROM
-                                                          libs.library l
-                                                      WHERE
-                                                            (l.properties::JSONB ->> 'liik')::INTEGER = 8 -- pm
-                                                        AND l.library = 'PALK'
-                                                        AND l.rekvid = user_rekvid
-                                                        AND l.status = 1
-                                                      --id = 149054
-                                                  )
-                                     AND status = 1
-                                   LIMIT 1
-                               );
+                    l_lib_id = (SELECT pk.libid
+                                FROM palk.palk_kaart pk
+                                WHERE lepingid = doc_lepingid
+                                  AND libid IN (SELECT id
+                                                FROM libs.library l
+                                                WHERE (l.properties::JSONB ->> 'liik')::INTEGER = 8 -- pm
+                                                  AND l.library = 'PALK'
+                                                  AND l.rekvid = user_rekvid
+                                                  AND l.status = 1
+                                    --id = 149054
+                                )
+                                  AND status = 1
+                                LIMIT 1);
 
                     IF l_lib_id IS NOT NULL
                     THEN
@@ -442,39 +356,28 @@ BEGIN
         END IF;
 
 
-        SELECT
-            row_to_json(row)
+        SELECT row_to_json(row)
         INTO new_history
-        FROM
-            (
-                SELECT
-                    now()    AS updated,
-                    userName AS user
-            ) row;
+        FROM (SELECT now()    AS updated,
+                     userName AS user) row;
 
         -- устанавливаем связи с документами
 
         -- получим связи документа
-        SELECT
-            docs_ids
+        SELECT docs_ids
         INTO docs
-        FROM
-            docs.doc
-        WHERE
-            id = doc_id;
+        FROM docs.doc
+        WHERE id = doc_id;
 
         -- will check if arvId exists
         UPDATE docs.doc
-        SET
-            docs_ids   = docs,
+        SET docs_ids   = docs,
             lastupdate = now(),
             history    = coalesce(history, '[]') :: JSONB || new_history
-        WHERE
-            id = doc_id;
+        WHERE id = doc_id;
 
         UPDATE palk.palk_oper
-        SET
-            kpv        = doc_kpv,
+        SET kpv        = doc_kpv,
             libid      = doc_libid,
             lepingid   = doc_lepingid,
             summa      = doc_summa,
@@ -499,8 +402,7 @@ BEGIN
             ajalugu    = new_history,
             muud       = doc_muud,
             properties = coalesce(properties, '{}'::jsonb) || l_props
-        WHERE
-            parentid = doc_id;
+        WHERE parentid = doc_id;
         --RETURNING id             INTO oper_id;
 
         IF kas_arvestus
@@ -510,18 +412,13 @@ BEGIN
             -- готовим параметры
             l_leping_ids = array_append(l_leping_ids, doc_lepingid);
 
-            SELECT
-                row_to_json(row)
+            SELECT row_to_json(row)
             INTO l_params
-            FROM
-                (
-                    SELECT
-                        l_leping_ids  AS leping_ids,
-                        l_lib_ids     AS lib_ids,
-                        doc_kpv       AS kpv,
-                        doc_dokpropid AS dokprop,
-                        FALSE         AS is_delete_prev_oper
-                ) row;
+            FROM (SELECT l_leping_ids  AS leping_ids,
+                         l_lib_ids     AS lib_ids,
+                         doc_kpv       AS kpv,
+                         doc_dokpropid AS dokprop,
+                         FALSE         AS is_delete_prev_oper) row;
 
             PERFORM palk.gen_palkoper(userid, l_params:: JSON);
 
@@ -541,26 +438,22 @@ BEGIN
     IF kas_lausend
     THEN
 
-        SELECT
-            row_to_json(row)
+        SELECT row_to_json(row)
         INTO l_params
-        FROM
-            (
-                SELECT doc_id AS id
-            ) row;
+        FROM (SELECT doc_id AS id) row;
 
-        SELECT
-            result
+        SELECT result
         INTO l_result
         FROM
-            palk.gen_lausend_palk(userid, l_params);
+            palk.gen_lausend_palk(userid, l_params)
+        limit 1;
     END IF;
 
     RETURN doc_id;
 EXCEPTION
     WHEN OTHERS
         THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+--            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
             RETURN 0;
 
 END ;

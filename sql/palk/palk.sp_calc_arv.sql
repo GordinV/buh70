@@ -1,23 +1,24 @@
 DROP FUNCTION IF EXISTS palk.sp_calc_arv(params JSONB);
-DROP FUNCTION IF EXISTS palk.sp_calc_arv_(INTEGER, params JSON);
+DROP FUNCTION IF EXISTS palk.sp_calc_arv(INTEGER, params JSON);
 DROP FUNCTION IF EXISTS palk.sp_calc_arv(INTEGER, params JSON);
 
 CREATE OR
     REPLACE FUNCTION palk.sp_calc_arv(IN user_id INTEGER, IN params JSON,
-                                      OUT selg TEXT,
-                                      OUT tki NUMERIC,
-                                      OUT tka NUMERIC,
-                                      OUT tm NUMERIC,
-                                      OUT tm_kokku NUMERIC,
-                                      OUT pm NUMERIC,
-                                      OUT sm NUMERIC,
-                                      OUT summa NUMERIC,
-                                      OUT mvt NUMERIC(14, 4),
-                                      OUT mvt_kokku NUMERIC(14, 4),
-                                      OUT error_code INTEGER,
-                                      OUT result INTEGER,
-                                      OUT error_message TEXT,
-                                      OUT data JSONB)
+                                       OUT selg TEXT,
+                                       OUT tki NUMERIC,
+                                       OUT tka NUMERIC,
+                                       OUT tm NUMERIC,
+                                       OUT tm_kokku NUMERIC,
+                                       OUT pm NUMERIC,
+                                       OUT sm NUMERIC,
+                                       OUT summa NUMERIC,
+                                       OUT mvt NUMERIC(14, 4),
+                                       OUT mvt_kokku NUMERIC(14, 4),
+                                       OUT error_code INTEGER,
+                                       OUT result INTEGER,
+                                       out alus_oper_ids jsonb,
+                                       OUT error_message TEXT,
+                                       OUT data JSONB)
     LANGUAGE plpgsql
 AS
 $$
@@ -625,6 +626,7 @@ BEGIN
     END IF;
 
     mvt = 0;
+    alus_oper_ids = to_jsonb(doc_ids);
 
     IF is_umardamine AND l_mvt_kokku > 0
     THEN
@@ -693,6 +695,7 @@ BEGIN
     END IF;
 
     summa = coalesce(summa, 0);
+
     -- empty result
     l_params = to_jsonb(row.*)
                FROM
@@ -741,7 +744,8 @@ and tululiik = '10'
 
 */
 
-/*SELECT *
+/*
+SELECT *
 FROM palk.sp_calc_arv_(5419, '{"kpv":"2023-02-28","lepingid":17851,"libid":153397}' :: JSON);
 
 
