@@ -15,6 +15,8 @@ const
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     Loading = require('./../../../components/loading/index.jsx'),
     styles = require('./styles');
+const Round = require('./../../../../libs/round_to_2');
+
 
 const DocContext = require('../../../doc-context');
 const LIBRARIES = require('./../../../../config/constants').ASENDUS_TAABEL.LIBRARIES;
@@ -170,14 +172,18 @@ class Laps extends React.PureComponent {
                                          name='hind'
                                          onChange={this.handleInput}
                                          value={(self.docData.hind) || ''}
-                                         readOnly={!isEditMode}/>
+                                         readOnly={true}
+                            //             readOnly={!isEditMode}
+                            />
 
                             <InputNumber ref="input-summa"
                                          title='Summa:'
                                          name='summa'
                                          onChange={this.handleInput}
                                          value={self.docData.summa || ''}
-                                         readOnly={!isEditMode}/>
+                                         readOnly={true}
+                             //            readOnly={!isEditMode}
+                            />
 
                             <InputNumber ref="input-kuu"
                                          title='Kuu:'
@@ -283,7 +289,7 @@ class Laps extends React.PureComponent {
                 // нашли, правим цену и сумму
                 if (nom && nom.id && nom.hind) {
                     Doc.docData.hind = Number(nom.hind);
-                    Doc.docData.summa = Number(nom.hind) * Number(Doc.docData.kogus);
+                    Doc.docData.summa = Round(Number(nom.hind) * Number(Doc.docData.kogus));
                 }
                 break;
             }
