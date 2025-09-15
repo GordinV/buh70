@@ -178,8 +178,6 @@ exports.put = async (req, res) => {
                 return {id: index, result: 0, kas_vigane: true, error_message: row.error_message};
             });
 
-            console.log('save tulem', tulemused);
-
             if (tulemused.error_code && !tulemused.data.length) {
                 // одно сообщение не массив
                 raport = [{id: 1, result: 0, kas_vigane: true, error_message: tulemused.error_message}];
@@ -194,6 +192,9 @@ exports.put = async (req, res) => {
     }
     let savedData;
     try {
+        // установим таймаут для ожидания тяжелых отчетов
+        res.setTimeout(400000);
+
         savedData = await Document.save(params);
 
         let l_error = '';
@@ -236,6 +237,7 @@ exports.put = async (req, res) => {
         {gridData: savedData.details ? savedData.details : []},
         {relations: savedData.relations ? savedData.relations : []},
         {gridConfig: savedData.gridConfig ? savedData.gridConfig : []});
+
 
     res.send({
         action: 'save',
@@ -483,6 +485,10 @@ exports.upload = async (req, res) => {
         if (!user) {
             return res.status(401);
         }
+
+        // установим таймаут для ожидания тяжелых отчетов
+        res.setTimeout(400000);
+
 
         // вызываем разбор файла
         try {
