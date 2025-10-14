@@ -10,11 +10,6 @@ const DocContext = require('./../../doc-context.js');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'TEATIS';
-const EVENTS = [
-    {name: 'Tabeli koostamine', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
-    {name: 'Arve koostamine', method: 'koostaArve', docTypeId: 'arv'},
-    {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArve', docTypeId: 'arv'},
-];
 
 
 /**

@@ -1,8 +1,8 @@
 -- Function: docs.sp_delete_mk(integer, integer)
 
-DROP FUNCTION IF EXISTS docs.koosta_teatis_(INTEGER, DATE);
+DROP FUNCTION IF EXISTS docs.koosta_teatis(INTEGER, DATE);
 
-CREATE OR REPLACE FUNCTION docs.koosta_teatis_(IN user_id INTEGER,
+CREATE OR REPLACE FUNCTION docs.koosta_teatis(IN user_id INTEGER,
                                                IN l_kpv DATE DEFAULT current_date,
                                                OUT error_code INTEGER,
                                                OUT result INTEGER,
@@ -12,15 +12,18 @@ CREATE OR REPLACE FUNCTION docs.koosta_teatis_(IN user_id INTEGER,
 $BODY$
 
 DECLARE
-    l_rekvid    INTEGER = (SELECT rekvid
-                           FROM ou.userid u
-                           WHERE id = user_id
-                           LIMIT 1);
-
+    l_rekvid    INTEGER = (
+                              SELECT
+                                  rekvid
+                              FROM
+                                  ou.userid u
+                              WHERE
+                                  id = user_id
+                              LIMIT 1
+    );
     v_arv       RECORD;
     v_teatis    RECORD;
     json_object JSONB;
-
     l_status    INTEGER;
     DOC_STATUS  INTEGER = 1; -- только активные услуги
     l_teatis_id INTEGER;
@@ -28,40 +31,50 @@ DECLARE
     l_sisu      TEXT;
 BEGIN
     doc_type_id = 'TEATIS';
-    -- will return docTypeid of new doc
-
     -- делаем выборку неоплаченных счетов на дату
 
     FOR v_arv IN
-        SELECT array_to_string(array_agg(d.id), ',')                                                   AS docs,
-               sum(a.jaak)                                                                             AS volg,
-               a.asutusid,
-               array_agg('Arve nr.:' || a.number::TEXT || ' kuupäev:' || to_char(a.kpv, 'DD.MM.YYYY')) AS selg
-        FROM docs.doc d
-                 INNER JOIN docs.arv a ON a.parentid = d.id
-                 INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-        WHERE a.jaak > 0
+        SELECT
+            array_to_string(array_agg(d.id), ',')                                                   AS docs,
+            sum(a.jaak)                                                                             AS volg,
+            a.asutusid,
+            array_agg('Arve nr.:' || a.number::TEXT || ' Viitenr.:' || (a.properties->>'viitenr')::text ||  ' kuupäev:' || to_char(a.kpv, 'DD.MM.YYYY')) AS selg
+        FROM
+            docs.doc                           d
+                INNER JOIN docs.arv            a ON a.parentid = d.id
+                INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+        WHERE
+              a.jaak > 0
           AND (a.tahtaeg IS NULL
             OR a.tahtaeg < l_kpv)
           AND d.rekvid = l_rekvid
-          AND a.asutusid NOT IN (SELECT t.asutusid
-                                 FROM docs.teatis t
-                                          INNER JOIN docs.doc dd ON dd.id = t.parentid
-                                 WHERE dd.rekvid = l_rekvid
-                                   AND dd.status <> 3
-                                   AND t.kpv = l_kpv)
-        and a.asutusid = 168
+          AND a.asutusid NOT IN (
+                                    SELECT
+                                        t.asutusid
+                                    FROM
+                                        docs.teatis             t
+                                            INNER JOIN docs.doc dd ON dd.id = t.parentid
+                                    WHERE
+                                          dd.rekvid = l_rekvid
+                                      AND dd.status <> 3
+                                      AND t.kpv = l_kpv
+                                )
+        -- временно на период теста
+        and a.asutusid in (select id from libs.asutus where regkood in ('49105223731','49812283717','49105223731'))
         GROUP BY a.asutusid
         LOOP
-            -- ищем требование. если есть и датировано сегодня - то осключаем (не нужны повторы)
-            -- критерий
+        -- ищем требование. если есть и датировано сегодня - то осключаем (не нужны повторы)
+        -- критерий
 
-            SELECT d.id,
-                   d.status
-                   INTO l_teatis_id, l_status
-            FROM docs.doc d
-                     INNER JOIN docs.teatis t ON t.parentid = d.id
-            WHERE t.asutusid = v_arv.asutusid
+            SELECT
+                d.id,
+                d.status
+            INTO l_teatis_id, l_status
+            FROM
+                docs.doc                   d
+                    INNER JOIN docs.teatis t ON t.parentid = d.id
+            WHERE
+                  t.asutusid = v_arv.asutusid
               AND t.kpv = l_kpv
               AND d.rekvid = l_rekvid
               AND d.status <> 3
@@ -73,20 +86,28 @@ BEGIN
                 -- продолжаем расчет
                 l_sisu = array_to_string(v_arv.selg, ','):: TEXT;
 
-                SELECT v_arv.asutusid AS asutusid,
-                       v_arv.docs     AS docs,
-                       l_sisu         AS sisu
-                       INTO v_teatis;
+                SELECT
+                    v_arv.asutusid AS asutusid,
+                    v_arv.docs     AS docs,
+                    l_kpv          as kpv,
+                    l_sisu         AS sisu
+                INTO v_teatis;
 
                 -- подготавливаем параметры для сохранения
-                SELECT row_to_json(row) INTO json_object
-                FROM (SELECT coalesce(l_teatis_id, 0)      AS id,
-                             (SELECT to_jsonb(v_teatis.*)) AS data) row;
+                SELECT
+                    row_to_json(row)
+                INTO json_object
+                FROM
+                    (
+                        SELECT
+                            coalesce(l_teatis_id, 0) AS id,
+                            (
+                                SELECT to_jsonb(v_teatis.*)
+                            )                        AS data
+                    ) row;
 
                 SELECT docs.sp_salvesta_teatis(json_object :: JSONB, user_id, l_rekvid) INTO l_teatis_id;
 
-
-                raise notice 'l_teatis_id %', l_teatis_id;
                 IF l_teatis_id > 0
                 THEN
                     l_count = l_count + 1;
@@ -123,12 +144,15 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.koosta_teatis_(INTEGER, DATE) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.koosta_teatis_(INTEGER, DATE) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.koosta_teatis_(INTEGER, DATE) TO arvestaja;
+GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO arvestaja;
 
 
 /*
-select docs.koosta_teatis_(5391,'2023-11-20')
+select docs.koosta_teatis(u.id,'2025-10-15')
+from ou.userid u
+where u.kasutaja = 'vlad'
+and u.rekvid in (88,101)
 
  */

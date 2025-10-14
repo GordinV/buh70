@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 html(lang="et")
 style(type='text/css').
-    .doc_wrapper {
-        margin-left:5%;
-        margin-top:5%;
-        width:auto;
-    }
     .row_wrapper {
         display:-webkit-box;
         flexDirection: row;
@@ -25,16 +20,27 @@ style(type='text/css').
         display: grid;
         grid-auto-rows: 30px;
     }
-    .div_column_left{
-        width: 500px;
-    }
-    .div_column_right{
-        width: 200px;
-    }
     .td_align {
         text-align: center;
         vertical-align: top;
     }
+    .td_summa_align {
+        text-align: right;
+        vertical-align: top;
+        padding-right: 20px;
+    }
+    .th_style {
+        text-align: center;
+        vertical-align: top;
+        text-indent: 5px;
+        border-bottom: 1px solid black;
+    }
+
+    .inner_padding {
+        padding-left: 5px;
+        display: inline-block;
+    }
+
     .auto {
         width: auto;
         margin-left: 5px;
@@ -43,6 +49,9 @@ style(type='text/css').
         font-weight: normal;
     }
 
+    .table_local {
+        border: 1px solid black;
+    }
 
 block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
@@ -75,11 +84,11 @@ block content
     div.body_wrapper
 
         h1
-            p #{`TEATIS`}
+            p #{`MAKSENÕUE`}
 
         div.row_wrapper
             p.label Number:
-            p.input #{data[0].number}
+            p.input NR-#{data[0].number}
 
         div.row_wrapper
             p.label Kuupäev:
@@ -97,48 +106,64 @@ block content
             p.label E-mail:
             p.input #{`${data[0].email}`}
 
-        table.table.table-hover.grid_data
+        table.table-hover.grid_data
             thead.grid_head.auto
                 tr
-                    th Arve number
-                    th Viitenumber
-                    th Arvestatud seisuga
-                    th Arve tasumata osa
+                    th.th_style
+                        div.inner_padding  Arve number
+                    th.th_style
+                        div.inner_padding Viitenumber
+                    th.th_style
+                        div.inner_padding Arvestatud seisuga
+                    th.th_style
+                        div.inner_padding Arve tasumata osa
 
             tbody.auto
-                each row in data[0].arved
+                each laps in data[0].lapsed
+                    -var laps_kokku = 0;
+                        each row in data[0].arved.filter(arve => arve.viitenr === laps)
+                            tr
+                                td.td_align=(row.number)
+                                td.td_align=(row.viitenr)
+                                td.td_align=(row.kpv)
+                                td.td_summa_align=Number(row.jaak).toFixed(2)
+                                -laps_kokku += Number(row.jaak);
+                    tr(style="line-height: 1px; height: 1px;")
+                        td(colspan="4" style="border-top: 1px solid #000; height: 1px; padding: 0;") &nbsp;
+                    td.td_align=('Kokku')
+                    td.td_align=(laps)
+                    td
+                    td.td_summa_align=Number(laps_kokku).toFixed(2)
                     tr
-                        td.td_align=(row.number)
-                        td.td_align=(row.viitenr)
-                        td.td_align=(row.kpv)
-                        td=Number(row.jaak).toFixed(2)
+                        td(colspan="4") &nbsp;
+
 
         h3
             div
                 div.row_wrapper
                     div.div_column
-                        span Võlgnevus seisuga
+                        span Kokku Teie võlgnevus seisuga
                     div.div_column.auto
-                        span #{`${data[0].kpv_print}`}
+                        span #{`${data[0].kpv_print}`} on
                     div.div_column.auto
-                        span #{`${Number(data[0].arved[0].kokku).toFixed(2)}`}
+                        span #{`${Number(data[0].arved[0].kokku).toFixed(2)}`} eurot.
+                br
+                div.row_wrapper
+                    div.div_column
+                        span Palume tasuda võlgnevus kalendrikuu lõpuni käesoleva maksenõude väljastamise kuupäevast arvates.
             div
                 div.row_wrapper
                     span Võla sissenõudmise menetluse etapid:
                 div.row_wrapper.font_text
-                    span 1. Meeldetuletus
+                    span 1. Käesolev maksenõue
                 div.row_wrapper.font_text
-                    span 2. Maksehäire register (https://www.e-krediidiinfo.ee)
+                    span 2. Võla sissenõudmine kohtu kaudu
+            br
+            div
                 div.row_wrapper.font_text
-                    span 3. Kohtu maksekäsu kiirmenetlus või kohtumenetlus (https://www.e-toimik.ee)
-            div.doc_footer
-                div.row_wrapper
-                    span Võla sissenõudmise menetluse etapid:
-            div.row_wrapper.font_text
-                span 1. Kohene tasumine - täissummana hiljemalt järgneva 14 kalendripäeva jooksul meeldetuletuse kuupäevast arvates
-            div.row_wrapper.font_text
-                span 2. Ajatatud tasumine - osadena maksegraafiku alusel vastavalt eraldi sõlmitud lepingules
-            p Täname, kui olete käesoleva meeldetuletuse kättesaamise hetkeks nõutud summa juba tasunud.
-
-            p.text Dokumendi koostaja: #{User.userName}
-            p Väljatrükkitatud: #{data[0].print_aeg}
+                    span  Täname, kui olete käesoleva maksenõude kättesaamise hetkeks nõutud summa juba tasunud.
+                br
+                div.row_wrapper.font_text
+                    span  Dokumendi koostaja: #{User.userName}
+                div.row_wrapper.font_text
+                    span Väljastatud: #{data[0].print_aeg}

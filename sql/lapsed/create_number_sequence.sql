@@ -49,8 +49,6 @@ BEGIN
             l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',' || l_number || ');';
 
         END IF;
-        raise notice '%',l_sql;
-
         -- execute sequnce
         EXECUTE l_sql;
     ELSE

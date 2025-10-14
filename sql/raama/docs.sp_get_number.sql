@@ -16,7 +16,6 @@ DECLARE
     l_seq_name        TEXT;
 BEGIN
 
-    raise notice 'tcDok %', tcDok;
     IF tnDokPropId IS NOT NULL
     THEN
         SELECT ltrim(rtrim(proc_))
@@ -98,12 +97,9 @@ BEGIN
 
         lcSqlString = lcSqlString || lcAdditionalWhere;
 
-        raise notice '%',lcSqlString;
         EXECUTE lcSqlString
             INTO v_number
             USING tnRekvId, tnYear, lcPref;
-
-        RAISE NOTICE 'lcSqlString %', lcSqlString;
     END IF;
 
     -- will plus pref and encrement
