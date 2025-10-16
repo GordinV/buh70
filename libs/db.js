@@ -8,6 +8,8 @@ const db = {
         // если не задана конфигурация, используем дефолтный
         let config = !dbConfig ? require('../config/default') : dbConfig;
 
+        console.log(config);
+
         let result = {
             error_code: 0,
             result: null,
