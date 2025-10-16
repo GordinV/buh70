@@ -53,11 +53,9 @@ const db = {
         }
 
         try {
-            console.log ('start connect', config.pg.connection)
             await client.connect();
 
             const res = await client.query(prepairedSqlString, params);
-            console.log ('query',prepairedSqlString, res.rows)
 
             if (res.rowCount && res.rowCount === 1 && res.rows && res.rows.length === 1 && ('error_code' in res.rows[0])) {
                 // executed procedure
