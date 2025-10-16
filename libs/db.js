@@ -2,6 +2,7 @@ const {Client} = require('pg');
 const log = require('./log');
 const path = require('path');
 const fs = require('fs');
+const config = require("../config/default.json");
 
 const db = {
     queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit, subTotals, dbConfig) => {
@@ -52,6 +53,7 @@ const db = {
         }
 
         try {
+            console.log ('start connect', config.pg.connection)
             await client.connect();
 
             const res = await client.query(prepairedSqlString, params);
