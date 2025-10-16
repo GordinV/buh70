@@ -28,6 +28,7 @@ exports.post = function (req, res, next) {
             function (callback) {
                 //Loooking for acccount and loading login data
                 let rekvId = null;
+                console.log('login', username, rekvId);
 
                 userid.getUserId(username, rekvId, function (err, kasutaja) {
                     if (err) return callback(err, null);
