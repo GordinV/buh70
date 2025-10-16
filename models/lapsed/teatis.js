@@ -146,10 +146,12 @@ const Teatis = {
                                                        sum(a.jaak) OVER (PARTITION BY a.asutusid),
                                                        'number', a.number,
                                                        'kpv', to_char(a.kpv, 'DD.MM.YYYY'),
-                                                       'viitenr', lapsed.get_viitenumber(a.rekvid, l.id),
+                                                       'viitenr', lapsed.get_viitenumber(a.rekvid, l.parentid),
                                                        'rekvid', a.rekvid,
                                                        'jaak', a.jaak) AS arve,
+                                    lapsed.get_viitenumber(a.rekvid, l.parentid) as laps,                                
                                     a.parentid                         AS id
+                                    
                              FROM docs.arv a
                                       LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = a.parentid
                                  WHERE
@@ -173,6 +175,8 @@ const Teatis = {
                          to_char(t.print, 'DD.MM.YYYY HH24:MI:SS') AS print,
                          to_jsonb(array((SELECT arve
                                          FROM arved WHERE arved.id IN (SELECT unnest(t.docs))))) AS arved,
+                         to_jsonb(get_unique_value_from_array(array(SELECT laps as lapsed FROM arved a WHERE a.id IN (SELECT unnest(t.docs))))) as lapsed,
+                            
                         r.muud as tais_nimetus,
                         r.tel as rekv_tel,
                         r.email as rekv_email,
@@ -285,7 +289,7 @@ const Teatis = {
     ],
     email: [
         {
-            view: 'teatis_email',
+            view: 'teatis_kaart',
             params: 'id',
             register: `UPDATE docs.doc
                        SET history = history ||

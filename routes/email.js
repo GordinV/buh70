@@ -16,6 +16,12 @@ const createPDF = async function createFile(html, fileName = 'doc') {
 
     const options = {
         pageSize: 'letter',
+        dpi: 300,
+        printMediaType: true,
+        disableSmartShrinking: true,
+        noStopSlowScripts: true,
+        javascriptDelay: 2000,
+        enableLocalFileAccess: true,
     };
     let outFile = path.join(__dirname, '..', 'public', 'pdf', `${fileName}.pdf`);
 
