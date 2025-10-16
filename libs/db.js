@@ -6,7 +6,10 @@ const fs = require('fs');
 const db = {
     queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit, subTotals, dbConfig) => {
         // если не задана конфигурация, используем дефолтный
-        let config = !dbConfig ? require('../config/default') : dbConfig;
+        let config = require('../config/default');
+
+        console.log('dbConfig',dbConfig,config )
+        config = !dbConfig ? config : dbConfig;
 
         console.log(config);
 
