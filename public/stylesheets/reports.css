@@ -87,4 +87,6 @@
     border-spacing: 0px;
     border: 1px solid black;
     width: -moz-available;
+    border-collapse: separate;
+    border-spacing: 0 1px;
 }
