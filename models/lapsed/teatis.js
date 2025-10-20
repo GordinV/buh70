@@ -48,13 +48,15 @@ const Teatis = {
                                                            'number', a.number,
                                                            'kpv', to_char(a.kpv, 'DD.MM.YYYY'),
                                                            'viitenr', lapsed.get_viitenumber(a.rekvid, l.parentid),
+                                                           'lapse_nimi', laps.nimi,
                                                            'rekvid', a.rekvid,
                                                            'jaak', a.jaak)                              as arve,
                                         teatis.id,
                                         array_agg(lapsed.get_viitenumber(a.rekvid, l.parentid)) over () as lapsed
                                     from
                                         docs.arv                                a
-                                            left outer join lapsed.liidestamine l on l.docid = a.parentid,
+                                            left outer join lapsed.liidestamine l on l.docid = a.parentid
+                                            left outer join lapsed.laps         laps on laps.id = l.parentid,
                                                                                 teatis
                                     where
                                         a.parentid in (
@@ -137,55 +139,92 @@ const Teatis = {
 
     ],
     multiple_print_doc: {
-        command: `WITH params AS (
-                        SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER AS ids,
-                            $2::integer as user_id                               
-                    ),                    
-                         arved AS (
-                             SELECT jsonb_build_object('kokku',
-                                                       sum(a.jaak) OVER (PARTITION BY a.asutusid),
-                                                       'number', a.number,
-                                                       'kpv', to_char(a.kpv, 'DD.MM.YYYY'),
-                                                       'viitenr', lapsed.get_viitenumber(a.rekvid, l.parentid),
-                                                       'rekvid', a.rekvid,
-                                                       'jaak', a.jaak) AS arve,
-                                    lapsed.get_viitenumber(a.rekvid, l.parentid) as laps,                                
-                                    a.parentid                         AS id
-                                    
-                             FROM docs.arv a
-                                      LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-                                 WHERE
-                                  a.parentid IN (
-                                      SELECT unnest(t.docs)
-                                      FROM docs.teatis t
-                                      where t.parentid in (SELECT ids FROM params)
-                                  )
-                                     
-                         )
-                        SELECT
-                         t.id,
-                         t.number :: TEXT,
-                         t.rekvid,
-                         to_char(t.kpv, 'DD.MM.YYYY') :: TEXT AS kpv,
-                         t.asutus :: TEXT AS asutus,
-                         t.regkood::text as regkood,
-                         t.aadress::text as aadress,
-                         t.email::text as email,
-                         to_char(t.saadetud, 'DD.MM.YYYY') AS saadetud,
-                         to_char(t.print, 'DD.MM.YYYY HH24:MI:SS') AS print,
-                         to_jsonb(array((SELECT arve
-                                         FROM arved WHERE arved.id IN (SELECT unnest(t.docs))))) AS arved,
-                         to_jsonb(get_unique_value_from_array(array(SELECT laps as lapsed FROM arved a WHERE a.id IN (SELECT unnest(t.docs))))) as lapsed,
-                            
-                        r.muud as tais_nimetus,
-                        r.tel as rekv_tel,
-                        r.email as rekv_email,
-                        r.aadress as rekv_aadress,
-                        r.regkood as rekv_regkood,                                         
-                         TRUE AS select
-                        FROM cur_teatised t
-                             INNER JOIN ou.rekv r ON r.id = t.rekvid
-                        WHERE  t.id IN (SELECT ids FROM params)`
+        command: `WITH
+                      params AS (
+                                    SELECT
+                                        unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER AS ids,
+                                        $2::integer                                           as user_id
+                                ),
+                      arved AS (
+                                    SELECT
+                                        jsonb_build_object('kokku',
+                                                           sum(a.jaak) OVER (PARTITION BY a.asutusid),
+                                                           'number', a.number,
+                                                           'kpv', to_char(a.kpv, 'DD.MM.YYYY'),
+                                                           'viitenr', lapsed.get_viitenumber(a.rekvid, l.parentid),
+                                                           'lapse_nimi', laps.nimi,
+                                                           'rekvid', a.rekvid,
+                                                           'jaak', a.jaak)           AS arve,
+                                        lapsed.get_viitenumber(a.rekvid, l.parentid) as laps,
+                                        laps.nimi                                    as lapse_nimi,
+                                        a.parentid                                   AS id
+
+                                    FROM
+                                        docs.arv                                a
+                                            LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+                                            LEFT OUTER JOIN lapsed.laps         laps on laps.id = l.parentid
+                                    WHERE
+                                        a.parentid IN (
+                                                          SELECT
+                                                              unnest(t.docs)
+                                                          FROM
+                                                              docs.teatis t
+                                                          where
+                                                              t.parentid in (
+                                                                                SELECT
+                                                                                    ids
+                                                                                FROM
+                                                                                    params
+                                                                            )
+                                                      )
+
+                                )
+                  SELECT
+                      t.id,
+                      t.number :: TEXT,
+                      t.rekvid,
+                      to_char(t.kpv, 'DD.MM.YYYY') :: TEXT                        AS kpv,
+                      t.asutus :: TEXT                                            AS asutus,
+                      t.regkood::text                                             as regkood,
+                      t.aadress::text                                             as aadress,
+                      t.email::text                                               as email,
+                      to_char(t.saadetud, 'DD.MM.YYYY')                           AS saadetud,
+                      to_char(t.print, 'DD.MM.YYYY HH24:MI:SS')                   AS print,
+                      to_jsonb(array((
+                                         SELECT
+                                             arve
+                                         FROM
+                                             arved
+                                         WHERE
+                                             arved.id IN (
+                                                             SELECT unnest(t.docs)
+                                                         )
+                                     )))                                          AS arved,
+                      to_jsonb(get_unique_value_from_array(array(SELECT
+                                                                     laps as lapsed
+                                                                 FROM
+                                                                     arved a
+                                                                 WHERE
+                                                                     a.id IN (
+                                                                                 SELECT unnest(t.docs)
+                                                                             )))) as lapsed,
+
+                      r.muud                                                      as tais_nimetus,
+                      r.tel                                                       as rekv_tel,
+                      r.email                                                     as rekv_email,
+                      r.aadress                                                   as rekv_aadress,
+                      r.regkood                                                   as rekv_regkood,
+                      TRUE                                                        AS select
+                  FROM
+                      cur_teatised           t
+                          INNER JOIN ou.rekv r ON r.id = t.rekvid
+                  WHERE
+                      t.id IN (
+                                  SELECT
+                                      ids
+                                  FROM
+                                      params
+                              )`
     },
     grid: {
         gridConfiguration: [

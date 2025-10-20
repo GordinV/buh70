@@ -120,6 +120,7 @@ block content
 
                     each laps in doc.lapsed
                         -var laps_kokku = 0;
+                        -var lapse_nimi = '';
 
                         each row in doc.arved.filter(arve => arve.viitenr === laps)
                             tr
@@ -128,12 +129,13 @@ block content
                                 td.td_align=(row.kpv)
                                 td.td_summa_align=Number(row.jaak).toFixed(2)
                                 -laps_kokku += Number(row.jaak);
+                                -lapse_nimi = row.lapse_nimi;
 
                         tr(style="line-height: 1px; height: 1px;")
                             td(colspan="4" style="border-top: 1px solid #000; height: 1px; padding: 0;") &nbsp;
                         td.td_align=('Kokku')
                         td.td_align=(laps)
-                        td
+                        td.td_align=('('+ lapse_nimi+')' )
                         td.td_summa_align=Number(laps_kokku).toFixed(2)
                         tr
                             td(colspan="4") &nbsp;

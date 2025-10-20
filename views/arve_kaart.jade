@@ -66,6 +66,10 @@ style(type='text/css').
     .fontLarger {
         font-size: larger;
     }
+    .vn_color {
+        color: darkred
+    }
+
 
 block content
     meta(charset='UTF-8')
@@ -75,7 +79,7 @@ block content
             div.label
                 span Asutus:
             div.input
-                span #{User.asutus}, reg.kood: #{User.regkood}
+                span #{User.asutusTais}, registri kood: #{User.regkood}
         div.row_wrapper
             div.label
                 span Aadress:
@@ -106,11 +110,12 @@ block content
                     tr
                         td #{aa.pank}
                         td #{aa.arve}
-        div.row_wrapper
-            div.label
-                span Viitenumber:
-            div.input
-                span #{data[0].viitenr}
+        h3
+            div.row_wrapper
+                div.label
+                    span.vn_color Viitenumber:
+                div.input
+                    span.vn_color #{data[0].viitenr}
 
         h3
             p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`} #{`${data[0].kr_number ? '(Kreeditarve arvele Nr.' + data[0].kr_number + ')': ''} `}

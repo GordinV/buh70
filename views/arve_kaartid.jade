@@ -58,7 +58,9 @@ style(type='text/css').
     .fontLarger {
         font-size: larger;
     }
-
+    .vn_color {
+        color: mediumvioletred;
+    }
 
 
 block content
@@ -74,7 +76,7 @@ block content
                         span #{doc.tais_nimetus}
                 div.row_wrapper
                    div.label
-                        span reg.kood:
+                        span registri kood:
                     div.input
                         span #{doc.rekv_regkood}
                 div.row_wrapper
@@ -101,12 +103,12 @@ block content
                             tr
                                 td #{aa.pank}
                                 td #{aa.arve}
-
-                div.row_wrapper
-                    div.label
-                        span Viitenumber:
-                    div.input
-                        span #{doc.viitenr}
+                h3
+                    div.row_wrapper
+                        div.label
+                            span.vn_color Viitenumber:
+                        div.input
+                            span.vn_color #{doc.viitenr}
                 h3
                     p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ' : 'ARVE'}`}
                     div.row_wrapper
