@@ -162,7 +162,14 @@ block content
                 div.label
                     span Märkused :
                 div.input
-                    span #{`${data[0].muud ? data[0].muud : ''}`}
+                    if data[0].muud !== null
+                            span #{`${data[0].muud}`}
+                    else
+                            span Teenuste periood:
+                            span #{`${data[0].period_alg_print}`}
+                            span  -
+                            span #{`${data[0].kpv_print}`}
+
 
             table.table.table-hover.grid_data
                 thead.grid_head
