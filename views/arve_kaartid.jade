@@ -153,8 +153,15 @@ block content
                     div.row_wrapper
                         div.label
                             span Märkused:
-                        div.input
-                            span #{`${doc.muud ? doc.muud : ''}`}
+                        if doc.muud !== null
+                            div.input
+                                span #{`${doc.muud}`}
+                        else
+                            div.input
+                                span Teenuste periood:
+                                span #{`${doc.period_alg_print}`}
+                                span  -
+                                span #{`${doc.kpv_print}`}
 
                     table.table.table-hover.grid_data
                         thead.grid_head
