@@ -22,6 +22,7 @@ const createPDF = async function createFile(html, fileName = 'doc') {
         noStopSlowScripts: true,
         javascriptDelay: 2000,
         enableLocalFileAccess: true,
+        encoding: "UTF-8"
     };
     let outFile = path.join(__dirname, '..', 'public', 'pdf', `${fileName}.pdf`);
 

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 html(lang="et")
+meta(charset="UTF-8")
+
 style(type='text/css').
     .grid_head {
         background-color: lightgray;;
@@ -16,11 +18,13 @@ style(type='text/css').
     .label {
             width:10%;
             font-weight:normal;
+            font-family: "Times New Roman", "Georgia", "DejaVu Serif", "Liberation Serif", serif;
     }
     .input {
         width:90%;
         margin-left:5%;
         font-weight: bold;
+        font-family: "Times New Roman", "Georgia", "DejaVu Serif", "Liberation Serif", serif;
     }
     .label_subtotal_arve {
         width:15em;
@@ -79,22 +83,22 @@ block content
             div.label
                 span Asutus:
             div.input
-                span #{User.asutusTais}, registri kood: #{User.regkood}
+                span #{data[0].tais_nimetus}, registri kood: #{data[0].regkood}
         div.row_wrapper
             div.label
                 span Aadress:
             div.input
-                span #{User.aadress}
+                span #{data[0].rekv_aadress}
         div.row_wrapper
             div.label
                 span Telefon:
             div.input
-                span #{User.tel}
+                span #{data[0].rekv_tel}
         div.row_wrapper
             div.label
                 span E-post:
             div.input
-                span #{User.email}
+                span #{data[0].rekv_email}
 
         div.row_wrapper
             div.label
@@ -134,6 +138,12 @@ block content
                     span #{data[0].kpv_print}
             div.row_wrapper
                 div.label
+                    span Arve on maksjale saadetud:
+                div.input
+                    div #{data[0].saadetud_kpv}
+
+            div.row_wrapper
+                div.label
                     span Tähtaeg:
                 div.input
                     span #{data[0].tahtaeg_print}
@@ -155,7 +165,7 @@ block content
 
             div.row_wrapper
                 div.label
-                    span Lisa:
+                    span Lisa.:
                 div.input
                     span #{`${data[0].lisa ? data[0].lisa: ''}`}
             div.row_wrapper
