@@ -12,14 +12,21 @@ function createEmptyFilterData(gridConfig, filterData, docTypeId) {
         if (row.default) {
 
             const defaultValue = getDefaultDates(row.default);
-            value = defaultValue.start;
+
             if (row.interval) {
+                value = defaultValue.start;
+
                 row.start = defaultValue.start;
                 row[`${row.id}_start`] = defaultValue.start;
                 row.end = defaultValue.end;
                 row[`${row.id}_end`] = defaultValue.end;
+            } else {
+                if (docTypeId === 'LAPS' && (row.id === 'kehtivus' || row.id === 'kehtiv_kpv')) {
+                    value = defaultValue.value;
+                }
             }
         }
+
 
         if (!row.type) {
             row.type = 'text';
@@ -28,7 +35,6 @@ function createEmptyFilterData(gridConfig, filterData, docTypeId) {
         return row;
 
     });
-
 
     DocContext.setFilter = filterData;
     return filterData;

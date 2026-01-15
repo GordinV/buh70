@@ -31,8 +31,6 @@ const getDefaultDate = (period) => {
 
     switch (period) {
         case 'KUU':
-
-
             returnValue.start = startMonth;
             returnValue.end = finishMonth;
 
@@ -40,10 +38,23 @@ const getDefaultDate = (period) => {
         case 'AASTA':
             returnValue.start = `${currentYear}-01-01`;
             returnValue.end = `${currentYear}-12-31`;
+            break;
+        case 'EELMISE_KUU':
+            let prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
+
+            let prevYearStr = prevMonthDate.getFullYear();
+            let prevMonthStr = getTwoDigits(prevMonthDate.getMonth() + 1);
+
+            // Последний день прошлого месяца (день 0 текущего месяца)
+            let lastDayPrev = new Date(currentYear, currentMonth - 1, 0).getDate();
+
+            returnValue.value = `${prevYearStr}-${prevMonthStr}-${lastDayPrev}`;
+            break;
 
         default:
             returnValue.start = null;
             returnValue.end = null;
+            returnValue.value = period;
     }
     return returnValue;
 

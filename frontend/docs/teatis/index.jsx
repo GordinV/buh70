@@ -94,7 +94,7 @@ class Documents extends React.PureComponent {
 
                 if (!ids.length) {
                     Doc.setState({
-                        warning: 'Mitte ühtegi arve leidnum', // строка извещений
+                        warning: 'Mitte ühtegi dokument leidnum', // строка извещений
                         warningType: 'notValid',
                     });
                 } else {

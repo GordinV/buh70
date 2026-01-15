@@ -104,6 +104,7 @@ class Laps extends React.PureComponent {
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
         let kas_lubatud = checkRights(userRoles, docRights, 'koostaArve');
+        let kas_lubatud_inf3 = checkRights(userRoles, docRights, 'edit');
 
 
         let gridSoodustusteData = [];
@@ -217,7 +218,7 @@ class Laps extends React.PureComponent {
                                    name='inf3_kpv'
                                    value={self.docData.inf3_kpv || ''}
                                    ref='input-inf3_kpv'
-                                   disabled = {!kas_lubatud}
+                                   disabled = {!kas_lubatud_inf3}
                                    readOnly={!isEditMode}
                                    styles={styles.inf3_kpv}
                                    onChange={self.handleInputChange}/>

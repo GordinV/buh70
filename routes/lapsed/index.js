@@ -13,6 +13,8 @@ const config = require('./../../config/lapsed');
 const DocContext = require('./../../frontend/doc-context');
 const db = require('./../../libs/db');
 const RECORDS_LIMIT = require('./../../config/constants').RECORDS_LIMIT;
+const createEmptyFilterData = require('./../../libs/createEmptyFilterData');
+const prepareSqlWhereFromFilter = require('./../../libs/prepareSqlWhereFromFilter');
 
 
 exports.get = async (req, res) => {
@@ -42,9 +44,14 @@ exports.get = async (req, res) => {
     let gridConfig = Document.config.grid.gridConfiguration;
     // вызвать метод
 
+    let filterData = [];
+    let defaultFilter = createEmptyFilterData(gridConfig, filterData, documentType.toUpperCase());
+
+    let sqlWhere = prepareSqlWhereFromFilter(defaultFilter, documentType.toUpperCase());
+
     const sqlData = {
         docTypeId: documentType,
-        result: await Document.selectDocs([], '', RECORDS_LIMIT),
+        result: await Document.selectDocs([], sqlWhere, RECORDS_LIMIT),
         menu: await db.queryDb(menuModel.sqlString, ['lapsed']),
         gridConfig: gridConfig,
         docConfig: docConfig,

@@ -111,7 +111,7 @@ module.exports = {
         ERITUNNUSED: [
             {id: 1, kood: '3008', name: 'Kulud seoses pagulaste vastuvotmisega'},
         ],
-        DOCS: ['ARV', 'SMK', 'VMK', 'LAPSE_TAABEL']
+        DOCS: ['ARV', 'SMK', 'VMK', 'LAPSE_TAABEL'],
     },
     LAPSE_KAART: {
         LIBRARIES: [

@@ -171,7 +171,7 @@ const DocContext = {
             this.pageName = menuRow.name;
         }
 
-        // set Filter
+        // get Filter
         if (!this.getFilter) {
             this.filter[this.docTypeId] = [];
         }

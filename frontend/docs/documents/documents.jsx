@@ -81,11 +81,15 @@ class Documents extends React.Component {
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
-            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick','modalPageBtnClick',
+            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
             'handleInputChange', 'btnEmailClick', 'modalReportePageBtnClick');
 
+        // пустой фильтр
+        if (this.filterData.length === 0) {
+            this.filterData = createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
+        }
 
     }
 
@@ -176,6 +180,7 @@ class Documents extends React.Component {
             }
 
         };
+
         return (
             <div style={_style.doc}>
                 <Menu params={btnParams}
@@ -291,6 +296,7 @@ class Documents extends React.Component {
      */
     btnFilterClick() {
         if (!this.filterData.length) {
+
             this.filterData = createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
         }
         this.setState({getFilter: true})
@@ -444,7 +450,7 @@ class Documents extends React.Component {
                     let error;
 
                     if (data.error_message || (data.data && data.data.error_message)) {
-                        error = data.error_message ?  data.error_message:  (data.data && data.data.error_message) ? data.data.error_message: 'Viga';
+                        error = data.error_message ? data.error_message : (data.data && data.data.error_message) ? data.data.error_message : 'Viga';
                         console.error('Viga', error);
                         this.setState({warning: `Tekkis viga: ${error}`, warningType: 'error'});
                         if (data.status && data.status == 401) {
@@ -719,6 +725,10 @@ class Documents extends React.Component {
         }
 // ставим статус
         this.setState({warning: 'Töötan...', warningType: 'notValid'});
+
+        if (!DocContext.getFilter) {
+            let filter = createEmptyFilterData();
+        }
 
         const params = {
             parameter: this.docTypeId, // параметры
