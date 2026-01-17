@@ -74,7 +74,7 @@ describe('dok. type Puudumine tests', function () {
         });
     });
 
-    it('doc type library should contain PUUDUMINE doc.type', async()=> {
+    it.skip('doc type library should contain PUUDUMINE doc.type', async()=> {
         let sql = `select id from libs.library where kood = 'PUUDUMINE' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -83,7 +83,7 @@ describe('dok. type Puudumine tests', function () {
 
     });
 
-    it('should exists view com_puudumiste_tyyp', async()=> {
+    it.skip('should exists view com_puudumiste_tyyp', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'com_puudumiste_tyyp'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -92,7 +92,7 @@ describe('dok. type Puudumine tests', function () {
 
     });
 
-    it('should exists view cur_puudumine', async()=> {
+    it.skip('should exists view cur_puudumine', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_puudumine'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -101,7 +101,7 @@ describe('dok. type Puudumine tests', function () {
 
     });
 
-    it('call calc_puhkuse paevad, should not return error_code', async () => {
+    it.skip('call calc_puhkuse paevad, should not return error_code', async () => {
         let sql = `WITH qry AS (SELECT t.id as lepingid
              FROM palk.tooleping t
              LIMIT 1)

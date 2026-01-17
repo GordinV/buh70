@@ -4,9 +4,9 @@ module.exports = {
     // таски
     events: {
         LAPS: [
-            {name: 'Tabeli koostamine (kuni 1000)', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
+            {name: 'Tabeli koostamine (Ainult nähtavad kaardid)', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
             {name: 'Tabeli koostamine (kõik)', method: 'arvestaKoikTaabelid', docTypeId: 'lapse_taabel'},
-            {name: 'Arvete koostamine (kuni 1000)', method: 'koostaArved', docTypeId: 'arv'},
+            {name: 'Arvete koostamine (Ainult nähtavad kaardid)', method: 'koostaArved', docTypeId: 'arv'},
             {name: 'Arvete koostamine (kõik)', method: 'koostaKoikArved', docTypeId: 'arv'},
             {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArved', docTypeId: 'arv'},
 //            {name: 'Lõpeta kõik teenused', method: 'lopetaKoikTeenused', docTypeId: 'laps'},

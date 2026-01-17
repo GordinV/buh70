@@ -271,8 +271,8 @@ module.exports = {
                     show: false,
                     filterValidation: true
                 },
-                {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "20%", type: 'date', show: false, default: 'EELMISE_KUU'},
-                {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei'], default: 'Jah'},
+                {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "20%", type: 'date', show: false},
+                {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "rekv_names", name: "Asutused", width: "20%", default: `DocContext.userData.asutus`},
                 {id: "arveldus", name: "Kas arveldus?", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "kov", name: "Kas teise KOV?", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
@@ -583,13 +583,13 @@ module.exports = {
 
     bpm: [
         {
-            name: 'Arvesta taabel (kuni 1000)',
+            name: 'Arvesta taabel (Ainult nähtavad kaart)',
             task: 'arvestaTaabel',
             type: 'manual',
             action: 'arvestaTaabel',
         },
         {
-            name: 'Koosta arve taabeli alusel (kuni 1000)',
+            name: 'Koosta arve taabeli alusel (Ainult nähtavad kaart)',
             task: 'koostaArve',
             type: 'manual',
             action: 'generateJournal',
