@@ -107,12 +107,12 @@ const automailer = async () => {
                                                  inner join ou.rekv     r on r.id = d.rekvid
                                            ,                            params
                                          WHERE
-                                             d.status <> ${DELETE_STATUS}
+                                               d.status <> ${DELETE_STATUS}
                                            AND t.kpv >= params.kpv1
                                            AND t.kpv <= params.kpv2
                                            and d.history::text not ilike '%"email"%'
---                                           and d.history::text not ilike '%"email_error"%'
---                                           and d.history::text not ilike '%"email_error_3"%'
+                                           and d.history::text not ilike '%"email_error"%'
+                                           and d.history::text not ilike '%"email_error_3"%'
                                            AND d.rekvid IN (
                                                                SELECT
                                                                    id
