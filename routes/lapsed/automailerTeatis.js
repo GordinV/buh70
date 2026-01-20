@@ -348,8 +348,11 @@ const automailer = async () => {
             ;
 
             // Ждем выполнения всех промисов.
-            // Promise.allSettled лучше, чем Promise.all, так как одна ошибка не прервет остальные отправки
-            const results = await Promise.allSettled(emailPromises);
+
+            const results = await Promise.all(emailPromises.map(p => p
+                .then(value => ({ status: 'fulfilled', value }))
+                .catch(reason => ({ status: 'rejected', reason }))
+            ));
 
             const successCount = results.filter(r => r.status === 'fulfilled').length;
             const failCount = results.filter(r => r.status === 'rejected').length;
