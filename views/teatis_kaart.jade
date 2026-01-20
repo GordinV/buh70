@@ -96,7 +96,7 @@ block content
 
         div.row_wrapper
             p.label Saaja:
-            p.input #{`${data[0].asutus.trim()} isikukood/reg.kood: ${data[0].regkood}`}
+            p.input #{`${data[0].asutus} isikukood/reg.kood: ${data[0].regkood}`}
 
         div.row_wrapper
             p.label Aadress::
@@ -118,11 +118,15 @@ block content
                         div.inner_padding Arve tasumata osa
 
             tbody.auto
+            - var lapsedList = data[0].lapsed || [];
+            - var arvedList = data[0].arved || [];
+
+            if lapsedList.length > 0
                 each laps in data[0].lapsed
                     -var laps_kokku = 0;
                     -var lapse_nimi = '';
 
-                    each row in data[0].arved.filter(arve => arve.viitenr === laps)
+                    each row in arvedList.filter(arve => arve.viitenr == laps)
                             tr
                                 td.td_align=(row.number)
                                 td.td_align=(row.viitenr)
@@ -138,8 +142,9 @@ block content
                     td.td_summa_align=Number(laps_kokku).toFixed(2)
                     tr
                         td(colspan="4") &nbsp;
-
-
+            else
+                tr
+                    td(colspan="4") Andmed puuduvad (lapsed)
         h3
             div
                 div.row_wrapper

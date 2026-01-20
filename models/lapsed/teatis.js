@@ -140,91 +140,124 @@ const Teatis = {
     ],
     multiple_print_doc: {
         command: `WITH
-                      params AS (
+                      params as (
                                     SELECT
-                                        unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER AS ids,
+                                        make_date(year(current_date), month(current_date), 1) AS kpv1,
+                                        get_last_day(current_date)                            AS kpv2,
+                                        string_to_array($1::text, ',')::INTEGER[]             AS ids,
                                         $2::integer                                           as user_id
                                 ),
-                      arved AS (
+                      teatised as (
                                     SELECT
-                                        jsonb_build_object('kokku',
-                                                           sum(a.jaak) OVER (PARTITION BY a.asutusid),
-                                                           'number', a.number,
-                                                           'kpv', to_char(a.kpv, 'DD.MM.YYYY'),
-                                                           'viitenr', lapsed.get_viitenumber(a.rekvid, l.parentid),
-                                                           'lapse_nimi', laps.nimi,
-                                                           'rekvid', a.rekvid,
-                                                           'jaak', a.jaak)           AS arve,
-                                        lapsed.get_viitenumber(a.rekvid, l.parentid) as laps,
-                                        laps.nimi                                    as lapse_nimi,
-                                        a.parentid                                   AS id
+                                        d.id,
+                                        t.number,
+                                        t.kpv,
+                                        to_char(t.kpv, 'DD.MM.YYYY')                         as print_kpv,
+                                        t.asutusid,
+                                        t.sisu,
+                                        t.muud,
+                                        d.docs_ids,
+                                        to_char(d.created, 'DD.MM.YYYY HH:MM:SS') :: TEXT    AS created,
+                                        to_char(d.lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
+                                        d.status                                             AS doc_status,
+                                        d.rekvid,
+                                        d.history -> 0 ->> 'user'                            AS koostaja,
+                                        r.muud                                               as tais_nimetus,
+                                        r.tel                                                as rekv_tel,
+                                        r.email                                              as rekv_email,
+                                        r.aadress                                            as rekv_aadress,
+                                        r.regkood                                            as rekv_regkood
 
                                     FROM
-                                        docs.arv                                a
-                                            LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-                                            LEFT OUTER JOIN lapsed.laps         laps on laps.id = l.parentid
+                                        docs.teatis                t
+                                            INNER JOIN docs.doc    d ON t.parentid = d.id
+                                            inner join libs.asutus a on a.id = t.asutusid
+                                            inner join ou.rekv     r on r.id = d.rekvid
+                                      ,                            params
                                     WHERE
-                                        a.parentid IN (
+                                          d.status <> 3
+                                      and d.id = any (params.ids)
+                                      and d.history::text not ilike '%"email"%'
+                                      and d.history::text not ilike '%"email_error"%'
+                                      and d.history::text not ilike '%"email_error_3"%'
+                                      AND d.rekvid IN (
                                                           SELECT
-                                                              unnest(t.docs)
+                                                              id
                                                           FROM
-                                                              docs.teatis t
-                                                          where
-                                                              t.parentid in (
-                                                                                SELECT
-                                                                                    ids
-                                                                                FROM
-                                                                                    params
-                                                                            )
+                                                              ou.rekv
+                                                          WHERE
+                                                              parentid = 119
                                                       )
+                                ),
 
+                      arved as (
+                                    with
+                                        arvete_info as (
+                                                           select
+                                                               sum(a.jaak) over (partition by t.id)         as jaak_kokku,
+                                                               a.jaak,
+                                                               a.number,
+                                                               to_char(a.kpv, 'DD.MM.YYYY')                 as kpv,
+                                                               lapsed.get_viitenumber(a.rekvid, l.parentid) as viitenr,
+                                                               laps.nimi                                    as lapse_nimi,
+                                                               a.rekvid                                     as rekvid,
+                                                               t.id                                         as teatis_id
+                                                           from
+                                                               docs.arv                                a
+                                                                   inner join      teatised            t on a.parentid = any (t.docs_ids)
+                                                                   left outer join lapsed.liidestamine l on l.docid = a.parentid
+                                                                   left outer join lapsed.laps         laps on laps.id = l.parentid
+
+                                        )
+                                    select
+                                        jsonb_agg(jsonb_build_object('kokku', a.jaak_kokku,
+                                                                     'number', a.number,
+                                                                     'kpv', a.kpv,
+                                                                     'viitenr', a.viitenr,
+                                                                     'lapse_nimi', a.lapse_nimi,
+                                                                     'rekvid', a.rekvid,
+                                                                     'jaak', a.jaak)) as arve,
+                                        a.teatis_id                                   as teatis_id,
+                                        array_agg(a.viitenr)                          as lapsed
+                                    from
+                                        arvete_info a
+                                    group by a.teatis_id
                                 )
+
                   SELECT
                       t.id,
-                      t.number :: TEXT,
-                      t.rekvid,
-                      to_char(t.kpv, 'DD.MM.YYYY') :: TEXT                        AS kpv,
-                      t.asutus :: TEXT                                            AS asutus,
-                      t.regkood::text                                             as regkood,
-                      t.aadress::text                                             as aadress,
-                      t.email::text                                               as email,
-                      to_char(t.saadetud, 'DD.MM.YYYY')                           AS saadetud,
-                      to_char(t.print, 'DD.MM.YYYY HH24:MI:SS')                   AS print,
-                      to_jsonb(array((
-                                         SELECT
-                                             arve
-                                         FROM
-                                             arved
-                                         WHERE
-                                             arved.id IN (
-                                                             SELECT unnest(t.docs)
-                                                         )
-                                     )))                                          AS arved,
-                      to_jsonb(get_unique_value_from_array(array(SELECT
-                                                                     laps as lapsed
-                                                                 FROM
-                                                                     arved a
-                                                                 WHERE
-                                                                     a.id IN (
-                                                                                 SELECT unnest(t.docs)
-                                                                             )))) as lapsed,
-
-                      r.muud                                                      as tais_nimetus,
-                      r.tel                                                       as rekv_tel,
-                      r.email                                                     as rekv_email,
-                      r.aadress                                                   as rekv_aadress,
-                      r.regkood                                                   as rekv_regkood,
-                      TRUE                                                        AS select
+                      t.created,
+                      t.lastupdate,
+                      t.doc_status,
+                      t.number::TEXT                                                                                    AS number,
+                      t.rekvId,
+                      to_char(t.kpv, 'YYYY-MM-DD')::TEXT                                                                AS kpv,
+                      to_char(t.kpv, 'DD.MM.YYYY')::TEXT                                                                AS kpv_print,
+                      t.asutusid,
+                      asutus.regkood,
+                      asutus.nimetus::TEXT                                                                              AS asutus,
+                      asutus.aadress,
+                      asutus.email::TEXT                                                                                AS email,
+                      t.koostaja,
+                      to_char(current_date, 'DD.MM.YYYY HH:MM:SS')                                                      AS print_aeg,
+                      t.sisu,
+                      t.muud,
+                      to_jsonb((
+                                   SELECT arve
+                                   FROM arved a
+                                   WHERE a.teatis_id = t.id
+                               ))                                                                                       AS arved,
+                      to_jsonb(get_unique_value_from_array(array(SELECT lapsed FROM arved a WHERE a.teatis_id = t.id))) as lapsed,
+                      t.tais_nimetus,
+                      t.rekv_tel,
+                      t.rekv_aadress,
+                      t.rekv_regkood,
+                      t.rekv_email
                   FROM
-                      cur_teatised           t
-                          INNER JOIN ou.rekv r ON r.id = t.rekvid
-                  WHERE
-                      t.id IN (
-                                  SELECT
-                                      ids
-                                  FROM
-                                      params
-                              )`
+                      teatised                      t
+                          INNER JOIN libs.asutus AS asutus ON asutus.id = t.asutusId,
+                                                    params
+        `
     },
     grid: {
         gridConfiguration: [
@@ -326,17 +359,67 @@ const Teatis = {
             params: 'sqlWhere'
         },
     ],
+    multiple_print: [
+        {
+            view: 'teatis_kaartid',
+            params: 'id',
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS print,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id IN (
+                           SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
+                       )`
+        },
+        {
+            view: 'teatis_register',
+            params: 'sqlWhere'
+        },
+    ],
+
     email: [
         {
             view: 'teatis_kaart',
             params: 'id',
             register: `UPDATE docs.doc
-                       SET history = history ||
-                                     (SELECT row_to_json(row)
-                                      FROM (SELECT now()                                AS email,
-                                                   (SELECT kasutaja
-                                                    FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
-                       WHERE id = $1`
+                       SET
+                           history = history ||
+                                     (
+                                         SELECT
+                                             row_to_json(row)
+                                         FROM
+                                             (
+                                                 SELECT
+                                                     now()   AS email,
+                                                     $3      AS aadress,
+                                                     (
+                                                         SELECT
+                                                             kasutaja
+                                                         FROM
+                                                             ou.userid
+                                                         WHERE
+                                                             id = $2
+                                                     )::TEXT AS user
+                                             ) row
+                                     )::JSONB
+                       WHERE
+                           id = $1`,
+            register_error: `Select docs.register_email_error($1::INTEGER,$3::TEXT, $2::INTEGER)`,
+            log: `INSERT INTO
+                      ou.logs (rekvid, user_id, doc_id, timestamp, propertis)
+                  SELECT
+                      (
+                          SELECT rekvid
+                          FROM ou.userid
+                          WHERE id = $2
+                          LIMIT 1
+                      )  AS rekv_id,
+                      $2 AS user_id,
+                      $1 AS doc_id,
+                      now(),
+                      jsonb_build_object('table', 'teatis', 'event', 'email', 'info', $3::JSONB)`
+
         }
     ],
 

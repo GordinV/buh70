@@ -3,11 +3,11 @@
 DROP FUNCTION IF EXISTS docs.koosta_teatis(INTEGER, DATE);
 
 CREATE OR REPLACE FUNCTION docs.koosta_teatis(IN user_id INTEGER,
-                                               IN l_kpv DATE DEFAULT current_date,
-                                               OUT error_code INTEGER,
-                                               OUT result INTEGER,
-                                               OUT doc_type_id TEXT,
-                                               OUT error_message TEXT)
+                                              IN l_kpv DATE DEFAULT current_date,
+                                              OUT error_code INTEGER,
+                                              OUT result INTEGER,
+                                              OUT doc_type_id TEXT,
+                                              OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -29,39 +29,52 @@ DECLARE
     l_teatis_id INTEGER;
     l_count     INTEGER = 0;
     l_sisu      TEXT;
+    VOLG_KOKKU  NUMERIC = 100; -- предельная сумма долга
 BEGIN
     doc_type_id = 'TEATIS';
     -- делаем выборку неоплаченных счетов на дату
 
     FOR v_arv IN
-        SELECT
-            array_to_string(array_agg(d.id), ',')                                                   AS docs,
-            sum(a.jaak)                                                                             AS volg,
-            a.asutusid,
-            array_agg('Arve nr.:' || a.number::TEXT || ' Viitenr.:' || (a.properties->>'viitenr')::text ||  ' kuupäev:' || to_char(a.kpv, 'DD.MM.YYYY')) AS selg
-        FROM
-            docs.doc                           d
-                INNER JOIN docs.arv            a ON a.parentid = d.id
-                INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-        WHERE
-              a.jaak > 0
-          AND (a.tahtaeg IS NULL
-            OR a.tahtaeg < l_kpv)
-          AND d.rekvid = l_rekvid
-          AND a.asutusid NOT IN (
-                                    SELECT
-                                        t.asutusid
-                                    FROM
-                                        docs.teatis             t
-                                            INNER JOIN docs.doc dd ON dd.id = t.parentid
-                                    WHERE
-                                          dd.rekvid = l_rekvid
-                                      AND dd.status <> 3
-                                      AND t.kpv = l_kpv
-                                )
-        -- временно на период теста
-        and a.asutusid in (select id from libs.asutus where regkood in ('49105223731','49812283717','49105223731'))
-        GROUP BY a.asutusid
+        select *
+        from
+            (
+                SELECT
+                    array_to_string(array_agg(d.id), ',')                  AS docs,
+                    sum(a.jaak)                                            AS volg,
+                    a.asutusid,
+                    array_agg('Arve nr.:' || a.number::TEXT || ' Viitenr.:' || (a.properties ->> 'viitenr')::text ||
+                              ' kuupäev:' || to_char(a.kpv, 'DD.MM.YYYY')) AS selg
+                FROM
+                    docs.doc                           d
+                        INNER JOIN docs.arv            a ON a.parentid = d.id
+                        INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+                WHERE
+                      a.jaak > 0
+                  AND (a.tahtaeg IS NULL
+                    OR a.tahtaeg < l_kpv)
+                  AND d.rekvid = l_rekvid
+                  AND a.asutusid NOT IN (
+                                            SELECT
+                                                t.asutusid
+                                            FROM
+                                                docs.teatis             t
+                                                    INNER JOIN docs.doc dd ON dd.id = t.parentid
+                                            WHERE
+                                                  dd.rekvid = l_rekvid
+                                              AND dd.status <> 3
+                                              AND t.kpv = l_kpv
+                                        )
+                  and d.rekvid <> 9 -- тут отстой долгов, исключаем
+                -- временно на период теста
+/*                  and a.asutusid in (
+                                        select id from libs.asutus where
+                                            regkood in ('49105223731', '49812283717', '48403302211')
+                                    )
+*/
+                GROUP BY a.asutusid
+            ) qry
+        where
+            qry.volg >= VOLG_KOKKU
         LOOP
         -- ищем требование. если есть и датировано сегодня - то осключаем (не нужны повторы)
         -- критерий
@@ -150,9 +163,11 @@ GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO arvestaja;
 
 
 /*
-select docs.koosta_teatis(u.id,'2025-10-15')
+select docs.koosta_teatis(u.id,current_date)
 from ou.userid u
 where u.kasutaja = 'vlad'
-and u.rekvid in (88,101)
+and u.rekvid in (
+select id from ou.rekv where parentid = 119
+)
 
  */
