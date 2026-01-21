@@ -116,9 +116,8 @@ const Smk = {
         {
             sql: `SELECT rd.id, $2::INTEGER AS userid, trim(l.kood) AS doc_type, trim(l.nimetus) AS name
                   FROM docs.doc d
-                           LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
+                           LEFT OUTER JOIN docs.doc rd ON rd.id = any (d.docs_ids)
                            LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
-                           INNER JOIN ou.userid u ON u.id = $2::INTEGER
                   WHERE d.id = $1`,
             query: null,
             multiple: true,
