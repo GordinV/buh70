@@ -143,7 +143,7 @@ const automailer = async () => {
                                                                         inner join      teatised            t on a.parentid = any (t.docs_ids)
                                                                         left outer join lapsed.liidestamine l on l.docid = a.parentid
                                                                         left outer join lapsed.laps         laps on laps.id = l.parentid
-
+                                                                order by l.parentid, a.kpv
                                              )
                                          select
                                              jsonb_agg(jsonb_build_object('kokku', a.jaak_kokku,
