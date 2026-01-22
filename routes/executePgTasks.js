@@ -2,11 +2,41 @@
 const db = require('./../libs/db');
 const config = require('./../config/narvalv.json');
 
-let test_config = Object.assign({}, config);
-test_config.pg.database = 'db_test';
-test_config.pg.connection = test_config.pg.connection + '_test';
+// Запускаем основную функцию
+main()
+    .then((result) => {
+        console.log('Finished teatis successfully:', result);
+        process.exit(0); // Явно завершаем процесс
+    })
+    .catch((error) => {
+        console.error('Error in teatis execution:', error);
+        process.exit(1); // Завершаем с кодом ошибки
+    });
 
-// получить список работников
-let sql = `select ou.execute_task(null::JSONB);`;
+/**
+ * Основная функция для составления извещений
+ */
+async function main() {
+    // Параметры для фильтрации (вынесены в переменные для удобства правки)
+    const targetParentId = 119;
 
-let data = db.queryDb(sql, null, null, null, null, null, test_config);
+    return await ebatoenaolised(targetParentId);
+}
+
+/**
+ * Выполняет запрос к БД
+ */
+async function executeTask() {
+    // Используем параметры $1 вместо хардкода внутри строки
+    // current_date оставляем на уровне БД, чтобы время бралось серверное
+    const sql = `SELECT ou.execute_task(null::JSONB);`;
+
+    try {
+        const data = await db.queryDb(sql, null, null, null, null, null, config);
+
+        return data;
+    } catch (error) {
+        // Пробрасываем ошибку наверх с контекстом
+        throw new Error(`DB Query failed: ${error.message}`);
+    }
+}
