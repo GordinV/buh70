@@ -315,7 +315,6 @@ const automailer = async () => {
                             // Логирование успеха
                             if (emailTemplateObject.register) {
                                 let sqlLog = emailTemplateObject.register;
-
                                 await db.queryDb(sqlLog, [Teatis.id, l_userId, Teatis.email]);
                             }
 
