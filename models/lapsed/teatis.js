@@ -265,6 +265,7 @@ const Teatis = {
             {id: "kpv", name: "Kuupaev", width: "15%", type: "date", interval: true},
             {id: "asutus", name: "Saaja", width: "30%"},
             {id: "saadetud", name: "Saadetud", width: "15%", type: "date", interval: true},
+            {id: "email_aadress", name: "E-post", width: "25%"},
             {id: "print", name: "Trükitud", width: "15%", type: "date", interval: true},
             {id: "select", name: "Valitud", width: "10%", show: false}
 
@@ -276,10 +277,11 @@ const Teatis = {
                          t.id,
                          t.number :: TEXT,
                          t.rekvid,
-                         to_char(t.kpv, 'DD.MM.YYYY') :: TEXT AS kpv,
+                         to_char(t.kpv, 'DD.MM.YYYY HH24:MI:SS') :: TEXT AS kpv,
                          params.user_id::INTEGER AS userId,
                          t.asutus :: TEXT AS asutus,
                          to_char(t.saadetud, 'DD.MM.YYYY') AS saadetud,
+                         t.email_aadress,
                          to_char(t.print, 'DD.MM.YYYY HH24:MI:SS') AS print,
                         r.muud as tais_nimetus,
                         r.tel as rekv_tel,
