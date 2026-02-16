@@ -4,6 +4,7 @@ module.exports = {
                           aasta,
                           kinni,
                           palk_kinni,
+                          eelarve_kinni,
                           default_,
                           ou.is_last_quarter_opened(aasta.rekvid,
                                                        make_date(aasta.aasta, aasta.kuu, 01))::INTEGER AS kas_veerand_avatud
@@ -35,9 +36,13 @@ module.exports = {
                                    THEN 'Jah'
                                ELSE 'Ei' END :: VARCHAR                                  AS palk_kinni,
                            CASE
+                               WHEN eelarve_kinni = 1
+                                   THEN 'Jah'
+                               ELSE 'Ei' END :: VARCHAR                                  AS eelarve_kinni,
+                           CASE
                                WHEN default_ = 1
                                    THEN 'JAH'
-                               ELSE 'EI' END :: VARCHAR                                  AS default_,
+                               ELSE 'Ei' END :: VARCHAR                                  AS default_,
                            ou.is_last_quarter_opened(Aasta.rekvid, DATE(aasta, kuu, 01))::INTEGER AS kas_veerand_avatud
                     FROM ou.aasta Aasta
                     WHERE Aasta.rekvid = $1

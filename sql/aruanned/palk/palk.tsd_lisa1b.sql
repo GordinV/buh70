@@ -81,7 +81,7 @@ FROM (
          SELECT isikukood::VARCHAR(20)                                    AS c_1300,
                 isik::VARCHAR(254)                                        AS c_1310,
                 tululiik                                                  AS c_1320,
-                sum(abs(summa))                                           AS c_1330,
+                abs(sum(summa))                                           AS c_1330,
                 year(period)                                              AS c_1340,
                 month(period)                                             AS c_1350,
                 pohjus                                                    AS c_1360,
@@ -95,24 +95,24 @@ FROM (
                 sum(qry.c_1400)                                           AS c_1400,
 -- 39. Koodil 1410 näidatakse tagastatud väljamakselt arvutatud sotsiaalmaksu summa järgmise valemi
 -- alusel: Kood 1410 = (kood 1370 – kood 1380 + kood 1390 – kood 1400) x sotsiaalmaksu määr.
-                sum(abs(qry.sotsmaks))                                    AS c_1410,
+                abs(sum(qry.sotsmaks))                                    AS c_1410,
 -- 40. Koodil 1420 näidatakse koodil 1370 näidatud tagastatud või tasaarvestatud väljamakselt kinnipeetud
 -- kogumispensioni makse.
-                sum(abs(qry.pensmaks))                                    AS c_1420,
+                abs(sum(qry.pensmaks))                                    AS c_1420,
 -- 41. Koodil 1430 näidatakse töötuskindlustusmaksega maksustatavad väljamaksed, mis vastavad koodil 1330 deklareeritud tagastatud või tasaarvestatud väljamakse summale koodil 1320 näidatud väljamakse liikidele 10, 11, 14, 17, 18, 19, 25, 26, 52.
-                sum(ABS(qry.summa) * qry.tka_arv)                         AS c_1430,
+                abs(sum(qry.summa * qry.tka_arv))                         AS c_1430,
 -- 42. Koodil 1440 näidatakse tagastatud töötuskindlustusmaksega maksustatavalt väljamakselt kinnipeetud kindlustatu töötuskindlustusmakse järgmise valemiga:
-                sum(abs(qry.tootumaks))                                   AS c_1440,
+                abs(sum(qry.tootumaks))                                   AS c_1440,
 -- Koodil 1450 näidatakse tagastatud töötuskindlustusmaksega maksustatavalt väljamakselt arvutatud tööandja töötuskindlustusmakse järgmise valemi alusel:
-                sum(abs(qry.tka))                                         AS c_1450,
+                abs(sum(qry.tka))                                         AS c_1450,
 -- Koodidel 1460 ja 1470 näidatakse tulumaksu kinnipidamisel maha arvatud maksuvaba tulu liik ja
 -- summa
                 CASE
                     WHEN (abs(qry.tulubaas) > 0 OR qry.kas_taotlus_mvt) AND coalesce(kas_pensionar, 0) = 1 THEN '650'
                     WHEN abs(qry.tulubaas) > 0 OR qry.kas_taotlus_mvt AND coalesce(kas_pensionar, 0) = 0 THEN '610'
                     ELSE '' END::VARCHAR(10)                              AS c_1460,
-                sum(abs(qry.tulubaas))                                    AS c_1470,
-                sum(abs(qry.tulumaks))                                    AS c_1480
+                abs(sum(qry.tulubaas))                                    AS c_1470,
+                abs(sum(qry.tulumaks))                                    AS c_1480
          FROM (
                   SELECT a.regkood                                                                              AS isikukood,
                          a.nimetus                                                                              AS isik,

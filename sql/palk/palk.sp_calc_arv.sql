@@ -90,6 +90,7 @@ DECLARE
     kas_pensionar         BOOLEAN         = FALSE;
     v_palk_config         record;
     kas_projekt           BOOLEAN         = FALSE;
+    l_tunnid              NUMERIC; -- для вявления часов по графику
 
 BEGIN
     -- уточняем ставки налогов
@@ -133,12 +134,12 @@ BEGIN
                 WHEN t.algab > l_kuu_alg AND month(t.algab) = month(l_kpv) AND
                      year(t.algab) = year(l_kpv)
                     THEN t.algab
-                ELSE l_kuu_alg END as algab,
+                ELSE l_kuu_alg END             as algab,
             CASE
                 WHEN t.lopp IS NOT NULL AND t.lopp < l_kuu_lopp AND month(t.lopp) = month(l_kpv) AND
                      year(t.lopp) = year(l_kpv)
                     THEN t.lopp
-                ELSE l_kuu_lopp END as lopp,
+                ELSE l_kuu_lopp END            as lopp,
             t.tasuliik,
             t.koormus,
 --            t.palk,
@@ -212,18 +213,18 @@ BEGIN
                 union all
                 (
                     select
-                        null as id,
-                        null as rekvid,
-                        null as proj_id,
-                        null as leping_id,
-                        null as summa,
-                        null as kasutatud,
-                        null as korrigeerimine,
-                        null as jaak,
-                        null as properties,
-                        null as kuu_summa,
-                        null as sm,
-                        null as sm_kasutatud,
+                        null       as id,
+                        null       as rekvid,
+                        null       as proj_id,
+                        null       as leping_id,
+                        null       as summa,
+                        null       as kasutatud,
+                        null       as korrigeerimine,
+                        null       as jaak,
+                        null       as properties,
+                        null       as kuu_summa,
+                        null       as sm,
+                        null       as sm_kasutatud,
                         null::text as selgitus
                     where
                         not exists
@@ -249,7 +250,7 @@ BEGIN
             pk.percent_,
             pk.summa,
             NOT empty(pk.alimentid),
-            pk.round,
+            coalesce(pk.round, 0.01),
             pk.tund,
             pk.tululiik,
             pk.liik
@@ -353,7 +354,24 @@ BEGIN
             -- установим 1 день для получения часов в месяц
             l_kuu_alg = make_date(year(l_kuu_alg), month(l_kuu_alg), 1);
 
+            -- проверим график. Добавил 16.01.2026 Е. Иголкина
+            l_tunnid = (
+                           select
+                               tg.tund
+                           from
+                               palk.toograf tg
+                           where
+                                 tg.lepingid = l_lepingid
+                             and kuu = month(l_kpv)
+                             and aasta = year(l_kpv)
+                             and coalesce(tund, 0) > 0
+                             and status <> 'deleted'
+                           order by id desc
+                           limit 1
+                       );
+
             SELECT
+
                 row_to_json(row)
             INTO l_params
             FROM
@@ -366,9 +384,9 @@ BEGIN
                         TRUE            AS kas_tahtpaevad,
                         l_toopaev       AS toopaev,
                         day(l_kuu_alg)  AS paev,
-                        day(l_kuu_lopp) AS lopp
+                        day(l_kuu_lopp) AS lopp,
+                        l_tunnid        as tund
                 ) row;
-
 
             l_hours = palk.get_work_hours(l_params :: JSONB);
 
@@ -377,7 +395,6 @@ BEGIN
             IF l_tasuliik = array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK')
             THEN
                 l_rate := l_palk_summa / l_hours * 0.01 * l_koormus;
-
 
                 summa = f_round(l_rate * l_pk_summa * 0.01 * l_tunnid_kokku, l_round);
 
@@ -666,7 +683,8 @@ BEGIN
                         -- should select from palk.palk_oper
                         coalesce(tki, 0)           AS tki,
                         kas_pensionar              AS kas_pensionar,
-                        coalesce(pm, 0)            AS pm
+                        coalesce(pm, 0)            AS pm,
+                        l_kpv                      as kpv
                 ) row;
 
             mvt = palk.fnc_calc_mvt(l_params :: JSONB);
@@ -746,7 +764,7 @@ and tululiik = '10'
 
 /*
 SELECT *
-FROM palk.sp_calc_arv_(5419, '{"kpv":"2023-02-28","lepingid":17851,"libid":153397}' :: JSON);
+FROM palk.sp_calc_arv(2,'{"lepingid":24,"libid":272685,"kpv":20260131,"kas_min_sots": false}' :: JSON);
 
 
 SELECT *

@@ -22,12 +22,9 @@ module.exports = {
                       0 as id,
                       0::integer as lepingid,
                       now()::date as kpv,
-                      make_date(date_part('year', now())::INT, date_part('month', now())::INT, 1)::date as alg_kpv,
-                      make_date(date_part('year', now())::INT, 12, 31)::date as lopp_kpv,
-                      coalesce((select tulubaas 
-                        from palk.palk_config 
-                        where status <> 'deleted' 
-                        and rekvid in (select rekvid from ou.userid where id = $2) ),500)::numeric(12,2) as summa,
+                      make_date(date_part('year', $3::date)::INT, date_part('month', $3::date)::INT, 1)::date as alg_kpv,
+                      make_date(date_part('year', $3::date)::INT, 12, 31)::date as lopp_kpv,
+                      palk.get_soodustus_mvt(null::text, $3::date)::numeric(12,2) as summa,
                       1 as status,
                       0::integer          as parentid,
                       null::text as muud`,
@@ -58,7 +55,8 @@ module.exports = {
             data: []
         },
         {
-            sql:`SELECT palk.kas_soodustus_mvt($1::TEXT, $2::DATE)::INTEGER as tulemus`, //$1 - isikukood, $2 - seisuga
+            sql:`SELECT palk.kas_soodustus_mvt($1::TEXT, $2::DATE)::INTEGER as tulemus ,
+                palk.get_soodustus_mvt($1::TEXT, $2::DATE)::NUMERIC as mvt`, //$1 - isikukood, $2 - seisuga
             query: null,
             multiple: false,
             alias: 'v_pensionari_mvt_kontrol',

@@ -8,18 +8,21 @@ CREATE OR REPLACE FUNCTION docs.gen_lausend_pv_oper(IN tnid INTEGER,
 AS
 $BODY$
 DECLARE
-    v_journal      RECORD;
-    v_journal1     RECORD;
-    v_pv_oper      RECORD;
-    v_dokprop      RECORD;
-    lcAllikas      VARCHAR(20);
-    lcSelg         TEXT;
-    l_json         TEXT;
-    l_json_details TEXT;
-    new_history    JSONB;
-    userName       TEXT;
-    a_docs_ids     INTEGER[];
-    a_pv_opers     TEXT[] = enum_range(NULL :: PV_OPERATSIOONID);
+    v_journal           RECORD;
+    v_journal1          RECORD;
+    v_pv_oper           RECORD;
+    v_dokprop           RECORD;
+    lcAllikas           VARCHAR(20);
+    lcSelg              TEXT;
+    l_json              TEXT;
+    l_json_details      TEXT;
+    new_history         JSONB;
+    userName            TEXT;
+    a_docs_ids          INTEGER[];
+    a_pv_opers          TEXT[] = enum_range(NULL :: PV_OPERATSIOONID);
+    l_kulumi_konto      varchar(20); -- при переквалификации будем использовать эту переменную для поиска нового конто износа
+    l_vana_kulumi_konto varchar(20); -- при переквалификации будем использовать эту переменную для поиска старового конто износа
+    l_konto             varchar(20); -- -- при переквалификации будем использовать эту переменную для поиска нового конто ОС
 BEGIN
 
     SELECT
@@ -199,9 +202,7 @@ BEGIN
                  end if;
 
         WHEN v_pv_oper.liik = 2
-            THEN
-
-                SELECT
+            THEN SELECT
                      0                              AS id,
                      coalesce(v_pv_oper.summa, 0)   AS summa,
                      v_pv_oper.konto                AS deebet,
@@ -288,6 +289,7 @@ BEGIN
                  THEN
                      -- продажа
                      -- D154010 K381010 TP kood TA04900 RV02
+
                      SELECT
                          0                                  AS id,
                          coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
@@ -341,6 +343,49 @@ BEGIN
 
                  END IF;
 
+                 IF ltrim(rtrim(coalesce(v_pv_oper.kood3, ''))) in ('23') and
+                    coalesce(v_pv_oper.kulum_kokku, 0) > 0
+                 THEN
+                     -- переквалификация ???
+                     -- Д155109 (тут может быть любой счет ОИ кроме 154000)         К155100 (конто основной карточки)
+                     --
+                     -- Д155110                                                                                  К155119
+
+                     -- ищем конто износа по новому конто группы
+                     l_konto = v_pv_oper.konto;
+                     l_kulumi_konto = (
+                                          select
+                                              properties::jsonb ->> 'kulum_konto' as kulum_konto
+                                          from
+                                              libs.library
+                                          where
+                                                library.library = 'PVGRUPP'
+                                            and rekvid = v_pv_oper.rekvid
+                                            and status < 3
+                                            and properties::jsonb ->> 'konto' = '155109'
+                                          order by id desc
+                                          limit 1
+                                      );
+
+                     SELECT
+                         0                                  AS id,
+                         coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
+                         v_pv_oper.kulum_konto              AS deebet,
+                         ''                                 AS lisa_d,
+                         l_kulumi_konto                     AS kreedit,
+                         coalesce(v_pv_oper.tp, '800599')   AS lisa_k,
+                         coalesce(v_pv_oper.tunnus, '')     AS tunnus,
+                         coalesce(v_pv_oper.proj, '')       AS proj,
+                         coalesce(v_pv_oper.kood1, '')      AS kood1,
+                         coalesce(v_pv_oper.kood2, '')      AS kood2,
+                         coalesce(v_pv_oper.kood3, '')      AS kood3,
+                         coalesce(v_pv_oper.kood4, '')      AS kood4,
+                         coalesce(v_pv_oper.kood5, '')      AS kood5
+                     INTO v_journal1;
+                     l_json_details = l_json_details || ',' || row_to_json(v_journal1);
+
+                 END IF;
+
 
         WHEN v_pv_oper.liik = 5 -- array_position(a_pv_opers, 'umberhindamine')
             THEN error_code = 1; -- Konteerimine pole vajalik
@@ -350,51 +395,49 @@ BEGIN
         WHEN v_pv_oper.liik = 6
             THEN -- umberklassifitseerimine
             -- PV->investeeringud
-                IF v_pv_oper.konto = '154000'
-                THEN
-                    SELECT
-                        0                              AS id,
-                        coalesce(v_pv_oper.summa, 0)   AS summa,
-                        '154000'                       AS deebet,
-                        v_pv_oper.po_konto             AS kreedit,
-                        ''                             AS lisa_d,
-                        ''                             AS lisa_k,
-                        coalesce(v_pv_oper.tunnus, '') AS tunnus,
-                        coalesce(v_pv_oper.proj, '')   AS proj,
-                        coalesce(v_pv_oper.kood1, '')  AS kood1,
-                        coalesce(v_pv_oper.kood2, '')  AS kood2,
-                        coalesce(v_pv_oper.kood3, '')  AS kood3,
-                        coalesce(v_pv_oper.kood4, '')  AS kood4,
-                        coalesce(v_pv_oper.kood5, '')  AS kood5
-                    INTO v_journal1;
-                    l_json_details = row_to_json(v_journal1);
+                case
+                    when v_pv_oper.konto = '154000'
+                        THEN SELECT
+                                 0                              AS id,
+                                 coalesce(v_pv_oper.summa, 0)   AS summa,
+                                 '154000'                       AS deebet,
+                                 v_pv_oper.po_konto             AS kreedit,
+                                 ''                             AS lisa_d,
+                                 ''                             AS lisa_k,
+                                 coalesce(v_pv_oper.tunnus, '') AS tunnus,
+                                 coalesce(v_pv_oper.proj, '')   AS proj,
+                                 coalesce(v_pv_oper.kood1, '')  AS kood1,
+                                 coalesce(v_pv_oper.kood2, '')  AS kood2,
+                                 coalesce(v_pv_oper.kood3, '')  AS kood3,
+                                 coalesce(v_pv_oper.kood4, '')  AS kood4,
+                                 coalesce(v_pv_oper.kood5, '')  AS kood5
+                             INTO v_journal1;
+                             l_json_details = row_to_json(v_journal1);
 
-                    IF v_pv_oper.po_kulum_konto IS NOT NULL AND v_pv_oper.korr_konto <> '155000' AND
-                       coalesce(v_pv_oper.kulum_kokku, 0) > 0 AND NOT empty(v_pv_oper.kulum_konto)
-                    THEN
-                        -- maa,
-                        -- kulum
-                        SELECT
-                            0                                  AS id,
-                            coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
-                            v_pv_oper.po_kulum_konto           AS deebet,
-                            '154010'                           AS kreedit,
-                            coalesce(v_pv_oper.tunnus, '')     AS tunnus,
-                            ''                                 AS lisa_d,
-                            ''                                 AS lisa_k,
-                            coalesce(v_pv_oper.proj, '')       AS proj,
-                            coalesce(v_pv_oper.kood1, '')      AS kood1,
-                            coalesce(v_pv_oper.kood2, '')      AS kood2,
-                            coalesce(v_pv_oper.kood3, '')      AS kood3,
-                            coalesce(v_pv_oper.kood4, '')      AS kood4,
-                            coalesce(v_pv_oper.kood5, '')      AS kood5
-                        INTO v_journal1;
-                        l_json_details = l_json_details::TEXT || ',' || row_to_json(v_journal1)::TEXT;
+                             IF v_pv_oper.po_kulum_konto IS NOT NULL AND v_pv_oper.korr_konto <> '155000' AND
+                                coalesce(v_pv_oper.kulum_kokku, 0) > 0 AND NOT empty(v_pv_oper.kulum_konto)
+                             THEN
+                                 -- maa,
+                                 -- kulum
+                                 SELECT
+                                     0                                  AS id,
+                                     coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
+                                     v_pv_oper.po_kulum_konto           AS deebet,
+                                     '154010'                           AS kreedit,
+                                     coalesce(v_pv_oper.tunnus, '')     AS tunnus,
+                                     ''                                 AS lisa_d,
+                                     ''                                 AS lisa_k,
+                                     coalesce(v_pv_oper.proj, '')       AS proj,
+                                     coalesce(v_pv_oper.kood1, '')      AS kood1,
+                                     coalesce(v_pv_oper.kood2, '')      AS kood2,
+                                     coalesce(v_pv_oper.kood3, '')      AS kood3,
+                                     coalesce(v_pv_oper.kood4, '')      AS kood4,
+                                     coalesce(v_pv_oper.kood5, '')      AS kood5
+                                 INTO v_journal1;
+                                 l_json_details = l_json_details::TEXT || ',' || row_to_json(v_journal1)::TEXT;
 
-                    END IF;
-
-                ELSE
-                    -- investeeringud -> PV
+                             END IF;
+                    when v_pv_oper.konto <> '154000' and v_pv_oper.kood3 in ('13', '14') then -- investeeringud -> PV
                     SELECT
                         0                              AS id,
                         coalesce(v_pv_oper.summa, 0)   AS summa,
@@ -434,8 +477,95 @@ BEGIN
                         l_json_details = l_json_details::TEXT || ',' || row_to_json(v_journal1)::TEXT;
 
                     END IF;
+                    else -- прочие переквалификации
+                    -- ищем конто износа
+                        select
+                            j1.kreedit
+                        into l_vana_kulumi_konto
+                        from
+                            docs.journal                 j
+                                inner join docs.journal1 j1 on j.id = j1.parentid
+                        where
+                              j.parentid in (
+                                                select
+                                                    po.journalid
+                                                from
+                                                    docs.pv_oper po
+                                                where
+                                                      po.pv_kaart_id = v_pv_oper.pv_kaart_id
+                                                  and po.liik in (1)
+                                            )
+                          and j1.kreedit like '15%'
+                        limit 1;
 
-                END IF;
+                        -- новое конто
+                        -- ищем конто износа по новому конто группы
+                        l_konto = v_pv_oper.konto;
+                        l_kulumi_konto = (
+                                             select
+                                                 properties::jsonb ->> 'kulum_konto' as kulum_konto
+                                             from
+                                                 libs.library
+                                             where
+                                                 library.library = 'PVGRUPP'
+                                               and rekvid = 28
+                                               and status < 3
+                                               and id in (
+                                                             select
+                                                                 (properties::jsonb ->> 'gruppid')::integer
+                                                             from
+                                                                 libs.library
+                                                             where
+                                                                 id = v_pv_oper.pv_kaart_id
+                                                         ) -- ищем группа карточки ОС после переквалификации
+                                             order by id desc
+                                             limit 1
+                                         );
+
+                        SELECT
+                            0                              AS id,
+                            coalesce(v_pv_oper.summa, 0)   AS summa,
+                            v_pv_oper.konto                AS deebet,  -- здесь конто на которое переквалифицируем
+                            libs.get_pv_kaart_konto(
+                                    v_pv_oper.pv_kaart_id,
+                                    v_pv_oper.kpv - 1)     AS kreedit, -- прежнее конто
+                            ''                             AS lisa_d,
+                            ''                             AS lisa_k,
+                            coalesce(v_pv_oper.tunnus, '') AS tunnus,
+                            coalesce(v_pv_oper.proj, '')   AS proj,
+                            coalesce(v_pv_oper.kood1, '')  AS kood1,
+                            coalesce(v_pv_oper.kood2, '')  AS kood2,
+                            coalesce(v_pv_oper.kood3, '')  AS kood3,
+                            coalesce(v_pv_oper.kood4, '')  AS kood4,
+                            coalesce(v_pv_oper.kood5, '')  AS kood5
+                        INTO v_journal1;
+                        l_json_details = row_to_json(v_journal1);
+
+                        if l_kulumi_konto is not null and l_vana_kulumi_konto is not null and
+                           coalesce(v_pv_oper.kulum_kokku, 0) > 0 then
+
+                            -- kulum
+                            SELECT
+                                0                                  AS id,
+                                coalesce(v_pv_oper.kulum_kokku, 0) AS summa,
+                                l_vana_kulumi_konto                AS deebet,
+                                l_kulumi_konto                     AS kreedit,
+                                coalesce(v_pv_oper.tunnus, '')     AS tunnus,
+                                ''                                 AS lisa_d,
+                                ''                                 AS lisa_k,
+                                coalesce(v_pv_oper.proj, '')       AS proj,
+                                coalesce(v_pv_oper.kood1, '')      AS kood1,
+                                coalesce(v_pv_oper.kood2, '')      AS kood2,
+                                coalesce(v_pv_oper.kood3, '')      AS kood3,
+                                coalesce(v_pv_oper.kood4, '')      AS kood4,
+                                coalesce(v_pv_oper.kood5, '')      AS kood5
+                            INTO v_journal1;
+                            l_json_details = l_json_details::TEXT || ',' || row_to_json(v_journal1)::TEXT;
+
+                        END IF;
+
+
+                    END case; --154000
         END CASE;
 
 

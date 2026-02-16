@@ -28,7 +28,7 @@ BEGIN
     THEN
         l_row_id = (SELECT id
                     FROM libs.asutus a
-                    WHERE regkood::TEXT = l_regkood::TEXT
+                    WHERE ltrim(rtrim(regkood))::TEXT = ltrim(rtrim(l_regkood))::TEXT
                     ORDER BY staatus ASC, id DESC
                     LIMIT 1);
     END IF;

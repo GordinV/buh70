@@ -74,8 +74,22 @@ DECLARE
     l_suletatud            BOOLEAN        = FALSE;
     l_raha_saaja           TEXT; -- PayToName for export
     l_umardamine           numeric        = 0; -- округление
+    l_rekv_regkood         text           = doc_data ->> 'rekv_regkood'; -- для контроля учреждения
 
 BEGIN
+    if l_rekv_regkood is not null and len(trim(l_rekv_regkood)) >= 8 and user_rekvid <> coalesce((
+                                                                                                     select
+                                                                                                         id
+                                                                                                     from
+                                                                                                         ou.rekv
+                                                                                                     where
+                                                                                                           regkood = l_rekv_regkood
+                                                                                                       and parentid < 999
+                                                                                                     limit 1
+                                                                                                 ), 0) then
+        raise exception 'Viga: vale asutus. Tee programmi restart';
+    end if;
+
     -- если есть ссылка на ребенка, то присвоим viitenumber
     IF doc_lapsid IS NOT NULL
     THEN
@@ -104,6 +118,7 @@ BEGIN
                                 l_raha_saaja                            AS raha_saaja,
                                 doc_print                               AS print,
                                 l_umardamine                            as umardamine,
+                                l_rekv_regkood                          as rekv_regkood,
                                 coalesce(doc_kas_peata_saatmine, FALSE) AS kas_peata_saatmine
                         ) row
                 );
@@ -230,6 +245,7 @@ BEGIN
         SELECT currval('docs.doc_id_seq') INTO doc_id;
 
         ids = NULL;
+
         INSERT INTO
             docs.arv (parentid, rekvid, userid, liik, operid, number, kpv, asutusid, lisa, tahtaeg, kbmta, kbm,
                       summa, muud, objektid, objekt, doklausid, properties)

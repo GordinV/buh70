@@ -39,8 +39,6 @@ BEGIN
     -- 2 (закрыт, права на просмотр, на редактирование прав нет, удаление у peakasutaja)
     -- 3 (удален, права на просмотр только у peakasutaja)
 
-    raise notice 'trigu_doc_before_rights %', new.id;
-
     author = ((new.history) -> 0) ->> 'user';
     SELECT id,
            muud

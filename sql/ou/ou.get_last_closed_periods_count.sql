@@ -32,9 +32,8 @@ BEGIN
     INTO v_period
     FROM ou.aasta a
     WHERE rekvid = l_rekvid
-      AND make_date(a.aasta, a.kuu, 01) = make_date(year(l_period_finish), MONTH(l_period_finish), 01);
-
-    RAISE NOTICE 'l_kpv %, l_period_finish %, v_period %, empty %', l_kpv, l_period_finish, v_period, empty(coalesce(v_period.kinni, 0)::INTEGER);
+      AND make_date(a.aasta, a.kuu, 01) = make_date(year(l_period_finish), MONTH(l_period_finish), 01)
+    order by id desc limit 1    ;
 
     IF v_period IS NOT NULL AND empty(coalesce(v_period.kinni, 0)::INTEGER)
     THEN
@@ -57,7 +56,7 @@ GRANT EXECUTE ON FUNCTION ou.is_last_quarter_opened(INTEGER, DATE) TO dbkasutaja
 SELECT ou.is_last_quarter_opened(63, DATE(aasta, kuu, 01)), *
 FROM ou.aasta
 WHERE rekvid = 63
-  AND aasta.aasta >= 2023
+  AND aasta.aasta >= 2025
 ORDER BY aasta, kuu DESC
 
 --update ou.aasta set kinni = 1 where id = 9564

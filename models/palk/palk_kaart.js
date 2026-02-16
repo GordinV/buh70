@@ -89,7 +89,7 @@ module.exports = {
     },
     executeCommand: {
         command: `SELECT error_code, result, error_message
-                  FROM palk.change_kaart_status($1::INTEGER, $2::INTEGER)`, //$1 - palk_kaart.id, $2 - user_id
+                  FROM palk.change_kaart_status($1::INTEGER, $2::INTEGER, $3::integer)`, //$1 - palk_kaart.id, $2 - user_id
         type: 'sql',
         alias: 'changeStatus'
     },

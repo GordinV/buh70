@@ -29,7 +29,7 @@ SELECT d.id,
        lib.kood,
        lib.nimetus,
        ((enum_range(NULL :: PALK_OPER_LIIK))[CASE ((lib.properties :: JSONB ->> 'liik') ||
-                                                   (lib.properties :: JSONB ->> 'asutusest')) :: TEXT
+                                                   coalesce((lib.properties :: JSONB ->> 'asutusest'),'0')) :: TEXT
                                                  WHEN '10'
                                                      THEN 1
                                                  WHEN '20'

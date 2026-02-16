@@ -10,7 +10,8 @@ DECLARE
     userName                TEXT;
     doc_id                  INTEGER = data ->> 'id';
     doc_data                JSON    = data ->> 'data';
-    doc_minpalk             NUMERIC = doc_data ->> 'minpalk';
+    doc_minpalk             NUMERIC = doc_data ->> 'minpalk'; -- для расчета доп. социального налога (минималка за прошлый год
+    doc_palk_miinium        NUMERIC = doc_data ->> 'palk_miinium'; -- минимальная ЗП на текущий период
     doc_tulubaas            NUMERIC = doc_data ->> 'tulubaas';
     doc_pensionari_tulubaas NUMERIC = coalesce((doc_data ->> 'pensionari_tulubaas')::numeric, 704)::NUMERIC;
     doc_round               NUMERIC = doc_data ->> 'round';
@@ -43,9 +44,13 @@ BEGIN
       AND u.id = user_id;
     IF userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
-        RETURN 0;
+        RAISE exception 'Viga: User not found %', user;
     END IF;
+
+-- обработаем новое поле
+    if doc_palk_miinium is null then
+        doc_palk_miinium = 886; -- минимальная за 2025 год
+    end if;
 
     IF (doc_id IS NULL)
     THEN
@@ -82,10 +87,11 @@ BEGIN
             ) row;
 
         INSERT INTO
-            palk.palk_config (rekvid, minpalk, tulubaas, round, jaak, genlausend, suurasu, tm,
+            palk.palk_config (rekvid, minpalk, palk_miinium, tulubaas, round, jaak, genlausend, suurasu, tm,
                               pm, tka, tki, sm, muud1, muud2, ajalugu, properties, pensionari_tulubaas)
         VALUES
-            (user_rekvid, doc_minpalk, doc_tulubaas, doc_round, doc_jaak, doc_genlausend, doc_suurasu, doc_tm,
+            (user_rekvid, doc_minpalk, doc_palk_miinium, doc_tulubaas, doc_round, doc_jaak, doc_genlausend, doc_suurasu,
+             doc_tm,
              doc_pm, doc_tka, doc_tki, doc_sm, doc_muud1, doc_muud2, new_history, l_jsonb, doc_pensionari_tulubaas)
         RETURNING id
             INTO config_id;
@@ -105,6 +111,7 @@ BEGIN
         UPDATE palk.palk_config
         SET
             minpalk             = doc_minpalk,
+            palk_miinium        = doc_palk_miinium,
             tulubaas            = doc_tulubaas,
             round               = doc_round,
             jaak                = doc_jaak,

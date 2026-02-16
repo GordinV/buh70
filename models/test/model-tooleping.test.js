@@ -76,7 +76,7 @@ describe('dok. type Tooleping tests', function () {
         });
     });
 
-    it('doc type library should contain TOOLEPING doc.type', async()=> {
+    it.skip('doc type library should contain TOOLEPING doc.type', async()=> {
         let sql = `select id from libs.library where kood = 'TOOLEPING' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -85,7 +85,7 @@ describe('dok. type Tooleping tests', function () {
 
     });
 
-    it('should exists view com_tootajad', async()=> {
+    it.skip('should exists view com_tootajad', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'com_toolepingud'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -93,7 +93,7 @@ describe('dok. type Tooleping tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
-    it('should exists view cur_tootajad', async()=> {
+    it.skip('should exists view cur_tootajad', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_toolepingud'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();

@@ -17,6 +17,8 @@ DECLARE
   lcTableName       TEXT;
   lcAdditionalWhere TEXT = '';
   lcSqlString       TEXT;
+  l_seq_name        TEXT;
+
 BEGIN
 
   IF tnDokPropId IS NOT NULL
@@ -38,6 +40,11 @@ BEGIN
       THEN
         lcTableName = 'docs.arv';
         lcAdditionalWhere = ' and liik = 1 and operid is not null and not empty(operid)';
+    WHEN tcDok = 'TEATIS'
+        THEN
+            l_seq_name = docs.create_number_sequence(tnrekvid, tcDok, FALSE);
+            SELECT nextval(l_seq_name) AS number INTO v_number;
+
     WHEN tcDok = 'SORDER'
       THEN
         lcTableName = 'docs.korder1';
@@ -78,8 +85,6 @@ BEGIN
                 ' where tbl.rekvId = $1::integer and date_part(''year'',tbl.kpv) = $2::integer and encode(tbl.number::bytea, ''escape'')::text  ilike $3::text';
 
   lcSqlString = lcSqlString || lcAdditionalWhere;
-
-  raise NOTICE 'lcSqlString, %', lcSqlString;
 
   EXECUTE lcSqlString
     INTO v_number

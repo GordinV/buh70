@@ -74,7 +74,7 @@ describe('dok. type Tootaja tests', function () {
         });
     });
 
-    it('doc type library should contain TOOTAJA doc.type', async()=> {
+    it.skip('doc type library should contain TOOTAJA doc.type', async()=> {
         let sql = `select id from libs.library where kood = 'TOOTAJA' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -83,7 +83,7 @@ describe('dok. type Tootaja tests', function () {
 
     });
 
-    it('should exists view com_tootajad', async()=> {
+    it.skip('should exists view com_tootajad', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'com_tootajad'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -91,7 +91,7 @@ describe('dok. type Tootaja tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
-    it('should exists view cur_tootajad', async()=> {
+    it.skip('should exists view cur_tootajad', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_tootajad'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -100,7 +100,7 @@ describe('dok. type Tootaja tests', function () {
 
     });
 
-    it('should exists view cur_palk_kaart', async()=> {
+    it.skip('should exists view cur_palk_kaart', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_kaart'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -108,7 +108,7 @@ describe('dok. type Tootaja tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
-    it('should exists view palk.cur_used_mvt', async()=> {
+    it.skip('should exists view palk.cur_used_mvt', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_used_mvt'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();

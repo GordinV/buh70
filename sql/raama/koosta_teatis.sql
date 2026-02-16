@@ -62,15 +62,10 @@ BEGIN
                                             WHERE
                                                   dd.rekvid = l_rekvid
                                               AND dd.status <> 3
-                                              AND t.kpv = l_kpv
+                                              AND year(t.kpv) = year(l_kpv)
+                                              and month(t.kpv) = month(l_kpv)
                                         )
                   and d.rekvid <> 9 -- тут отстой долгов, исключаем
-                -- временно на период теста
-/*                  and a.asutusid in (
-                                        select id from libs.asutus where
-                                            regkood in ('49105223731', '49812283717', '48403302211')
-                                    )
-*/
                 GROUP BY a.asutusid
             ) qry
         where

@@ -8,14 +8,10 @@ AS
 $$
 DECLARE
     doc_id      INTEGER = coalesce((params ->> 'doc_id') :: INTEGER, 0);
-
     result      INTEGER;
     tmpTaotlus  RECORD;
     tmpEelProj  RECORD;
-
     lnEelProjId INTEGER;
-    l_proj_json JSON;
-    l_proj_row  RECORD;
     new_history JSON;
 BEGIN
 
@@ -27,30 +23,42 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT t.* INTO tmpTaotlus
-    FROM eelarve.taotlus t,
-         ou.userid u
-    WHERE t.parentid = doc_id
+    SELECT
+        t.*
+    INTO tmpTaotlus
+    FROM
+        eelarve.taotlus t,
+        ou.userid       u
+    WHERE
+          t.parentid = doc_id
       AND u.id = user_id
+      and u.rekvid = t.rekvid
       AND coalesce((u.roles ->> 'is_eel_allkirjastaja')::BOOLEAN, FALSE)::BOOLEAN;
-    --        AND docs.usersRigths(t.parentid, 'EelAllkirjastaja', user_id);
-
-    -- @todo довести права до ума
 
     IF tmpTaotlus.id IS NULL
     THEN
         error_code = 6;
-        error_message = 'Document not exists or not enough rights , docId: ' || coalesce(doc_id, 0) :: TEXT;
+        error_message = 'Viga, document not exists or not enough rights , docId: ' || coalesce(doc_id, 0) :: TEXT;
         result = 0;
         RETURN;
     END IF;
 
+    -- контроль периода для модуля Eelarve
+    IF NOT (ou.fnc_aasta_eelarve_kontrol(tmpTaotlus.rekvid, tmpTaotlus.kpv))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. Eelarve kinni';
+    END IF;
+
+
     --* eelarve projektide side
-    SELECT e.id,
-           e.status
-           INTO tmpEelProj
-    FROM eelarve.eelproj e
-    WHERE e.aasta = tmptaotlus.aasta
+    SELECT
+        e.id,
+        e.status
+    INTO tmpEelProj
+    FROM
+        eelarve.eelproj e
+    WHERE
+          e.aasta = tmptaotlus.aasta
       AND e.status > 0
       AND e.status < array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'aktsepteeritud')
       AND e.rekvid = tmpTaotlus.rekvid
@@ -63,46 +71,65 @@ BEGIN
     ELSE
         --		* puudub eelarve variant
         --		lnresult = -1;
-        lnEelProjId = (select e.result from eelarve.koosta_eelproj(70,
-                                             json_build_object('rekvid', tmpTaotlus.rekvid, 'aasta', tmpTaotlus.aasta,
-                                                               'muud', tmpTaotlus.muud)) e);
-
-
---    lnEelProjId = eelarve.sp_salvesta_eelproj(l_proj_json, user_id, tmpTaotlus.rekvid);
+        lnEelProjId = (
+                          select
+                              e.result
+                          from
+                              eelarve.koosta_eelproj(70,
+                                                     json_build_object('rekvid', tmpTaotlus.rekvid, 'aasta',
+                                                                       tmpTaotlus.aasta,
+                                                                       'muud', tmpTaotlus.muud)) e
+                      );
 
     END IF;
 
     IF lnEelProjId > 0 -- saved successfuly
     THEN
         UPDATE eelarve.taotlus1
-        SET eelprojid = lnEelProjId
-        WHERE parentid = tmpTaotlus.id;
+        SET
+            eelprojid = lnEelProjId
+        WHERE
+            parentid = tmpTaotlus.id;
     END IF;
 
     IF empty(tmptaotlus.allkiri)
     THEN
         UPDATE eelarve.taotlus
-        SET status     = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
+        SET
+            status     = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
             allkiri    = 1,
             KoostajaID = user_id
-        WHERE parentid = doc_id;
+        WHERE
+            parentid = doc_id;
 
         -- ajalugu
-        SELECT row_to_json(row) INTO new_history
-        FROM (SELECT now()             AS updated,
-                     (SELECT kasutaja
-                      FROM ou.userid
-                      WHERE id = user_id
-                      LIMIT 1) :: TEXT AS user,
-                     'allkirjastatud'  AS status
-             ) row;
+        SELECT
+            row_to_json(row)
+        INTO new_history
+        FROM
+            (
+                SELECT
+                    now()            AS updated,
+                    (
+                        SELECT
+                            kasutaja
+                        FROM
+                            ou.userid
+                        WHERE
+                            id = user_id
+                        LIMIT 1
+                    ) :: TEXT        AS user,
+                    'allkirjastatud' AS status
+            ) row;
 
         -- will check if arvId exists
         UPDATE docs.doc
-        SET lastupdate = now(),
+        SET
+            lastupdate = now(),
             status     = array_position((enum_range(NULL :: DOK_STATUS)), 'active'),
             history    = coalesce(history, '[]') :: JSONB || new_history :: JSONB
-        WHERE id = doc_id;
+        WHERE
+            id = doc_id;
 
 
         result = 1;

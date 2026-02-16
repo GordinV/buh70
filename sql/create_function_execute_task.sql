@@ -57,7 +57,6 @@ BEGIN
   INTO STRICT tulemus
   USING user_id, params;
 
-raise notice 'tulemus %', tulemus;
   error_code = tulemus.error_code;
   result = tulemus.result;
   error_message = tulemus.error_message;
@@ -72,14 +71,14 @@ raise notice 'tulemus %', tulemus;
   data = row_to_json(tulemus);
 
   RETURN;
-
+/*
   EXCEPTION WHEN OTHERS
   THEN
     RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
     error_message = SQLERRM;
     result = 0;
     RETURN;
-
+*/
 END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;

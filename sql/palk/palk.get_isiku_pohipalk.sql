@@ -95,6 +95,7 @@ BEGIN
                                                       where
                                                             a.library = 'AMETI_KLASSIF'
                                                         and a.status = 1
+                                                        and a.properties::jsonb ->> 'palgaastmed' is not null
                                                         and to_jsonb(a.kood::text) = l_klassif
 --                                                        and a.properties::jsonb -> 'palgaastmed' @>
 --                                                            ('[]'::jsonb || jsonb_build_object('palgamaar', l_palga_maar::text))
@@ -134,24 +135,10 @@ GRANT EXECUTE ON FUNCTION palk.get_isiku_pohipalk(jsonb) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION palk.get_isiku_pohipalk(jsonb) TO dbvaatleja;
 
 select
-    palk.get_isiku_pohipalk('{
-      "projekt_id": 282919,
-      "leping_id": 6,
-      "seisuga": "2025-12-31",
-      "-isik_id": 25436,
-      "-amet_id": 248273,
-      "-ameti_klassif": "KJ2-RE-JAH",
-      "-palgamaar": 4
-    }'::jsonb)
+    palk.get_isiku_pohipalk(jsonb_build_object('ameti_klassif', 'HKE-HT',
+                                               'palgamaar', 1))
 
 /*
-      "ameti_klassif": [
-        "HKP",
-        "KJ1",
-        "KJ2-RE-JAH"
-      ],
-
-
 -- Koolituskulud -> NOM
 -- TUNNUS ->>test 3
 

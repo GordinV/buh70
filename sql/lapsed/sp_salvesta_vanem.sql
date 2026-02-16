@@ -91,9 +91,10 @@ BEGIN
 
     --  проверяем на сальдо
     IF (l_prev_arv_isik_id IS NOT NULL AND doc_arved AND l_prev_arv_isik_id <> doc_asutusid
-        and (SELECT sum(jaak) AS jaak
-             FROM
-                 lapsed.lapse_saldod(current_date, doc_parentid, user_rekvid)) <> 0)
+        )
+--        and (SELECT sum(jaak) AS jaak
+  --           FROM
+    --             lapsed.lapse_saldod(current_date, doc_parentid, user_rekvid)) <> 0)
     THEN
         -- проверяем на сальдо
         json_props = jsonb_build_object('laps_id', jsonb_build_object('laps_id', array [doc_parentid]));

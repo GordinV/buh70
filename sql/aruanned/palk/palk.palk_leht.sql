@@ -36,14 +36,14 @@ WITH
     qry_taabel AS (
                       SELECT
                           t.isik_id,
-                          sum(paev)                   AS paev,
-                          sum(ohtu)                   AS ohtu,
-                          sum(oo)                     AS oo,
-                          sum(puhapaev)               AS puhapaev,
-                          sum(tahtpaev)               AS tahtpaev,
-                          sum(uleajatoo)              AS uleajatoo,
-                          sum(kokku)                  AS kokku,
-                          sum(palk.get_work_hours((
+                          max(paev)                   AS paev,
+                          max(ohtu)                   AS ohtu,
+                          max(oo)                     AS oo,
+                          max(puhapaev)               AS puhapaev,
+                          max(tahtpaev)               AS tahtpaev,
+                          max(uleajatoo)              AS uleajatoo,
+                          max(kokku)                  AS kokku,
+                          max(palk.get_work_hours((
                                                       SELECT
                                                           to_jsonb(qry)
                                                       FROM

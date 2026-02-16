@@ -1,15 +1,22 @@
-DROP FUNCTION IF EXISTS get_unique_value_from_array(TEXT[]);
+--DROP FUNCTION IF EXISTS get_unique_value_from_array(TEXT[]);
 
 CREATE OR REPLACE FUNCTION get_unique_value_from_array(l_array TEXT[])
     RETURNS TEXT[]
 AS
 $BODY$
-SELECT array_agg(value)
-FROM (
-         SELECT DISTINCT value
-         FROM (
-                  SELECT unnest(l_array) AS value
-              ) qry) qry
+SELECT
+    array_agg(value)
+FROM
+    (
+        SELECT DISTINCT
+            value
+        FROM
+            (
+                SELECT unnest(l_array) AS value
+            ) qry
+        order by value
+    ) qry
+
 
 $BODY$
     LANGUAGE SQL

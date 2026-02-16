@@ -23,13 +23,15 @@ BEGIN
         d.*,
         po.kpv,
         po.lepingid,
-        u.ametnik                                          AS user_name,
-        (po.properties ->> 'parallel_lausedn_id')::integer as parallel_lausend_id,
-        (po.properties ->> 'puudumise_id')::integer as puudumise_id
+        u.ametnik                                                                                AS user_name,
+        (po.properties ->> 'parallel_lausedn_id')::integer                                       as parallel_lausend_id,
+        (po.properties ->> 'puudumise_id')::integer                                              as puudumise_id,
+        ((enum_range(NULL :: PALK_LIIK))[(l.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik
     INTO v_doc
     FROM
         docs.doc                           d
             INNER JOIN      palk.palk_oper po ON po.parentid = d.id
+            inner join      libs.library   l on l.id = po.libid
             LEFT OUTER JOIN ou.userid      u ON u.id = user_id
     WHERE
         d.id = doc_id;
@@ -195,12 +197,30 @@ BEGIN
     end if;
 
     -- удаление ссылки в регистре отсутствий, если отпускные или больничный
-    if v_doc.puudumise_id is not null then
+    if v_doc.puudumise_id is not null and v_doc.palk_liik = 'ARVESTUSED' then
         update palk.puudumine
         set
-            properties = coalesce(properties,'{}'::jsonb) || jsonb_build_object('palk_oper_id', null)
+            properties = coalesce(properties, '{}'::jsonb) || jsonb_build_object('palk_oper_id', null)
         where
             id = v_doc.puudumise_id;
+    end if;
+
+    if exists
+    (
+        select
+            1
+        from
+            palk.puudumine
+        where
+            (properties ->> 'palk_oper_id')::integer = doc_id
+    ) then
+        -- снимем ссылку на удаленную операцию
+        update palk.puudumine
+        set
+            properties = properties || jsonb_build_object('palk_oper_id', null)
+        where
+            (properties ->> 'palk_oper_id')::integer = doc_id;
+
     end if;
 
 

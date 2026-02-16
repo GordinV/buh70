@@ -40,16 +40,16 @@ SELECT
     report.summa,
     --CASE WHEN report.summa < 0 THEN 0 ELSE report.summa END::NUMERIC(14, 2) AS summa,
     report.maksja_nimi,
-    ltrim(rtrim(report.maksja_isikukood))                                                     AS maksja_isikukood,
+    ltrim(rtrim(report.maksja_isikukood))                                                          AS maksja_isikukood,
     report.lapse_nimi,
-    ltrim(rtrim(report.lapse_isikukood))                                                      AS lapse_isikukood,
+    ltrim(rtrim(report.lapse_isikukood))                                                           AS lapse_isikukood,
     report.aasta::INTEGER,
     report.rekvid::INTEGER,
     report.liik::INTEGER,
     report.docs_arv_ids::TEXT,
     report.docs_tasu_ids::TEXT,
     report.doc_tagastused_ids::TEXT,
-    r.regkood::text                                                                           as asutuse_regkood,
+    r.regkood::text                                                                                as asutuse_regkood,
     extract('year' FROM
             age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(report.lapse_isikukood))) < 18 as kas_18
 FROM
@@ -57,9 +57,9 @@ FROM
         SELECT
             sum(summa)                             AS summa,
             a.nimetus::TEXT                        AS maksja_nimi,
-            a.regkood::TEXT                        AS maksja_isikukood,
+            trim(a.regkood)::TEXT                  AS maksja_isikukood,
             lapse_nimi::TEXT                       AS lapse_nimi,
-            lapse_isikukood::TEXT                  AS lapse_isikukood,
+            trim(lapse_isikukood)::TEXT            AS lapse_isikukood,
             qry.aasta::INTEGER                     AS aasta,
             qry.rekvid::INTEGER                    AS rekvid,
             CASE
@@ -154,7 +154,7 @@ FROM
                 SELECT
                     AT.rekvid                                             AS rekvid,
                     l.nimi                                                AS lapse_nimi,
-                    l.isikukood                                           AS lapse_isikukood,
+                    trim(l.isikukood)                                     AS lapse_isikukood,
                     (l.properties ->> 'inf3_kpv')::date                   as inf3_kpv,
                     round((arved.a1_summa / arved.a_kokku) * AT.summa, 2) AS summa,
                     tasud.asutusid                                        AS asutusId,
@@ -184,21 +184,21 @@ FROM
         WHERE
             qry.summa IS NOT NULL
           AND len(ltrim(rtrim(a.regkood))) >= 11 -- только частники
-          AND (params.aasta <= coalesce(year(qry.inf3_kpv::date),params.aasta - 1)  or
+          AND (params.aasta <= coalesce(year(qry.inf3_kpv::date), params.aasta - 1) or
                extract('year' FROM
                        age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(qry.lapse_isikukood))) <
                18) -- только до 18 лет или если указана дата в карточке ребенка
         GROUP BY
-            lapse_isikukood,
+            trim(lapse_isikukood),
             lapse_nimi,
             a.nimetus,
-            a.regkood,
+            trim(a.regkood),
             qry.aasta,
             qry.rekvid,
             r.properties ->> 'liik'
     )            report,
     asutuse_rekv r,
-    params
+                 params
 WHERE
       summa <> 0
   AND left(lapse_isikukood, 1) NOT IN ('9') -- А. Варгунин, 01.02.2024

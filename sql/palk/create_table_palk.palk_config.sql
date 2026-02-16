@@ -28,4 +28,8 @@ CREATE INDEX ix_palk_config
     ON palk.palk_config (rekvid);
 
 ALTER TABLE palk.palk_config
-    ADD COLUMN IF NOT EXISTS pensionari_tulubaas NUMERIC(12, 2) DEFAULT 704 NOT NULL; 
+    ADD COLUMN IF NOT EXISTS pensionari_tulubaas NUMERIC(12, 2) DEFAULT 704 NOT NULL;
+
+ALTER TABLE palk.palk_config
+    ADD COLUMN IF NOT EXISTS palk_miinium NUMERIC(12, 2) DEFAULT 886 NOT NULL;
+

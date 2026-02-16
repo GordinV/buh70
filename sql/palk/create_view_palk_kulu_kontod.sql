@@ -27,8 +27,9 @@ select
    }'::text[]                                                                                                             as huvitised_kontod,
     '{500500,50026801,50029801}'::text[]                                                                                      as vola_kontod,
     '{50000117,50000118,50010117,50010118,50012117,50012118,50014117,50014118,50021117,50021118,50024117,50024118,50025117,
-    50025118,50026117,50026118,50027117,50027118,50028117,50028118,50029117,50029118}'::text[]                            as muud_lisa_tasud_kontod
-        ;
+    50025118,50026117,50026118,50027117,50027118,50028117,50028118,50029117,50029118}'::text[]                            as muud_lisa_tasud_kontod,
+    '{50010305,50012305,50014305,50021305,50024305,50025305,50026305,50027305,50028305,50029305}'::text[]                     as aasta_preemiad_kontod
+;
 
 GRANT SELECT ON TABLE palk.palk_kulu_kontod TO dbkasutaja;
 GRANT SELECT ON TABLE palk.palk_kulu_kontod TO dbvaatleja;

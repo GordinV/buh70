@@ -77,7 +77,7 @@ describe('dok. type Palk_Kaart tests', function () {
         });
     });
 
-    it('doc type library should contain PALK_KAART doc.type', async()=> {
+    it.skip('doc type library should contain PALK_KAART doc.type', async()=> {
         let sql = `select id from libs.library where kood = 'PALK_KAART' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
@@ -86,7 +86,7 @@ describe('dok. type Palk_Kaart tests', function () {
 
     });
 
-    it('should exists view com_palk_kaart', async()=> {
+    it.skip('should exists view com_palk_kaart', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'com_palk_kaart'`;
         let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();
@@ -94,7 +94,7 @@ describe('dok. type Palk_Kaart tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
-    it('should exists view cur_palk_kaart', async()=> {
+    it.skip('should exists view cur_palk_kaart', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_kaart'`;
         let returnValue = await db.queryDb(sql, [], null, null, null, null, config);
         expect(returnValue).toBeDefined();

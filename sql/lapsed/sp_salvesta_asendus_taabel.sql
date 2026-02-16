@@ -7,31 +7,38 @@ CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_asendus_taabel(data JSONB,
 $BODY$
 
 DECLARE
-    userName        TEXT;
-    doc_data        JSON    = data ->> 'data';
-    doc_id          INTEGER = doc_data ->> 'id';
-    doc_parentid    INTEGER = doc_data ->> 'parentid';
-    doc_nomid       INTEGER = doc_data ->> 'nomid';
-    doc_yksusid     INTEGER = doc_data ->> 'yksusid';
-    doc_kogus       NUMERIC = doc_data ->> 'kogus';
-    doc_hind        NUMERIC = doc_data ->> 'hind';
-    doc_summa       NUMERIC = doc_data ->> 'summa';
-    doc_kuu         INTEGER = doc_data ->> 'kuu';
-    doc_aasta       INTEGER = doc_data ->> 'aasta';
-    doc_muud        TEXT    = doc_data ->> 'muud';
-    doc_viitenumber TEXT    = doc_data ->> 'viitenumber';
-    doc_staatus     INTEGER = 1;
-    json_ajalugu    JSONB;
+    userName         TEXT;
+    doc_data         JSON    = data ->> 'data';
+    doc_id           INTEGER = doc_data ->> 'id';
+    doc_parentid     INTEGER = doc_data ->> 'parentid';
+    doc_nomid        INTEGER = doc_data ->> 'nomid';
+    doc_yksusid      INTEGER = doc_data ->> 'yksusid';
+    doc_kogus        NUMERIC = doc_data ->> 'kogus';
+    doc_hind         NUMERIC = doc_data ->> 'hind';
+    doc_summa        NUMERIC = doc_data ->> 'summa';
+    doc_kuu          INTEGER = doc_data ->> 'kuu';
+    doc_aasta        INTEGER = doc_data ->> 'aasta';
+    doc_muud         TEXT    = doc_data ->> 'muud';
+    doc_viitenumber  TEXT    = doc_data ->> 'viitenumber';
+    l_nom_id         integer;
+    doc_staatus      INTEGER = 1;
+    json_ajalugu     JSONB;
+    v_nom            record;
+    l_lapse_rekvid   integer;
+    l_lapse_kaart_id integer;
 BEGIN
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
       AND u.id = userId;
 
     IF userName IS NULL
@@ -46,6 +53,51 @@ BEGIN
     END IF;
 
 
+    -- проверка на наличие услуг в родном учреждении
+    -- ищем услугу по коду другово учреждения
+    select
+        kood
+    into v_nom
+    from
+        libs.nomenklatuur n
+    where
+        id = doc_nomid;
+
+    l_lapse_rekvid = lapsed.get_rekv_id_from_viitenumber(doc_viitenumber);
+
+    SELECT
+        id
+    INTO l_nom_id
+    FROM
+        libs.nomenklatuur n
+    WHERE
+          ltrim(rtrim(kood)) = ltrim(rtrim(v_nom.kood))
+      AND rekvid = l_lapse_rekvid
+      AND n.status <> 3
+    ORDER BY id
+    LIMIT 1;
+
+    -- ищем запись в карте
+    SELECT
+        id
+    INTO l_lapse_kaart_id
+    FROM
+        lapsed.lapse_kaart lk
+    WHERE
+          parentid = doc_parentid
+      AND nomid = l_nom_id
+      AND rekvid = l_lapse_rekvid
+      AND staatus <> 3
+      AND (lk.properties ->> 'alg_kpv')::DATE <= make_date(doc_aasta, doc_kuu, 1)
+    ORDER BY (lk.properties ->> 'lopp_kpv')::DATE DESC
+    LIMIT 1;
+
+    IF (l_lapse_kaart_id IS NULL)
+    THEN
+        raise exception 'Puudub  teenused , VN:%, Kood:%', doc_viitenumber, v_nom.kood;
+    END IF;
+
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
@@ -53,30 +105,41 @@ BEGIN
         -- логгирование
 
         json_ajalugu = to_jsonb(row)
-                       FROM (SELECT now()    AS created,
-                                    userName AS user) row;
+                       FROM
+                           (
+                               SELECT
+                                   now()    AS created,
+                                   userName AS user
+                           ) row;
 
-        INSERT INTO lapsed.asendus_taabel (parentid, yksusid, nomid, rekvid, hind, kogus, summa,
-                                           kuu, aasta, viitenumber,
-                                           muud,
-                                           ajalugu)
-        VALUES (doc_parentid, doc_yksusid, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_summa,
-                doc_kuu, doc_aasta, doc_viitenumber,
-                doc_muud,
-                '[]' :: JSONB || json_ajalugu) RETURNING id
-                   INTO doc_id;
+        INSERT INTO
+            lapsed.asendus_taabel (parentid, yksusid, nomid, rekvid, hind, kogus, summa,
+                                   kuu, aasta, viitenumber,
+                                   muud,
+                                   ajalugu)
+        VALUES
+            (doc_parentid, doc_yksusid, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_summa,
+             doc_kuu, doc_aasta, doc_viitenumber,
+             doc_muud,
+             '[]' :: JSONB || json_ajalugu)
+        RETURNING id
+            INTO doc_id;
 
     ELSE
 
         -- логгирование
 
         json_ajalugu = to_jsonb(row)
-                       FROM (SELECT now()    AS updated,
-                                    userName AS user
-                            ) row;
+                       FROM
+                           (
+                               SELECT
+                                   now()    AS updated,
+                                   userName AS user
+                           ) row;
 
         UPDATE lapsed.asendus_taabel
-        SET nomid       = doc_nomid,
+        SET
+            nomid       = doc_nomid,
             yksusid     = doc_yksusid,
             viitenumber = doc_viitenumber,
             hind        = doc_hind,
@@ -87,7 +150,9 @@ BEGIN
             muud        = doc_muud,
             ajalugu     = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
             staatus     = doc_staatus
-        WHERE id = doc_id RETURNING id
+        WHERE
+            id = doc_id
+        RETURNING id
             INTO doc_id;
 
     END IF;

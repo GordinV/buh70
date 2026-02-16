@@ -9,7 +9,11 @@ BEGIN
 
 --    return true;
 
-    RAISE NOTICE 'l_aasta %, l_kuu %', l_aasta, l_kuu;
+    RAISE NOTICE 'l_aasta %, l_kuu %, l_kpv %, l_rekvid %', l_aasta, l_kuu, l_kpv, l_rekvid;
+if l_kpv is null then
+    l_kpv = get_last_day(date(l_aasta, l_kuu, 1));
+end if;
+
     IF NOT exists(
             SELECT a.id
             FROM ou.aasta a

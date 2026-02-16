@@ -12,7 +12,7 @@ DECLARE
     l_num integer = 0;
     l_multiply integer = 5;
 BEGIN
-
+    l_round_summa = l_summa;
     if l_scale <= 1 then
         -- десятки. ничего не округляем
         l_diff = 0;
@@ -25,6 +25,7 @@ BEGIN
             when l_num in (1, 2) then l_num
             when l_num in (3,4, 6, 7) then abs(5 - l_num)
             when l_num in (8,9) then abs(10 - l_num)
+            else 0
             end)  * 0.01 * l_multiply;
      end if;
 

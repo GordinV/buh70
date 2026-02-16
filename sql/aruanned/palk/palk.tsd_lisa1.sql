@@ -319,7 +319,7 @@ FROM
                         INNER JOIN      com_palklib      pl ON pl.id = po.libId
                                             --                           LEFT OUTER JOIN palk.palk_kaart pk ON pk.lepingId = t.id AND pk.libid = po.libid
 --                           INNER JOIN ou.rekv ON rekv.id = po.rekvid
-                        LEFT OUTER JOIN libs.LIBRARY     l ON l.kood = po.tululiik AND l.library = 'MAKSUKOOD'
+                        LEFT OUTER JOIN libs.LIBRARY     l ON l.kood = po.tululiik AND l.library = 'MAKSUKOOD' and l.status < 3
                         LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
                         LEFT OUTER JOIN (
                                             SELECT
@@ -396,7 +396,7 @@ where isikukood = '47608283744'
 
 union all
          SELECT -1 * sum(c_1410)
-         FROM palk.tsd_lisa_1b('2021-01-01', '2021-01-31', 96, 0 :: INTEGER)
+         FROM palk.tsd_lisa_1('2021-01-01', '2021-01-31', 96, 0 :: INTEGER)
 ) qry
 
 --where isikukood = '35908263723'

@@ -1,19 +1,10 @@
+/*
 const _ = require('lodash');
-const obj = [{
-    isikukood: '36708052213',
-    nimi:'Ivanov Deniss',
-    tululiik:'10'
-},{
-    isikukood: '36708052213',
-    nimi:'Ivanov Deniss',
-    tululiik:'10'
-}];
+const config = require('./../config/narvalv.json');
+let test_config = Object.assign({}, config);
+test_config.pg.database = 'db_test';
+test_config.pg.connection = test_config.pg.connection + '_test';
+*/
 
-let tuluLiigid = ['10','17','33'];
-
-let tl = obj.filter(kiri => {
-
-    return tuluLiigid.indexOf(kiri.tululiik) !== -1;
-})
-
-console.log(tl)
+lFilter = [];
+console.log(lFilter.length)

@@ -25,63 +25,58 @@ SELECT
 FROM (
          SELECT regexp_split_to_array(l, ';') AS f
          FROM regexp_split_to_table(
-                      $$;30.04.2025;0810203 Narva Paemurru Spordikool;Svetlana Guljajeva;;54,00;;0810203;60;3500;08102;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0810203 Narva Paemurru Spordikool;Svetlana Guljajeva;;30,00;;0810203;60;3500;08102;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;;488,00;;0810204;60;3500;08102;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;;60,00;;0810204;60;3500;08102;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0810799 Narva Noortekeskus;Svetlana Guljajeva;;400,00;;0810799;60;3500;08107;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0820101 Narva Keskraamatukogu;Svetlana Guljajeva;;90,00;;0820101;60;3500;08201;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0820101 Narva Keskraamatukogu;Svetlana Guljajeva;;24,00;;0820101;60;3500;08201;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911010 Narva Lasteaed Potsataja;Svetlana Guljajeva;;27,00;;0911010;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911010 Narva Lasteaed Potsataja;Svetlana Guljajeva;;26,00;;0911010;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911018 Narva Vanalinna Lasteaed;Svetlana Guljajeva;;78,00;;0911018;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911027 Narva Lasteaed Pongerjas;Svetlana Guljajeva;;15,00;;0911027;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911031 Narva Lasteaed Sipsik;Svetlana Guljajeva;;151,00;;0911031;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911032 Narva Lasteaed Sademeke;Svetlana Guljajeva;;42,00;;0911032;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911032 Narva Lasteaed Sademeke;Svetlana Guljajeva;;15,00;;0911032;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911032 Narva Lasteaed Sademeke;Svetlana Guljajeva;;15,00;;0911032;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911033 Narva Lasteaed Pingviin;Svetlana Guljajeva;;221,00;;0911033;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911033 Narva Lasteaed Pingviin;Svetlana Guljajeva;;54,00;;0911033;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911033 Narva Lasteaed Pingviin;Svetlana Guljajeva;;107,00;;0911033;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911037 Narva Lasteaed Cipollino;Svetlana Guljajeva;;28,00;;0911037;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911038 Narva Lasteaed Kaoke;Svetlana Guljajeva;;365,00;;0911038;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911038 Narva Lasteaed Kaoke;Svetlana Guljajeva;;84,00;;0911038;60;3500;09110;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921206 Narva 6. Kool;Svetlana Guljajeva;;253,00;;0921206;60;3500;09212;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921204 Narva Kreenholmi Kool;Svetlana Guljajeva;;404,00;;0921204;60;3500;09212;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921204 Narva Kreenholmi Kool;Svetlana Guljajeva;;82,00;;0921204;60;3500;09212;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921204 Narva Kreenholmi Kool;Svetlana Guljajeva;;142,00;;0921204;60;3500;09212;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921210 Narva Paju Kool;Svetlana Guljajeva;;29,00;;0921210;60;3500;09212;;00001;;Sotsiaalkindlustusamet. Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0820201 Narva Kultuurimaja Rugodiv;Svetlana Guljajeva;800,00;800,00;;0820201;60;3500;08202;;25007;;Eesti Kultuurkapital. Kooliteatrite festivali Kuldkalake 2025 läbiviimine;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0860001 Kultuuriosakond;Svetlana Guljajeva;286344,00;286344,00;;0921285;60;3500;09212;;25008;;Haridus- ja Teadusministeerium. 09212 Toetus munitsipaalkoolide pidajatele valmisoleku tagamiseks tasemetööde ja eksamite läbiviimiseks testide andmekogus;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0860001 Kultuuriosakond;Svetlana Guljajeva;114120,00;114120,00;;0921285;60;3500;09212;;25009;;Haridus- ja Teadusministeerium. 09212 Toetus liikumisõpetuse ja loodusainete praktilise õppe läbiviimiseks;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0823601 Narva Linna Sumfooniaorkester;Svetlana Guljajeva;28500,00;28500,00;;0823601;60;352;08236;;25010;;Kultuuriministeerium. Toetus Sumfooniaorkestri kontserttegevuseks 2025;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921210 Narva Paju Kool;Svetlana Guljajeva;48000,00;48000,00;;0921210;21;3500;09212;;25011;;Haridus- ja Teadusministeerium. AI - as an assistant in working with children with special needs;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;2255,00;2255,00;;0921201;60;3500;09212;;25012;;Eesti Töötukassa. A2-taseme eesti keele eksamiks ettevalmistav kursus (11 in.);Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;4269,00;4269,00;;0921201;60;3500;09212;;25012;;Eesti Töötukassa. A2-taseme eesti keele eksamiks ettevalmistav kursus (11 in.);Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0820201 Narva Kultuurimaja Rugodiv;Svetlana Guljajeva;1138,00;1138,00;;0820201;60;3500;08202;;25017;;Eesti Rahvakultuuri Keskus. Toetuse eraldamine eelarvevahenditestLaulu- ja tantsupeoliikumises osalevate kollektiivide juhendajate tööjõukulu 2025aasta;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0820201 Narva Kultuurimaja Rugodiv;Svetlana Guljajeva;612,00;612,00;;0820201;60;3500;08202;;25017;;Eesti Rahvakultuuri Keskus. Toetuse eraldamine eelarvevahenditestLaulu- ja tantsupeoliikumises osalevate kollektiivide juhendajate tööjõukulu 2025aasta;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;48000,00;48000,00;;0921201;21;3500;09212;;25019;;Haridus- ja Teadusministeerium. Meaningful Language Mastery;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;320,00;320,00;;0951005;60;3500;09510;;25020;;Kultuuriministeerium. Pitsifestival;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0911032 Narva Lasteaed Sademeke;Svetlana Guljajeva;10000,00;10000,00;;0911032;60;3500;09110;;25021;;Haridus- ja Teadusministeerium. Keeleoppe metoodikakeskus;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;350,00;350,00;;0951005;60;3500;09510;;25023;;Eesti Kultuurkapital. Raadio teel juhitavate lennumudelite õhuvõitluse korraldamine;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;488,00;488,00;;0921201;60;3500;09212;;25024;;Eesti Olumpiaakadeemia MTÜ. Narva Kesklinna Kooli kooliolümpiamängude korraldamine;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;2267,00;2267,00;;0810204;60;3500;08102;;25025;;NARVA SÕUDEKLUBI ENERGIA MTÜ. Narva Spordikooli Energia sõudmise huviala toetus;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921214 Narva Keeltelutseum;Svetlana Guljajeva;700,00;700,00;;0921214;60;352;09212;;25026;;Kaitseressursside Amet. Riigikaitseõpetuse 2025: välilaagri transport, õppekäik;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921214 Narva Keeltelutseum;Svetlana Guljajeva;2100,00;2100,00;;0921214;60;352;09212;;25026;;Kaitseressursside Amet. Riigikaitseõpetuse 2025: välilaagri transport, õppekäik;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921206 Narva 6. Kool;Svetlana Guljajeva;7200,00;7200,00;;0921206;60;3500;09212;;25027;;Haridus- ja Teadusministeerium. Uussisserändaja toetus põhikoolile ja gümnaasiumile;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;7800,00;7800,00;;0921201;60;3500;09212;;25027;;Haridus- ja Teadusministeerium. Uussisserändaja toetus põhikoolile ja gümnaasiumile;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921204 Narva Kreenholmi Kool;Svetlana Guljajeva;15600,00;15600,00;;0921204;60;3500;09212;;25027;;Haridus- ja Teadusministeerium. Uussisserändaja toetus põhikoolile ja gümnaasiumile;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921210 Narva Paju Kool;Svetlana Guljajeva;3000,00;3000,00;;0921210;60;3500;09212;;25027;;Haridus- ja Teadusministeerium. Uussisserändaja toetus põhikoolile ja gümnaasiumile;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0921214 Narva Keeltelutseum;Svetlana Guljajeva;13200,00;13200,00;;0921214;60;3500;09212;;25027;;Haridus- ja Teadusministeerium. Uussisserändaja toetus põhikoolile ja gümnaasiumile;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0823601 Narva Linna Sumfooniaorkester;Svetlana Guljajeva;1200,00;1200,00;;0823601;60;3500;08236;;25028;;Eesti Kultuurkapital. Kontsert - etenduse Kogu pere ja orkestriga esineva etleja jaoks;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0823601 Narva Linna Sumfooniaorkester;Svetlana Guljajeva;1500,00;1500,00;;0823601;60;3500;08236;;25029;;Eesti Kultuurkapital. Johann Sebastian Bachi ja Georg Friedrich Händeli 340. sünniaastapäeva kontsertide korraldamine;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0951004 Narva Muusikakool;Svetlana Guljajeva;1500,00;1500,00;;0951004;60;3500;09510;;25030;;Eesti Kultuurkapital. Noorte segakoori Vaimustus ja poistekoori osalemine ESTO 2025 üritusel;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;780,00;780,00;;0951005;60;3500;09510;;25032;;Eesti Kultuurkapital. Pitsifestivali korraldamisele;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;3500,00;3500,00;;0951005;60;3500;09510;;25033;;Eesti Kultuurkapital. Narva Laste Loomemaja tantsurühmale rahvarõivakomplektide õmblemine;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0951002 Narva Kunstikool;Svetlana Guljajeva;2000,00;2000,00;;0951002;60;3500;09510;;25034;;Eesti Rahvakultuuri Keskus. Virumaa pärandi hoidmine ja tulevikule suunamine kunsti kaudu;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0820201 Narva Kultuurimaja Rugodiv;Svetlana Guljajeva;446,00;446,00;;0820201;60;3500;08202;;25035;;Eesti Rahvakultuuri Keskus. Kadrina khk otsiktanude valmistamise õpituba Narva rahvatantsuansamblile Jun-Ost;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0951004 Narva Muusikakool;Svetlana Guljajeva;2600,00;2600,00;;0951004;60;3500;09510;;25037;;Eesti Kultuurkapital. Noorte segakoori Vaimustus ja poistekoori osalemine ESTO 2025 üritusel;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN
-;30.04.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;150,00;150,00;;0810204;60;3500;08102;;25041;;Narva Motoklub MTÜ. Narva Spordikooli Energia treeningute laiviimine motospordi huvialal;Narva Linnavalitsuse Kultuuriosakonna PP.04.2025 taotlus nr 9.1-19-NNNN$$, '\n') AS l) t;
+                      $$;30.09.2025;0810203 Narva Paemurru Spordikool;Svetlana Guljajeva;;379;;0810203;60;3500;08102;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810203 Narva Paemurru Spordikool;Svetlana Guljajeva;72;72;;0810203;60;3500;08102;;25076;Eesti Töötukassa avalik;0810203 Eesti keele B2-taseme eksamiks ettevalmistamisele suunatud täienduskoolitus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;230;230;;0810204;60;3500;08102;;25041;FÜÜSILISED ISIKUD isik;0810204 Narva Spordikooli Energia treeningute labiviimine motospordi huvialal;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;6992;6992;;0810204;60;3500;08102;;25040;Eesti Töötukassa avalik;0810204 Eesti keele B1 taseme eksamiks ettevalmisttav kursus (4 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;15945;15945;;0810204;60;3500;08102;;25038;Eesti Töötukassa avalik;0810204 Eesti keele A2 taseme eksamiks ettevalmisttav kursus (9 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;1271;1271;;0810204;60;3500;08102;;25043;Eesti Töötukassa avalik;0810204 Eesti keele A2 taseme eksamiks ettevalmisttav kursus (1 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;4481;4481;;0810204;60;3500;08102;;25039;Eesti Töötukassa avalik;0810204 Eesti keele A2 taseme eksamiks ettevalmisttav kursus (3 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;180;180;;0810204;60;3500;08102;;25041;Narva Motoklub MTU;0810204 Narva Spordikooli Energia treeningute labiviimine motospordi huvialal;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810204 Narva Spordikool Energia;Svetlana Guljajeva;;68;;0810204;60;3500;08102;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0951004 Narva Muusikakool;Svetlana Guljajeva;;214;;0951004;60;3500;09510;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;;211;;0951005;60;3500;09510;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;2907;2907;;0951005;60;3500;09510;;24063;Kliimaministeerium riik;0951005 Taaskasutus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;2440;2440;;0951005;21;3500;09510;;25071;Regionaal- ja Põllumajandusministeerium riik;0951005 Loodus kõneleb…;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;5316;5316;;0951005;39;3500;09510;;25046;YOUTH4YOUTH-GIOVANI IN MOVIMEN mitteresident;0951005 MyMusicAlley;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0951005 Narva Laste Loomemaja;Svetlana Guljajeva;300;300;;0951005;60;3500;09510;;25077;Eesti Kultuurkapital avalik;0951005 Male sokolaaditurniiride korraldamine;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810799 Narva Noortekeskus;Svetlana Guljajeva;500;500;;0810799;60;3500;08107;;25053;Eesti Noorteühenduste Liit MTU;0810799 Oleviku Otsustajad;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0810799 Narva Noortekeskus;Svetlana Guljajeva;2000;2000;;0810799;60;3500;08107;;25078;Eesti Noorteühenduste Liit MTU;0810799 Minu linn – minu valik;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0820101 Narva Keskraamatukogu;Svetlana Guljajeva;4246;4246;;0820101;60;3500;08201;;25066;OÜ Vestifex OU;0820101 Õpiränded konsortsiumi liikmega;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0820101 Narva Keskraamatukogu;Svetlana Guljajeva;;182;;0820101;60;3500;08201;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0820201 Narva Kultuurimaja Rugodiv;Svetlana Guljajeva;1749;1749;;0820201;60;3500;08202;;25017;Eesti Rahvakultuuri Keskus riik;0820201 Toetuse eraldamine eelarvevahenditestLaulu- ja tantsupeoliikumises osalevate kollektiivide juhendajate tööjõukulu 2025aasta;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0820201 Narva Kultuurimaja Rugodiv;Svetlana Guljajeva;;646;;0820201;60;3500;08202;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911010 Narva Lasteaed Potsataja;Svetlana Guljajeva;340;340;;0911010;60;3500;09110;;21112;Põllumajanduse Registrite Ja Informatsiooni Amet riik;0911010 PRIA puvilja- ja koogiviljatoetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911010 Narva Lasteaed Potsataja;Svetlana Guljajeva;4832;4832;;0911010;39;3500;09110;;25075;Kedainiai kindergarten Vaikyste mitteresident;0911010 Eco-Tech Explorers;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911027 Narva Lasteaed Pongerjas;Svetlana Guljajeva;122;122;;0911027;60;3500;09110;;25068;Sotsiaalministeerium riik;0911027 Lapse tervis;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911027 Narva Lasteaed Pongerjas;Svetlana Guljajeva;;63;;0911027;60;3500;09110;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911031 Narva Lasteaed Sipsik;Svetlana Guljajeva;679;679;;0911031;60;3500;09110;;24127;Eesti Töötukassa avalik;0911031 Koolitustoetuse maksmine (B1);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911032 Narva Lasteaed Sademeke;Svetlana Guljajeva;255;255;;0911032;60;3500;09110;;22100;Põllumajanduse Registrite Ja Informatsiooni Amet riik;0911032 PRIA puvilja- ja koogiviljatoetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911033 Narva Lasteaed Pingviin;Svetlana Guljajeva;;98;;0911033;60;3500;09110;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911034 Narva Lasteaed Kirsike;Svetlana Guljajeva;243;243;;0911034;60;3500;09110;;25065;Sotsiaalministeerium riik;0911034 Lapse tervis;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911034 Narva Lasteaed Kirsike;Svetlana Guljajeva;522;522;;0911034;21;3500;09110;;25013;Põllumajanduse Registrite Ja Informatsiooni Amet riik;0911034 Ise kasvatame, ise valmistame, ise sööme;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911037 Narva Lasteaed Cipollino;Svetlana Guljajeva;82;82;;0911037;60;3500;09110;;24119;Eesti Töötukassa avalik;0911037 Eesti keele B2 taseme eksamiks ettevalmisttav kursus (1 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911037 Narva Lasteaed Cipollino;Svetlana Guljajeva;408;408;;0911037;60;3500;09110;;22017;Põllumajanduse Registrite Ja Informatsiooni Amet riik;0911037 PRIA puvilja- ja koogiviljatoetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911038 Narva Lasteaed Kaoke;Svetlana Guljajeva;;342;;0911038;60;3500;09110;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0911038 Narva Lasteaed Kaoke;Svetlana Guljajeva;300;300;;0911038;60;3500;09110;;21113;Põllumajanduse Registrite Ja Informatsiooni Amet riik;0911038 PRIA puvilja- ja koogiviljatoetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;6360;6360;;0921201;60;3500;09212;;25012;Eesti Töötukassa avalik;0921201 A2-taseme eesti keele eksamiks ettevalmistav kursus (11 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;6072;6072;;0921201;60;3500;09601;;22120;Põllumajanduse Registrite Ja Informatsiooni Amet riik;09212 Mahe koolitoidu toetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921201 Narva Kesklinna Kool;Svetlana Guljajeva;;366;;0921201;60;3500;09212;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921204 Narva Kreenholmi Kool;Svetlana Guljajeva;3775;3775;;0921204;60;3500;09601;;22120;Põllumajanduse Registrite Ja Informatsiooni Amet riik;09212 Mahe koolitoidu toetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921204 Narva Kreenholmi Kool;Svetlana Guljajeva;;654;;0921204;60;3500;09212;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921210 Narva Paju Kool;Svetlana Guljajeva;;711;;0921210;60;3500;10403;;00001;Sotsiaalkindlustusamet riik;Hallatavate asutuste töötajate puhkusetasu ja palga hüvitise nõuded;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921214 Narva Keeltelutseum;Svetlana Guljajeva;213;213;;0921214;60;3500;09212;;23060;Kliimaministeerium riik;0921214 Jalgratturi koolitus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921214 Narva Keeltelutseum;Svetlana Guljajeva;5214;5214;;0921214;60;3500;09601;;22120;Põllumajanduse Registrite Ja Informatsiooni Amet riik;09212 Mahe koolitoidu toetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0860001 Kultuuriosakond;Svetlana Guljajeva;2639;2639;;0810901;60;3500;08109;;25067;Ida-Virumaa Omavalitsuste Liit MTU;Laulu-ja tantsupeo transpordikompensatsioon 2025. Narva linna kollektiivid;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0860001 Kultuuriosakond;Svetlana Guljajeva;2000;2000;;0911065;21;3500;09110;;25069;Regionaal- ja Põllumajandusministeerium riik;0860001 Teadusnädal Narvas;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0860001 Kultuuriosakond;Svetlana Guljajeva;4000;4000;;0921285;21;3500;09212;;25069;Regionaal- ja Põllumajandusministeerium riik;0860001 Teadusnädal Narvas;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921211 Narva Pahklimae Kool;Svetlana Guljajeva;175;175;;0921211;60;3500;09212;;23049;Kliimaministeerium riik;0921211 Jalgratturite koolituse koostooleping;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921211 Narva Pahklimae Kool;Svetlana Guljajeva;664;664;;0921211;60;3500;09212;;25022;Eesti Töötukassa avalik;0921211 Eesti keele C1-taseme eksamiks ettevalmistav kursus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921211 Narva Pahklimae Kool;Svetlana Guljajeva;2950;2950;;0921211;60;3500;09212;;25018;Eesti Töötukassa avalik;0921211 Eesti keele B2-taseme eksamiks ettevalmistav kursus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921211 Narva Pahklimae Kool;Svetlana Guljajeva;5755;5755;;0921211;60;3500;09601;;22120;Põllumajanduse Registrite Ja Informatsiooni Amet riik;09212 Mahe koolitoidu toetus;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921211 Narva Pahklimae Kool;Svetlana Guljajeva;2500;2500;;0921211;60;3500;09212;;25064;Eesti Töötukassa avalik;0921211 B1-taseme eesti keele eksamiks ettevalmistav kursus (1 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921211 Narva Pahklimae Kool;Svetlana Guljajeva;2500;2500;;0921211;60;3500;09212;;24109;Eesti Töötukassa avalik;0921211 B2-taseme eesti keele eksamiks ettevalmistav kursus (2 in.);Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN
+;30.09.2025;0921211 Narva Pahklimae Kool;Svetlana Guljajeva;5606;5606;;0921211;39;3500;09212;;25036;Het Palet Hapert Primary School mitteresident;0921211 Art in inclusive education;Narva Linnavalitsuse Kultuuriosakonna PP.11.2025 taotlus nr 9.1-19-NNNNN$$, '\n') AS l) t;
 */
 DROP FUNCTION IF EXISTS import_taotlused;
 
@@ -112,7 +107,7 @@ BEGIN
                             select id from ou.rekv where nimetus ilike ltrim(rtrim(v_asutus.asutus)) || '%' limit 1
                         );
             l_user_id = (
-                            select id from ou.userid where rekvid = l_rekv_id and kasutaja = 'margarita.tolkova' limit 1
+                            select id from ou.userid where rekvid = l_rekv_id and kasutaja = 'svetlana.guljajeva' limit 1
                         );
             if l_rekv_id is null or l_user_id is null then
                 raise exception 'Puudub kasutaja voi asutus l_rekv_id %, l_user_id %', l_rekv_id, l_user_id;
@@ -130,11 +125,11 @@ BEGIN
                                                 'kood5', v_taotlus.artikkel, 'selg', v_taotlus.rea_selg, 'proj',
                                                 v_taotlus.projekt,
                                                 'tunnus', v_taotlus.tunnus,
-                                                'summa', case when empty(v_taotlus.tekke) then '0' else replace(v_taotlus.tekke , ',', '.') end,
-                                                'summa_kassa', case when empty(v_taotlus.kassa) then '0' else replace(v_taotlus.kassa , ',', '.') end);
+                                                'summa', case when empty(v_taotlus.tekke) then '0' else replace (replace(v_taotlus.tekke , ',', '.'),' ','')   end,
+                                                'summa_kassa', case when empty(v_taotlus.kassa) then '0' else  replace ( replace(v_taotlus.kassa , ',', '.'),' ','') end);
                     l_count = l_count + 1;
                 end loop;
-            l_json =  jsonb_build_object('id', 0,'koostajaid',l_user_id, 'tunnus',1, 'aasta', 2025, 'kpv', '2025-04-30', 'gridData', l_json);
+            l_json =  jsonb_build_object('id', 0,'koostajaid',l_user_id, 'tunnus',1, 'aasta', 2025, 'kpv', '2025-09-30', 'gridData', l_json);
             l_json =  jsonb_build_object('id', 0, 'data', l_json);
             l_doc_id = eelarve.sp_salvesta_taotlus(l_json::json, l_user_id, l_rekv_id);
             if coalesce(l_doc_id, 0) = 0 then
@@ -153,19 +148,11 @@ $$;
 
 SELECT import_taotlused();
 
-DROP FUNCTION IF EXISTS import_taotlused;
+--DROP FUNCTION IF EXISTS import_taotlused;
 --DROP TABLE IF EXISTS tmp_viitenr;
 /*
- select trim(replace(vn,E'\n',''),'"'), vn, ik, asutus from tmp_viitenr_kustuta
+select * from eelarve.taotlus order by id desc limit 10
 
-SELECT id FROM ou.rekv WHERE left(nimetus, 10) = left(trim('"0911027 Narva Lasteaed Pongerjas T"','"'), 10) LIMIT 1
-
-          FROM lapsed.viitenr
-            WHERE isikukood = v_vn.ik
-              AND rekv_id = l_rekv_id
-              AND viitenumber = trim(replace(v_vn.vn,E'\n',''),'"');
-
-select * from tmp_viitenr_kustuta
- where vn = '9366554'
+select * from eelarve.taotlus1 where parentid = 30006
 
  */

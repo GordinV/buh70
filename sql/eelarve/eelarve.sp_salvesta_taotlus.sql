@@ -40,7 +40,6 @@ DECLARE
     is_import      BOOLEAN = data ->> 'import';
 BEGIN
 
-    raise notice 'start salvestamine doc_data %', doc_data;
 
     SELECT kasutaja
     INTO userName
@@ -57,6 +56,13 @@ BEGIN
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
+
+    -- контроль периода для модуля Eelarve
+    IF NOT (ou.fnc_aasta_eelarve_kontrol(user_rekvid, doc_kpv))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. Eelarve kinni';
+    END IF;
+
 
     -- проверка на символы
     PERFORM check_text(doc_muud);

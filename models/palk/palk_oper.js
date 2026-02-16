@@ -137,6 +137,7 @@ const PalkOper = {
             alias: 'relations',
             data: []
         },
+
     ],
     grid: {
         gridConfiguration: [
@@ -150,61 +151,79 @@ const PalkOper = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Status", width: "100px"}
         ],
-        sqlString: `SELECT d.*
-                    FROM (SELECT d.id,
-                                 p.kpv,
-                                 p.summa,
-                                 p.rekvid,
-                                 a.regkood                                                                                  AS isikukood,
-                                 a.nimetus                                                                                  AS isik,
-                                 a.id                                                                                       as isikid,
-                                 coalesce(jid.number, 0)                                                                    AS journalid,
-                                 coalesce(j.parentid, 0)                                                                    AS lausend_id,
-                                 o.kood                                                                                     AS osakond,
-                                 lib.nimetus,
-                                 ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
-                                 ((enum_range(NULL :: PALK_OPER_LIIK))[CASE ((lib.properties :: JSONB ->> 'liik') ||
-                                                                             (lib.properties :: JSONB ->> 'asutusest')) :: TEXT
-                                                                           WHEN '10'
-                                                                               THEN 1
-                                                                           WHEN '20'
-                                                                               THEN 2
-                                                                           WHEN '40'
-                                                                               THEN 2
-                                                                           WHEN '70'
-                                                                               THEN 2
-                                                                           WHEN '71'
-                                                                               THEN 3
-                                                                           WHEN '80'
-                                                                               THEN 2
-                                                                           WHEN '60'
-                                                                               THEN 2
-                                                                           ELSE 3 END]) :: VARCHAR(20)                      AS liik,
-                                 (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                           AS tululiik,
-                                 coalesce(p.konto, '')::varchar(20)                                                         as konto,
-                                 coalesce(p.kood2, '')::varchar(20)                                                         as allikas,
-                                 coalesce(p.tunnus, '')::varchar(20)                                                        as tunnus,
-                                 coalesce(p.proj, '')::varchar(20)                                                          as proj,
-                                 coalesce(lib.tun1, 0)::INTEGER                                                             AS is_ametiuhingu_liikme,
-                                 (lib.properties :: JSONB ->> 'asutusest') :: BOOLEAN                                       AS is_asutusest,
-                                 (lib.properties :: JSONB ->> 'maks') :: BOOLEAN                                            AS is_maksustatav,
-                                 (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks
+        sqlString: `SELECT
+                        d.*
+                    FROM
+                        (
+                            SELECT
+                                d.id,
+                                p.kpv,
+                                p.summa,
+                                p.rekvid,
+                                a.regkood                                                                                  AS isikukood,
+                                a.nimetus                                                                                  AS isik,
+                                a.id                                                                                       as isikid,
+                                coalesce(jid.number, 0)                                                                    AS journalid,
+                                coalesce(j.parentid, 0)                                                                    AS lausend_id,
+                                o.kood                                                                                     AS osakond,
+                                amet.kood                                                                                  as ameti_kood,
+                                lib.nimetus,
+                                ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                                ((enum_range(NULL :: PALK_OPER_LIIK))[CASE ((lib.properties :: JSONB ->> 'liik') ||
+                                                                            (lib.properties :: JSONB ->> 'asutusest')) :: TEXT
+                                                                          WHEN '10'
+                                                                              THEN 1
+                                                                          WHEN '20'
+                                                                              THEN 2
+                                                                          WHEN '40'
+                                                                              THEN 2
+                                                                          WHEN '70'
+                                                                              THEN 2
+                                                                          WHEN '71'
+                                                                              THEN 3
+                                                                          WHEN '80'
+                                                                              THEN 2
+                                                                          WHEN '60'
+                                                                              THEN 2
+                                                                          ELSE 3 END]) :: VARCHAR(20)                      AS liik,
+                                (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                           AS tululiik,
+                                coalesce(p.konto, '')::varchar(20)                                                         as konto,
+                                coalesce(p.kood1, '')::varchar(20)                                                         as tegev,
+                                coalesce(p.kood4, '')::varchar(20)                                                         as uritus,
+                                coalesce(p.kood2, '')::varchar(20)                                                         as allikas,
+                                coalesce(p.tunnus, '')::varchar(20)                                                        as tunnus,
+                                coalesce(p.proj, '')::varchar(20)                                                          as proj,
+                                coalesce(lib.tun1, 0)::INTEGER                                                             AS is_ametiuhingu_liikme,
+                                (lib.properties :: JSONB ->> 'asutusest') :: BOOLEAN                                       AS is_asutusest,
+                                (lib.properties :: JSONB ->> 'maks') :: BOOLEAN                                            AS is_maksustatav,
+                                (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks,
+                                coalesce((p.properties ->> 'kas_ettemaks')::boolean, false)::BOOLEAN                       AS is_ettemaks
 
-                          FROM docs.doc d
-                                   INNER JOIN palk.palk_oper p ON p.parentid = d.id
-                                   INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
-                                   INNER JOIN palk.tooleping t ON p.lepingid = t.id
-                                   INNER JOIN libs.asutus a ON t.parentid = a.id
-                                   LEFT OUTER JOIN libs.library o ON o.id = t.osakondid
-                                   LEFT OUTER JOIN docs.doc dd ON p.journalid = dd.id
-                                   LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
-                                   LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
-                          WHERE d.doc_type_id IN (SELECT id
-                                                  FROM libs.library l
-                                                  WHERE l.library = 'DOK'
-                                                    AND l.kood = 'PALK_OPER')
-                            AND d.status <> 3) d
-                    WHERE d.rekvId = $1
+                            FROM
+                                docs.doc                           d
+                                    INNER JOIN      palk.palk_oper p ON p.parentid = d.id
+                                    INNER JOIN      libs.library   lib ON p.libid = lib.id AND lib.library = 'PALK'
+                                    INNER JOIN      palk.tooleping t ON p.lepingid = t.id
+                                    INNER JOIN      libs.asutus    a ON t.parentid = a.id
+                                    LEFT OUTER JOIN libs.library   o ON o.id = t.osakondid
+                                    LEFT OUTER JOIN libs.library   amet ON amet.id = t.ametid
+                                    LEFT OUTER JOIN docs.doc       dd ON p.journalid = dd.id
+                                    LEFT OUTER JOIN docs.journal   j ON j.parentid = dd.id
+                                    LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+                            WHERE
+                                  d.doc_type_id IN (
+                                                       SELECT
+                                                           id
+                                                       FROM
+                                                           libs.library l
+                                                       WHERE
+                                                             l.library = 'DOK'
+                                                         AND l.kood = 'PALK_OPER'
+                                                   )
+                              AND d.status <> 3
+                        ) d
+                    WHERE
+                          d.rekvId = $1
                       AND coalesce(docs.usersRigths(d.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curPalkOper'

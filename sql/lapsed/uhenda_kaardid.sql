@@ -119,7 +119,7 @@ $BODY$
     COST 100;
 
 /*
-select lapsed.uhenda_kaardid('50611103715', '50611103713')
+select lapsed.uhenda_kaardid('61910080073', ' 6191008007')
 
 select * from lapsed.lapse_kaart where parentid = 10329
 

@@ -179,13 +179,343 @@ CREATE OR REPLACE FUNCTION palk.palk_kaart_2025(l_kpv1 DATE, l_kpv2 DATE, l_rekv
 AS
 $BODY$
 with
-    params as (select *,
-                      l_kpv1                                                                                                                    as kpv_1,
-                      l_kpv2                                                                                                                    as kpv_2,
-                      l_rekvid as rekv_id
-                          from palk.palk_kulu_kontod
+    params as (
+                  select *,
+                         l_kpv1                                                                                                                                    as kpv_1,
+                         l_kpv2                                                                                                                                    as kpv_2,
+                         l_rekvid                                                                                                                                  as rekv_id,
+                         array ['50000002', '50010002', '50012002', '50014002', '50021002', '50024002','50025002', '50026002', '50027002', '50028002', '50029002'] as eri_kontod
+
+                  from
+                      palk.palk_kulu_kontod
               ),
+    qryPuudumine AS (
+                        -- собираем здесь данные о пропусках раб. места, сгруппированные по договорам , по месяцам
+                  WITH
+                      puudumised_paevad AS (
+                                               WITH
+                                                   qryKuu AS (
+                                                                 SELECT
+                                                                     kuu,
+                                                                     year(p.kpv_1) AS aasta,
+                                                                     t.id          AS lepingid
+                                                                 FROM
+                                                                     unnest('{1,2,3,4,5,6,7,8,9,10,11,12}' :: INTEGER[]) AS kuu,
+                                                                     palk.tooleping                                         t,
+                                                                     params                                                 p
+                                                                 WHERE
+                                                                     t.rekvid = p.rekv_id
+                                                                 ORDER BY lepingid, kuu, aasta
+                                                             ),
+                                                   qryKorPuudu AS (
+                                                                 SELECT
+                                                                     p.id                    AS p_id,
+                                                                     q.alg_kpv,
+                                                                     q.lopp_kpv,
+                                                                     p.kpv1                  AS kpv_1,
+                                                                     p.kpv2                  AS kpv_2,
+                                                                     CASE
+                                                                         WHEN p.kpv1 >= q.alg_kpv AND month(p.kpv1) = month(q.alg_kpv)
+                                                                             THEN p.kpv1
+                                                                         ELSE q.alg_kpv END  AS kpv1,
+                                                                     CASE
+                                                                         WHEN p.kpv2 <= q.lopp_kpv AND MONTH(p.kpv2) = MONTH(q.lopp_kpv)
+                                                                             THEN p.kpv2
+                                                                         ELSE q.lopp_kpv END AS kpv2,
+                                                                     CASE
+                                                                         WHEN month(p.kpv1) = month(p.kpv2)
+                                                                             THEN p.paevad
+
+                                                                         WHEN p.kpv1 >= q.alg_kpv AND MONTH(p.kpv1) = MONTH(q.alg_kpv)
+                                                                             THEN palk.get_days_of_month_in_period(
+                                                                                 kuu,
+                                                                                 aasta,
+                                                                                 p.kpv1,
+                                                                                 (q.alg_kpv +
+                                                                                  INTERVAL
+                                                                                      '1 month')::DATE - 1,
+                                                                                 TRUE,
+                                                                                 puudumiste_liik =
+                                                                                 'PUHKUS')
+                                                                         WHEN
+                                                                             MONTH(p.kpv1) <
+                                                                             MONTH(q.alg_kpv) AND
+                                                                             MONTH(p.kpv2) =
+                                                                             MONTH(q.lopp_kpv)
+                                                                             THEN palk.get_days_of_month_in_period(
+                                                                                 kuu,
+                                                                                 aasta,
+                                                                                 make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
+                                                                                 p.kpv2,
+                                                                                 TRUE,
+                                                                                 puudumiste_liik =
+                                                                                 'PUHKUS')
+                                                                         WHEN p.kpv1 > q.alg_kpv
+                                                                             THEN 0
+                                                                         ELSE palk.get_days_of_month_in_period(
+                                                                                 kuu,
+                                                                                 aasta,
+                                                                                 make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
+                                                                                 q.lopp_kpv,
+                                                                                 TRUE,
+                                                                                 puudumiste_liik =
+                                                                                 'PUHKUS')
+                                                                         END                 AS paevad,
+
+                                                                     p.puudumiste_liik,
+                                                                     p.lepingid,
+                                                                     p.tyyp,
+                                                                     pt.kas_kehtiv,
+                                                                     pt.vs_kooded,
+                                                                     q.kuu,
+                                                                     q.aasta
+                                                                 FROM
+                                                                     (
+                                                                         SELECT
+                                                                             kuu,
+                                                                             aasta,
+                                                                             make_date(aasta, qryKuu.kuu, 1) alg_kpv,
+                                                                             ((make_date(aasta, qryKuu.kuu, 1) + INTERVAL '1 month')::DATE -
+                                                                              1)::DATE AS                    lopp_kpv,
+                                                                             lepingid
+                                                                         FROM
+                                                                             qryKuu
+                                                                     )                                       q,
+                                                                     palk.puudumine                          p
+                                                                         inner join palk.com_puudumiste_tyyp pt
+                                                                                    on pt.liik = p.puudumiste_liik and pt.id = p.tyyp,
+                                                                     params                                  ps
+                                                                 WHERE
+                                                                       p.status <> 'deleted'
+                                                                   AND q.alg_kpv >= ps.kpv_1
+                                                                   AND q.lopp_kpv <= ps.kpv_2
+                                                                   AND p.kpv1 >= ps.kpv_1
+                                                                   AND p.kpv2 <= ps.kpv_2
+                                                                   AND q.lepingid = p.lepingid
+                                                                   AND q.kuu >= MONTH(p.kpv1)
+                                                                   AND q.kuu <= MONTH(p.kpv2)
+                                                             )
+                                               SELECT *
+                                               FROM
+                                                   qryKorPuudu q
+                      )
+                  -- разбиваем дни по периодам
+                  SELECT
+                      lepingid,
+                      CASE
+                          WHEN kuu = 1
+                              THEN paevad
+                          ELSE 0 END AS paevad1,
+                      CASE
+                          WHEN kuu = 2
+                              THEN paevad
+                          ELSE 0 END AS paevad2,
+                      CASE
+                          WHEN kuu = 3
+                              THEN paevad
+                          ELSE 0 END AS paevad3,
+                      CASE
+                          WHEN kuu = 4
+                              THEN paevad
+                          ELSE 0 END AS paevad4,
+                      CASE
+                          WHEN kuu = 5
+                              THEN paevad
+                          ELSE 0 END AS paevad5,
+                      CASE
+                          WHEN kuu = 6
+                              THEN paevad
+                          ELSE 0 END AS paevad6,
+                      CASE
+                          WHEN kuu = 7
+                              THEN paevad
+                          ELSE 0 END AS paevad7,
+                      CASE
+                          WHEN kuu = 8
+                              THEN paevad
+                          ELSE 0 END AS paevad8,
+                      CASE
+                          WHEN kuu = 9
+                              THEN paevad
+                          ELSE 0 END AS paevad9,
+                      CASE
+                          WHEN kuu = 10
+                              THEN paevad
+                          ELSE 0 END AS paevad10,
+                      CASE
+                          WHEN kuu = 11
+                              THEN paevad
+                          ELSE 0 END AS paevad11,
+                      CASE
+                          WHEN kuu = 12
+                              THEN paevad
+                          ELSE 0 END AS paevad12,
+                      puudumiste_liik,
+                      tyyp,
+                      qry.vs_kooded,
+                      qry.kas_kehtiv
+                  FROM
+                      (
+                          SELECT
+                              p.kuu,
+                              p.aasta,
+                              p.paevad,
+                              p.puudumiste_liik,
+                              p.tyyp,
+                              p.vs_kooded,
+                              p.kas_kehtiv,
+                              p.lepingid
+                          FROM
+                              puudumised_paevad             p
+                                  INNER JOIN palk.tooleping t ON t.id = p.lepingid
+                                  AND p.paevad > 0,
+                                                            params
+--                     AND p.puudumiste_liik = 'PUHKUS'
+                          WHERE
+                              t.rekvid = params.rekv_id
+                      ) qry,
+                        params
+                  WHERE
+                        kuu >= month(params.kpv_1)
+                    AND kuu <= month(params.kpv_2)
+                    AND aasta = year(params.kpv_1)
+                  ORDER BY lepingid, kuu, aasta
+              ),
+
     qryPalkOper AS (
+                       -- предварительно выберем операции с ЗП суммированные по месяцам в разрезе договоров
+                       -- разбиваем суммы по месяцам
+                  with
+                      PO as (
+                                SELECT
+                                    (CASE
+                                         WHEN month(po.kpv) = 1
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa1,
+                                    (CASE
+                                         WHEN month(po.kpv) = 2
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa2,
+                                    (CASE
+                                         WHEN month(po.kpv) = 3
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa3,
+                                    (CASE
+                                         WHEN month(po.kpv) = 4
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa4,
+                                    (CASE
+                                         WHEN month(po.kpv) = 5
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa5,
+                                    (CASE
+                                         WHEN month(po.kpv) = 6
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa6,
+                                    (CASE
+                                         WHEN month(po.kpv) = 7
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa7,
+                                    (CASE
+                                         WHEN month(po.kpv) = 8
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa8,
+                                    (CASE
+                                         WHEN month(po.kpv) = 9
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa9,
+                                    (CASE
+                                         WHEN month(po.kpv) = 10
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa10,
+                                    (CASE
+                                         WHEN month(po.kpv) = 11
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa11,
+                                    (CASE
+                                         WHEN month(po.kpv) = 12
+                                             THEN summa
+                                         ELSE 0 END)                                     AS summa12,
+                                    po.lepingid,
+                                    month(po.kpv)                                        AS kuu,
+                                    year(po.kpv)                                         AS aasta,
+                                    po.rekvid,
+                                    ((l.properties :: JSONB ->> 'liik')) :: INTEGER      AS liik,
+                                    ((l.properties :: JSONB ->> 'asutusest')) :: INTEGER AS asutusest,
+                                    po.konto
+                                FROM
+                                    palk.palk_oper              po
+                                        INNER JOIN libs.library l ON l.id = po.libid,
+                                    params                      p
+                                WHERE
+                                      po.kpv >= p.kpv_1
+                                  AND po.kpv <= p.kpv_2
+                                  AND po.rekvid = (
+                                    CASE
+                                        WHEN l_kond IS NOT NULL
+                                            AND NOT empty(l_kond)
+                                            THEN p.rekv_id
+                                        ELSE po.rekvid END)
+                                  AND po.rekvid IN (
+                                                       SELECT
+                                                           rekv_id
+                                                       FROM
+                                                           get_asutuse_struktuur(p.rekv_id)
+                                                   )
+                      )
+                  SELECT
+                      po.lepingid,
+                      po.kuu,
+                      po.aasta,
+                      po.liik,
+                      po.asutusest,
+                      po.konto,
+                      sum(po.summa1)  AS summa1,
+                      sum(po.summa2)  AS summa2,
+                      sum(po.summa3)  AS summa3,
+                      sum(po.summa4)  AS summa4,
+                      sum(po.summa5)  AS summa5,
+                      sum(po.summa6)  AS summa6,
+                      sum(po.summa7)  AS summa7,
+                      sum(po.summa8)  AS summa8,
+                      sum(po.summa9)  AS summa9,
+                      sum(po.summa10) AS summa10,
+                      sum(po.summa11) AS summa11,
+                      sum(po.summa12) AS summa12
+                  FROM
+                      po
+                  GROUP BY po.lepingid, kuu, aasta, liik, konto, asutusest
+                  union all
+                  SELECT
+                      l.lepingid,
+                      month(p.kpv_2) as kuu,
+                      month(p.kpv_2) as aasta,
+                      1              as liik,
+                      0              as asutusest,
+                      ''             as konto,
+                      0              AS summa1,
+                      0              AS summa2,
+                      0              AS summa3,
+                      0              AS summa4,
+                      0              AS summa5,
+                      0              AS summa6,
+                      0              AS summa7,
+                      0              AS summa8,
+                      0              AS summa9,
+                      0              AS summa10,
+                      0              AS summa11,
+                      0              AS summa12
+                  from
+                      params p,
+                      (
+                          select distinct
+                              lepingid
+                          from
+                              qryPuudumine
+                      )      l
+              )
+
+/*    qryPalkOper_vana AS (
                        -- предварительно выберем операции с ЗП суммированные по месяцам в разрезе договоров
                   SELECT
                       qryPalkOper.lepingid,
@@ -285,6 +615,7 @@ with
                       ) qryPalkOper
                   GROUP BY qryPalkOper.lepingid, kuu, aasta, liik, konto, asutusest
               )
+*/
 SELECT
     a.regkood :: VARCHAR(20)                  AS isikukood,
     a.nimetus :: VARCHAR(254)                 AS isik,
@@ -487,6 +818,9 @@ FROM
                                 (po.konto IN (
                                                  SELECT
                                                      unnest(p.pohi_palk_kontod)
+                                                 union all
+                                                 select
+                                                     '' as konto
                                              )
                                     )
                             AND po.liik = 1
@@ -573,10 +907,41 @@ FROM
                                 po.konto IN (
                                                 SELECT
                                                     unnest(p.preemiad_kontod)
+                                                union all
+                                                SELECT
+                                                    unnest(p.aasta_preemiad_kontod)
+
                                             )
                             AND po.liik = 1
                           GROUP BY lepingid, po.liik
                           UNION ALL
+                          -- Tasu maksmine teenistuse takistuse korral
+                          SELECT
+                              po.lepingid,
+                              sum(summa1)                                                 AS summa1,
+                              sum(summa2)                                                 AS summa2,
+                              sum(summa3)                                                 AS summa3,
+                              sum(summa4)                                                 AS summa4,
+                              sum(summa5)                                                 AS summa5,
+                              sum(summa6)                                                 AS summa6,
+                              sum(summa7)                                                 AS summa7,
+                              sum(summa8)                                                 AS summa8,
+                              sum(summa9)                                                 AS summa9,
+                              sum(summa10)                                                AS summa10,
+                              sum(summa11)                                                AS summa11,
+                              sum(summa12)                                                AS summa12,
+                              'Tasu maksmine teenistuse takistuse korral' :: VARCHAR(254) AS NIMETUS,
+                              35                                                          AS idx,
+                              po.liik
+                          FROM
+                              qryPalkOper po,
+                              params      p
+                          WHERE
+                                po.liik = 1
+                            and po.konto = any (p.eri_kontod) -- выделим их в отдельную запись
+                          GROUP BY lepingid, po.liik
+                          UNION ALL
+                          -- Puhkusetasud
                           SELECT
                               po.lepingid,
                               sum(summa1)                    AS summa1,
@@ -602,8 +967,9 @@ FROM
                                                  SELECT
                                                      unnest(p.puhkused_kontod)
                                              )
-                                    OR left(po.konto, 6) IN ('500153', '500203')
+                                    OR left(po.konto, 6) IN ('500153', '500203', '103560')
                                     )
+                            and po.konto not in  (select unnest(p.eri_kontod)) -- выделим их в отдельную запись
                             AND po.liik = 1
                           GROUP BY lepingid, po.liik
                           UNION ALL
@@ -965,197 +1331,6 @@ FROM
         GROUP BY preArv.lepingid, qryKokku.lepingid, nimetus, liik, idx
     )                                  po
         LEFT OUTER JOIN (
-                            WITH
-                                qryPuudumine AS (
-                                                    -- собираем здесь данные о пропусках раб. места, сгруппированные по договорам , по месяцам
-                                                    WITH
-                                                        puudumised_paevad AS (
-                                                                                 WITH
-                                                                                     qryKuu AS (
-                                                                                                   SELECT
-                                                                                                       kuu,
-                                                                                                       year(p.kpv_1) AS aasta,
-                                                                                                       t.id          AS lepingid
-                                                                                                   FROM
-                                                                                                       unnest('{1,2,3,4,5,6,7,8,9,10,11,12}' :: INTEGER[]) AS kuu,
-                                                                                                       palk.tooleping                                         t,
-                                                                                                       params                                                 p
-                                                                                                   WHERE
-                                                                                                       t.rekvid = p.rekv_id
-                                                                                                   ORDER BY lepingid, kuu, aasta
-                                                                                               ),
-                                                                                     qryKorPuudu AS (
-                                                                                                   SELECT
-                                                                                                       p.id                    AS p_id,
-                                                                                                       q.alg_kpv,
-                                                                                                       q.lopp_kpv,
-                                                                                                       p.kpv1                  AS kpv_1,
-                                                                                                       p.kpv2                  AS kpv_2,
-                                                                                                       CASE
-                                                                                                           WHEN p.kpv1 >= q.alg_kpv AND month(p.kpv1) = month(q.alg_kpv)
-                                                                                                               THEN p.kpv1
-                                                                                                           ELSE q.alg_kpv END  AS kpv1,
-                                                                                                       CASE
-                                                                                                           WHEN p.kpv2 <= q.lopp_kpv AND MONTH(p.kpv2) = MONTH(q.lopp_kpv)
-                                                                                                               THEN p.kpv2
-                                                                                                           ELSE q.lopp_kpv END AS kpv2,
-                                                                                                       CASE
-                                                                                                           WHEN month(p.kpv1) = month(p.kpv2)
-                                                                                                               THEN p.paevad
-
-                                                                                                           WHEN p.kpv1 >= q.alg_kpv AND MONTH(p.kpv1) = MONTH(q.alg_kpv)
-                                                                                                               THEN palk.get_days_of_month_in_period(
-                                                                                                                   kuu,
-                                                                                                                   aasta,
-                                                                                                                   p.kpv1,
-                                                                                                                   (q.alg_kpv +
-                                                                                                                    INTERVAL
-                                                                                                                        '1 month')::DATE,
-                                                                                                                   FALSE,
-                                                                                                                   puudumiste_liik =
-                                                                                                                   'PUHKUS')
-                                                                                                           WHEN
-                                                                                                               MONTH(p.kpv1) <
-                                                                                                               MONTH(q.alg_kpv) AND
-                                                                                                               MONTH(p.kpv2) =
-                                                                                                               MONTH(q.lopp_kpv)
-                                                                                                               THEN palk.get_days_of_month_in_period(
-                                                                                                                   kuu,
-                                                                                                                   aasta,
-                                                                                                                   make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
-                                                                                                                   p.kpv2,
-                                                                                                                   FALSE,
-                                                                                                                   puudumiste_liik =
-                                                                                                                   'PUHKUS')
-                                                                                                           WHEN p.kpv1 > q.alg_kpv
-                                                                                                               THEN 0
-                                                                                                           ELSE palk.get_days_of_month_in_period(
-                                                                                                                   kuu,
-                                                                                                                   aasta,
-                                                                                                                   make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
-                                                                                                                   q.lopp_kpv,
-                                                                                                                   FALSE,
-                                                                                                                   puudumiste_liik =
-                                                                                                                   'PUHKUS')
-                                                                                                           END                 AS paevad,
-
-                                                                                                       p.puudumiste_liik,
-                                                                                                       p.lepingid,
-                                                                                                       p.tyyp,
-                                                                                                       pt.kas_kehtiv,
-                                                                                                       pt.vs_kooded,
-                                                                                                       q.kuu,
-                                                                                                       q.aasta
-                                                                                                   FROM
-                                                                                                       (
-                                                                                                           SELECT
-                                                                                                               kuu,
-                                                                                                               aasta,
-                                                                                                               make_date(aasta, qryKuu.kuu, 1) alg_kpv,
-                                                                                                               ((make_date(aasta, qryKuu.kuu, 1) + INTERVAL '1 month')::DATE -
-                                                                                                                1)::DATE AS                    lopp_kpv,
-                                                                                                               lepingid
-                                                                                                           FROM
-                                                                                                               qryKuu
-                                                                                                       )                                       q,
-                                                                                                       palk.puudumine                          p
-                                                                                                           inner join palk.com_puudumiste_tyyp pt
-                                                                                                                      on pt.liik = p.puudumiste_liik and pt.id = p.tyyp,
-                                                                                                       params                                  ps
-                                                                                                   WHERE
-                                                                                                         p.status <> 'deleted'
-                                                                                                     AND q.alg_kpv >= ps.kpv_1
-                                                                                                     AND q.lopp_kpv <= ps.kpv_2
-                                                                                                     AND p.kpv1 >= ps.kpv_1
-                                                                                                     AND p.kpv2 <= ps.kpv_2
-                                                                                                     AND q.lepingid = p.lepingid
-                                                                                                     AND q.kuu >= MONTH(p.kpv1)
-                                                                                                     AND q.kuu <= MONTH(p.kpv2)
-                                                                                               )
-                                                                                 SELECT *
-                                                                                 FROM
-                                                                                     qryKorPuudu q
-                                                        )
-                                                    -- разбиваем дни по периодам
-                                                    SELECT
-                                                        lepingid,
-                                                        CASE
-                                                            WHEN kuu = 1
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad1,
-                                                        CASE
-                                                            WHEN kuu = 2
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad2,
-                                                        CASE
-                                                            WHEN kuu = 3
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad3,
-                                                        CASE
-                                                            WHEN kuu = 4
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad4,
-                                                        CASE
-                                                            WHEN kuu = 5
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad5,
-                                                        CASE
-                                                            WHEN kuu = 6
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad6,
-                                                        CASE
-                                                            WHEN kuu = 7
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad7,
-                                                        CASE
-                                                            WHEN kuu = 8
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad8,
-                                                        CASE
-                                                            WHEN kuu = 9
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad9,
-                                                        CASE
-                                                            WHEN kuu = 10
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad10,
-                                                        CASE
-                                                            WHEN kuu = 11
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad11,
-                                                        CASE
-                                                            WHEN kuu = 12
-                                                                THEN paevad
-                                                            ELSE 0 END AS paevad12,
-                                                        puudumiste_liik,
-                                                        tyyp,
-                                                        qry.vs_kooded,
-                                                        qry.kas_kehtiv
-                                                    FROM
-                                                        (
-                                                            SELECT
-                                                                p.kuu,
-                                                                p.aasta,
-                                                                p.paevad,
-                                                                p.puudumiste_liik,
-                                                                p.tyyp,
-                                                                p.vs_kooded,
-                                                                p.kas_kehtiv,
-                                                                p.lepingid
-                                                            FROM
-                                                                puudumised_paevad             p
-                                                                    INNER JOIN palk.tooleping t ON t.id = p.lepingid
-                                                                    AND p.paevad > 0
---                     AND p.puudumiste_liik = 'PUHKUS'
-                                                            WHERE
-                                                                t.rekvid = l_rekvid
-                                                        ) qry
-                                                    WHERE
-                                                          kuu >= month(l_kpv1)
-                                                      AND kuu <= month(l_kpv2)
-                                                      AND aasta = year(l_kpv1)
-                                                    ORDER BY lepingid, kuu, aasta
-                                )
                             -- выбираем больничные
                             SELECT
                                 lepingid,
@@ -1552,7 +1727,16 @@ GRANT EXECUTE ON FUNCTION palk.palk_kaart_2025( DATE, DATE, INTEGER, INTEGER ) T
 
 /*
 
+select * from ou.rekv where nimetus like '%21%'
+
 SELECT *
-FROM palk.palk_kaart_2025('2025-01-01', '2025-03-31',63, 0 :: INTEGER)
---where isik ilike '%Sepp Christi%'
+FROM palk.palk_kaart_2025__('2025-01-01', '2025-10-31',89, 0 :: INTEGER)
+where isik ilike '%Jefimova Irina%'
+
+
+union all
+SELECT *
+FROM palk.palk_kaart_2025('2025-01-01', '2025-10-31',89, 0 :: INTEGER)
+where isik ilike '%Karacharova%'
+
 */

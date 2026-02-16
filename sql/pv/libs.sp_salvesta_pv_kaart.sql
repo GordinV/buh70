@@ -103,7 +103,7 @@ BEGIN
         SET kood       = doc_kood,
             nimetus    = doc_nimetus,
             library    = doc_library,
-            properties = json_object,
+            properties = properties::jsonb || json_object::jsonb,
             muud       = doc_muud
         WHERE id = doc_id RETURNING id
             INTO lib_id;

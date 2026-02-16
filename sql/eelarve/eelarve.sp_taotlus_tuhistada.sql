@@ -10,7 +10,6 @@ DECLARE
     doc_id     INTEGER = coalesce((params ->> 'doc_id') :: INTEGER, 0);
     tcLiik     TEXT    = params ->> 'liik';
     tcMuud     TEXT    = params ->> 'muud';
-
     c_oigus    TEXT    = CASE
                              WHEN tcLiik = 'ALLKIRI'
                                  THEN 'is_eel_allkirjastaja'
@@ -22,28 +21,21 @@ DECLARE
 
 BEGIN
 
-    IF doc_id IS NULL
-    THEN
-        error_code = 6;
-        error_message = 'Parameter doc_id not exists, docId: ' || coalesce(doc_id, 0) :: TEXT;
-        result = 0;
-        RETURN;
-    END IF;
-
-    SELECT t.*
+    SELECT
+        t.*
     INTO tmpTaotlus
-    FROM eelarve.taotlus t,
-         ou.userid u
-    WHERE t.parentid = doc_id
+    FROM
+        eelarve.taotlus t,
+        ou.userid       u
+    WHERE
+          t.parentid = doc_id
       AND u.id = user_id
       AND coalesce((u.roles ->> c_oigus) :: BOOLEAN, FALSE) :: BOOLEAN;
-    --        AND docs.usersRigths(t.parentid, c_oigus, user_id);
-
 
     IF tmpTaotlus IS NULL
     THEN
         error_code = 6;
-        error_message = 'Document not exists or not enough rights , docId: ' || coalesce(doc_id, 0) :: TEXT;
+        error_message = 'Viga, document not exists or not enough rights , docId: ' || coalesce(doc_id, 0) :: TEXT;
         result = 0;
         RETURN;
     END IF;
@@ -51,10 +43,16 @@ BEGIN
     IF tmpTaotlus.status > 3
     THEN
         error_code = 7;
-        error_message = 'Vale taotluse staatus , docId: ' || coalesce(doc_id, 0) :: TEXT;
+        error_message = 'Viga, vale taotluse staatus , docId: ' || coalesce(doc_id, 0) :: TEXT;
         result = 0;
         RETURN;
 
+    END IF;
+
+    -- контроль периода для модуля Eelarve
+    IF NOT (ou.fnc_aasta_eelarve_kontrol(tmpTaotlus.rekvid, tmpTaotlus.kpv))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. Eelarve kinni';
     END IF;
 
     IF tcLiik = 'ALLKIRI'
@@ -63,51 +61,41 @@ BEGIN
         IF NOT empty(tmptaotlus.allkiri)
         THEN
             UPDATE eelarve.taotlus
-            SET status     = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
-                allkiri    = 0,
+            SET
+                status  = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
+                allkiri = 0,
 --                KoostajaID = user_id,
-                muud       = muud || chr(13) || current_user :: TEXT || ':' + tcMuud
-            WHERE parentid = doc_id;
+                muud    = muud || chr(13) || current_user :: TEXT || ':' + tcMuud
+            WHERE
+                parentid = doc_id;
 
             result = 1;
 
         ELSE
             result = 0;
-            error_message = 'Ei saa tuhistatda allkiri, allkiri = 0 , docId: ' || coalesce(doc_id, 0) :: TEXT;
+            error_message = 'Viga, Ei saa tuhistatda allkiri, allkiri = 0 , docId: ' || coalesce(doc_id, 0) :: TEXT;
             RETURN;
         END IF;
     END IF;
 
     IF tcLiik = 'ESITA'
     THEN
-        /*
-        IF exists(SELECT id
-                  FROM eelarve.eelproj
-                  WHERE id IN (SELECT eelprojId
-                               FROM eelarve.taotlus1 t1
-                               WHERE parentid = tmptaotlus.id)
-                        AND status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
-                        AND NOT empty(kinnitaja))
-        THEN
-          result = 0;
-          error_message = 'Ei saa tuhistada esitamine, eelarve projekt on kinnitatud, docId: ' ||
-                          coalesce(doc_id, 0) :: TEXT;
-          RETURN;
-        END IF;
-    */
         IF tmptaotlus.status = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'esitatud')
         THEN
             UPDATE eelarve.taotlus
-            SET status    = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
+            SET
+                status    = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
                 allkiri   = 1,
                 ametnikid = 0,
                 muud      = muud || chr(13) || current_user :: TEXT || ':' || tcMuud
-            WHERE parentid = doc_id;
+            WHERE
+                parentid = doc_id;
 
             result = 1;
         ELSE
             error_message =
-                        'ei saa tuhistada esitamine, staatus = allkirjastatud, docId: ' || coalesce(doc_id, 0) :: TEXT;
+                    'Viga, ei saa tuhistada esitamine, staatus = allkirjastatud, docId: ' ||
+                    coalesce(doc_id, 0) :: TEXT;
             result = 0;
         END IF;
 
@@ -117,14 +105,21 @@ BEGIN
     THEN
         -- удалить бюджет
         FOR v_eelarve IN (
-            SELECT e.id
-            FROM eelarve.eelarve e
-            WHERE id IN (
-                SELECT t1.eelarveid
-                FROM eelarve.taotlus t
-                         INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
-                WHERE t.parentid = doc_id
-            ))
+                             SELECT
+                                 e.id
+                             FROM
+                                 eelarve.eelarve e
+                             WHERE
+                                 id IN (
+                                           SELECT
+                                               t1.eelarveid
+                                           FROM
+                                               eelarve.taotlus                 t
+                                                   INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
+                                           WHERE
+                                               t.parentid = doc_id
+                                       )
+                         )
             LOOP
                 -- удаляем бюджетную строку
                 PERFORM eelarve.sp_delete_eelarve(user_id, v_eelarve.id, 0);
@@ -136,12 +131,14 @@ BEGIN
         -- поменять статус
 
         UPDATE eelarve.taotlus
-        SET status    = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'esitatud'),
+        SET
+            status    = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'esitatud'),
             allkiri   = 1,
             ametnikid = 0,
             muud      = muud || chr(13) || CURRENT_USER :: TEXT ||
                         ':' || tcMuud
-        WHERE parentid = doc_id;
+        WHERE
+            parentid = doc_id;
 
         result = 1;
 

@@ -81,7 +81,8 @@ BEGIN
                                    INNER JOIN      docs.doc                         d ON d.id = a.parentid
                            WHERE
                                  r.konto = '10300929'
-                             and r.rekvid not in (80, 81, 82, 83, 85, 94, 99, 107, 112, 114)
+                             and r.rekvid not in (80, 81, 82, 83, 85, 94, 99, 107, 112, 114, 119)
+--                             and r.doc_id not in (4572746)
 --            WHERE (l_arv_id IS NULL
 --                OR r.doc_id = l_arv_id)
             )
@@ -282,26 +283,62 @@ BEGIN
                         l_vn = null;
                     end if;
 
-                    SELECT
-                        0                                                                             AS id,
-                        'JOURNAL'                                                                     AS doc_type_id,
-                        l_lausendi_period                                                             AS kpv,
-                        l_selg || CASE WHEN kas_noude_100 THEN '(100)' ELSE '(50)' END || l_lisa_selg AS selg,
-                        v_aruanne.Asutusid,
-                        'Arve nr.' || v_aruanne.number::TEXT                                          AS dok,
-                        l_vn                                                                          as vn,
-                        l_json_details                                                                AS "gridData"
-                    INTO v_params;
+/*                    if doc_vn is not null and len(doc_vn) = 10 then
+                        -- сделаем связь с карточкой ребенка
+                        l_laps_id = lapsed.get_laps_from_viitenumber(doc_vn::TEXT);
+                        if not exists
+                        (
+                            select id from lapsed.liidestamine where parentid = l_laps_id and docid = doc_id
+                        ) then
+                            insert into lapsed.liidestamine (parentid, docid)
+                            values (l_laps_id, doc_id);
+                        end if;
+                    end if;
+*/
+                    raise notice 'salvestan arve nr %, v_aruanne.doc_id %',v_aruanne.number, v_aruanne.doc_id;
+                    if l_vn is not null and len(l_vn) = 10 and l_laps_id is not null and exists
+                    (
+                        select id
+                        from lapsed.laps
+                        where id = l_laps_id
+                    )
+                        and exists
+                       (
+                           SELECT
+                               id
+                           FROM
+                               lapsed.lapse_kaart
+                           WHERE
+                                 parentid = l_laps_id
+                             AND staatus < 3
+                             AND rekvid = v_aruanne.rekvId
+                       )
+                    THEN
 
-                    l_json = to_json(row)
-                             FROM
-                                 (
-                                     SELECT
-                                         0        AS id,
-                                         v_params AS data
-                                 ) row;
+                        SELECT
+                            0                                                                             AS id,
+                            'JOURNAL'                                                                     AS doc_type_id,
+                            l_lausendi_period                                                             AS kpv,
+                            l_selg || CASE WHEN kas_noude_100 THEN '(100)' ELSE '(50)' END || l_lisa_selg AS selg,
+                            v_aruanne.Asutusid,
+                            'Arve nr.' || v_aruanne.number::TEXT                                          AS dok,
+                            l_vn                                                                          as vn,
+                            l_json_details                                                                AS "gridData"
+                        INTO v_params;
 
-                    l_journal_id = docs.sp_salvesta_journal(l_json :: JSON, l_user_id, v_aruanne.rekvId);
+                        l_json = to_json(row)
+                                 FROM
+                                     (
+                                         SELECT
+                                             0        AS id,
+                                             v_params AS data
+                                     ) row;
+
+                        l_journal_id = docs.sp_salvesta_journal(l_json :: JSON, l_user_id, v_aruanne.rekvId);
+                    else
+                        l_journal_id = null;
+
+                    end if;
 
                     IF (l_journal_id IS NOT NULL AND l_journal_id > 0 AND
                         exists
@@ -410,7 +447,7 @@ GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE, INTEGER) TO dbpeaka
 
 select * from ou.rekv where id = 66
 
-SELECT docs.ebatoenaolised(119, '2025-10-05')
+SELECT docs.ebatoenaolised(id, '2025-10-07')
 from ou.rekv
 where parentid = 119
 and id  in (94)

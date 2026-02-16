@@ -3,13 +3,13 @@ DROP FUNCTION IF EXISTS palk.sp_calc_tulumaks(params JSONB);
 DROP FUNCTION IF EXISTS palk.sp_calc_tulumaks(user_id INTEGER, params JSON);
 
 CREATE FUNCTION palk.sp_calc_tulumaks(user_id INTEGER, params JSON,
-                                       OUT summa NUMERIC,
-                                       OUT mvt NUMERIC,
-                                       OUT selg TEXT,
-                                       OUT error_code INTEGER,
-                                       OUT result INTEGER,
-                                       out alus_oper_ids jsonb,
-                                       OUT error_message TEXT)
+                                      OUT summa NUMERIC,
+                                      OUT mvt NUMERIC,
+                                      OUT selg TEXT,
+                                      OUT error_code INTEGER,
+                                      OUT result INTEGER,
+                                      out alus_oper_ids jsonb,
+                                      OUT error_message TEXT)
     LANGUAGE plpgsql
 AS
 $$
@@ -24,6 +24,7 @@ DECLARE
     l_kasutatud_mvt_summa NUMERIC(12, 4) = coalesce((params ->> 'kasutatud_mvt_summa') :: NUMERIC, 0); -- kasutatud mvt
     l_mvt                 NUMERIC(12, 4) = coalesce((params ->> 'mvt') :: NUMERIC, 0); -- mvt
     l_tm_miinus_summa     NUMERIC(12, 4) = coalesce((params ->> 'kulud') :: NUMERIC, 0); -- tm miinus summad
+    l_alus_po_id          integer        = params ->> 'puhk_oper_id'; -- расчет на основании конкретной операции
     l_round               NUMERIC        = 0.01;
     v_tooleping           RECORD;
 
@@ -34,13 +35,16 @@ BEGIN
     IF l_alus_summa IS NULL
     THEN
         selg = 'ennearvestatud TM ' || '(r)';
-        SELECT pk.percent_,
-               pk.summa,
-               l.round
+        SELECT
+            pk.percent_,
+            pk.summa,
+            l.round
         INTO is_percent, l_pk_summa, l_round
-        FROM palk.palk_kaart pk
-                 INNER JOIN palk.com_palk_lib l ON pk.libid = l.id
-        WHERE pk.lepingid = l_lepingid
+        FROM
+            palk.palk_kaart                  pk
+                INNER JOIN palk.com_palk_lib l ON pk.libid = l.id
+        WHERE
+              pk.lepingid = l_lepingid
           AND pk.libId = l_libId;
 
         selg = coalesce(selg, '') || 'pk summa:' || l_pk_summa :: TEXT || CASE
@@ -48,42 +52,81 @@ BEGIN
                                                                                   THEN '%'
                                                                               ELSE ' EUR' END || '(r)';
 
-        SELECT rekvid,
-               parentid
+        SELECT
+            rekvid,
+            parentid
         INTO v_tooleping
-        FROM palk.tooleping t
-        WHERE t.id = l_lepingid;
+        FROM
+            palk.tooleping t
+        WHERE
+            t.id = l_lepingid;
 
-        SELECT sum(coalesce(po.tulubaas, 0)),
-               sum(coalesce(po.tulumaks, 0))
-               FILTER (WHERE lepingid = l_lepingid) AS tulumaks,
-               sum(po.summa)
-               FILTER (WHERE lepingid = l_lepingid) AS tulud,
-               jsonb_agg(po.doc_id)
+        -- операции, которые идут как отдельный расчет
+        with
+            eri_po_ids as (
+                              select
+                                  po.properties -> 'alus_oper_ids' as alus_oper_ids
+                              from
+                                  palk.palk_oper po
+                              where
+                                    po.kpv = l_kpv
+                                AND po.rekvid = v_tooleping.rekvid
+                                AND po.lepingId = l_lepingid
+                                and coalesce((po.properties ->> 'kas_eri_arvestus')::boolean, false)
+            )
+
+        SELECT
+            sum(coalesce(po.tulubaas, 0)),
+            sum(coalesce(po.tulumaks, 0))
+            FILTER (WHERE lepingid = l_lepingid) AS tulumaks,
+            sum(po.summa)
+            FILTER (WHERE lepingid = l_lepingid) AS tulud,
+            jsonb_agg(po.doc_id)
         INTO l_kasutatud_mvt_summa, summa, l_alus_summa, alus_oper_ids
-        FROM (SELECT p.summa,
-                     p.sotsmaks,
-                     p.tulubaas,
-                     p.tulumaks,
-                     p.konto,
-                     p.kpv,
-                     p.rekvid,
-                     p.libid,
-                     p.period,
-                     ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
-                     p.lepingid,
-                     d.id                                                                                       as doc_id
-              FROM docs.doc d
-                       INNER JOIN palk.palk_oper p ON p.parentid = d.id
-                       INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
-                       INNER JOIN palk.tooleping t ON p.lepingid = t.id) po
-        WHERE po.kpv = l_kpv
+        FROM
+            (
+                SELECT
+                    p.summa,
+                    p.sotsmaks,
+                    p.tulubaas,
+                    p.tulumaks,
+                    p.konto,
+                    p.kpv,
+                    p.rekvid,
+                    p.libid,
+                    p.period,
+                    ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                    p.lepingid,
+                    d.id                                                                                       as doc_id
+                FROM
+                    docs.doc                      d
+                        INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                        INNER JOIN libs.library   lib ON p.libid = lib.id AND lib.library = 'PALK'
+                        INNER JOIN palk.tooleping t ON p.lepingid = t.id
+            ) po
+        WHERE
+              po.kpv = l_kpv
           AND po.rekvid = v_tooleping.rekvid
           AND po.palk_liik = 'ARVESTUSED'
           AND po.period IS NULL
-          AND po.lepingId IN (SELECT t.id
-                              FROM palk.tooleping t
-                              WHERE t.parentid = v_tooleping.parentId);
+          AND po.lepingId IN (
+                                 SELECT
+                                     t.id
+                                 FROM
+                                     palk.tooleping t
+                                 WHERE
+                                     t.parentid = v_tooleping.parentId
+                             )
+              -- только одна операция, если задан ИД
+          and (l_alus_po_id is null or po.doc_id = l_alus_po_id)
+              -- за исключение отдельного расчета
+          and po.doc_id not in (
+                                   select
+                                       jsonb_array_elements(eri.alus_oper_ids)::integer
+                                   from
+                                       eri_po_ids eri
+                                   where eri.alus_oper_ids is not null
+                               );
 
         mvt = l_kasutatud_mvt_summa;
 

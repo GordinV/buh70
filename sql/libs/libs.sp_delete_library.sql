@@ -1,5 +1,6 @@
 ﻿DROP FUNCTION IF EXISTS libs.sp_delete_library(INTEGER, INTEGER);
 
+--tahtpaevad
 CREATE OR REPLACE FUNCTION libs.sp_delete_library(IN userid INTEGER,
                                                   IN doc_id INTEGER,
                                                   OUT error_code INTEGER,
@@ -19,6 +20,7 @@ BEGIN
         l.*,
         u.ametnik AS user_name,
         u.rekvid  AS kasutaja_rekvid
+
     INTO v_doc
     FROM
         libs.library                  l
@@ -28,11 +30,7 @@ BEGIN
 
     IF v_doc IS NULL
     THEN
-        error_code = 6;
-        error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
-        result = 0;
-        RETURN;
-
+        raise exception 'Viga: Dokument ei leitud, docId: %', doc_id;
     END IF;
 
     IF NOT exists
@@ -46,13 +44,9 @@ BEGIN
           AND (u.rekvid = v_doc.kasutaja_rekvid OR v_doc.kasutaja_rekvid IS NULL OR v_doc.kasutaja_rekvid = 0)
     )
     THEN
-
-        error_code = 5;
         error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
                         coalesce(userid, 0) :: TEXT;
-        result = 0;
---        RETURN;
-
+        raise exception 'Viga: %',error_message;
     END IF;
 
     -- проверим на использование кода в справочниках
@@ -89,13 +83,7 @@ BEGIN
               AND r.properties ->> 'liik' = v_doc.kood::TEXT
         ))
     THEN
-        error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-        error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
-        result = 0;
-
-        RAISE EXCEPTION 'Есть связанные доку менты. удалять нельзя';
-        RETURN;
-
+        RAISE EXCEPTION 'Viga: On olemas seotud dokumendid. Kustutamine on keelatud.';
     END IF;
 
 
@@ -115,11 +103,17 @@ BEGIN
 
         IF (userName IS NULL OR NOT is_peakasutaja)
         THEN
-            RAISE EXCEPTION 'Viga, Puuduvad õigused või kasutaja ei leidnud %', user;
---            RETURN ;
+            RAISE EXCEPTION 'Viga, Puuduvad õigused või kasutaja ei leidnud %', userName;
         END IF;
 
     END IF;
+
+    IF v_doc.library::text IN ('TAHTPAEV') and v_doc.kasutaja_rekvid <> 63
+    THEN
+        -- контроль за правами.
+        RAISE EXCEPTION 'Viga, Puuduvad õigused';
+    END IF;
+
 
     UPDATE libs.library
     SET
@@ -131,7 +125,6 @@ BEGIN
     if v_doc.library = 'PROJ' then
         delete from libs.proj_laiendus where proj_id = doc_id;
     end if;
-
 
     result = 1;
     RETURN;
@@ -147,7 +140,9 @@ GRANT EXECUTE ON FUNCTION libs.sp_delete_library(INTEGER, INTEGER) TO dbpeakasut
 
 /*
 SELECT *
-FROM libs.sp_delete_library(2477, 121358)
+FROM libs.sp_delete_library(5435, 292827)
+
+
 
 select * from libs.library where kood = 'Kood'
 

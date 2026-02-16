@@ -9,15 +9,16 @@ module.exports = {
                   t.ametid,
                   t.algab,
                   t.lopp,
---                  t.palk,
-                  case
+                  t.palk,
+/*                  case
                       when t.palgamaar is not null and t.properties ->> 'ameti_klassif' is not null
-                          and len(t.properties ->> 'ameti_klassif') > 1 then
+                          and len(t.properties ->> 'ameti_klassif') > 1 and
+                           coalesce(t.lopp, current_date) >= current_date then
                           palk.get_isiku_pohipalk(jsonb_build_object('ameti_klassif', t.properties ->> 'ameti_klassif',
                                                                      'palgamaar', t.palgamaar))
                       else t.palk
                       end::numeric(12, 2)                                       as palk,
-                  (
+*/                  (
                       select
                           kuu_summa
                       from

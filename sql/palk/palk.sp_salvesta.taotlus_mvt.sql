@@ -63,11 +63,12 @@ BEGIN
         THEN
             l_error_message = 'Taotlus juba kinni';
             -- lubatud ainult lopp kpv
-            IF doc_lopp_kpv < (date(year(current_date), month(current_date), 1) - 1)
+                -- убрал, чтобы можно было изменить последнюю дату
+/*            IF doc_lopp_kpv < (date(year(current_date), month(current_date), 1) - 1)
             THEN
                 doc_lopp_kpv = v_taotlus_mvt.lopp_kpv;
             END IF;
-        ELSE
+*/        ELSE
 
         END IF;
 

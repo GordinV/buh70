@@ -1,7 +1,7 @@
 /*drop table if exists tmp_viitenr;
-create table if not EXISTS tmp_viitenr (vn text,  ik text, asutus text);
+create table if not EXISTS tmp_viitenr (ik text);
 
-insert into  tmp_viitenr(vn, ik, asutus)
+insert into  tmp_viitenr(ik)
 SELECT
     t.f[1]::text AS vn
         ,t.f[2]::text AS ik

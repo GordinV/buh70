@@ -1,93 +1,113 @@
-DROP FUNCTION IF EXISTS palk.sp_salvesta_toograafik( JSON, INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS palk.sp_salvesta_toograafik(JSON, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION palk.sp_salvesta_toograafik(
-  data        JSON,
-  userid      INTEGER,
-  user_rekvid INTEGER)
-  RETURNS INTEGER
-LANGUAGE 'plpgsql'
-AS $BODY$
+    data JSON,
+    userid INTEGER,
+    user_rekvid INTEGER)
+    RETURNS INTEGER
+    LANGUAGE 'plpgsql'
+AS
+$BODY$
 
 DECLARE
-  graafik_id   INTEGER;
-  userName     TEXT;
-  doc_id       INTEGER = data ->> 'id';
-  doc_data     JSON = data ->> 'data';
-  doc_lepingid INTEGER = doc_data ->> 'lepingid';
-  doc_kuu      INTEGER = doc_data ->> 'kuu';
-  doc_aasta    INTEGER = doc_data ->> 'aasta';
-  doc_tund     NUMERIC(12, 4) = doc_data ->> 'tund';
-  doc_muud     TEXT = doc_data ->> 'muud';
-  new_history  JSONB;
-  v_graafik    RECORD;
+    graafik_id   INTEGER;
+    userName     TEXT;
+    doc_id       INTEGER        = data ->> 'id';
+    doc_data     JSON           = data ->> 'data';
+    doc_lepingid INTEGER        = doc_data ->> 'lepingid';
+    doc_kuu      INTEGER        = doc_data ->> 'kuu';
+    doc_aasta    INTEGER        = doc_data ->> 'aasta';
+    doc_tund     NUMERIC(12, 4) = doc_data ->> 'tund';
+    doc_muud     TEXT           = doc_data ->> 'muud';
+    new_history  JSONB;
+    v_graafik    RECORD;
 BEGIN
 
-  SELECT kasutaja
-  INTO userName
-  FROM ou.userid u
-  WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
-  THEN
-    RAISE NOTICE 'User not found %', user;
-    RETURN 0;
-  END IF;
+    SELECT
+        kasutaja
+    INTO userName
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
+      AND u.id = userId;
+    IF userName IS NULL
+    THEN
+        RAISE NOTICE 'User not found %', user;
+        RETURN 0;
+    END IF;
 
-  IF (doc_id IS NULL)
-  THEN
-    doc_id = doc_data ->> 'id';
-  END IF;
+    if doc_tund is null or doc_tund = 0 then
+        RAISE NOTICE 'Puuduvad tunnid ';
+        RETURN 0;
+    end if;
 
-  -- вставка или апдейт docs.doc
+    IF (doc_id IS NULL)
+    THEN
+        doc_id = doc_data ->> 'id';
+    END IF;
 
-  IF doc_id IS NULL OR doc_id = 0
-  THEN
+    -- вставка или апдейт docs.doc
+
+    IF doc_id IS NULL OR doc_id = 0
+    THEN
+        SELECT
+            row_to_json(row)
+        INTO new_history
+        FROM
+            (
+                SELECT
+                    now()    AS created,
+                    userName AS user
+            ) row;
 
 
-    SELECT row_to_json(row)
-    INTO new_history
-    FROM (SELECT
-            now()    AS created,
-            userName AS user) row;
+        INSERT INTO palk.toograf (lepingid, kuu, aasta, tund, ajalugu, muud)
+        VALUES
+            (doc_lepingid, doc_kuu, doc_aasta, doc_tund, new_history, doc_muud)
+        RETURNING id
+            INTO graafik_id;
 
+    ELSE
+        -- history
+        SELECT *
+        INTO v_graafik
+        FROM
+            palk.toograf
+        WHERE
+            id = doc_id;
 
-    INSERT INTO palk.toograf (lepingid, kuu, aasta, tund, ajalugu, muud)
-    VALUES
-      (doc_lepingid, doc_kuu, doc_aasta, doc_tund, new_history, doc_muud)
-    RETURNING id
-      INTO graafik_id;
+        SELECT
+            row_to_json(row)
+        INTO new_history
+        FROM
+            (
+                SELECT
+                    now()    AS updated,
+                    userName AS user
+            ) row;
 
-  ELSE
-    -- history
-    SELECT *
-    INTO v_graafik
-    FROM palk.toograf
-    WHERE id = doc_id;
+        UPDATE palk.toograf
+        SET
+            kuu     = doc_kuu,
+            aasta   = doc_aasta,
+            tund    = doc_tund,
+            ajalugu = '[]':: jsonb || coalesce(ajalugu, '[]'::jsonb) || new_history,
+            muud    = doc_muud
+        WHERE
+            id = doc_id
+        RETURNING id
+            INTO graafik_id;
 
-    SELECT row_to_json(row)
-    INTO new_history
-    FROM (SELECT
-            now()     AS updated,
-            userName  AS user) row;
+    END IF;
 
-    UPDATE palk.toograf
-    SET
-      kuu     = doc_kuu,
-      aasta   = doc_aasta,
-      tund    = doc_tund,
-      ajalugu = '[]':: jsonb || coalesce(ajalugu,'[]'::jsonb) || new_history,
-      muud    = doc_muud
-    WHERE id = doc_id
-    RETURNING id
-      INTO graafik_id;
+    RETURN graafik_id;
 
-  END IF;
-
-  RETURN graafik_id;
-
-  EXCEPTION WHEN OTHERS
-  THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-    RETURN 0;
+EXCEPTION
+    WHEN OTHERS
+        THEN
+            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+            RETURN 0;
 
 END;
 $BODY$;

@@ -8,7 +8,7 @@ $$
 DECLARE
     v_taotlus  RECORD;
     v_tootajad RECORD;
-    l_aasta    INTEGER = 2025;
+    l_aasta    INTEGER = 2026;
     l_count    INTEGER = 0;
     l_params   JSON;
     v_params   RECORD;
@@ -20,16 +20,18 @@ BEGIN
         FROM libs.asutus a
         WHERE exists(SELECT id
                      FROM palk.tooleping t
-                              INNER JOIN (SELECT DISTINCT lepingid FROM palk.taotlus_mvt WHERE lopp_kpv >= '2024-12-01'
+                              INNER JOIN (SELECT DISTINCT lepingid FROM palk.taotlus_mvt WHERE lopp_kpv >= '2025-12-01'
                      ) mvt ON mvt.lepingid = t.id
-                     WHERE (t.lopp IS NULL OR t.lopp >= '2025-01-01')
+                     WHERE (t.lopp IS NULL OR t.lopp >= '2026-01-01')
                        AND t.parentid = a.id
-                       AND rekvid IN (SELECT r.id
+                       AND rekvid IN (
+                       SELECT r.id
                                       FROM ou.rekv r
 --                                               INNER JOIN ou.aa aa ON aa.parentid = r.id
 --                                          AND aa.kassa = 2
 --                                          AND tp IN ('18510140', '18510103', '18510105', '18510106', '18510107')
-                                      WHERE  r.parentid <> 119 AND  r.id <> 119 and r.parentid < 999
+                                      WHERE  (r.parentid = 119 or r.id  in  (119))
+                                        --and r.parentid < 999
                            )
 
                   )
@@ -47,22 +49,23 @@ BEGIN
             IF coalesce(v_taotlus.summa, -1) >= 0 AND
                NOT exists(SELECT id
                           FROM palk.taotlus_mvt
-                          WHERE year(lopp_kpv) = 2025
+                          WHERE year(lopp_kpv) = 2026
                             AND lepingid = v_taotlus.lepingid
                             AND status <> 'deleted'
                    )
             THEN
-/*                IF v_taotlus.summa = 500
+                IF v_taotlus.summa = 654
                 THEN
-                    v_taotlus.summa = 654;
+                    v_taotlus.summa = 700;
                 END IF;
-*/                -- save
+                -- save
                 SELECT 0                       AS id,
                        make_date(l_aasta, 01, 01) AS kpv,
                        make_date(l_aasta, 01, 01) AS alg_kpv,
                        make_date(l_aasta, 12, 31) AS lopp_kpv,
                        v_taotlus.lepingid      AS lepingid,
                        v_taotlus.summa         AS summa,
+--                       700 as summa,
                        'Genereeritud'          AS muud
                 INTO v_params;
 
@@ -81,7 +84,7 @@ BEGIN
 
                 l_id = palk.sp_salvesta_taotlus_mvt(l_params, v_user.id, v_user.rekvid);
 
-                RAISE NOTICE '2024 summa %, v_taotlus.lopp_kpv %, saved id %' , v_taotlus.summa,v_taotlus.lopp_kpv, l_id;
+--                RAISE NOTICE '2025 summa %, v_taotlus.lopp_kpv %, saved id %' , v_taotlus.summa,v_taotlus.lopp_kpv, l_id;
                 l_count = l_count + 1;
             END IF;
         END LOOP;

@@ -3,6 +3,7 @@ DROP FUNCTION IF EXISTS palk.arvuta_puudumise_paevad(JSONB);
 CREATE FUNCTION palk.arvuta_puudumise_paevad(IN params JSONB,
                                              OUT puudumise_paevad INTEGER,
                                              OUT arvestatud_paevad INTEGER,
+                                             OUT too_paevad INTEGER,
                                              OUT puudumise_tunnid numeric)
     RETURNS RECORD AS
 $BODY$
@@ -52,6 +53,13 @@ BEGIN
     if l_max > 0 and arvestatud_paevad > l_max then
         arvestatud_paevad = l_max;
     end if;
+
+    -- рабочие дн в периоде
+    too_paevad = palk.get_work_days(jsonb_build_object('kuu', extract(month from l_kpv_1),
+                                                         'aasta', extract(year from l_kpv_1),
+                                                         'paev', extract(day from l_kpv_1),
+                                                         'lopp',
+                                                         extract(day from l_kpv_2)) :: JSON);
     RETURN;
 
 END;

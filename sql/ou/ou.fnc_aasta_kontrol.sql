@@ -6,6 +6,7 @@ DECLARE
     l_aasta INTEGER = year(coalesce(l_kpv, current_date));
     l_kuu   INTEGER = month(coalesce(l_kpv, current_date));
 BEGIN
+
     IF NOT exists(
             SELECT a.id
             FROM ou.aasta a
@@ -36,5 +37,5 @@ $$;
 
 ALTER FUNCTION ou.fnc_aasta_kontrol(INTEGER, DATE) OWNER TO vlad;
 
-GRANT EXECUTE ON FUNCTION ou.fnc_aasta_kontrol(INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION ou.fnc_aasta_kontrol(INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION ou.fnc_aasta_kontrol(INTEGER, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION ou.fnc_aasta_kontrol(INTEGER, DATE) TO dbkasutaja;

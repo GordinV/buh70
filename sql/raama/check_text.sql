@@ -15,7 +15,7 @@ DECLARE
 BEGIN
     IF l_var ~ l_sumbol_1 OR l_var ~ l_sumbol_2 OR l_var ~ l_sumbol_3 OR l_var ~ l_sumbol_4 OR l_var ~ l_sumbol_5
     THEN
-        RAISE EXCEPTION 'Viga, on sisestatud keelatud sümbolid';
+        RAISE EXCEPTION 'Viga, on sisestatud keelatud sümbolid %', l_var;
     END IF;
     RETURN TRUE;
 END

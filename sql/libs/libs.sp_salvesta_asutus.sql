@@ -47,10 +47,13 @@ DECLARE
 BEGIN
 
 
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
       AND u.id = user_id;
     IF is_import IS NULL AND userName IS NULL
     THEN
@@ -79,13 +82,22 @@ BEGIN
     THEN
         -- если задан упрощенный расч. счет, то пишем его (для модуля дети)
 
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_aa
-        FROM (SELECT doc_aa AS aa, '' AS pank) row;
+        FROM
+            (
+                SELECT doc_aa AS aa, '' AS pank
+            ) row;
     END IF;
 
     IF doc_id IS NOT NULL AND doc_id > 0 AND NOT coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE) AND
-       exists(SELECT id FROM palk.tooleping WHERE parentid = doc_id)
+       exists
+       (
+           SELECT id
+           FROM palk.tooleping
+           WHERE parentid = doc_id
+       )
     THEN
         doc_is_tootaja = TRUE;
     END IF;
@@ -95,52 +107,95 @@ BEGIN
         doc_tp = '800699';
     END IF;
 
-    SELECT row_to_json(row)
+    SELECT
+        row_to_json(row)
     INTO new_properties
-    FROM (SELECT doc_kehtivus                                                              AS kehtivus,
-                 doc_pank                                                                  AS pank,
-                 CASE WHEN doc_id IS NULL OR doc_id = 0 THEN FALSE ELSE doc_is_tootaja END AS is_tootaja,
-                 doc_palk_email                                                            AS palk_email,
-                 CASE
-                     WHEN doc_aa IS NOT NULL AND NOT empty(doc_aa) THEN '[]'::JSONB || new_aa :: JSONB
-                     ELSE doc_asutus_aa :: JSONB END                                       AS asutus_aa,
-                 doc_kmkr                                                                  AS kmkr,
-                 coalesce(doc_kas_teiste_kov, FALSE)                                       AS kas_teiste_kov) row;
+    FROM
+        (
+            SELECT
+                doc_kehtivus                                                              AS kehtivus,
+                doc_pank                                                                  AS pank,
+                CASE WHEN doc_id IS NULL OR doc_id = 0 THEN FALSE ELSE doc_is_tootaja END AS is_tootaja,
+                doc_palk_email                                                            AS palk_email,
+                CASE
+                    WHEN doc_aa IS NOT NULL AND NOT empty(doc_aa) THEN '[]'::JSONB || new_aa :: JSONB
+                    ELSE doc_asutus_aa :: JSONB END                                       AS asutus_aa,
+                doc_kmkr                                                                  AS kmkr,
+                coalesce(doc_kas_teiste_kov, FALSE)                                       AS kas_teiste_kov
+        ) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        SELECT row_to_json(row)
-        INTO new_history
-        FROM (SELECT now()    AS created,
-                     userName AS user) row;
-        SELECT row_to_json(row)
-        INTO new_rights
-        FROM (SELECT ARRAY [user_id] AS "select",
-                     ARRAY [user_id] AS "update",
-                     ARRAY [user_id] AS "delete") row;
+        -- check for IK
+        IF exists
+        (
+            select
+                id
+            from
+                libs.asutus
+            where
+                  len(ltrim(rtrim(regkood))) > 7
+              and ltrim(rtrim(regkood)) = doc_regkood
+              and staatus < 3
+        )
+        THEN
+            RAISE EXCEPTION 'Viga. IK juba olemas';
+        END IF;
 
-        INSERT INTO libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud, properties,
-                                 tp, ajalugu)
-        VALUES (user_rekvid, doc_regkood, doc_nimetus, doc_omvorm, doc_kontakt, doc_aadress, doc_tel, doc_email,
-                doc_mark,
-                doc_muud, new_properties, coalesce(doc_tp, '800699'), new_history) RETURNING id
-                   INTO asutus_id;
+
+        SELECT
+            row_to_json(row)
+        INTO new_history
+        FROM
+            (
+                SELECT
+                    now()    AS created,
+                    userName AS user
+            ) row;
+        SELECT
+            row_to_json(row)
+        INTO new_rights
+        FROM
+            (
+                SELECT
+                    ARRAY [user_id] AS "select",
+                    ARRAY [user_id] AS "update",
+                    ARRAY [user_id] AS "delete"
+            ) row;
+
+        INSERT INTO
+            libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud, properties,
+                         tp, ajalugu)
+        VALUES
+            (user_rekvid, doc_regkood, doc_nimetus, doc_omvorm, doc_kontakt, doc_aadress, doc_tel, doc_email,
+             doc_mark,
+             doc_muud, new_properties, coalesce(doc_tp, '800699'), new_history)
+        RETURNING id
+            INTO asutus_id;
 
 
     ELSE
         -- history
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS updated,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS updated,
+                    userName AS user
+            ) row;
 
         SELECT ltrim(rtrim(regkood)) INTO l_old_regkood FROM libs.asutus WHERE id = doc_id;
         IF NOT empty(l_old_regkood) AND len(l_old_regkood) >= 7 AND len(l_old_regkood) < 11
         THEN
             -- asutus, редактировать только по правам
-            IF NOT exists(SELECT id FROM ou.userid WHERE id = user_id AND (roles ->> 'is_asutuste_korraldaja')::BOOLEAN)
+            IF NOT exists
+            (
+                SELECT id FROM ou.userid WHERE id = user_id AND (roles ->> 'is_asutuste_korraldaja')::BOOLEAN
+            )
             THEN
                 RAISE EXCEPTION 'Viga. Puudub õigused';
                 RETURN 0;
@@ -149,7 +204,8 @@ BEGIN
         END IF;
 
         UPDATE libs.asutus
-        SET regkood    = doc_regkood,
+        SET
+            regkood    = doc_regkood,
             nimetus    = doc_nimetus,
             omvorm     = doc_omvorm,
             kontakt    = doc_kontakt,
@@ -162,14 +218,16 @@ BEGIN
             properties = properties || new_properties,
             ajalugu    = coalesce(ajalugu, '[]') :: JSONB || new_history::JSONB,
             staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END
-        WHERE id = doc_id RETURNING id
+        WHERE
+            id = doc_id
+        RETURNING id
             INTO asutus_id;
 
     END IF;
 
     RETURN asutus_id;
 
-END;
+END ;
 $BODY$;
 
 

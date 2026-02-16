@@ -42,6 +42,13 @@ BEGIN
         RETURN;
     END IF;
 
+    -- контроль периода для модуля Eelarve
+    IF NOT (ou.fnc_aasta_eelarve_kontrol(tmpTaotlus.rekvid, tmpTaotlus.kpv))
+    THEN
+        RAISE EXCEPTION 'Viga, periodi kontrol. Eelarve kinni';
+    END IF;
+
+
     -- проверка на проект
 
 --* eelarve projektide side

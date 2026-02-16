@@ -20,11 +20,16 @@ DECLARE
                                                                            WHEN doc_opt = '2'
                                                                                THEN 'SMK'
                                                                            ELSE 'VMK' END);
-    doc_typeId        INTEGER = (SELECT id
-                                 FROM libs.library
-                                 WHERE ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood)))
-                                   AND library = 'DOK'
-                                 LIMIT 1);
+    doc_typeId        INTEGER = (
+                                    SELECT
+                                        id
+                                    FROM
+                                        libs.library
+                                    WHERE
+                                          ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood)))
+                                      AND library = 'DOK'
+                                    LIMIT 1
+                                );
     doc_number        TEXT    = doc_data ->> 'number';
     doc_kpv           DATE    = coalesce((doc_data ->> 'kpv')::DATE, current_date);
     doc_aa_id         INTEGER = coalesce((doc_data ->> 'aa_id')::INTEGER, (doc_data ->> 'aaid')::INTEGER);
@@ -37,7 +42,7 @@ DECLARE
     doc_lapsid        INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
     doc_dok_id        INTEGER = doc_data ->> 'dokid'; -- kui mk salvestatud avansiaruanne alusel
     doc_kasusaaja_id  INTEGER = doc_data ->> 'kasusaaja_id'; -- дл модуля Hooldekodu
-    doc_tyyp        TEXT = doc_data ->> 'tehingu_tyyp'; -- если перенос сальдо из детского модуля
+    doc_tyyp          TEXT    = doc_data ->> 'tehingu_tyyp'; -- если перенос сальдо из детского модуля
     doc_kreedit_makse INTEGER = doc_data ->> 'doc_kreedit_makse'; -- если перенос сальдо то ссылка на первый документ
 
     json_object       JSON;
@@ -57,10 +62,13 @@ DECLARE
     v_nom             RECORD;
 BEGIN
 
-    SELECT kasutaja
+    SELECT
+        kasutaja
     INTO userName
-    FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
+    FROM
+        ou.userid u
+    WHERE
+          u.rekvid = user_rekvid
       AND u.id = user_id;
     IF is_import IS NULL AND userName IS NULL
     THEN
@@ -72,13 +80,16 @@ BEGIN
     THEN
         RAISE EXCEPTION 'Viga, Period on kinni, doc_kpv %, doc_viitenr %, doc_lapsid %, doc_selg %', doc_kpv, doc_viitenr, doc_lapsid, doc_selg;
     END IF;
-    
+
 
     IF doc_muud = 'Oppetasu algsaldo 2023' AND doc_kpv = '2022-12-31' AND user_id NOT IN (
-        SELECT id
-        FROM ou.userid
-        WHERE kasutaja IN ('temp', 'vlad')
-    )
+                                                                                             SELECT
+                                                                                                 id
+                                                                                             FROM
+                                                                                                 ou.userid
+                                                                                             WHERE
+                                                                                                 kasutaja IN ('temp', 'vlad')
+                                                                                         )
     THEN
 
         RAISE NOTICE 'Vale kasutaja %', user;
@@ -99,17 +110,26 @@ BEGIN
     END IF;
 
 -- проверим расч. счет
-    IF doc_aa_id IS NULL OR NOT exists(SELECT id
-                                       FROM ou.aa
-                                       WHERE parentId = user_rekvid
-                                         AND kassa = 1
-                                         AND id = doc_aa_id
-                                       ORDER BY default_ DESC)
+    IF doc_aa_id IS NULL OR NOT exists
+    (
+        SELECT
+            id
+        FROM
+            ou.aa
+        WHERE
+              parentId = user_rekvid
+          AND kassa = 1
+          AND id = doc_aa_id
+        ORDER BY default_ DESC
+    )
     THEN
-        SELECT id
+        SELECT
+            id
         INTO doc_aa_id
-        FROM ou.aa
-        WHERE parentId = user_rekvid
+        FROM
+            ou.aa
+        WHERE
+              parentId = user_rekvid
           AND kassa = 1
         ORDER BY default_ DESC
         LIMIT 1;
@@ -123,13 +143,26 @@ BEGIN
     IF coalesce(doc_doklausid, 0) = 0
     THEN
         -- не задан профиль, укажем принудительно
-        doc_doklausid = (SELECT ID
-                         FROM libs.dokprop
-                         WHERE parentid IN
-                               (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN (doc_type_kood))
-                           AND rekvid = user_rekvid
-                         ORDER BY registr DESC, id DESC
-                         LIMIT 1);
+        doc_doklausid = (
+                            SELECT
+                                ID
+                            FROM
+                                libs.dokprop
+                            WHERE
+                                  parentid IN
+                                  (
+                                      SELECT
+                                          id
+                                      FROM
+                                          libs.library
+                                      WHERE
+                                            library.library = 'DOK'
+                                        AND kood IN (doc_type_kood)
+                                  )
+                              AND rekvid = user_rekvid
+                            ORDER BY registr DESC, id DESC
+                            LIMIT 1
+                        );
     END IF;
 
     -- для модуля Hooldekodu укажем бенефициара платежа, если получателем денег является отличное от их владельца лицо
@@ -141,7 +174,7 @@ BEGIN
     -- для модуля lapsed укажем тип операции, для последующей контировки с коррекцией корр.счетов
     IF (doc_tyyp IS NOT NULL AND NOT empty(doc_tyyp))
     THEN
-        json_properties = jsonb_build_object('tehingu_tyyp', doc_tyyp, 'doc_kreedit_makse',doc_kreedit_makse);
+        json_properties = jsonb_build_object('tehingu_tyyp', doc_tyyp, 'doc_kreedit_makse', doc_kreedit_makse);
     END IF;
 
     -- вставка или апдейт docs.doc
@@ -149,10 +182,15 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS created,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS created,
+                    userName AS user
+            ) row;
 
 
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
@@ -160,28 +198,39 @@ BEGIN
         --RETURNING id             INTO doc_id;
         SELECT currval('docs.doc_id_seq') INTO doc_id;
 
-        INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
-                             dokid, properties)
-        VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, left(doc_number, 20), doc_muud,
-                coalesce(doc_arvid, 0),
-                coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
-                coalesce(doc_viitenr, ''), coalesce(doc_dok_id, 0), json_properties) RETURNING id
-                   INTO mk_id;
+        INSERT INTO
+            docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
+                     dokid, properties)
+        VALUES
+            (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, left(doc_number, 20), doc_muud,
+             coalesce(doc_arvid, 0),
+             coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
+             coalesce(doc_viitenr, ''), coalesce(doc_dok_id, 0), json_properties)
+        RETURNING id
+            INTO mk_id;
 
     ELSE
         kas_muudatus = TRUE;
-        SELECT row_to_json(row)
+        SELECT
+            row_to_json(row)
         INTO new_history
-        FROM (SELECT now()    AS updated,
-                     userName AS user) row;
+        FROM
+            (
+                SELECT
+                    now()    AS updated,
+                    userName AS user
+            ) row;
 
         -- устанавливаем связи с документами
 
         -- получим связи документа
-        SELECT docs_ids
+        SELECT
+            docs_ids
         INTO docs
-        FROM docs.doc
-        WHERE id = doc_id;
+        FROM
+            docs.doc
+        WHERE
+            id = doc_id;
 
         IF doc_arvid IS NOT NULL
         THEN
@@ -189,14 +238,17 @@ BEGIN
         END IF;
 
         UPDATE docs.doc
-        SET doc_type_id = doc_typeId,
+        SET
+            doc_type_id = doc_typeId,
             docs_ids    = docs,
             lastupdate  = now(),
             history     = coalesce(history, '[]') :: JSONB || new_history
-        WHERE id = doc_id;
+        WHERE
+            id = doc_id;
 
         UPDATE docs.mk
-        SET kpv        = doc_kpv,
+        SET
+            kpv        = doc_kpv,
             aaid       = doc_aa_id,
             number     = left(doc_number, 20),
             muud       = doc_muud,
@@ -207,7 +259,9 @@ BEGIN
             viitenr    = coalesce(doc_viitenr, ''),
             dokid      = coalesce(doc_dok_id, 0),
             properties = coalesce(properties, '{}'::JSONB) || coalesce(json_properties, '{}'::JSONB)
-        WHERE parentid = doc_id RETURNING id
+        WHERE
+            parentid = doc_id
+        RETURNING id
             INTO mk_id;
 
         -- если есть оплата счетов и меняется дата, правим
@@ -223,43 +277,57 @@ BEGIN
 
     FOR json_object IN
         SELECT *
-        FROM json_array_elements(doc_details)
+        FROM
+            json_array_elements(doc_details)
         LOOP
             SELECT *
             INTO json_record
-            FROM json_to_record(
-                         json_object) AS x(id TEXT, asutusid INTEGER, nomid INTEGER, summa NUMERIC(14, 4), aa TEXT,
-                                           pank TEXT,
-                                           tunnus TEXT, proj TEXT, konto TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT,
-                                           kood4 TEXT, kood5 TEXT, tp TEXT, valuuta TEXT, kuurs NUMERIC(14, 8),
-                                           journalid INTEGER);
+            FROM
+                json_to_record(
+                        json_object) AS x(id TEXT, asutusid INTEGER, nomid INTEGER, summa NUMERIC(14, 4), aa TEXT,
+                                          pank TEXT,
+                                          tunnus TEXT, proj TEXT, konto TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT,
+                                          kood4 TEXT, kood5 TEXT, tp TEXT, valuuta TEXT, kuurs NUMERIC(14, 8),
+                                          journalid INTEGER);
 
-            SELECT properties ->> 'tegev'    AS tegev,
-                   properties ->> 'artikkel' AS artikkel,
-                   properties ->> 'allikas'  AS allikas,
-                   *
+            SELECT
+                properties ->> 'tegev'    AS tegev,
+                properties ->> 'artikkel' AS artikkel,
+                properties ->> 'allikas'  AS allikas,
+                *
             INTO v_nom
-            FROM libs.nomenklatuur
-            WHERE id = json_record.nomid
+            FROM
+                libs.nomenklatuur
+            WHERE
+                id = json_record.nomid
             LIMIT 1;
 
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
-               NOT exists(SELECT id
-                          FROM docs.mk1
-                          WHERE id = json_record.id :: INTEGER)
+               NOT exists
+               (
+                   SELECT
+                       id
+                   FROM
+                       docs.mk1
+                   WHERE
+                       id = json_record.id :: INTEGER
+               )
             THEN
 
-                INSERT INTO docs.mk1 (parentid, asutusid, nomid, summa, aa, pank, tunnus, proj, konto,
-                                      kood1, kood2, kood3, kood4, kood5, tp, journalid)
-                VALUES (mk_id, json_record.asutusid, json_record.nomid, json_record.summa, json_record.aa,
-                        json_record.pank,
-                        json_record.tunnus, json_record.proj, json_record.konto,
-                        coalesce(json_record.kood1, v_nom.tegev), coalesce(json_record.kood2, v_nom.allikas),
-                        json_record.kood3, json_record.kood4,
-                        coalesce(json_record.kood5, v_nom.artikkel),
-                        json_record.tp, json_record.journalid) RETURNING id
-                           INTO mk1_id;
+                INSERT INTO
+                    docs.mk1 (parentid, asutusid, nomid, summa, aa, pank, tunnus, proj, konto,
+                              kood1, kood2, kood3, kood4, kood5, tp, journalid)
+                VALUES
+                    (mk_id, json_record.asutusid, json_record.nomid, json_record.summa, json_record.aa,
+                     json_record.pank,
+                     json_record.tunnus, json_record.proj, json_record.konto,
+                     coalesce(json_record.kood1, v_nom.tegev), coalesce(json_record.kood2, v_nom.allikas),
+                     json_record.kood3, json_record.kood4,
+                     coalesce(json_record.kood5, v_nom.artikkel),
+                     json_record.tp, json_record.journalid)
+                RETURNING id
+                    INTO mk1_id;
 
                 -- add new id into array of ids
                 ids = array_append(ids, mk1_id);
@@ -267,7 +335,8 @@ BEGIN
             ELSE
 
                 UPDATE docs.mk1
-                SET nomid    = json_record.nomid,
+                SET
+                    nomid    = json_record.nomid,
                     asutusid = json_record.asutusid,
                     summa    = json_record.summa,
                     aa       = json_record.aa,
@@ -281,7 +350,8 @@ BEGIN
                     kood4    = json_record.kood4,
                     kood5    = coalesce(json_record.kood5, v_nom.artikkel),
                     tp       = json_record.tp
-                WHERE id = json_record.id :: INTEGER;
+                WHERE
+                    id = json_record.id :: INTEGER;
 
                 mk1_id = json_record.id :: INTEGER;
 
@@ -293,9 +363,13 @@ BEGIN
             -- delete record which not in json
 
             DELETE
-            FROM docs.mk1
-            WHERE parentid = mk_id
-              AND id NOT IN (SELECT unnest(ids));
+            FROM
+                docs.mk1
+            WHERE
+                  parentid = mk_id
+              AND id NOT IN (
+                                SELECT unnest(ids)
+                            );
 
             l_uus_tasu_summa = l_uus_tasu_summa + json_record.summa;
 
@@ -310,8 +384,10 @@ BEGIN
             -- кешируем старую сумму оплаты
             SELECT *
             INTO v_arvtasu
-            FROM docs.arvtasu
-            WHERE doc_tasu_id = doc_id
+            FROM
+                docs.arvtasu
+            WHERE
+                  doc_tasu_id = doc_id
               AND status <> 3
             ORDER BY summa DESC
             LIMIT 1;
@@ -323,8 +399,8 @@ BEGIN
             ELSE
                 -- удаляем оплату и распределяем счета по новой
                 PERFORM docs.sp_delete_arvtasu(
-                                user_id,
-                                v_arvtasu.id);
+                        user_id,
+                        v_arvtasu.id);
             END IF;
         END IF;
 
@@ -350,37 +426,59 @@ BEGIN
     IF doc_lapsid IS NOT NULL AND doc_lapsid > 0
     THEN
 
-        IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
+        IF NOT exists
+        (
+            SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id
+        )
         THEN
+            -- если ВГ изменен, то удалим "старые" связи
+            DELETE FROM lapsed.liidestamine WHERE docid = doc_id;
+
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
+
         END IF;
 
         -- проверим на учреждение
-        IF NOT exists(SELECT id FROM lapsed.lapse_kaart WHERE parentid = doc_lapsid AND rekvid = user_rekvid)
+        IF NOT exists
+        (
+            SELECT id FROM lapsed.lapse_kaart WHERE parentid = doc_lapsid AND rekvid = user_rekvid
+        )
         THEN
             -- чужой, удаляем связь (Kalle 17.01.2023)
             DELETE FROM lapsed.liidestamine WHERE docid = doc_id AND parentid = doc_lapsid;
         END IF;
 
         -- присвоим платежу код группы по услугам
-        IF (SELECT properties ->> 'yksus'
-            FROM docs.mk
-            WHERE parentid = doc_id
-        ) IS NULL
+        IF (
+               SELECT
+                   properties ->> 'yksus'
+               FROM
+                   docs.mk
+               WHERE
+                   parentid = doc_id
+           ) IS NULL
         THEN
-            l_yksus = (SELECT properties ->> 'yksus'
-                       FROM lapsed.lapse_kaart
-                       WHERE parentid = doc_lapsid
-                         AND rekvid = user_rekvid
-                         AND staatus < 3
-                       ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
-                       LIMIT 1);
+            l_yksus = (
+                          SELECT
+                              properties ->> 'yksus'
+                          FROM
+                              lapsed.lapse_kaart
+                          WHERE
+                                parentid = doc_lapsid
+                            AND rekvid = user_rekvid
+                            AND staatus < 3
+                          ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
+                          LIMIT 1
+                      );
 
             UPDATE docs.mk
-            SET properties = coalesce(properties, '{}'::JSONB) || jsonb_build_object('yksus', l_yksus)
-            WHERE parentid = doc_id;
+            SET
+                properties = coalesce(properties, '{}'::JSONB) || jsonb_build_object('yksus', l_yksus)
+            WHERE
+                parentid = doc_id;
 
         END IF;
+
 
     END IF;
 
@@ -389,6 +487,13 @@ BEGIN
         -- произведем поиск и оплату счета
         PERFORM docs.sp_loe_tasu(doc_id, user_id);
     END IF;
+
+    -- в противном случае делаем разбор платежа
+    if l_jaak < 0
+        --   or  doc_opt::INTEGER <> 2
+    then
+        PERFORM docs.makse_umber_jaotada(user_id::INTEGER, doc_id::INTEGER, 0);
+    end if;
 
 
     RETURN doc_id;

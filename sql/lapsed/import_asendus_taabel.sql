@@ -98,7 +98,7 @@ BEGIN
                          json_object AS data) row;
 
             SELECT lapsed.sp_salvesta_lapse_taabel(json_save_params :: JSONB, user_id, user_rekvid) INTO l_id;
-            RAISE NOTICE 'json_save_params %, l_id %', json_save_params, l_id;
+
             IF l_id > 0
             THEN
                 count = count + 1;

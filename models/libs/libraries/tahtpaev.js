@@ -47,33 +47,36 @@ module.exports = {
             {id: "aasta", name: "Aasta", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `select 
-                $2::integer as userId, *
-                from cur_tahtpaevad l       
-                where (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `select
+                        $1::integer as rekvid,
+                        $2::integer as userId,
+                        *
+                    from
+                        cur_tahtpaevad l`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curHoliday'
     },
     getLog: {
-        command: `SELECT ROW_NUMBER() OVER ()              AS id,
-                         (ajalugu ->> 'user')::VARCHAR(20) AS kasutaja,
-                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
-                                  '')::VARCHAR(20)         AS koostatud,
-                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
-                                  '')::VARCHAR(20)         AS muudatud,
-                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
-                                  '')::VARCHAR(20)         AS prinditud,
-                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
-                                  '')::VARCHAR(20)         AS kustutatud
-
-                  FROM (SELECT $2                                                      AS user_id,
-                               jsonb_array_elements(jsonb_agg(jsonb_build_object('updated', propertis ->> 'updated', 'user',
-                                                            ltrim(rtrim(u.kasutaja))))) AS ajalugu
-                        FROM ou.logs l
-                                 LEFT OUTER JOIN ou.userid u ON u.id = l.user_id
-                        WHERE propertis ->> 'table' = 'library'
-                          AND doc_id = $1) qry
-        `,
+        command: `SELECT
+                      $2::integer                            as user_id,
+                      ROW_NUMBER() OVER (ORDER BY l.id DESC) AS id,
+                      ltrim(rtrim(u.kasutaja))::VARCHAR(20)  AS kasutaja,
+                      coalesce(to_char((l.propertis ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH24:MI:SS'),
+                               '')::VARCHAR(20)              AS koostatud,
+                      coalesce(to_char((l.propertis ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH24:MI:SS'),
+                               '')::VARCHAR(20)              AS muudatud,
+                      coalesce(to_char((l.propertis ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH24:MI:SS'),
+                               '')::VARCHAR(20)              AS prinditud,
+                      coalesce(to_char((l.propertis ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH24:MI:SS'),
+                               '')::VARCHAR(20)              AS kustutatud
+                  FROM
+                      ou.logs                       l
+                          LEFT OUTER JOIN ou.userid u ON u.id = l.user_id
+                  WHERE
+                        l.doc_id = $1::integer
+                    AND l.propertis ->> 'table' = 'library'
+                  ORDER BY
+                      l.id DESC;`,
         type: "sql",
         alias: "getLogs"
     },

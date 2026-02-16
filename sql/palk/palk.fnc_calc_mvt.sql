@@ -4,7 +4,6 @@ CREATE OR REPLACE FUNCTION palk.fnc_calc_mvt(params JSONB)
     RETURNS NUMERIC AS
 $BODY$
 
-    -- tnMVT_kokku personal taotluse summa
 DECLARE
     l_alus_summa            NUMERIC = coalesce((params ->> 'summa') :: NUMERIC, 0); -- tulu
     l_mvt_kokku             NUMERIC = coalesce((params ->> 'mvt_kokku') :: NUMERIC, 0); -- taotluse summa
@@ -15,28 +14,25 @@ DECLARE
 
     l_tki                   NUMERIC = coalesce((params ->> 'tki') :: NUMERIC, 0);
     l_pm                    NUMERIC = coalesce((params ->> 'pm') :: NUMERIC, 0);
-
     kas_pensionar           BOOLEAN = coalesce((params ->> 'kas_pensionar') :: BOOLEAN, FALSE);
-    l_isiku_MVT             NUMERIC = palk.calc_mvt((l_alus_summa + l_enne_arvestatud_tulud), l_mvt_kokku); -- сумма, которую можно использовать как мвт
-    l_taotluse_MVT          NUMERIC = CASE
-                                          WHEN NOT kas_pensionar THEN l_isiku_MVT
-                                          ELSE coalesce((params ->> 'taotluse_MVT') :: NUMERIC, 0) END; -- сумма, по заявлению
+    l_kpv                   date    = params ->> 'kpv';
+    l_isiku_MVT             NUMERIC = palk.calc_mvt((l_alus_summa + l_enne_arvestatud_tulud), l_mvt_kokku,
+                                                    l_kpv); -- сумма, которую можно использовать как мвт
     l_MVT                   NUMERIC = l_isiku_MVT - l_kokku_kasutatud_mvt;
 
 BEGIN
-    RAISE NOTICE 'fnc params %',params;
     IF (kas_pensionar)
     THEN
         l_isiku_MVT = l_mvt_kokku - l_kokku_kasutatud_mvt;
         l_MVT = CASE WHEN l_isiku_MVT > 0 THEN l_isiku_MVT ELSE 0 END;
     END IF;
-    RAISE NOTICE 'fnc l_isiku_MVT %, l_alus_summa %, l_MVT %',l_isiku_MVT, l_alus_summa, l_MVT;
 
     IF l_MVT > (l_alus_summa - l_tki - l_pm)
     THEN
         l_MVT = l_alus_summa - l_tki - l_pm;
         l_isiku_MVT = l_MVT; -- поправим мвт
     END IF;
+
 
     IF l_alus_summa < 0
     THEN
@@ -71,14 +67,15 @@ GRANT EXECUTE ON FUNCTION palk.fnc_calc_mvt(JSONB) TO dbkasutaja;
 
 
 
-SELECT palk.fnc_calc_mvt('{
-  "summa": 239.3200,
-  "mvt_kokku": 500.0000,
-  "kokku_kasutatud_mvt": 177.4600,
-  "tulud_kokku": 184.0900,
-  "tki": 3.8300,
-  "pm": 4.7900
-}'::JSONB)
+SELECT
+    palk.fnc_calc_mvt('{
+      "summa": 239.3200,
+      "mvt_kokku": 700.0000,
+      "kokku_kasutatud_mvt": 177.4600,
+      "tulud_kokku": 184.0900,
+      "tki": 3.8300,
+      "pm": 4.7900
+    }'::JSONB)
 
 /*
 SELECT palk.fnc_calc_mvt(

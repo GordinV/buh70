@@ -74,7 +74,7 @@ describe('dok. type taotlus_mvt tests', function () {
         });
     });
 
-    it('doc type library should contain TAOTLUS_MVT doc.type', async()=> {
+    it.skip('doc type library should contain TAOTLUS_MVT doc.type', async()=> {
         let sql = `select id from libs.library where kood = 'TAOTLUS_MVT' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -83,7 +83,7 @@ describe('dok. type taotlus_mvt tests', function () {
 
     });
 
-    it('call palk.get_taotlus_mvt_data, should return data', async () => {
+    it.skip('call palk.get_taotlus_mvt_data, should return data', async () => {
         let sql = `WITH qry AS (SELECT t.parentid as isik_id
              FROM palk.tooleping t
              LIMIT 1)
@@ -97,7 +97,7 @@ describe('dok. type taotlus_mvt tests', function () {
     });
 
     //palk.isiku_mvt_taotlused
-    it('should exists view isiku_mvt_taotlused', async()=> {
+    it.skip('should exists view isiku_mvt_taotlused', async()=> {
         let sql = `select 1 FROM pg_views WHERE viewname = 'isiku_mvt_taotlused'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();

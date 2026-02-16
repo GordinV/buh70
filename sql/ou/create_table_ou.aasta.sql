@@ -28,3 +28,8 @@ ALTER TABLE ou.aasta
 
 UPDATE ou.aasta set palk_kinni = kinni;
 
+
+ALTER TABLE ou.aasta
+    ADD COLUMN IF NOT EXISTS eelarve_kinni SMALLINT DEFAULT 0 NOT NULL;
+
+UPDATE ou.aasta set eelarve_kinni = kinni;

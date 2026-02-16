@@ -78,6 +78,7 @@ DECLARE
     l_arve_kogus         NUMERIC = 0; -- для проверки кол-ва услуг в счете
     l_selg               TEXT    = ''; -- доп. пояснение
     l_kas_saldo_ulekanne BOOLEAN = FALSE; -- тип счета (перенос сальдо)
+    l_kas_arve_saadetud  boolean = false;
 
 BEGIN
 
@@ -197,7 +198,17 @@ BEGIN
             lt.properties ->> 'kas_asendus'                                                        AS kas_asendus,
             at.rekvid                                                                              AS asendus_rekvid,
             ltrim(rtrim(CASE WHEN r.muud IS NULL OR empty(r.muud) THEN r.nimetus ELSE r.muud END)) AS asendus_asutus,
-            at.id                                                                                  AS asendus_id
+            at.id                                                                                  AS asendus_id,
+            exists
+            (
+                select
+                    id
+                from
+                    docs.arv1 a1
+                where
+                      a1.properties ->> 'lapse_taabel_id' is not null
+                  and (a1.properties ->> 'lapse_taabel_id')::integer = lt.id
+            )                                                                                      as kas_arve_olemas
         FROM
             lapsed.lapse_taabel                       lt
                 INNER JOIN      lapsed.lapse_kaart    lk
@@ -329,6 +340,7 @@ BEGIN
                 )
                 THEN
                     l_arv_id = null;
+                    l_kas_arve_saadetud = true;
                 END IF;
 
 
@@ -370,23 +382,28 @@ BEGIN
                                   );
 
                     -- подготавливаем параметры для создания счета
-                    SELECT
-                        row_to_json(row)
-                    INTO json_object
-                    FROM
-                        (
-                            SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data
-                        ) row;
+                    if l_kas_arve_saadetud and v_taabel.kas_arve_olemas then
+                        -- счет на эту строку уже есть и он отправлен.
+                        l_json_arve = '[]'::JSONB;
+                    else
+                        SELECT
+                            row_to_json(row)
+                        INTO json_object
+                        FROM
+                            (
+                                SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data
+                            ) row;
 
-                    IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus <> 0 OR l_arve_kogus <> 0
-                    THEN
-                        SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
-                        -- контируем
-                        PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
+                        IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus <> 0 OR l_arve_kogus <> 0
+                        THEN
+                            SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+                            -- контируем
+                            PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
 
-                    ELSE
-                        l_arve_kogus = 0; -- обнулим кол-во услуг
-                    END IF;
+                        ELSE
+                            l_arve_kogus = 0; -- обнулим кол-во услуг
+                        END IF;
+                    end if;
                 END IF;
 
                 -- обнуляем строку
@@ -397,7 +414,6 @@ BEGIN
                 json_arvread = json_arvread || json_arvrea;
                 -- calc arve summa
                 l_arve_summa = l_arve_summa + (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus;
-
             END IF;
             i = i + 1;
         END LOOP;

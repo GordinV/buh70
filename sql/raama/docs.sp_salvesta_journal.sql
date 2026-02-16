@@ -686,7 +686,7 @@ BEGIN
             if not exists
             (
                 select id from lapsed.liidestamine where parentid = l_laps_id and docid = doc_id
-            ) then
+            ) and l_laps_id is not null then
                 insert into lapsed.liidestamine (parentid, docid)
                 values (l_laps_id, doc_id);
             end if;

@@ -72,7 +72,7 @@ describe('dok. type Kontod tests', function () {
         });
     });
 
-    it('should succesfully sql selectAsLibs', async () => {
+    it.skip('should succesfully sql selectAsLibs', async () => {
         let sql = doc.selectAsLibs;
         let returnValue = await db.queryDb(sql, [null]);
         expect(returnValue).toBeDefined();

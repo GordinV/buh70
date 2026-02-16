@@ -176,11 +176,17 @@ BEGIN
     -- vanem
     IF exists(SELECT id FROM lapsed.vanemad WHERE asutusid = vale_id AND staatus < 3)
     THEN
+        if (SELECT count(id) FROM lapsed.vanemad WHERE asutusid in (oige_id, vale_id) AND staatus < 3) > 1 then
+            delete from lapsed.vanemad where asutusid = vale_id;
+        end if;
+
         UPDATE lapsed.vanemad SET asutusid = oige_id WHERE asutusid = vale_id AND staatus < 3;
     END IF;
 
     IF exists(SELECT id FROM lapsed.vanem_arveldus WHERE asutusid = vale_id)
     THEN
+        delete from lapsed.vanem_arveldus where asutusid = vale_id and not arveldus;
+
         UPDATE lapsed.vanem_arveldus SET asutusid = oige_id WHERE asutusid = vale_id;
     END IF;
 

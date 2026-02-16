@@ -636,7 +636,6 @@ BEGIN
 
                         l_json_details = coalesce(l_json_details, '[]'::JSONB) || to_jsonb(v_journal);
 
-
                         -- Доп. проводка для род.платы, если услуга была оказана в другом учреждении
                         IF v_arv1.properties ->> 'asendus_id' IS NOT NULL AND exists
                         (
@@ -901,12 +900,28 @@ BEGIN
             THEN
                 FOR i IN 1..jsonb_array_length(l_json_asendus_details::JSONB)
                     LOOP
+                        -- ищем параллельную проводку
+                        l_parrallel_id = (
+                                             select
+                                                 j.id
+                                             from
+                                                 docs.journal                 j
+                                                     inner join docs.journal1 j1 on j.id = j1.parentid
+                                             where
+                                                   j.parentid in (
+                                                                     select unnest(v_arv.docs_ids::integer[])
+                                                                 )
+                                               and j.rekvid =
+                                                   ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_rekvid')::INTEGER
+                                               and (j.properties ->> 'asendus_id')::integer =
+                                                   ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_id')::INTEGER
+                                         );
 
                         lcSelg = 'Tulud üleviimine: ' ||
                                  ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_tunnus');
 
                         SELECT
-                            0                                                                             AS id,
+                            coalesce(l_parrallel_id, 0)                                                   AS id,
                             'JOURNAL'                                                                     AS doc_type_id,
                             v_arv.kpv                                                                     AS kpv,
                             lcSelg                                                                        AS selg,
@@ -946,6 +961,10 @@ BEGIN
                         l_parrallel_id =
                                 docs.sp_salvesta_journal(l_json :: JSON, l_asendus_user_id,
                                                          ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_rekvid')::INTEGER);
+
+                        -- свяжем параллельную проводку со счетом
+                        v_arv.docs_ids = array_append(v_arv.docs_ids, l_parrallel_id);
+
                     END LOOP;
 
 
