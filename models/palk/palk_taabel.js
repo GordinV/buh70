@@ -17,6 +17,7 @@ module.exports = {
                      p.status,
                      p.muud,
                      coalesce((p.properties ->> 'tahtpaeva_tunnid')::NUMERIC, 0)::NUMERIC AS tahtpaeva_tunnid,
+                     p.tyyp::varchar(20),
                      t.parentid
               FROM palk.palk_taabel1 p
                        INNER JOIN palk.tooleping t ON t.id = p.lepingid
@@ -39,6 +40,7 @@ module.exports = {
                       0::numeric(12,4) as uleajatoo,
                       0::numeric(12,4) as tahtpaeva_tunnid,
                       1 as status,
+                      'TAVALINE'::varchar(20) as tyyp,
                       0::integer          as parentid,
                       null::text as muud`,
         query: null,
