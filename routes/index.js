@@ -15,6 +15,9 @@ module.exports = function (app) {
         // arv.palk leht, email
         app.get('/email/PALK_LEHT/:id', require('./palk/palk_leht').email); //checkAuth
     */
+//AI
+    // trasform address according to prompt
+    app.post('/ai/get_address/', require('./ai/getAddress'));
 
 // taotlus
     app.get('/print/TAOTLUS/:hash/:id/', require('./eelproj/taotlus').get); //checkAuth
