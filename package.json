@@ -11,6 +11,7 @@
     "storybook": "start-storybook -p 9001 -c .storybook"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "ajax": "0.0.4",
     "async": "^1.5.0",
     "axios": "^0.19.0",
@@ -31,6 +32,7 @@
     "csurf": "^1.10.0",
     "csv-parse": "^4.6.5",
     "debug": "~2.2.0",
+    "dotenv": "^17.3.1",
     "easy-soap-request": "^2.6.0",
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",
@@ -72,6 +74,7 @@
     "xmlbuilder": "^13.0.2"
   },
   "devDependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@storybook/react": "^3.4.12",
     "babel-cli": "^6.26.0",
     "babel-plugin-transform-class-properties": "^6.23.0",
@@ -81,6 +84,7 @@
     "babel-preset-react": "^6.23.0",
     "babel-preset-stage-0": "^6.22.0",
     "chai-immutable": "^1.6.0",
+    "dotenv": "^17.3.1",
     "enzyme": "^2.5.1",
     "eslint": "^4.19.1",
     "eslint-config-airbnb": "^16.1.0",
@@ -97,6 +101,7 @@
     "jsdom": "^5.3.0",
     "jsx-loader": "^0.13.2",
     "mocha": "^3.1.2",
+    "node-fetch": "^2.7.0",
     "object-to-xml": "^1.1.0",
     "proxyquire": "^1.7.10",
     "react": "^16.10.2",
