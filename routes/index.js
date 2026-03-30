@@ -32,7 +32,7 @@ module.exports = function (app) {
 
     // same as main
     app.get('/', require('./login').get)
-//    app.get('/pdf/:doc_id',require('./login').get) // попытка получить доступ к пдф файлам
+    app.get('/pdf/:doc_id',require('./login').get) // попытка получить доступ к пдф файлам
 
     app.post('/', require('./login').post);
 
