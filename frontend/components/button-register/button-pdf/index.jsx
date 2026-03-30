@@ -12,20 +12,20 @@ class ButtonPdf extends React.PureComponent {
 // кнопка вызова файла влодения в формате PDF
     constructor(props) {
         super(props);
+        this.handleClick = this.handleClick.bind(this);
     }
 
     handleClick(e) {
-        if (this.props.onClick()) {
-            return this.props.onClick();
-        }
+        console.log('handleClick', e)
+        return this.props.onClick();
     }
 
     render() {
         return <Button
             ref="btnGetPdf"
-            value = {this.props.value? this.props.value: 'PDF'}
+            value={this.props.value ? this.props.value : 'PDF'}
             onClick={(e) => this.handleClick(e)}>
-            <img ref = 'image' src={styles.icons[ICON]}/>
+            <img ref='image' src={styles.icons[ICON]}/>
         </Button>
     }
 }

@@ -31,7 +31,9 @@ module.exports = function (app) {
     app.post('/virasoft/import/', require('./virasoft')); //checkAuth
 
     // same as main
-    app.get('/', require('./login').get);
+    app.get('/', require('./login').get)
+//    app.get('/pdf/:doc_id',require('./login').get) // попытка получить доступ к пдф файлам
+
     app.post('/', require('./login').post);
 
 //login logic
@@ -108,6 +110,8 @@ module.exports = function (app) {
     app.get('/reports/lapse_taabel/:uuid/:params*?/', require('./reports/lapse_taabel').get);
     app.get('/reports/pank_vv/:uuid/:filter/:params*?/', require('./reports/pank_vv').get);
     app.get('/reports/pank_vv/:uuid/:params*?/', require('./reports/pank_vv').get);
+
+    app.get('/pdf_file/teatis/:uuid/:id/', require('./pdf').getPdf); //checkAuth will return stored PDF file
 
     app.get('/pdf/:documentType/:uuid/:id/:params', require('./pdf').get); //checkAuth
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth

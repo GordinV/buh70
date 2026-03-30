@@ -54,7 +54,6 @@ const db = {
 
         try {
             await client.connect();
-
             const res = await client.query(prepairedSqlString, params);
 
             if (res.rowCount && res.rowCount === 1 && res.rows && res.rows.length === 1 && ('error_code' in res.rows[0])) {

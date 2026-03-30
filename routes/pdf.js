@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const getParameterFromFilter = require('./../libs/getParameterFromFilter');
 const getGroupedData = require('./../libs/getGroupedData');
+const Doc = require("../classes/DocumentTemplate");
 
 
 const createPDF = async function createFile(html, fileName = 'doc') {
@@ -29,6 +30,30 @@ const createPDF = async function createFile(html, fileName = 'doc') {
     }
     return outFile;
 };
+
+exports.getPdf = async (req, res) => {
+    let id = req.params.id || 0; // параметр id документа
+    const uuid = req.params.uuid || ''; // параметр uuid пользователя
+    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
+
+    id = Number(id);
+
+    const cachedFileName = `doc_${id}.pdf`;
+    const cachedFilePath = path.join(__dirname, '..', 'public', 'pdf', cachedFileName);
+
+    try {
+        await fs.promises.access(cachedFilePath, fs.constants.F_OK); // Проверяем, существует ли файл
+
+        const stream = fs.createReadStream(cachedFilePath);
+        res.setHeader('Content-disposition', 'inline; filename="doc.pdf"');
+        res.setHeader('Content-type', 'application/pdf');
+        stream.pipe(res);
+
+        return; // ВАЖНО: Выходим из функции после отдачи существующего файла
+    } catch (error) {
+        res.send({status: 500, result: 'Puudub fail'});
+    }
+}
 
 
 exports.get = async (req, res) => {
@@ -92,8 +117,8 @@ exports.get = async (req, res) => {
         const method = id ? 'select' : 'selectDocs';
         let gridParams;
 
-        if (method === 'selectDocs'  && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
-            gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
+        if (method === 'selectDocs' && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
+            gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
 
         let result = await doc[method]('', sqlWhere, limit, gridParams);

@@ -270,30 +270,37 @@ const Teatis = {
             {id: "select", name: "Valitud", width: "10%", show: false}
 
         ],
-        sqlString: `WITH params AS (
-                        SELECT $1::integer AS rekv_id,
-                               $2::integer  AS user_id
-                    ) SELECT
-                         t.id,
-                         t.number :: TEXT,
-                         t.rekvid,
-                         to_char(t.kpv, 'DD.MM.YYYY HH24:MI:SS') :: TEXT AS kpv,
-                         params.user_id::INTEGER AS userId,
-                         t.asutus :: TEXT AS asutus,
-                         to_char(t.saadetud, 'DD.MM.YYYY') AS saadetud,
-                         t.email_aadress,
-                         to_char(t.print, 'DD.MM.YYYY HH24:MI:SS') AS print,
-                        r.muud as tais_nimetus,
-                        r.tel as rekv_tel,
-                        r.email as rekv_email,
-                        r.aadress as rekv_aadress,
-                        r.regkood as rekv_regkood,                                         
-                         TRUE AS select
-                        FROM cur_teatised t,
-                         params,
-                         ou.rekv r 
-                        WHERE r.id = t.rekvId
-                         and t.rekvId = params.rekv_id::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `WITH
+                        params AS (
+                                      SELECT
+                                          $1::integer AS rekv_id,
+                                          $2::integer AS user_id
+                        )
+                    SELECT
+                        t.id,
+                        t.number :: TEXT,
+                        t.rekvid,
+                        to_char(t.kpv, 'DD.MM.YYYY HH24:MI:SS') :: TEXT AS kpv,
+                        params.user_id::INTEGER                         AS userId,
+                        t.asutus :: TEXT                                AS asutus,
+                        to_char(t.saadetud, 'DD.MM.YYYY')               AS saadetud,
+                        t.email_aadress,
+                        to_char(t.print, 'DD.MM.YYYY HH24:MI:SS')       AS print,
+                        r.muud                                          as tais_nimetus,
+                        r.tel                                           as rekv_tel,
+                        r.email                                         as rekv_email,
+                        r.aadress                                       as rekv_aadress,
+                        r.regkood                                       as rekv_regkood,
+                        TRUE                                            AS select
+                    FROM
+                        cur_teatised t,
+                                     params,
+                        ou.rekv      r
+                    WHERE
+                          r.id = t.rekvId
+                      and t.rekvId = params.rekv_id::INTEGER
+                    order by
+                        t.kpv desc`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTeatised'
     },

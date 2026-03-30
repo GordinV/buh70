@@ -11,8 +11,10 @@ const
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
+    BtnGetPdf = require('./../../../components/button-register/button-pdf/index.jsx'),
 
     styles = require('./styles');
+const DocContext = require("../../../doc-context");
 
 const LIBDOK = 'TEATIS',
     LIBRARIES = [];
@@ -32,6 +34,7 @@ class Teatis extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.handlePageClick = this.handlePageClick.bind(this);
         this.btnEditAsutusClick = this.btnEditAsutusClick.bind(this);
+        this.handleBtnGetPdf = this.handleBtnGetPdf.bind(this);
 
         this.pages = [
             {pageName: 'Teatis', docTypeId: 'TEATIS'},
@@ -135,10 +138,16 @@ class Teatis extends React.PureComponent {
                               value={self.docData.muud || ''}
                               readOnly={!isEditMode}/>
                 </div>
+                <BtnGetPdf
+                    value={`doc.pdf`}
+                    name='btnGetPdf'
+                    ref='btnGetPdf'
+                    onClick={this.handleBtnGetPdf}/>
 
             </div>
         );
     }
+
 
     handlePageClick(pageDocTypeId) {
         let nimi = this.refs['document'].docData.vanem_nimi;
@@ -157,6 +166,18 @@ class Teatis extends React.PureComponent {
         // осуществит переход на карточку контр-агента
         this.props.history.push(`/lapsed/asutused/${docAsutusId}`);
     }
+
+    handleBtnGetPdf() {
+        // get url
+        console.log('teatis handleBtnGetPdf', this.state.docId);
+        let url;
+        if (this.state.docId) {
+            url = `/pdf_file/teatis/${DocContext.userData.uuid}/${this.state.docId}`;
+            console.log('handleBtnGetPdf', this.state.docId);
+            window.open(`${url}`);
+        }
+    }
+
 }
 
 Teatis.propTypes = {

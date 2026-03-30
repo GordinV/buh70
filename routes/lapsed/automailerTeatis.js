@@ -335,12 +335,15 @@ const automailer = async () => {
                             throw err; // Пробрасываем ошибку, чтобы Promise.all поймал (или использовать allSettled)
                         } finally {
                             // Всегда удаляем временный файл
+                            console.log('Teatis saadetud',Teatis.id )
 
+/*
                             if (filePDF) {
                                 fs.unlink(filePDF, (err) => {
                                     if (err) console.error('Warning: Failed to delete temp PDF', err);
                                 });
                             }
+*/
                         }
                     }
                 )
