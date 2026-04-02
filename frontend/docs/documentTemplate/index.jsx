@@ -179,7 +179,7 @@ class DocumentTemplate extends React.Component {
         this.makeBackup();
 
         if (this.props.history) {
-            this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/0`);
+            this.props.history.push(`/lapsed/${this.props.docTypeId}/0`);
         }
 
         this.setState({docId: 0, edited: true}, () => {
@@ -258,7 +258,7 @@ class DocumentTemplate extends React.Component {
                 queryType: 'id' // ид - документ, where -
             };
 
-            this.props.history.push(`/${this.props.module}/e-mail/0`);
+            this.props.history.push(`/lapsed/e-mail/0`);
         }
     }
 
@@ -314,7 +314,7 @@ class DocumentTemplate extends React.Component {
                 if (this.props.reload) {
                     // reload / redirect
                     setTimeout(() => {
-                        const current = `/${this.props.module ? this.props.module : 'lapsed'}/${docTypeId}/${docId}`;
+                        const current = `/lapsed/${docTypeId}/${docId}`;
                         this.props.history.replace(`/reload`);
                         setTimeout(() => {
                             this.props.history.replace(current);
@@ -382,7 +382,7 @@ class DocumentTemplate extends React.Component {
 
                     setTimeout(() => {
                         // koostatud uus dok, teeme reload
-                        const current = `/${this.props.module}/${this.props.docTypeId}/${this.state.docId}`;
+                        const current = `/lapsed/${this.props.docTypeId}/${this.state.docId}`;
                         if (task.task == 'KoostaTagasimakse' || task.task == 'KoostaUlekanneMakse') {
 
                             // осуществит переход на карточку контр-агента
@@ -681,7 +681,7 @@ class DocumentTemplate extends React.Component {
         let method = 'fetchDataPost';
         let params = {
             docTypeId: this.props.docTypeId ? this.props.docTypeId : DocContext.docTypeId,
-            module: this.props.module ? this.props.module : DocContext.module,
+            module: 'lapsed',
             userId: DocContext.getUserId,
             uuid: DocContext.getUuid,
             docId: this.state.docId,

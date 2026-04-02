@@ -61,8 +61,8 @@ class Smk extends React.PureComponent {
     componentDidMount() {
         if (this.props.history && this.props.history.location.state) {
             let lapsId = this.props.history.location.state.lapsId;
-            let module = this.props.history.location.state.module ? this.props.history.location.state.module : 'lapsed';
-            this.setState({lapsId: lapsId, module: module});
+//            let module = this.props.history.location.state.module ? this.props.history.location.state.module : 'lapsed';
+            this.setState({lapsId: lapsId, module: 'lapsed'});
         }
 
     }
@@ -267,7 +267,7 @@ class Smk extends React.PureComponent {
 
             const params = {
                 docTypeId: DOC_TYPE_ID,
-                module: this.props.module ? this.props.module : DocContext.module,
+                module: 'lapsed',
                 userId: DocContext.userData.userId,
                 uuid: DocContext.userData.uuid,
                 docs: [Number(this.state.arvId)],
@@ -293,7 +293,7 @@ class Smk extends React.PureComponent {
                         // переходим на созданнй док
                         if (newDocId) {
                             setTimeout(() => {
-                                const current = `/${this.props.module ? this.props.module : DocContext.module}/smk/${newDocId}`;
+                                const current = `/lapsed/smk/${newDocId}`;
                                 this.props.history.replace(`/reload`);
                                 setTimeout(() => {
                                     this.props.history.replace(current);

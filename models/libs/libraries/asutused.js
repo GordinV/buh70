@@ -199,5 +199,10 @@ module.exports = {
         type: "sql",
         alias: "getLogs"
     },
+    ai : {
+        endpoint: `http://oppetasu.narva.ee:3000/ai/get_address/`,
+        type: `link`,
+        alias: `ai`
+    }
 
 };

@@ -239,7 +239,8 @@ const DocContext = {
     },
 
     get getModule() {
-        return this.module;
+
+        return this.module ? this.module: 'lapsed';
     },
 
     get getMenu() {

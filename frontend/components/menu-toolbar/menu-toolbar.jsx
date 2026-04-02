@@ -189,12 +189,12 @@ class MenuToolBar extends React.Component {
 
         if (this.props.history) {
             return this.props.history.push({
-                pathname: `/${DocContext.getModule}/${value}`,
+                pathname: `/lapsed/${value}`,
                 state: {module: DocContext.getModule}
 
             });
         } else {
-            document.location.href = `/${DocContext.getModule}/${value}`
+            document.location.href = `/lapsed/${value}`
         }
     }
 
@@ -222,7 +222,7 @@ class MenuToolBar extends React.Component {
 
     btnAccountClick() {
         return this.props.history.push({
-            pathname: `/${DocContext.getModule}/userid/${DocContext.getUserId}`,
+            pathname: `/lapsed/userid/${DocContext.getUserId}`,
             state: {module: DocContext.getModule}
         });
 
@@ -231,7 +231,7 @@ class MenuToolBar extends React.Component {
 
     btnLinkClick() {
         return this.props.history.push({
-            pathname: `/${DocContext.getModule}/laps`,
+            pathname: `/lapsed/laps`,
             state: {module: DocContext.getModule}
         });
 
@@ -240,7 +240,7 @@ class MenuToolBar extends React.Component {
 
     btnEditRekvClick() {
         return this.props.history.push({
-            pathname: `/${DocContext.getModule}/rekv/${DocContext.getAsutusId}`,
+            pathname: `/lapsed/rekv/${DocContext.getAsutusId}`,
             state: {module: DocContext.getModule}
         });
 
