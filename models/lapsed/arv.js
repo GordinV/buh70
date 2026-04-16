@@ -836,7 +836,7 @@ const Arv = {
                  LEFT OUTER JOIN ebatoenaolised_mahakandmine em ON em.arv_id = a.id
                  LEFT JOIN ebatoenaolised_tagastamine et ON et.arv_id = a.id                  
                  LEFT JOIN ebatoenaolised_kreedit_arve eka ON eka.arv_id = a.id                  
-         order by yksus, a.kpv`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+         order by a.kpv,yksus`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLasteArved'
     },
