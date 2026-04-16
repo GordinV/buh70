@@ -8,14 +8,21 @@ exports.post = async (req, res) => {
     const user = await require('../middleware/userData')(req), // данные пользователя
         parameter = req.body.parameter || '',// параметры если переданы
         module = req.body.module || 'documents',
-        sortBy = req.body.sortBy, //порядок сортировки
+//        sortBy = req.body.sortBy, //порядок сортировки
         limit = req.body.limit ? req.body.limit : Liimit, //порядок сортировки
         method = req.body.method ? req.body.method : 'selectDocs', //порядок сортировки
         sqlWhere = req.body.sqlWhere, //динамический фильтр
         filterData = req.body.filterData || []; // параметры фильтры
     let paring_id = req.body.paring_id; // ид запроса, вернем его , если задан
+    let sortBy = req.body.sortBy; //порядок сортировки
 
-    if (!user) {
+// same object type
+    if (sortBy && Object.keys(sortBy).length === 0) {
+        sortBy = [];
+    }
+
+    if
+    (!user) {
         console.error('error 401 newAPI');
         return res.status(401).end();
 
@@ -41,6 +48,11 @@ exports.post = async (req, res) => {
             gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
 
+        // установим дефолт на сортировку
+        if (sortBy.length === 0 || (Object.keys(sortBy[0]).length === 0  && doc.config.grid.defaults && doc.config.grid.defaults.ORDER_BY)) {
+            sortBy = doc.config.grid.defaults ?  [doc.config.grid.defaults.ORDER_BY]:[];
+        }
+
         // установим таймаут для ожидания тяжелых отчетов
         res.setTimeout(400000);
 
@@ -48,7 +60,7 @@ exports.post = async (req, res) => {
         // оставим только "заданные" параметры
         let paramsWithData = gridParams ? gridParams.filter(param => param) : [];
 
-        let minimum = doc.config.grid.min_params ? (doc.config.grid.min_params): 4;
+        let minimum = doc.config.grid.min_params ? (doc.config.grid.min_params) : 4;
 
         if (doc.config.grid.notReloadWithoutParameters && doc.config.grid.params.length > 2 && paramsWithData.length < minimum) {
             // если задан параметр, то не делать выборку, пока нет параметров (для отчетов)

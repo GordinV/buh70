@@ -264,15 +264,17 @@ const Smk = {
             select t.inf3_summa, d.*
             from docs d
                      left outer join tasud t on t.doc_tasu_id = d.id
-            order by d.doc_maksepaev
-
         `,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         totals: `sum(deebet) over() as deebet_total,
                 sum(kreedit) over() as kreedit_total,
                 sum(inf3_summa) over() as inf3_total`,
-        alias: 'curLasteMk'
+        alias: 'curLasteMk',
+        defaults: {
+            ORDER_BY: {column: 'kpv', direction: 'desc', type: 'date'}
+        }
+
     },
 
     returnData: {
