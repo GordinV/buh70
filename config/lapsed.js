@@ -62,6 +62,7 @@ module.exports = {
     arved_emailiga:'/aruanned/lapsed/arved_emailiga',
     saldod_asutustes:'/aruanned/lapsed/saldod_asutustes',
     saldo_aruanne:'/aruanned/lapsed/saldo_aruanne',
+    topelt_saldo:'/aruanned/lapsed/topelt_saldo',
     asendus_taabel:'/lapsed/asendus_taabel',
 
 };
