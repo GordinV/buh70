@@ -6,7 +6,7 @@ module.exports = {
             {id: "ik", name: "Lapse IK", width: "10%", show: false},
             {id: "vn", name: "Viitenumber", width: "10%", show: true},
             {id: "arvete_jaak", name: "Arvete jääk", width: "10%", type: "number", interval: true},
-            {id: "mk_jaak", name: "Maksekorraldu ettemaks", width: "10%", type: "number", interval: true},
+            {id: "mk_jaak", name: "Maksekorralduse ettemaks", width: "10%", type: "number", interval: true},
             {id: "asutus", name: "Asutus", width: "20%", type: "text", show: true, interval: true},
         ],
         sqlString: `select *,
