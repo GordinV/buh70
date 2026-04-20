@@ -93,6 +93,7 @@ module.exports = function (app) {
     app.get('/reports/kaive_aruanne_kokku/:uuid/:filter/:params*?', require('./reports/kaive_aruanne_kokku').get);
     app.get('/reports/kaive_aruanne/:uuid/:filter/:params*?', require('./reports/kaive_aruanne').get);
     app.get('/reports/topelt_saldo/:uuid/:filter/:params*?', require('./reports/topelt_saldo').get);
+    app.get('/reports/jaotamata_jaak/:uuid/:filter/:params*?', require('./reports/jaotamata_jaak').get);
     app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?', require('./reports/saldo_ja_kaive').get);
     app.get('/reports/saldo_ja_kaibeandmik/:uuid/:filter/:params*?', require('./reports/saldo_ja_kaibeandmik').get);
     app.get('/reports/kuutabeli_aruanne/:uuid/:filter/:params*?', require('./reports/kuutabeli_aruanne').get);

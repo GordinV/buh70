@@ -53,6 +53,7 @@ module.exports = {
     yksuse_taabel: '/aruanned/lapsed/yksuse_taabel',
     kohaloleku_aruanne: '/aruanned/lapsed/kohaloleku_aruanne',
     topeltmaksud: '/aruanned/lapsed/topeltmaksud',
+    jaotamata_jaak: '/aruanned/lapsed/jaotamata_jaak',
     kuutabeli_aruanne: '/aruanned/lapsed/kuutabeli_aruanne',
     viitenr:'/lapsed/viitenr',
     kaive_aruanne_kokku:'/aruanned/lapsed/kaive_kokkuvote',
