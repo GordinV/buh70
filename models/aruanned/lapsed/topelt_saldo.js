@@ -1,7 +1,7 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "period", name: "Period", width: "1%", show: false, type: "date"},
+            {id: "period", name: "Seisuga", width: "1%", show: false, type: "date"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
             {id: "lapse_isikukood", name: "Lapse IK", width: "10%", show: true},
             {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
@@ -48,7 +48,7 @@ module.exports = {
                                                                                      lasteaeds
                                                                                  where
                                                                                      liik = 'LASTEAED'
-                                                                             ) and jaak <> 0 then 1
+                                                                             )  then 1
                                                             else 0 end as lasteaja_asutuste_count
                                                  FROM
                                                      lapsed.kaive_aruanne($1::INTEGER, $3::date, $3::date) r
