@@ -48,7 +48,7 @@ module.exports = {
                                                                                      lasteaeds
                                                                                  where
                                                                                      liik = 'LASTEAED'
-                                                                             )  then 1
+                                                                             ) then 1
                                                             else 0 end as lasteaja_asutuste_count
                                                  FROM
                                                      lapsed.kaive_aruanne($1::INTEGER, $3::date, $3::date) r
@@ -73,20 +73,18 @@ module.exports = {
                                 qryReport
                                     INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                             where
-                                  lasteaja_asutuste_count > 0
-                              and qryReport.rekvid IN (
-                                                          SELECT
-                                                              rekv_id
-                                                          FROM
-                                                              get_asutuse_struktuur($1)
-                                                      )
-
+                                qryReport.rekvid IN (
+                                                        SELECT
+                                                            rekv_id
+                                                        FROM
+                                                            get_asutuse_struktuur($1)
+                                                    )
                             ORDER BY
                                 lapse_isikukood,
                                 r.nimetus
                         ) qry
                     where
-                        qry.lapse_asutused_count > 1
+                        qry.lasteaja_asutuste_count > 1
         `,     // $1 - rekvid, $3 - seisuga
         params: ['rekvid', 'userid', 'period'],
         min_params: 2,
