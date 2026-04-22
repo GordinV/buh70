@@ -54,6 +54,7 @@ block content
         table.table.table-hover.grid_data
             thead.grid_head
                 tr
+                    th Külastatavus
                     th Lapse nimi
                     th Lapse IK
                     th Viitenumber
@@ -64,6 +65,7 @@ block content
             tbody
                 each rea in data
                     tr
+                        td(align='center')=rea.kulastatavus
                         td(align='center')=rea.lapse_nimi
                         td(align='center')=rea.lapse_isikukood
                         td(align='center')=rea.viitenumber

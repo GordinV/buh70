@@ -2,6 +2,7 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "period", name: "Seisuga", width: "1%", show: false, type: "date"},
+            {id: "kulastatavus", name: "Külastatavus", width: "7%", show: true},
             {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
             {id: "lapse_isikukood", name: "Lapse IK", width: "10%", show: true},
             {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
@@ -23,7 +24,7 @@ module.exports = {
                 show: true,
                 interval: true
             },
-            {id: "asutus", name: "Asutus", width: "20%"},
+            {id: "asutus", name: "Asutus", width: "15%"},
         ],
         sqlString: `select *
                     from
@@ -59,6 +60,7 @@ module.exports = {
                                 count(*) OVER ()                                                 AS rows_total,
                                 sum(lasteaja_asutuste_count) OVER (PARTITION BY lapse_isikukood) AS lasteaja_asutuste_count,
                                 count(1) OVER (PARTITION BY lapse_isikukood)                     AS lapse_asutused_count,
+                                qryReport.kulastatavus,
                                 qryReport.id,
                                 qryReport.period,
                                 qryReport.lapse_nimi,
