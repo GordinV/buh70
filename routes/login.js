@@ -19,6 +19,7 @@ exports.post = function (req, res, next) {
 
     let username = req.body.username,
         password = req.body.password,
+        router = req.body.router || 'lapsed',
         errorMessage,
         statusCode = 200;
 
@@ -142,7 +143,32 @@ exports.post = function (req, res, next) {
 
                 // open main page
                 req.app.locals.user = user;
-                res.redirect('/lapsed'); //@todo переделать
+                // если запрос на токен, то вернем его, мначе переадресовка
+                if (router === 'getLogin') {
+                    log('return token', 'info');
+
+                    const cookieOptions = {
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === 'production', // Авто-переключение для HTTPS
+                        maxAge: 3600000,
+                        sameSite: 'lax',
+                        path: '/'
+                    };
+
+// Устанавливаем куку
+                    res.cookie('auth_token', user.uuid, cookieOptions);
+
+// Отправляем данные для фронтенда (имя, id), но чувствительные данные (token/uuid)
+// теперь "спрятаны" в httpOnly куке
+                    res.status(200).send({
+                        result: 'Ok',
+                        user_id: user.userId,
+                        user_name: user.userName
+                    });
+                    //res.send({result: 'Ok', uuid: user.uuid, user_id: user.userId, user_name:user.userName});
+                } else {
+                    res.redirect(`/${router}`); //@todo переделать
+                }
             }
         });
 };

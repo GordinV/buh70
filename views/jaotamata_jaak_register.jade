@@ -54,6 +54,7 @@ block content
         table.table.table-hover.grid_data
             thead.grid_head
                 tr
+                    th Külastatavus
                     th Lapse nimi
                     th Lapse IK
                     th Viitenumber
@@ -64,10 +65,11 @@ block content
             tbody
                 each rea in data
                     tr
-                        td(align='center')=rea.nimi
+                        td(align='center')=rea.kulastatavus
+                        td(align='left')=rea.nimi
                         td(align='center')=rea.ik
                         td(align='center')=rea.vn
                         td(align='center')=Number(rea.arvete_jaak).toFixed(2)
                         td(align='center')=Number(rea.mk_jaak).toFixed(2)
-                        td(align='center')=rea.asutus
+                        td(align='left')=rea.asutus
 
