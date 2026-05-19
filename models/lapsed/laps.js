@@ -35,7 +35,7 @@ module.exports = {
                                 ),
                       ll AS (
                                     SELECT
-                                        sum(jaak + ettemaksud) AS jaak
+                                        sum(coalesce(jaak,0)) AS jaak
                                     FROM
                                         params, lapsed.lapse_saldod(current_date, params.laps_id, params.rekv_id)
                                 )
