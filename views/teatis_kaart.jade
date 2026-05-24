@@ -84,7 +84,7 @@ block content
     div.body_wrapper
 
         h1
-            p #{`MAKSENÕUE`}
+            p #{`MAKSEVÕLA TEATIS`}
 
         div.row_wrapper
             p.label Number:
@@ -99,7 +99,7 @@ block content
             p.input #{`${data[0].asutus} isikukood/reg.kood: ${data[0].regkood}`}
 
         div.row_wrapper
-            p.label Aadress::
+            p.label Aadress:
             p.input #{`${data[0].aadress}`}
         div.row_wrapper
             p.label E-mail:
@@ -162,9 +162,10 @@ block content
                 div.row_wrapper
                     span Võla sissenõudmise menetluse etapid:
                 div.row_wrapper.font_text
-                    span 1. Käesolev maksenõue
+                    span 1. Käesolev maksevõla teatis
                 div.row_wrapper.font_text
-                    span 2. Võla sissenõudmine kohtu kaudu
+                    span 2. Võla sissenõudmine kohtu kaudu (мälja arvatud aegunud võlanõuded – TsÜS § 142
+                        | lg 1 ja § 146 lg 1)
             br
             div.row_wrapper
                 span Makse saaja:
@@ -181,11 +182,11 @@ block content
             br
             div
                 div.row_wrapper
-                    span  Täname, kui olete käesoleva maksenõude kättesaamise hetkeks nõutud summa juba tasunud.
+                    span  Täname, kui olete käesoleva maksevõla teatise kättesaamise hetkeks nõutud summa juba tasunud.
                 br
                 div.row_wrapper.font_text
-                    span Maksenõue on esitatud vastutava maksja nimele, kellega arveldusi peetakse.
+                    span Maksevõla teatise on esitatud vastutava maksja nimele, kellega arveldusi peetakse.
                 div.row_wrapper.font_text
-                    span  Maksenõue on genereeritud õppetasu tarkvara moodulist
+                    span  Maksevõla teatise on genereeritud õppetasu tarkvara moodulist.
                 div.row_wrapper.font_text
                     span Väljastatud: #{data[0].print_aeg}
