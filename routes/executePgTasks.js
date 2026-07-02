@@ -1,9 +1,11 @@
 'use strict';
 const db = require('./../libs/db');
-const config = require('./../config/narvalv.json');
+//const config = require('./../config/narvalv.json');
+const config = require('./../config/default.json');
+console.log('start executePgTask');
 
 // Запускаем основную функцию
-main()
+executeTask()
     .then((result) => {
         console.log('Finished teatis successfully:', result);
         process.exit(0); // Явно завершаем процесс
@@ -13,15 +15,6 @@ main()
         process.exit(1); // Завершаем с кодом ошибки
     });
 
-/**
- * Основная функция для составления извещений
- */
-async function main() {
-    // Параметры для фильтрации (вынесены в переменные для удобства правки)
-    const targetParentId = 119;
-
-    return await ebatoenaolised(targetParentId);
-}
 
 /**
  * Выполняет запрос к БД
@@ -32,11 +25,15 @@ async function executeTask() {
     const sql = `SELECT ou.execute_task(null::JSONB);`;
 
     try {
+        console.log('start sql', sql);
         const data = await db.queryDb(sql, null, null, null, null, null, config);
+        console.log('finished sql', data);
 
         return data;
     } catch (error) {
         // Пробрасываем ошибку наверх с контекстом
-        throw new Error(`DB Query failed: ${error.message}`);
+        console.error('error', error.message);
+//        throw new Error(`DB Query failed: ${error.message}`);
     }
+    console.log('finished executePgTask')
 }
