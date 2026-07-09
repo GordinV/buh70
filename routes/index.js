@@ -3,7 +3,6 @@
 const checkAuth = require('../middleware/checkAuth');
 
 module.exports = function (app) {
-
     // arv.palk leht
 
     /*
@@ -29,6 +28,9 @@ module.exports = function (app) {
     app.post('/virosoft/import_tabel/', require('./virasoft/import_taabel')); //checkAuth
     app.post('/virosoft/import_taabel/', require('./virasoft/import_taabel')); //checkAuth
     app.post('/virasoft/import/', require('./virasoft')); //checkAuth
+
+    // task
+    app.post('/task/execute/:doc_id', require('./task/executePostTask').post); //checkAuth
 
     // same as main
     app.get('/', require('./login').get)
