@@ -65,5 +65,6 @@ module.exports = {
     saldo_aruanne:'/aruanned/lapsed/saldo_aruanne',
     topelt_saldo:'/aruanned/lapsed/topelt_saldo',
     asendus_taabel:'/lapsed/asendus_taabel',
+    ettemaksete_aruanne:'/aruanned/lapsed/ettemaksete_aruanne',
 
 };

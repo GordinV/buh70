@@ -214,7 +214,8 @@ const Arv = {
                            INNER JOIN docs.arv a ON a.id = a1.parentId
                            INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  WHERE a.parentid = $1 :: INTEGER`,
+                  WHERE a.parentid = $1 :: INTEGER
+                  ORDER BY a1.id`,
             query: null,
             multiple: true,
             alias: 'details',
@@ -523,7 +524,9 @@ const Arv = {
                                      AND kassa = 1
                                    LIMIT 1) qry_aa
                              WHERE a.rekvId = params.rekv_id::INTEGER
-                         ),
+                               and a.kpv >= $3
+                               and a.kpv <= $4
+                                  ),
                          ebatoenaolised_tagastamine AS (
                              SELECT DISTINCT doc_arv_id AS arv_id
                              FROM docs.arvtasu,

@@ -58,13 +58,13 @@ WITH qryRekv AS (SELECT rekv_id
                               FROM lapsed.cur_lapse_taabel
                               WHERE kuu = l_kuu
                                 AND aasta = l_aasta
-                                AND teenus IN ('Õppetasu', 'Kohatasu')
+                                AND ltrim(rtrim(teenus)) IN ('Õppetasu', 'Kohatasu','Osalustasu lastehoiurühmas','Osalustasu lasteaiarühmas')
                               GROUP BY isikukood, ltrim(rtrim(teenus))
                               HAVING count(*) > 1) dbl
                              ON dbl.isikukood = lt.isikukood AND ltrim(rtrim(dbl.teenus)) = ltrim(rtrim(lt.teenus))
          WHERE lt.kuu = l_kuu
            AND lt.aasta = l_aasta
-           AND n.nimetus IN ('Õppetasu', 'Kohatasu')
+           AND ltrim(rtrim(n.nimetus)) IN ('Õppetasu', 'Kohatasu','Osalustasu lastehoiurühmas','Osalustasu lasteaiarühmas')
            AND l.staatus < 3
      ),
      qryKaart AS (
@@ -111,7 +111,7 @@ WITH qryRekv AS (SELECT rekv_id
                              r.nimetus::TEXT                             AS asutus
                       FROM lapsed.lapse_kaart lk
                                INNER JOIN libs.nomenklatuur n
-                                          ON n.id = lk.nomid AND ltrim(rtrim(n.nimetus)) IN ('Õppetasu', 'Kohatasu')
+                                          ON n.id = lk.nomid AND ltrim(rtrim(n.nimetus)) IN ('Õppetasu', 'Kohatasu','Osalustasu lastehoiurühmas','Osalustasu lasteaiarühmas')
                                INNER JOIN (
                           SELECT id, nimetus
                           FROM ou.rekv r

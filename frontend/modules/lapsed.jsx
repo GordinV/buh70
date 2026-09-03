@@ -103,6 +103,7 @@ const SaldodAsutustes = require('./../docs/saldod_asutustes/index.jsx');
 const SaldoAruanne = require('./../docs/saldo_aruanne/index.jsx');
 const TopeltSaldoAruanne = require('./../docs/topelt_saldo/index.jsx');
 const JaotamataJaakAruanne = require('./../docs/jaotamata_jaak/index.jsx');
+const EttemakseteAruanne = require('./../docs/ettemaksete_aruanne/index.jsx');
 
 const ArvedEmailiga = require('./../docs/arved_emailiga/index.jsx');
 
@@ -465,6 +466,12 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/saldod_asutustes"
                        render={(props) => <SaldodAsutustes
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+
+                <Route exact path="/lapsed/ettemaksete_aruanne"
+                       render={(props) => <EttemakseteAruanne
                            module={MODULE}
                            history={props.history}
                            initData={props.initData}/>}/>

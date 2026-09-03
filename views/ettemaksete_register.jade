@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 ETTEMAKSETE ARUANNE
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each asutus in data
+            p #{Object.keys(asutus)[0]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Maksja nimi
+                        th Saldo
+                        th Ettemakse vanus
+                        th Viimane tehing
+
+                tbody
+                    each rea in asutus[Object.keys(asutus)[0]]
+                        tr
+                            td=rea.maksja_nimi
+                            td=rea.saldo
+                            td=rea.kokku_kuued
+                            td=rea.viimane_tehing_print
+                tr.group
+                    td.group='Kokku:'
+                    td.group=asutus[Object.keys(asutus)[0]][0].saldo_kokku
+                    td.group
+                    td.group
