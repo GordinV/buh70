@@ -1,0 +1,121 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData>
+  <grid>
+    <sql>SELECT
+                        $2                                                                              AS user_id,
+                        $1                                                                              as rekv_id,
+                        u.kasutaja,
+                        t.id,
+                        to_char(t.created, 'DD.MM.YYYY HH24:MI:SS')::varchar(20)                        AS created,
+                        coalesce(to_char(t.finished, 'DD.MM.YYYY HH24:MI:SS'), '')::varchar(20)         AS finished,
+                        t.tulemused                                                                     as viga,
+                        t.nimetus::varchar(254)                                                         as nimetus,
+                        to_char((t.properties -&gt;&gt; 'execute_time')::interval, 'HH24:MI:SS')::varchar(20) as execute_time,
+                        case
+                            when t.status = 0 then 'Ootel'
+                            when t.status = 1 and t.finished is null then 'Arvestan'
+                            when t.status = 1 and t.finished is not null then 'Edukalt'
+                            when t.status = 2 then 'Vigane'
+                            else
+                                ''
+                            end::varchar(20)                                                            as status
+                    from
+                        ou.task                  t
+                            inner join ou.userid u on u.id = t.user_id
+                    where
+                          u.rekvid = $1
+                      and t.status &lt;&gt; 3
+                    order by
+                        id desc</sql>
+    <alias>curTask</alias>
+  </grid>
+  <select>
+    <sql>SELECT
+                  'TASK'      AS doc_type_id,
+                  $2::INTEGER AS userid,
+                  t.*
+              FROM
+                  ou.task   t,
+                  ou.userid u
+              WHERE
+                    t.id = $1
+                AND u.id = $2</sql>
+    <sqlAsNew>SELECT
+                      $1 :: INTEGER         AS id,
+                      $2 :: INTEGER         AS userid,
+                      'TASK'              AS doc_type_id,
+                      null::text as sql,
+                      null::text as nimetus
+                      </sqlAsNew>
+    <query />
+    <multiple>false</multiple>
+    <alias>row</alias>
+  </select>
+  <select>
+    <sql>select *
+                  from
+                      ou.tuhista_task_staatus($1::INTEGER, $2::jsonb)</sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>tuhistaTaskStaatus</alias>
+    <not_initial_load>true</not_initial_load>
+  </select>
+  <select>
+    <sql>select *
+                  from
+                      ou.execute_task($1::jsonb)</sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>startTask</alias>
+    <not_initial_load>true</not_initial_load>
+  </select>
+  <selectAsLibs>
+    <sql></sql>
+    <alias>selectAsLibs</alias>
+  </selectAsLibs>
+  <saveDoc>
+    <sql>select ou.sp_salvesta_task($1::text, $2::text, $3::integer) as id</sql>
+    <alias>saveDoc</alias>
+  </saveDoc>
+  <deleteDoc>
+    <sql>SELECT
+                    error_code,
+                    result,
+                    error_message
+                FROM
+                    ou.sp_delete_task($1, $2)</sql>
+    <alias>deleteDoc</alias>
+  </deleteDoc>
+  <requiredFields>
+    <validate></validate>
+  </requiredFields>
+  <executeSql>
+    <sql></sql>
+    <alias></alias>
+  </executeSql>
+  <executeCommand>
+    <sql></sql>
+    <alias></alias>
+  </executeCommand>
+  <register>
+    <sql></sql>
+    <alias></alias>
+  </register>
+  <endProcess>
+    <sql />
+    <alias />
+  </endProcess>
+  <generateJournal>
+    <sql />
+    <alias />
+  </generateJournal>
+  <print></print>
+  <getLog>
+    <sql />
+    <alias />
+  </getLog>
+  <ai>
+    <link />
+    <alias />
+  </ai>
+</VFPData>

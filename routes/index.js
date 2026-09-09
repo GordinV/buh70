@@ -31,6 +31,7 @@ module.exports = function (app) {
 
     // task
     app.post('/task/execute/:doc_id', require('./task/executePostTask').post); //checkAuth
+    app.post('/task/query_finbit/:userid_id/:date_query_from', require('./raama/getEarvedFromFinBit').post); //checkAuth
 
     // same as main
     app.get('/', require('./login').get)

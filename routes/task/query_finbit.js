@@ -1,26 +1,12 @@
-'use strict';
-const db = require('./../libs/db');
-//const config = require('./../config/narvalv.json');
-const config = require('./../config/default.json');
-console.log('start executePgTask');
-
-// Запускаем основную функцию
-executeTask()
-    .then((result) => {
-        console.log('Finished task successfully:', result);
-        process.exit(0); // Явно завершаем процесс
-    })
-    .catch((error) => {
-        console.error('Error in teatis execution:', error);
-        process.exit(1); // Завершаем с кодом ошибки
-    });
-
 
 /**
  * Выполняет запрос к БД, передавая doc_id в формате JSON.
  * @param {number | null} doc_id - ID документа для передачи в задачу.
  */
 async function executeTask(doc_id) {
+    const db = require("../../libs/db");
+    const config = require("../../config/default.json");
+
     // 1. Определяем SQL-запрос с плейсхолдером $1.
     const sql = `SELECT ou.execute_task($1::JSONB);`;
 
@@ -38,15 +24,11 @@ async function executeTask(doc_id) {
     try {
         // 1. Обновляем статус задачи
         if (doc_id) {
-            console.log('Выполнение UPDATE:', updateSql, 'с параметром:', doc_id);
-            await db.queryDb(updateSql, [doc_id], null, null, null, null, config);
-            console.log('Статус задачи успешно обновлен.');
+            db.queryDb(updateSql, [doc_id], null, null, null, null, config);
         }
 
         // 2. Выполняем основную задачу
-        console.log('Выполнение SELECT:', selectSql, 'с параметром:', jsonParameter);
-        const data = await db.queryDb(selectSql, [jsonParameter], null, null, null, null, config);
-        console.log('finished sql', data);
+        db.queryDb(selectSql, [jsonParameter], null, null, null, null, config);
 
         return data;
     } catch (error) {
@@ -56,13 +38,13 @@ async function executeTask(doc_id) {
     }
 }
 
-exports.post = async (req, res) => {
 
-    const params = req.body;
-    const doc_id = params.parameter ? params.parameter : params.data.doc_id;
+exports.post = async (req, res) => {
+    const user_id = req.params.user_id || '';
+    const date_query_from = req.params.date_query_from || '';
 
     // запустим процесс задач
-    await executeTask(doc_id);
+    executeTask(doc_id);
 
     res.send({
         status: 200, result: 1, data: {
@@ -71,9 +53,9 @@ exports.post = async (req, res) => {
                 doc_id: doc_id,
                 error_code: 0,
                 error_message: null,
-                tulemused: 'Täidetud'
+                tulemused: 'Täitmisel'
             },
-            data: result
+            data: null
         }
     });
 }

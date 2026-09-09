@@ -24,11 +24,11 @@ async function executeTask(doc_id) {
     try {
         // 1. Обновляем статус задачи
         if (doc_id) {
-            db.queryDb(updateSql, [doc_id], null, null, null, null, config);
+            await db.queryDb(updateSql, [doc_id], null, null, null, null, config);
         }
 
         // 2. Выполняем основную задачу
-        db.queryDb(selectSql, [jsonParameter], null, null, null, null, config);
+        const data = await db.queryDb(selectSql, [jsonParameter], null, null, null, null, config);
 
         return data;
     } catch (error) {
@@ -38,6 +38,7 @@ async function executeTask(doc_id) {
     }
 }
 
+exports.executeTask = executeTask;
 
 exports.post = async (req, res) => {
     const doc_id = req.params.doc_id || '';
@@ -57,4 +58,4 @@ exports.post = async (req, res) => {
             data: null
         }
     });
-}
+};
