@@ -25,18 +25,26 @@ function toArray(val) {
 
 /**
  * Классифицирует код затрат CostObjective
- * @param {string} val
- * @returns {'kood1'|'kood2'|'kood5'|'tp'|null}
+ * @param {string|Object} val
+ * @returns {'kood1'|'kood2'|'kood5'|'tp'|'objekt'|null}
  */
 function classifyCostObjective(val) {
     if (!val) {
         return null;
     }
-    const str = String(val).trim();
+    let str = '';
+    if (typeof val === 'object' && val !== null) {
+        str = String(val._ || val.Code || val.code || val.value || val.Name || '').trim();
+    } else {
+        str = String(val).trim();
+    }
+    if (!str) {
+        return null;
+    }
 
-    // kood2: Allikas (буквенно-символьный код, например "LE-P", "RE-P")
-    if (/^[A-Za-z]+-[A-Za-z]+$/.test(str) || /^[A-Za-z]{2,}/.test(str)) {
-        return 'kood2';
+    // objekt: Явные коды объектов затрат (например "OBJ-001", "OBJ_TEST", "10400-01")
+    if (/^OBJ/i.test(str) || (/\d/.test(str) && /[A-Za-z]/.test(str))) {
+        return 'objekt';
     }
 
     // tp: Tehingupartner (6 цифр, обычно 800xxx или 01-99xxx)
@@ -44,17 +52,23 @@ function classifyCostObjective(val) {
         return 'tp';
     }
 
-    // kood1: Tegevusala (5 цифр, например "01112")
+    // kood1: Tegevusala (5 цифр, например "01112", "10400")
     if (/^\d{5}$/.test(str)) {
         return 'kood1';
     }
 
-    // kood5: Eelarve artikkel (4 цифры, например "5500", "5513")
+    // kood5: Eelarve artikkel (4 цифры, например "5500", "5513", "5521")
     if (/^\d{4}$/.test(str)) {
         return 'kood5';
     }
 
-    return null;
+    // kood2: Allikas (буквенно-символьный короткий код финансирования, например "LE-P", "RE-P", "RE-AH", "LE", "RE")
+    if (/^[A-Za-z]{1,4}(-[A-Za-z]{1,4})?$/.test(str)) {
+        return 'kood2';
+    }
+
+    // objekt: Код объекта затрат (любой другой непустой код, например "0111201", "1234567" и т.д.)
+    return 'objekt';
 }
 
 /**
@@ -133,33 +147,90 @@ function convertInvoiceItem(item, options) {
         summa = Number(item.ItemTotal);
     }
 
-    // Разбор аналитики бухгалтерского учета из Accounting / JournalEntry
+    // Сохраняем оригинальные массивы Accounting.CostObjective, Accounting.JournalEntry и item.CostObjective
+    const journalEntries = (item && item.Accounting && item.Accounting.JournalEntry)
+        ? toArray(item.Accounting.JournalEntry)
+        : [];
+    const accountingCostObjectives = (item && item.Accounting && item.Accounting.CostObjective)
+        ? toArray(item.Accounting.CostObjective)
+        : [];
+    const itemCostObjectives = (item && item.CostObjective)
+        ? toArray(item.CostObjective)
+        : [];
+
+    const fullAccounting = (item && item.Accounting) ? {
+        ...item.Accounting,
+        JournalEntry: journalEntries,
+        CostObjective: accountingCostObjectives
+    } : {
+        JournalEntry: journalEntries,
+        CostObjective: accountingCostObjectives
+    };
+
+    // Разбор аналитики бухгалтерского учета из Accounting / JournalEntry / CostObjective
     let konto = '';
     let kood1 = '';
     let kood2 = '';
     let kood5 = '';
+    let tunnus = '';
     let tp = '';
+    let objekt = '';
 
-    if (item && item.Accounting && item.Accounting.JournalEntry) {
-        const entries = toArray(item.Accounting.JournalEntry);
-        for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i];
-            if (entry.GeneralLedger && !konto) {
-                konto = String(entry.GeneralLedger).trim();
-            }
-            if (entry.CostObjective) {
-                const co = String(entry.CostObjective).trim();
+    if (item && item.Accounting) {
+        if (item.Accounting.CostObjective) {
+            const coEntries = toArray(item.Accounting.CostObjective);
+            for (let i = 0; i < coEntries.length; i++) {
+                const rawCo = coEntries[i];
+                const co = String(typeof rawCo === 'object' && rawCo !== null ? (rawCo._ || rawCo.Code || rawCo.code || rawCo.value || '') : rawCo).trim();
                 const type = classifyCostObjective(co);
-                if (type === 'kood1') {
-                    kood1 = co;
-                } else if (type === 'kood2') {
-                    kood2 = co;
-                } else if (type === 'kood5') {
-                    kood5 = co;
-                } else if (type === 'tp') {
-                    tp = co;
+                if (type === 'kood1' && !kood1) kood1 = co;
+                else if (type === 'kood2' && !kood2) kood2 = co;
+                else if (type === 'kood5' && !kood5) kood5 = co;
+                else if (type === 'tp' && !tp) tp = co;
+                else if (type === 'objekt' && !objekt) objekt = co;
+            }
+        }
+        if (item.Accounting.JournalEntry) {
+            const entries = toArray(item.Accounting.JournalEntry);
+            for (let i = 0; i < entries.length; i++) {
+                const entry = entries[i];
+                if (entry.GeneralLedger && !konto) {
+                    konto = String(entry.GeneralLedger).trim();
+                }
+                if (entry.CostObjective) {
+                    const coList = toArray(entry.CostObjective);
+                    for (let c = 0; c < coList.length; c++) {
+                        const rawCo = coList[c];
+                        const co = String(typeof rawCo === 'object' && rawCo !== null ? (rawCo._ || rawCo.Code || rawCo.code || rawCo.value || '') : rawCo).trim();
+                        const type = classifyCostObjective(co);
+                        if (type === 'kood1' && !kood1) {
+                            kood1 = co;
+                        } else if (type === 'kood2' && !kood2) {
+                            kood2 = co;
+                        } else if (type === 'kood5' && !kood5) {
+                            kood5 = co;
+                        } else if (type === 'tp' && !tp) {
+                            tp = co;
+                        } else if (type === 'objekt' && !objekt) {
+                            objekt = co;
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    if (item && item.CostObjective && !objekt) {
+        const coList = toArray(item.CostObjective);
+        for (let c = 0; c < coList.length; c++) {
+            const rawCo = coList[c];
+            const co = String(typeof rawCo === 'object' && rawCo !== null ? (rawCo._ || rawCo.Code || rawCo.code || rawCo.value || '') : rawCo).trim();
+            const type = classifyCostObjective(co);
+            if (type === 'kood1' && !kood1) kood1 = co;
+            else if (type === 'kood2' && !kood2) kood2 = co;
+            else if (type === 'kood5' && !kood5) kood5 = co;
+            else if (type === 'tp' && !tp) tp = co;
+            else if (type === 'objekt' && !objekt) objekt = co;
         }
     }
 
@@ -186,7 +257,7 @@ function convertInvoiceItem(item, options) {
         muud: description,
         nimetus: description,
         nomid: defaultNomid,
-        objekt: '',
+        objekt: objekt,
         omavalitsuse_osa: 0,
         proj: '',
         soodus: 0,
@@ -199,7 +270,10 @@ function convertInvoiceItem(item, options) {
         umardamine: 0,
         userid: 0,
         valuuta: '',
-        vastisik: ''
+        vastisik: '',
+        Accounting: fullAccounting,
+        JournalEntry: journalEntries,
+        CostObjective: itemCostObjectives.length > 0 ? itemCostObjectives : accountingCostObjectives
     };
 }
 
@@ -437,6 +511,20 @@ function convertInvoice(invoice, options) {
     // Извлечение информации BPM / согласования
     const bpm = extractBpm(invoice);
 
+    const invoiceAccounting = invoice && invoice.Accounting ? {
+        ...invoice.Accounting,
+        JournalEntry: toArray(invoice.Accounting.JournalEntry || []),
+        CostObjective: toArray(invoice.Accounting.CostObjective || [])
+    } : (gridData.length > 0 && gridData[0].Accounting ? gridData[0].Accounting : null);
+
+    const invoiceJournalEntry = (invoice && invoice.Accounting && invoice.Accounting.JournalEntry)
+        ? toArray(invoice.Accounting.JournalEntry)
+        : (gridData.length > 0 ? gridData[0].JournalEntry : []);
+
+    const invoiceCostObjective = (invoice && invoice.CostObjective)
+        ? toArray(invoice.CostObjective)
+        : (gridData.length > 0 ? gridData[0].CostObjective : []);
+
     return {
         id: 0,
         data: {
@@ -472,7 +560,7 @@ function convertInvoice(invoice, options) {
             lisa: '',
             muud: '',
             number: invoiceNumber,
-            objekt: '',
+            objekt: gridData.length > 0 && gridData[0].objekt ? gridData[0].objekt : '',
             objektid: 0,
             operid: 0,
             raha_saaja: '',
@@ -489,7 +577,10 @@ function convertInvoice(invoice, options) {
             umardamine: 0,
             userid: defaultUserid,
             viitenr: viitenr,
-            gridData: gridData
+            gridData: gridData,
+            Accounting: invoiceAccounting,
+            JournalEntry: invoiceJournalEntry,
+            CostObjective: invoiceCostObjective
         }
     };
 }
