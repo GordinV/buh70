@@ -33,6 +33,20 @@ module.exports = function (app) {
     app.post('/task/execute/:doc_id', require('./task/executePostTask').post); //checkAuth
     app.post('/task/query_finbit/:userid_id/:date_query_from', require('./raama/getEarvedFromFinBit').post); //checkAuth
 
+    // вернет наличие в логах вызова функции на текущий день
+    app.post('/task/read_log/:user_id/:task_name', require('./ou/readLog').main); //checkAuth
+    // запустит расчет сводного сальдоандмика
+    app.post('/task/calcKondSaldoandmik/', require('./raama/calcKondSaldoandmik').main); //checkAuth
+    // запустит расчет сводного lisa1_lisa5_kontrol
+    app.post('/task/calcLisa1Lisa5/', require('./raama/calcLisa1Lisa5Kontrol').main); //checkAuth
+    // запустит расчет сальдо счетов (отложенная оплата)
+    app.post('/task/calcArvJaak/', require('./raama/calcArvJaak').main); //checkAuth
+    // запустит импорт из finbit
+    app.post('/task/getEarved/', require('./raama/getEarvedFromFinBit').main); //checkAuth
+    // запустит отправку отчета о загруженных счетах из finbit
+    app.post('/task/sendFinBitReport/', require('./raama/sendFinBitReport').main); //checkAuth
+
+
     // same as main
     app.get('/', require('./login').get)
     app.get('/pdf/:doc_id',require('./login').get) // попытка получить доступ к пдф файлам

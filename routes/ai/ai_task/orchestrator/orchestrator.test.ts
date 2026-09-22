@@ -1115,12 +1115,12 @@ describe('Главный Оркестратор', () => {
 
       const client = new ApiClient({}, mockFetch as unknown as typeof fetch);
 
-      // Тик в 12:30 дня (до 20:00, forceRun: false)
+      // Тик в 07:15 утра (после getEarved 07:00, но до calc_arv_jaak 07:30 и saldoandmik 20:00, forceRun: false)
       const tickAtNoon = await runOrchestratorTick(
         { stateFilePath: testStateFile, forceRun: false },
         {
           apiClient: client,
-          currentDate: new Date('2026-09-15T12:30:00'),
+          currentDate: new Date('2026-09-15T07:15:00'),
           dailyStartHour: 20,
         }
       );
@@ -1351,8 +1351,8 @@ describe('Главный Оркестратор', () => {
       expect(configs.getEarved.flow).toBe('docs.sp_loe_earved');
       expect(configs.getEarved.params).toMatchObject({ is_agent: true });
 
-      expect(configs.calc_arv_jaak.prompt).toContain('localhost');
-      expect(configs.calc_arv_jaak.prompt).toContain('SUCCESS');
+      expect(configs.calc_arv_jaak.flow).toBe('docs.check_arv_jaak');
+      expect(configs.calc_arv_jaak.schedule).toEqual({ time: '07:30' });
 
       expect(configs.sendFinBitReport.flow).toBe('sendFinBitReport');
       expect(configs.sendFinBitReport.depends_on).toEqual(['getEarved']);
