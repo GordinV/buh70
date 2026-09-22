@@ -1,0 +1,431 @@
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"><SOAP-ENV:Header/><SOAP-ENV:Body><BuyInvoiceExportResponse xmlns="http://e-arvetekeskus.eu/erp" includesLatest="YES" latestChange="2026-09-03 11:24:04"><E_Invoice xmlns="">
+<Header>
+<Date>2026-09-04</Date>
+<FileId>260904191954841_22</FileId>
+<Version>1.0</Version>
+<TotalNumberInvoices>2</TotalNumberInvoices>
+<TotalAmount>148.55</TotalAmount>
+</Header>
+<Invoice accountNumber="" invoiceId="65674064" regNumber="75008427">
+<InvoiceParties>
+<SellerParty>
+<Name>ARGO ELECTRONICS OÜ</Name>
+<RegNumber>10127606</RegNumber>
+<VATRegNumber>EE100416947</VATRegNumber>
+<ContactData>
+<PhoneNumber>372 35 69 580</PhoneNumber>
+<E-mailAddress>info@argo.ee</E-mailAddress>
+<LegalAddress>
+<PostalAddress1>A.Puðkini tn. 10 M-3-</PostalAddress1>
+<PostalAddress2>Ida-Virumaa</PostalAddress2>
+<City>Narva</City>
+<PostalCode>20308</PostalCode>
+<Country>Eesti</Country>
+</LegalAddress>
+<MailAddress>
+<PostalAddress1>A.Puðkini tn. 10 M-3-</PostalAddress1>
+<PostalAddress2>Ida-Virumaa</PostalAddress2>
+<City>Narva</City>
+<PostalCode>20308</PostalCode>
+<Country>Eesti</Country>
+</MailAddress>
+</ContactData>
+<AccountInfo>
+<AccountNumber>EE264204278612111102</AccountNumber>
+<IBAN>EE264204278612111102</IBAN>
+<BIC>EKRDEE22</BIC>
+<BankName>Coop Pank</BankName>
+</AccountInfo>
+<AccountInfo>
+<AccountNumber>EE281010562005465000</AccountNumber>
+<IBAN>EE281010562005465000</IBAN>
+<BIC>EEUHEE2X</BIC>
+<BankName>AS SEB Pank</BankName>
+</AccountInfo>
+<Extension extensionId="eakInvPartyCountry">
+<InformationContent>EE</InformationContent>
+</Extension>
+</SellerParty>
+<BuyerParty>
+<Name>Narva Linnavalitsuse Rahandusamet</Name>
+<RegNumber>75008427</RegNumber>
+<ContactData>
+<LegalAddress>
+<PostalAddress1>Peetri plats 5 Narva linn Ida-Viru maakond 20308 -</PostalAddress1>
+<Country>ESTONIA</Country>
+</LegalAddress>
+</ContactData>
+<Extension extensionId="eakInvPartyCountry">
+<InformationContent>EE</InformationContent>
+</Extension>
+</BuyerParty>
+</InvoiceParties>
+<InvoiceInformation>
+<Type type="DEB"/>
+<DocumentName>Arve-Saateleht</DocumentName>
+<InvoiceNumber>48095</InvoiceNumber>
+<InvoiceContentText>TN-221BK Toner BizHub C227/C287</InvoiceContentText>
+<InvoiceDate>2026-09-02</InvoiceDate>
+<DueDate>2026-09-12</DueDate>
+<Extension extensionId="eakTransactionDate">
+<InformationContent>2026-09-02</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmationCreator">
+<InformationContent>48612183747|Anastassia Moldon</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmCreator">
+<InformationContent>48612183747|Anastassia Moldon</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmation">
+<InformationName>2026-09-03 08:15:18</InformationName>
+<InformationContent>47608105226|Jelena Golubeva|VERIFIED|Täidetud oli üldkasutuses printeri kasett ja raamatupidamise osakonnas printeri kasett</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmation">
+<InformationName>2026-09-03 09:25:19</InformationName>
+<InformationContent>47102122229|Svetlana Tðaikina|VERIFIED|</InformationContent>
+</Extension>
+<Extension extensionId="eakInvoiceURL">
+<InformationContent>https://finance.omniva.eu/finance/main?araTransactionId=override&amp;araTopServiceId=application&amp;araThreadServiceId=mainThread&amp;araPleaseClone=true&amp;araWidgetEventPath=m.f0.root&amp;araWidgetEventHandler=externalLink&amp;araWidgetEventParameter=viewFullBuyInv:65674064:3e7cf794-297e-4131-8664-a2920229dd10</InformationContent>
+</Extension>
+</InvoiceInformation>
+<InvoiceSumGroup>
+<Balance/>
+<InvoiceSum>96</InvoiceSum>
+<Rounding>0</Rounding>
+<VAT>
+<SumBeforeVAT>96.00</SumBeforeVAT>
+<VATRate>24</VATRate>
+<VATSum>23.04</VATSum>
+</VAT>
+<TotalSum>119.04</TotalSum>
+<Currency>EUR</Currency>
+<Extension extensionId="TotalVATSum">
+<InformationContent>23.04</InformationContent>
+</Extension>
+</InvoiceSumGroup>
+<InvoiceItem>
+<InvoiceItemGroup groupId="">
+<ItemEntry>
+<Code>0000003894</Code>
+<Accounting>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>5500</CostObjective>
+<Sum>74</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>01112</CostObjective>
+<Sum>74</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>LE-P</CostObjective>
+<Sum>74</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>800599</CostObjective>
+<Sum>74</Sum>
+</JournalEntry>
+</Accounting>
+<Description>TN-221BK Toner BizHub C227/C287</Description>
+<ItemReserve extensionId="eakInvoiceItemId">
+<InformationContent>428509399</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="eakSellerProductId">
+<InformationContent>0000003894</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="eakOppositeAccount">
+<InformationContent>201000</InformationContent>
+</ItemReserve>
+<ItemUnit>tk</ItemUnit>
+<ItemAmount>1</ItemAmount>
+<ItemPrice>74</ItemPrice>
+<ItemSum>74</ItemSum>
+<VAT>
+<SumBeforeVAT>74</SumBeforeVAT>
+<VATRate>24</VATRate>
+<VATSum>17.76</VATSum>
+</VAT>
+<ItemTotal>91.76</ItemTotal>
+</ItemEntry>
+<ItemEntry>
+<Code>0000005782</Code>
+<Accounting>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>LE-P</CostObjective>
+<Sum>22</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>5500</CostObjective>
+<Sum>22</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>01112</CostObjective>
+<Sum>22</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550002</GeneralLedger>
+<CostObjective>800599</CostObjective>
+<Sum>22</Sum>
+</JournalEntry>
+</Accounting>
+<Description>Pantum PA-210E 1.6K toner täitmine</Description>
+<ItemReserve extensionId="eakInvoiceItemId">
+<InformationContent>428509400</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="eakSellerProductId">
+<InformationContent>0000005782</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="eakOppositeAccount">
+<InformationContent>201000</InformationContent>
+</ItemReserve>
+<ItemUnit>tk</ItemUnit>
+<ItemAmount>1</ItemAmount>
+<ItemPrice>22</ItemPrice>
+<ItemSum>22</ItemSum>
+<VAT>
+<SumBeforeVAT>22</SumBeforeVAT>
+<VATRate>24</VATRate>
+<VATSum>5.28</VATSum>
+</VAT>
+<ItemTotal>27.28</ItemTotal>
+</ItemEntry>
+</InvoiceItemGroup>
+</InvoiceItem>
+<PaymentInfo>
+<Currency>EUR</Currency>
+<PaymentDescription>Arve-Saateleht 0048095</PaymentDescription>
+<Payable>YES</Payable>
+<PayDueDate>2026-09-12</PayDueDate>
+<PaymentTotalSum>119.04</PaymentTotalSum>
+<PayerName>Narva Linnavalitsuse Rahandusamet</PayerName>
+<PaymentId>65674064</PaymentId>
+<PayToAccount>EE281010562005465000</PayToAccount>
+<PayToName>ARGO ELECTRONICS OÜ</PayToName>
+</PaymentInfo>
+</Invoice>
+<Invoice accountNumber="" invoiceId="65705563" regNumber="75008427">
+<InvoiceParties>
+<SellerParty>
+<Name>Telia Eesti AS</Name>
+<RegNumber>10234957</RegNumber>
+<VATRegNumber>EE100070008</VATRegNumber>
+<ContactData>
+<PhoneNumber>1551</PhoneNumber>
+<E-mailAddress>arikliendid@telia.ee</E-mailAddress>
+<LegalAddress>
+<PostalAddress1>Mustamäe tee 3</PostalAddress1>
+<City>Tallinn</City>
+<PostalCode>15033</PostalCode>
+</LegalAddress>
+</ContactData>
+<AccountInfo>
+<AccountNumber>EE021010052037412007</AccountNumber>
+<IBAN>EE021010052037412007</IBAN>
+<BIC>EEUHEE2X</BIC>
+<BankName>SEB</BankName>
+</AccountInfo>
+<AccountInfo>
+<AccountNumber>EE127700771001133975</AccountNumber>
+<IBAN>EE127700771001133975</IBAN>
+<BIC>LHVBEE22</BIC>
+<BankName>LHV Pank</BankName>
+</AccountInfo>
+<AccountInfo>
+<AccountNumber>EE371700017000389251</AccountNumber>
+<IBAN>EE371700017000389251</IBAN>
+<BIC>RIKOEE22</BIC>
+<BankName>Luminor Bank</BankName>
+</AccountInfo>
+<AccountInfo>
+<AccountNumber>EE632200221001126348</AccountNumber>
+<IBAN>EE632200221001126348</IBAN>
+<BIC>HABAEE2X</BIC>
+<BankName>Swedbank</BankName>
+</AccountInfo>
+<Extension extensionId="eakInvPartyCountry">
+<InformationContent>EE</InformationContent>
+</Extension>
+</SellerParty>
+<BuyerParty>
+<UniqueCode>648604</UniqueCode>
+<Name>NARVA LINNAVALITSUSE RAHANDUSAMET</Name>
+<RegNumber>75008427</RegNumber>
+<ContactData>
+<LegalAddress>
+<PostalAddress1>Peetri plats 5</PostalAddress1>
+<PostalAddress2>Narva linn Ida-Viru maakond</PostalAddress2>
+<City>Narva linn</City>
+<PostalCode>20308</PostalCode>
+<Country>EE</Country>
+</LegalAddress>
+<MailAddress>
+<PostalAddress1>Peetri plats 5</PostalAddress1>
+<PostalAddress2>Narva linn Ida-Viru maakond</PostalAddress2>
+<City>Narva linn</City>
+<PostalCode>20308</PostalCode>
+<Country>EE</Country>
+</MailAddress>
+</ContactData>
+<Extension extensionId="eakInvPartyCountry">
+<InformationContent>EE</InformationContent>
+</Extension>
+</BuyerParty>
+<RecipientParty>
+<UniqueCode>648604</UniqueCode>
+<Name>NARVA LINNAVALITSUSE RAHANDUSAMET</Name>
+<ContactData>
+<LegalAddress>
+<PostalAddress1>Peetri plats 5</PostalAddress1>
+<PostalAddress2>Narva linn Ida-Viru maakond</PostalAddress2>
+<City>Narva linn</City>
+<PostalCode>20308</PostalCode>
+<Country>EE</Country>
+</LegalAddress>
+<MailAddress>
+<PostalAddress1>Peetri plats 5</PostalAddress1>
+<PostalAddress2>Narva linn Ida-Viru maakond</PostalAddress2>
+<City>Narva linn</City>
+<PostalCode>20308</PostalCode>
+<Country>EE</Country>
+</MailAddress>
+</ContactData>
+<Extension extensionId="eakInvPartyCountry">
+<InformationContent>ZZ</InformationContent>
+</Extension>
+</RecipientParty>
+</InvoiceParties>
+<InvoiceInformation>
+<Type type="DEB"/>
+<DocumentName>Arve</DocumentName>
+<InvoiceNumber>20260849296993</InvoiceNumber>
+<InvoiceContentText>Kõnede maht</InvoiceContentText>
+<PaymentReferenceNumber>50076227401</PaymentReferenceNumber>
+<InvoiceDate>2026-08-31</InvoiceDate>
+<DueDate>2026-09-20</DueDate>
+<Period>
+<PeriodName>august</PeriodName>
+<StartDate>2026-08-01</StartDate>
+<EndDate>2026-08-31</EndDate>
+</Period>
+<Extension extensionId="eakTransactionDate">
+<InformationContent>2026-08-31</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmationCreator">
+<InformationContent>48612183747|Anastassia Moldon</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmCreator">
+<InformationContent>48612183747|Anastassia Moldon</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmation">
+<InformationName>2026-09-03 11:18:13</InformationName>
+<InformationContent>47608105226|Jelena Golubeva|VERIFIED|</InformationContent>
+</Extension>
+<Extension extensionId="eakConfirmation">
+<InformationName>2026-09-03 11:24:04</InformationName>
+<InformationContent>47102122229|Svetlana Tðaikina|VERIFIED|</InformationContent>
+</Extension>
+<Extension extensionId="eakInvoiceURL">
+<InformationContent>https://finance.omniva.eu/finance/main?araTransactionId=override&amp;araTopServiceId=application&amp;araThreadServiceId=mainThread&amp;araPleaseClone=true&amp;araWidgetEventPath=m.f0.root&amp;araWidgetEventHandler=externalLink&amp;araWidgetEventParameter=viewFullBuyInv:65705563:a3736ff9-f8c1-4808-bd77-86047a789291</InformationContent>
+</Extension>
+</InvoiceInformation>
+<InvoiceSumGroup>
+<Balance>
+<BalanceDate>2026-08-31</BalanceDate>
+<BalanceBegin>-29.51</BalanceBegin>
+<BalanceEnd>-29.51</BalanceEnd>
+</Balance>
+<InvoiceSum>23.8</InvoiceSum>
+<VAT>
+<SumBeforeVAT>23.80</SumBeforeVAT>
+<VATRate>24</VATRate>
+<VATSum>5.71</VATSum>
+</VAT>
+<TotalSum>29.51</TotalSum>
+<Currency>EUR</Currency>
+<Extension extensionId="TotalVATSum">
+<InformationContent>5.71</InformationContent>
+</Extension>
+</InvoiceSumGroup>
+<InvoiceItem>
+<InvoiceItemGroup groupId="7603931">
+<ItemEntry>
+<Accounting>
+<JournalEntry>
+<GeneralLedger>550010</GeneralLedger>
+<CostObjective>LE-P</CostObjective>
+<Sum>23.8</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550010</GeneralLedger>
+<CostObjective>5500</CostObjective>
+<Sum>23.8</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550010</GeneralLedger>
+<CostObjective>01112</CostObjective>
+<Sum>23.8</Sum>
+</JournalEntry>
+<JournalEntry>
+<GeneralLedger>550010</GeneralLedger>
+<CostObjective>800599</CostObjective>
+<Sum>23.8</Sum>
+</JournalEntry>
+</Accounting>
+<Description>Sideteenused</Description>
+<ItemReserve extensionId="eakInvoiceItemId">
+<InformationContent>429049330</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="eakOppositeAccount">
+<InformationContent>201000</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="eakInvoiceItemGroup">
+<InformationContent>7603931</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="DescriptionIcon">
+<InformationContent>icon_mobile_services_private</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="InvoiceEntryId">
+<InformationContent>545067462</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="InvoiceBlock">
+<InformationContent>Mobiilsed teenused</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="InvoiceGroup">
+<InformationContent>Mobiiltelefoni number 57190180  Anastassia Moldon</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="ARVEREA_ID">
+<InformationContent>81005</InformationContent>
+</ItemReserve>
+<ItemReserve extensionId="Kestus">
+<InformationContent>0:07:45</InformationContent>
+</ItemReserve>
+<ItemSum>23.8</ItemSum>
+<VAT>
+<SumBeforeVAT>23.8</SumBeforeVAT>
+<VATRate>24</VATRate>
+<VATSum>5.71</VATSum>
+</VAT>
+<ItemTotal>29.51</ItemTotal>
+</ItemEntry>
+</InvoiceItemGroup>
+</InvoiceItem>
+<PaymentInfo>
+<Currency>EUR</Currency>
+<PaymentRefId>50076227401</PaymentRefId>
+<PaymentDescription>e-arve 20260849296993</PaymentDescription>
+<Payable>YES</Payable>
+<PayDueDate>2026-09-20</PayDueDate>
+<PaymentTotalSum>29.51</PaymentTotalSum>
+<PayerName>NARVA LINNAVALITSUSE RAHANDUSAMET</PayerName>
+<PaymentId>65705563</PaymentId>
+<PayToAccount>EE021010052037412007</PayToAccount>
+<PayToName>Telia Eesti AS</PayToName>
+</PaymentInfo>
+</Invoice>
+</E_Invoice></BuyInvoiceExportResponse></SOAP-ENV:Body></SOAP-ENV:Envelope>

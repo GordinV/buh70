@@ -1,0 +1,500 @@
+[
+  {
+    "id": 0,
+    "data": {
+      "aa": "EE281010562005465000",
+      "aadress": "",
+      "alus_arve_id": 0,
+      "arvid": 0,
+      "asutus": "",
+      "asutusid": 10127606,
+      "bpm": [
+        {
+          "isik": "Anastassia Moldon",
+          "kpv": "2026-09-02",
+          "rolli": "creator"
+        },
+        {
+          "isik": "Jelena Golubeva",
+          "kpv": "2026-09-03 08:15:18",
+          "rolli": "VERIFIED"
+        },
+        {
+          "isik": "Svetlana Tðaikina",
+          "kpv": "2026-09-03 09:25:19",
+          "rolli": "VERIFIED"
+        }
+      ],
+      "created": "",
+      "doc": "",
+      "doc_status": 0,
+      "doc_type_id": "",
+      "doklausid": 1874,
+      "dokprop": "",
+      "id": 0,
+      "is_show_journal": 0,
+      "jaak": 0,
+      "journalid": 0,
+      "kbm": 23.04,
+      "kbmkonto": "",
+      "kbmta": 96,
+      "kmkr": "",
+      "konto": "",
+      "koostaja": "",
+      "korr_konto": "201000",
+      "kpv": "20260902",
+      "kr_number": "",
+      "lastupdate": "",
+      "laus_nr": 0,
+      "liik": 1,
+      "lisa": "",
+      "muud": "",
+      "number": "48095",
+      "objekt": "",
+      "objektid": 0,
+      "operid": 0,
+      "raha_saaja": "",
+      "regkood": "",
+      "rekvid": 63,
+      "rekv_regkood": "75008427",
+      "status": "",
+      "summa": 119.04,
+      "tahtaeg": "20260912",
+      "taskuraha_kov": 0,
+      "tasud": "        ",
+      "tasudok": "",
+      "tyyp": "",
+      "umardamine": 0,
+      "userid": 2477,
+      "viitenr": "",
+      "gridData": [
+        {
+          "allikas_85": 0,
+          "allikas_muud": 0,
+          "allikas_taskuraha": 0,
+          "allikas_vara": 0,
+          "formula": "",
+          "hind": 74,
+          "id": 0,
+          "kbm": 17.76,
+          "kbmta": 74,
+          "km": "24",
+          "kogus": 1,
+          "konto": "550002",
+          "kood": "",
+          "kood1": "01112",
+          "kood2": "LE-P",
+          "kood3": "",
+          "kood4": "",
+          "kood5": "5500",
+          "kuurs": 0,
+          "muud": "TN-221BK Toner BizHub C227/C287",
+          "nimetus": "TN-221BK Toner BizHub C227/C287",
+          "nomid": 17748,
+          "objekt": "",
+          "omavalitsuse_osa": 0,
+          "proj": "",
+          "soodus": 0,
+          "sugulane_osa": 0,
+          "summa": 91.76,
+          "taskuraha": 0,
+          "tp": "800599",
+          "tunnus": "",
+          "uhik": "",
+          "umardamine": 0,
+          "userid": 0,
+          "valuuta": "",
+          "vastisik": "",
+          "Accounting": {
+            "JournalEntry": [
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "5500",
+                "Sum": "74"
+              },
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "01112",
+                "Sum": "74"
+              },
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "LE-P",
+                "Sum": "74"
+              },
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "800599",
+                "Sum": "74"
+              }
+            ],
+            "CostObjective": []
+          },
+          "JournalEntry": [
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "5500",
+              "Sum": "74"
+            },
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "01112",
+              "Sum": "74"
+            },
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "LE-P",
+              "Sum": "74"
+            },
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "800599",
+              "Sum": "74"
+            }
+          ],
+          "CostObjective": []
+        },
+        {
+          "allikas_85": 0,
+          "allikas_muud": 0,
+          "allikas_taskuraha": 0,
+          "allikas_vara": 0,
+          "formula": "",
+          "hind": 22,
+          "id": 0,
+          "kbm": 5.28,
+          "kbmta": 22,
+          "km": "24",
+          "kogus": 1,
+          "konto": "550002",
+          "kood": "",
+          "kood1": "01112",
+          "kood2": "LE-P",
+          "kood3": "",
+          "kood4": "",
+          "kood5": "5500",
+          "kuurs": 0,
+          "muud": "Pantum PA-210E 1.6K toner täitmine",
+          "nimetus": "Pantum PA-210E 1.6K toner täitmine",
+          "nomid": 17748,
+          "objekt": "",
+          "omavalitsuse_osa": 0,
+          "proj": "",
+          "soodus": 0,
+          "sugulane_osa": 0,
+          "summa": 27.28,
+          "taskuraha": 0,
+          "tp": "800599",
+          "tunnus": "",
+          "uhik": "",
+          "umardamine": 0,
+          "userid": 0,
+          "valuuta": "",
+          "vastisik": "",
+          "Accounting": {
+            "JournalEntry": [
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "LE-P",
+                "Sum": "22"
+              },
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "5500",
+                "Sum": "22"
+              },
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "01112",
+                "Sum": "22"
+              },
+              {
+                "GeneralLedger": "550002",
+                "CostObjective": "800599",
+                "Sum": "22"
+              }
+            ],
+            "CostObjective": []
+          },
+          "JournalEntry": [
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "LE-P",
+              "Sum": "22"
+            },
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "5500",
+              "Sum": "22"
+            },
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "01112",
+              "Sum": "22"
+            },
+            {
+              "GeneralLedger": "550002",
+              "CostObjective": "800599",
+              "Sum": "22"
+            }
+          ],
+          "CostObjective": []
+        }
+      ],
+      "Accounting": {
+        "JournalEntry": [
+          {
+            "GeneralLedger": "550002",
+            "CostObjective": "5500",
+            "Sum": "74"
+          },
+          {
+            "GeneralLedger": "550002",
+            "CostObjective": "01112",
+            "Sum": "74"
+          },
+          {
+            "GeneralLedger": "550002",
+            "CostObjective": "LE-P",
+            "Sum": "74"
+          },
+          {
+            "GeneralLedger": "550002",
+            "CostObjective": "800599",
+            "Sum": "74"
+          }
+        ],
+        "CostObjective": []
+      },
+      "JournalEntry": [
+        {
+          "GeneralLedger": "550002",
+          "CostObjective": "5500",
+          "Sum": "74"
+        },
+        {
+          "GeneralLedger": "550002",
+          "CostObjective": "01112",
+          "Sum": "74"
+        },
+        {
+          "GeneralLedger": "550002",
+          "CostObjective": "LE-P",
+          "Sum": "74"
+        },
+        {
+          "GeneralLedger": "550002",
+          "CostObjective": "800599",
+          "Sum": "74"
+        }
+      ],
+      "CostObjective": []
+    }
+  },
+  {
+    "id": 0,
+    "data": {
+      "aa": "EE021010052037412007",
+      "aadress": "",
+      "alus_arve_id": 0,
+      "arvid": 0,
+      "asutus": "",
+      "asutusid": 10234957,
+      "bpm": [
+        {
+          "isik": "Anastassia Moldon",
+          "kpv": "2026-08-31",
+          "rolli": "creator"
+        },
+        {
+          "isik": "Jelena Golubeva",
+          "kpv": "2026-09-03 11:18:13",
+          "rolli": "VERIFIED"
+        },
+        {
+          "isik": "Svetlana Tðaikina",
+          "kpv": "2026-09-03 11:24:04",
+          "rolli": "VERIFIED"
+        }
+      ],
+      "created": "",
+      "doc": "",
+      "doc_status": 0,
+      "doc_type_id": "",
+      "doklausid": 1874,
+      "dokprop": "",
+      "id": 0,
+      "is_show_journal": 0,
+      "jaak": 0,
+      "journalid": 0,
+      "kbm": 5.71,
+      "kbmkonto": "",
+      "kbmta": 23.8,
+      "kmkr": "",
+      "konto": "",
+      "koostaja": "",
+      "korr_konto": "201000",
+      "kpv": "20260831",
+      "kr_number": "",
+      "lastupdate": "",
+      "laus_nr": 0,
+      "liik": 1,
+      "lisa": "",
+      "muud": "",
+      "number": "20260849296993",
+      "objekt": "",
+      "objektid": 0,
+      "operid": 0,
+      "raha_saaja": "",
+      "regkood": "",
+      "rekvid": 63,
+      "rekv_regkood": "75008427",
+      "status": "",
+      "summa": 29.51,
+      "tahtaeg": "20260920",
+      "taskuraha_kov": 0,
+      "tasud": "        ",
+      "tasudok": "",
+      "tyyp": "",
+      "umardamine": 0,
+      "userid": 2477,
+      "viitenr": "50076227401",
+      "gridData": [
+        {
+          "allikas_85": 0,
+          "allikas_muud": 0,
+          "allikas_taskuraha": 0,
+          "allikas_vara": 0,
+          "formula": "",
+          "hind": 23.8,
+          "id": 0,
+          "kbm": 5.71,
+          "kbmta": 23.8,
+          "km": "24",
+          "kogus": 1,
+          "konto": "550010",
+          "kood": "",
+          "kood1": "01112",
+          "kood2": "LE-P",
+          "kood3": "",
+          "kood4": "",
+          "kood5": "5500",
+          "kuurs": 0,
+          "muud": "Sideteenused",
+          "nimetus": "Sideteenused",
+          "nomid": 17748,
+          "objekt": "",
+          "omavalitsuse_osa": 0,
+          "proj": "",
+          "soodus": 0,
+          "sugulane_osa": 0,
+          "summa": 29.51,
+          "taskuraha": 0,
+          "tp": "800599",
+          "tunnus": "",
+          "uhik": "",
+          "umardamine": 0,
+          "userid": 0,
+          "valuuta": "",
+          "vastisik": "",
+          "Accounting": {
+            "JournalEntry": [
+              {
+                "GeneralLedger": "550010",
+                "CostObjective": "LE-P",
+                "Sum": "23.8"
+              },
+              {
+                "GeneralLedger": "550010",
+                "CostObjective": "5500",
+                "Sum": "23.8"
+              },
+              {
+                "GeneralLedger": "550010",
+                "CostObjective": "01112",
+                "Sum": "23.8"
+              },
+              {
+                "GeneralLedger": "550010",
+                "CostObjective": "800599",
+                "Sum": "23.8"
+              }
+            ],
+            "CostObjective": []
+          },
+          "JournalEntry": [
+            {
+              "GeneralLedger": "550010",
+              "CostObjective": "LE-P",
+              "Sum": "23.8"
+            },
+            {
+              "GeneralLedger": "550010",
+              "CostObjective": "5500",
+              "Sum": "23.8"
+            },
+            {
+              "GeneralLedger": "550010",
+              "CostObjective": "01112",
+              "Sum": "23.8"
+            },
+            {
+              "GeneralLedger": "550010",
+              "CostObjective": "800599",
+              "Sum": "23.8"
+            }
+          ],
+          "CostObjective": []
+        }
+      ],
+      "Accounting": {
+        "JournalEntry": [
+          {
+            "GeneralLedger": "550010",
+            "CostObjective": "LE-P",
+            "Sum": "23.8"
+          },
+          {
+            "GeneralLedger": "550010",
+            "CostObjective": "5500",
+            "Sum": "23.8"
+          },
+          {
+            "GeneralLedger": "550010",
+            "CostObjective": "01112",
+            "Sum": "23.8"
+          },
+          {
+            "GeneralLedger": "550010",
+            "CostObjective": "800599",
+            "Sum": "23.8"
+          }
+        ],
+        "CostObjective": []
+      },
+      "JournalEntry": [
+        {
+          "GeneralLedger": "550010",
+          "CostObjective": "LE-P",
+          "Sum": "23.8"
+        },
+        {
+          "GeneralLedger": "550010",
+          "CostObjective": "5500",
+          "Sum": "23.8"
+        },
+        {
+          "GeneralLedger": "550010",
+          "CostObjective": "01112",
+          "Sum": "23.8"
+        },
+        {
+          "GeneralLedger": "550010",
+          "CostObjective": "800599",
+          "Sum": "23.8"
+        }
+      ],
+      "CostObjective": []
+    }
+  }
+]

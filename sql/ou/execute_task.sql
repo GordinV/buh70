@@ -12,6 +12,7 @@ DECLARE
     l_start        timestamp;
     l_finish       timestamp;
     l_exec_time    interval;
+    l_tulemused    record;
 BEGIN
     for v_task in (
                       select *
@@ -25,10 +26,11 @@ BEGIN
         loop
             l_task_id = v_task.id;
             l_start = clock_timestamp();
-            raise notice 'v_task.sql %',v_task.sql;
-            EXECUTE v_task.sql;
+
+            EXECUTE v_task.sql into l_tulemused;
             l_finish = clock_timestamp();
             l_exec_time = l_finish - l_start;
+
             update ou.task
             set
                 status     = 1,
@@ -36,6 +38,14 @@ BEGIN
                 properties = coalesce(properties, '{}'::jsonb) || jsonb_build_object('execute_time', l_exec_time)
             where
                 id = l_task_id;
+
+            if (to_jsonb(l_tulemused) ? 'error_message') then
+                update ou.task
+                set
+                    tulemused = l_tulemused.error_message
+                where
+                    id = l_task_id;
+            end if;
 
             l_count = l_count + 1;
         end loop;

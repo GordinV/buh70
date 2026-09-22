@@ -1,0 +1,30 @@
+{
+  "name": "ai-task-orchestrator",
+  "version": "1.0.0",
+  "description": "Autonomous Genkit AI Orchestrator for buh70 accounting background tasks",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "dev": "tsx index.ts",
+    "genkit:dev": "genkit start -- tsx index.ts",
+    "test": "jest --runInBand"
+  },
+  "dependencies": {
+    "@genkit-ai/googleai": "^1.28.0",
+    "dotenv": "^16.4.7",
+    "genkit": "^1.42.0",
+    "nodemailer": "^10.0.9",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.17.24",
+    "@types/nodemailer": "^8.0.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

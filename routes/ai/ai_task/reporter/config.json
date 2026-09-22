@@ -1,0 +1,17 @@
+{
+  "name": "reporter",
+  "flow": "email_report",
+  "description": "Формирование и отправка сводного email-отчета по результатам цикла",
+  "allow_parallel": false,
+  "depends_on": [
+    "saldoandmik",
+    "calc_arv_jaak",
+    "getEarved",
+    "sendFinBitReport",
+    "lisa1_lisa5"
+  ],
+  "schedule": null,
+  "prompt": null,
+  "max_attempts": 3,
+  "params": {}
+}

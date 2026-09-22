@@ -1,0 +1,17 @@
+{
+  "name": "getEarved",
+  "flow": "docs.sp_loe_earved",
+  "description": "Импорт электронных счетов из FinBit в агентском режиме",
+  "prompt": null,
+  "allow_parallel": true,
+  "depends_on": [],  
+  "schedule": {
+    "time": "07:00"
+  },
+  "max_attempts": 3,
+  "params": {
+    "userId": 2477,
+    "rekvId": 63,
+    "is_agent": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "sendFinBitReport",
+  "flow": "sendFinBitReport",
+  "description": "Формирование и отправка email-уведомлений получателям импортированных счетов FinBit с передачей logId",
+  "allow_parallel": true,
+  "depends_on": [
+    "getEarved"
+  ],
+  "schedule": null,
+  "prompt": "Ты — AI-контролер регламентного процесса отправки отчетов по счетам sendFinBitReport системы buh70. Твоя задача — проанализировать результаты отправки email из логов. Если в массиве result есть ошибки (success: false, connect ETIMEDOUT, SMTP ошибки) или поле error не пустое, зафиксировать статус выполнения как FAILED, извлечь конкретные адреса получателей и текст ошибок, и сформировать информативное резюме для итогового отчета reporter. Если все письма успешно отправлены (success: true), подтвердить статус SUCCESS.",
+  "max_attempts": 3,
+  "params": {
+    "userId": 2477,
+    "rekvId": 63
+  }
+}

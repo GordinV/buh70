@@ -61,7 +61,12 @@ function createXMLmodel(modelForExport, callback) {
             getLog: {
                 sql:  _.indexOf(keys, 'getLog')> -1 ? model.getLog.command : null,
                 alias: _.indexOf(keys, 'getLog')> -1 ? model.getLog.alias : null
+            },
+            ai: {
+                link:  _.indexOf(keys, 'ai')> -1 ? model.ai.endpoint : null,
+                alias: _.indexOf(keys, 'ai')> -1 ? model.ai.alias : null
             }
+
         }
     };
 

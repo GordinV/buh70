@@ -1,0 +1,16 @@
+{
+  "name": "lisa1_lisa5",
+  "flow": "eelarve.salvesta_lisa_1_5_kontrol",
+  "description": "Контрольные формы Lisa 1 и Lisa 5",
+  "allow_parallel": true,
+  "depends_on": [
+    "saldoandmik"
+  ],
+  "schedule": null,
+  "prompt": null,
+  "max_attempts": 3,
+  "params": {
+    "userId": 2477,
+    "rekvId": 63
+  }
+}

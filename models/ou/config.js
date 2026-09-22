@@ -17,8 +17,8 @@ module.exports = {
                   coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
                   c.tahtpaev,
                   coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf,
-                  coalesce((c.properties ->> 'round_arve')::integer, 0)::integer    as round_arve
-
+                  coalesce((c.properties ->> 'round_arve')::integer, 0)::integer    as round_arve,
+                  coalesce((c.properties ->> 'web_server')::VARCHAR(254))           AS web_server
               FROM
                   ou.config c,
                   ou.userid u

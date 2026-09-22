@@ -1,0 +1,17 @@
+{
+  "name": "saldoandmik",
+  "flow": "eelarve.sp_koosta_saldoandmik",
+  "description": "Расчет сводного сальдоандмика",
+  "allow_parallel": true,
+  "depends_on": [],
+"schedule": {
+    "time": "20:00"
+  },  
+  "prompt": null,
+  "max_attempts": 3,
+  "params": {
+    "userId": 2477,
+    "rekvId": 63,
+    "kond": 1
+  }
+}
