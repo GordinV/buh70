@@ -1,12 +1,24 @@
 #!/bin/bash
 set -e
 
-# Skripti kausta tuvastamine (alati absoluutne tee ai_task kaustani)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Skripti tegeliku asukoha tuvastamine (lahendab ka sümbollingid / symlinks)
+TARGET_SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$TARGET_SOURCE" ]; do
+  TARGET_DIR="$(cd -P "$(dirname "$TARGET_SOURCE")" && pwd)"
+  TARGET_SOURCE="$(readlink "$TARGET_SOURCE")"
+  [[ $TARGET_SOURCE != /* ]] && TARGET_SOURCE="$TARGET_DIR/$TARGET_SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$TARGET_SOURCE")" && pwd)"
+
 STATE_DIR="${SCRIPT_DIR}/state"
 ENV_FILE="${SCRIPT_DIR}/.env"
 LOCK_FILE="/tmp/buh70_ai_task.lock"
 LOG_FILE="${STATE_DIR}/cron_tick.log"
+
+if [ ! -f "${ENV_FILE}" ]; then
+  echo "VIGA: Faili .env ei leitud asukohas: ${ENV_FILE}" >&2
+  exit 1
+fi
 
 mkdir -p "${STATE_DIR}"
 
