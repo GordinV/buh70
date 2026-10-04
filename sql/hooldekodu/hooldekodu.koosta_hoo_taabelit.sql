@@ -62,6 +62,7 @@ BEGIN
                    n.uhik,
                    hl.algkpv,
                    hl.loppkpv,
+                   hl.sugulane_osa,
                    l_kalendri_paevad                                                           AS kalendri_paevad,
                    date_part('day', CASE
                                         WHEN hl.algkpv > make_date(l_aasta, l_kuu, 1) THEN hl.algkpv

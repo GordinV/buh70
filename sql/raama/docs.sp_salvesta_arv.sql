@@ -77,16 +77,18 @@ DECLARE
     l_rekv_regkood         text           = doc_data ->> 'rekv_regkood'; -- для контроля учреждения
 
 BEGIN
-    if l_rekv_regkood is not null and len(trim(l_rekv_regkood)) >= 8 and user_rekvid <> coalesce((
-                                                                                                     select
-                                                                                                         id
-                                                                                                     from
-                                                                                                         ou.rekv
-                                                                                                     where
-                                                                                                           regkood = l_rekv_regkood
-                                                                                                       and parentid < 999
-                                                                                                     limit 1
-                                                                                                 ), 0) then
+    if l_rekv_regkood is not null
+        and len(trim(l_rekv_regkood)) >= 8
+        and user_rekvid <> coalesce((
+                                        select
+                                            id
+                                        from
+                                            ou.rekv
+                                        where
+                                              regkood = l_rekv_regkood
+                                          and parentid < 999
+                                        limit 1
+                                    ), 0) then
         raise exception 'Viga: vale asutus. Tee programmi restart';
     end if;
 
@@ -372,9 +374,26 @@ BEGIN
             THEN
                 json_record.tunnus = ''::TEXT;
             END IF;
+
             IF ltrim(rtrim(json_record.objekt)) = 'null'
             THEN
                 json_record.objekt = ''::TEXT;
+            ELSE
+                -- kontrol
+                if not exists
+                (
+                    select
+                        id
+                    from
+                        libs.library l
+                    where
+                          l.kood = ltrim(rtrim(json_record.objekt))
+                      and l.status < 3
+                      and l.library = 'OBJEKT'
+                      and l.rekvid = user_rekvid
+                ) then
+                    json_record.objekt = ''::TEXT;
+                end if;
             END IF;
 
 
@@ -401,7 +420,8 @@ BEGIN
                         coalesce(json_record.omavalitsuse_osa, 0)  AS omavalitsuse_osa
                 ) row;
 
-            IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
+            IF json_record.id IS NULL OR json_record.id::text = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' or
+               json_record.id::text = 'NULL'
             THEN
                 IF empty(coalesce(json_record.km, ''))
                 THEN
@@ -413,7 +433,7 @@ BEGIN
                     json_record.km = '0';
                 END IF;
 
-                IF NOT l_osaliselt_suletatud
+                IF NOT l_osaliselt_suletatud and coalesce(json_record.hind, 0) <> 0
                 THEN
 
                     INSERT INTO
@@ -450,6 +470,8 @@ BEGIN
                              ELSE json_record.soodustus END ::NUMERIC(14, 4))
                     RETURNING id
                         INTO arv1_id;
+
+                    raise notice 'arv1_id %',arv1_id;
 
                     -- add new id into array of ids
                     ids = array_append(ids, arv1_id);
