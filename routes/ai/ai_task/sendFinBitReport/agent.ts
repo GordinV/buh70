@@ -57,3 +57,31 @@ export async function runSendFinBitReportSubagent(
     resultSummary: watchResult.resultSummary,
   });
 }
+
+export const manifest = {
+  dispatch: async (ctx: {
+    userId: number;
+    rekvId: number;
+    kond: number;
+    params: Record<string, unknown>;
+    apiClient: ApiClient;
+  }): Promise<number | null> => {
+    const finalUserId = (ctx.params?.userId as number) ?? ctx.userId;
+    const finalRekvId = (ctx.params?.rekvId as number) ?? ctx.rekvId;
+    const logId = (ctx.params?.logId as number) ?? (ctx.params?.paramLogId as number);
+
+    if (!logId) {
+      throw new Error('sendFinBitReport viga: logId puudub (parent context getEarved log_id ei ole edastatud)');
+    }
+
+    const res = await startSendFinBitReport(
+      { userId: finalUserId, rekvId: finalRekvId, logId },
+      ctx.apiClient
+    );
+    return res.log_id;
+  },
+  resolveParentParams: (state: { tasks: Record<string, { log_id?: number | null }> }): Record<string, unknown> => {
+    const parentLogId = state.tasks?.['getEarved']?.log_id;
+    return parentLogId ? { logId: parentLogId } : {};
+  },
+};

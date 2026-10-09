@@ -107,3 +107,47 @@ Tests:       21 passed, 21 total
 ```
 
 Сборка TypeScript (`npm run build` -> `tsc`) завершается без ошибок.
+
+---
+
+## 4. Реестр агентов (Agent Registry) и Watchdog таймаутов
+
+### 4.1. Реестр субагентов (`shared/agent_registry.ts`)
+- Введен интерфейс `AgentManifest` (`dispatch`, `resolveParentParams`).
+- Каждый агент экспортирует свой манифест в `agent.ts`.
+- `buildAgentRegistry()` сканирует директории и динамически загружает манифесты.
+- В `orchestrator.agent.ts` убран хардкод `dispatchTaskByKey` и проброса `logId` от `getEarved` к `sendFinBitReport`.
+- Dockerfile обновлен для автоматического сбора всех `config.json` без ручного перечисления.
+
+### 4.2. Watchdog таймаутов (`timeout_hours`, по умолчанию 12 часов)
+- В схему `AgentConfig` и `TaskState` добавлен параметр `timeout_hours` (число часов, по умолчанию 12).
+- При превышении таймаута для зависшей в `RUNNING` задачи (без `exec_end` в `ou.logs`) фиксируется событие `TASK_TIMEOUT`.
+- Выполняется попытка повторного запуска (до `max_attempts`), либо задача переводится в `FAILED`.
+- Зависшая задача больше не блокирует завершение цикла и наступление следующего календарного дня.
+
+### 4.3. Выборка e-счетов `getEarved` (текущая дата - 2 дня)
+- Функция `getDefaultDateQueryFrom()` в `getEarved/schemas.ts` обновлена для вычитания 2 дней (`d.setDate(d.getDate() - 2)`).
+- Схемы и unit-тесты приведены в соответствие.
+
+### 4.4. Перевооружение задач по расписанию и таймзоны
+- Задачи с `schedule` автоматически переводятся в `PENDING` при смене календарных суток (`TASK_REARMED`).
+- `isTaskScheduleReady` использует точный расчет в целевой временной зоне (`Intl.DateTimeFormat` по `timezone`, по умолчанию `Europe/Tallinn`).
+- Проверка `allow_parallel: false` предотвращает запуск финализатора (`reporter`) при активных параллельных вычислениях.
+
+### 4.5. Служебный субагент `schedule_monitor`
+- Создан изолированный модуль `schedule_monitor/` (`config.json`, `schemas.ts`, `tools.ts`, `agent.ts`, `schedule_monitor.test.ts`).
+- Добавлен `config.json` субагента, агент включен в `KNOWN_AGENT_DIRS` (`state.manager.ts`) и `KNOWN_SUBAGENTS` (`shared/agent_registry.ts`), экспортирует `manifest` для реестра.
+- Функция `buildScheduleSnapshot` формирует детальный срез графа: статусы, причины планирования (`SCHEDULE_TODAY`, `SCHEDULE_TOMORROW`, `AFTER_DEPENDENCIES`, `RETRY`, `RUNNING_NOW`), дедлайны таймаутов `timeout_deadline`, усеченные ошибки и счетчики `summary`.
+- Функция `logAgentSchedule` вызывает `POST /task/logAgentSchedule/` для синхронной записи среза в `ou.logs` под flow `ai_task.agent_schedule`.
+- Зарегистрированы Genkit flows: `scheduleMonitorFlow` и `agentScheduleFlow` в `index.ts` с поддержкой автономного вызова и чтения состояния.
+- В `orchestrator.agent.ts` внедрен безопасный вызов `invokeScheduleMonitorSafe` на каждом выходе тика (включая ранние выходы `IDLE_WAIT_NEXT_SCHEDULE`).
+- Конфигурация в `orchestrator/config.json` (`schedule_monitor.enabled`, по умолчанию `true`).
+
+### 4.6. Результаты тестирования (10 тест-сьютов, 90 тестов)
+```
+Test Suites: 10 passed, 10 total
+Tests:       90 passed, 90 total
+Snapshots:   0 total
+Time:        ~19 s
+```
+Все проверки типов (`npm run typecheck`) и сборка (`npm run build`) выполняются без ошибок.

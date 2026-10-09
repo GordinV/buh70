@@ -48,7 +48,7 @@ describe('Субагент getEarved', () => {
     expect(res.status).toBe(200);
   });
 
-  it('startGetEarved должен по умолчанию подставлять дату вчерашнего дня (текущая дата минус 1 день)', async () => {
+  it('startGetEarved должен по умолчанию подставлять дату выборки (текущая дата минус 2 дня)', async () => {
     let capturedBody: Record<string, unknown> = {};
 
     const mockFetch = jest.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
@@ -77,10 +77,10 @@ describe('Субагент getEarved', () => {
     expect(capturedBody.date_query_from).toBe(expectedDate);
   });
 
-  it('getDefaultDateQueryFrom корректно вычисляет дату минус 1 день', () => {
-    expect(getDefaultDateQueryFrom(new Date('2026-09-17T12:00:00'))).toBe('2026-09-16');
-    expect(getDefaultDateQueryFrom(new Date('2026-01-01T00:00:00'))).toBe('2025-12-31');
-    expect(getDefaultDateQueryFrom(new Date('2024-03-01T00:00:00'))).toBe('2024-02-29'); // високосный год
+  it('getDefaultDateQueryFrom корректно вычисляет дату минус 2 дня', () => {
+    expect(getDefaultDateQueryFrom(new Date('2026-09-17T12:00:00'))).toBe('2026-09-15');
+    expect(getDefaultDateQueryFrom(new Date('2026-01-01T00:00:00'))).toBe('2025-12-30');
+    expect(getDefaultDateQueryFrom(new Date('2024-03-01T00:00:00'))).toBe('2024-02-28'); // високосный год
   });
 
   it('runGetEarvedSubagent должен запускать задачу и возвращать результат ожидания через logs_watcher', async () => {

@@ -1,7 +1,7 @@
 {
   "name": "getEarved",
   "flow": "docs.sp_loe_earved",
-  "description": "Импорт электронных счетов из FinBit в агентском режиме",
+  "description": "Импорт электронных счетов из FinBit в агентском режиме (userId 11770 — сервисный аккаунт FinBit в buh70)",
   "prompt": null,
   "allow_parallel": true,
   "depends_on": [],  

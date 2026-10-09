@@ -16,6 +16,7 @@ import { TASK_FLOW_GET_EARVED } from '../getEarved/schemas';
 import { TASK_FLOW_SEND_FIN_BIT_REPORT } from '../sendFinBitReport/schemas';
 import { TASK_FLOW_LISA1_LISA5 } from '../lisa1_lisa5/schemas';
 import {
+  StateManager,
   calculateNextScheduledRun,
   getDefaultTaskGraph,
   loadAgentConfig,
@@ -47,6 +48,16 @@ jest.mock('../reporter/agent', () => ({
     formattedReport: 'Mock test report',
   }),
 }));
+
+// Мокируем runScheduleMonitor по умолчанию, чтобы не засорять сетевые моки остальных тестов
+jest.mock('../schedule_monitor/agent', () => {
+  const actual = jest.requireActual('../schedule_monitor/agent');
+  return {
+    ...actual,
+    runScheduleMonitor: jest.fn().mockResolvedValue(12345),
+  };
+});
+import { runScheduleMonitor } from '../schedule_monitor/agent';
 
 describe('Главный Оркестратор', () => {
   const testStateFile = path.resolve(__dirname, 'test_orchestrator_state.json');
@@ -2353,6 +2364,435 @@ describe('Главный Оркестратор', () => {
             (h) => h.event === 'TASK_START_FAILED' && h.details?.includes('ammendatud')
           )
         ).toBe(true);
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    }, 15000);
+
+    it('runOrchestratorTick: Watchdog TASK_TIMEOUT срабатывает при превышении timeout_hours', async () => {
+      const testStateFile = path.join(__dirname, 'test_timeout_state.json');
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
+
+        // Задача lisa1_lisa5 запущена 13 часов назад (дефолтный лимит 12ч)
+        state.status = 'IN_PROGRESS';
+        state.tasks.lisa1_lisa5.status = 'RUNNING';
+        state.tasks.lisa1_lisa5.attempts = 1;
+        state.tasks.lisa1_lisa5.timeout_hours = 12;
+        state.tasks.lisa1_lisa5.started_at = '2026-10-08T10:00:00.000Z';
+        state.tasks.lisa1_lisa5.log_id = 991122;
+
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, jest.fn().mockImplementation(async (url: string) => {
+          if (url.includes('/task/read_log/')) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                status: 200,
+                result: 1,
+                data: [{
+                  id: 991122,
+                  flow: 'eelarve.salvesta_lisa_1_5_kontrol',
+                  status: null,
+                  exec_start: '2026-10-08T10:00:00.000Z',
+                }],
+              }),
+            };
+          }
+          if (url.includes('/task/calcLisa1Lisa5/')) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({ status: 200, result: 1, log_id: 991123, data: { status: 'STARTED' } }),
+            };
+          }
+          return { ok: true, status: 200, json: async () => ({ status: 200 }) };
+        }) as unknown as typeof fetch);
+
+        // Проверяем в момент времени через 13 часов (23:00)
+        const tickTime = new Date('2026-10-08T23:00:00.000Z');
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: tickTime,
+            targetDateStr: '2026-10-08',
+            forceRun: true,
+          }
+        );
+
+        const updated: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+        expect(updated.tasks.lisa1_lisa5.attempts).toBe(2);
+        expect(
+          updated.history.some((h) => h.event === 'TASK_TIMEOUT' && h.details?.includes('ületatud 12 h'))
+        ).toBe(true);
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: задачи со schedule посуточно перевооружаются в PENDING при смене даты', async () => {
+      const testStateFile = path.join(__dirname, 'test_rearm_state.json');
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
+
+        state.status = 'IN_PROGRESS';
+        state.cycle_date = '2026-10-08';
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.finished_at = '2026-10-08T08:00:00.000Z';
+        state.tasks.getEarved.schedule = { time: '07:00' };
+
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, jest.fn().mockImplementation(async () => {
+          return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+        }) as unknown as typeof fetch);
+
+        // Наступает следующий день: 2026-10-09 в 06:00 (до наступления 07:00)
+        const nextDayEarly = new Date('2026-10-09T03:00:00.000Z');
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: nextDayEarly,
+            targetDateStr: '2026-10-09',
+            forceRun: false,
+          }
+        );
+
+        const updated: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+        expect(updated.tasks.getEarved.status).toBe('PENDING');
+        expect(updated.tasks.getEarved.attempts).toBe(0);
+        expect(updated.history.some((h) => h.event === 'TASK_REARMED')).toBe(true);
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: вызывает /task/logAgentSchedule/ на каждом тике', async () => {
+      const testStateFile = path.join(__dirname, 'test_schedule_monitor_state.json');
+      try {
+        const { runScheduleMonitor: actualRunScheduleMonitor } = jest.requireActual('../schedule_monitor/agent');
+        (runScheduleMonitor as jest.Mock).mockImplementation(actualRunScheduleMonitor);
+
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        let scheduleLogged = false;
+        let loggedPayload: any = null;
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (url: string, opts?: any) => {
+            if (url.includes('/task/logAgentSchedule/')) {
+              scheduleLogged = true;
+              loggedPayload = JSON.parse(opts?.body || '{}');
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 200, result: 1, log_id: 998877 }),
+              };
+            }
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T03:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            forceRun: true,
+          }
+        );
+
+        expect(scheduleLogged).toBe(true);
+        expect(loggedPayload?.snapshot?.agents?.length).toBeGreaterThan(0);
+        expect(loggedPayload?.snapshot?.cycle_date).toBe('2026-10-09');
+      } finally {
+        (runScheduleMonitor as jest.Mock).mockResolvedValue(12345);
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: вызывает /task/logAgentSchedule/ даже при раннем выходе IDLE_WAIT_NEXT_SCHEDULE', async () => {
+      const testStateFile = path.join(__dirname, 'test_schedule_monitor_early_exit.json');
+      try {
+        const { runScheduleMonitor: actualRunScheduleMonitor } = jest.requireActual('../schedule_monitor/agent');
+        (runScheduleMonitor as jest.Mock).mockImplementation(actualRunScheduleMonitor);
+
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        state.status = 'COMPLETED';
+        state.next_scheduled_run = '2026-10-10T17:00:00.000Z';
+        for (const task of Object.values(state.tasks)) {
+          task.status = 'SUCCESS';
+        }
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        let scheduleLogged = false;
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (url: string) => {
+            if (url.includes('/task/logAgentSchedule/')) {
+              scheduleLogged = true;
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 200, result: 1, log_id: 112233 }),
+              };
+            }
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+          }) as unknown as typeof fetch
+        );
+
+        const res = await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-10T10:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            forceRun: false,
+          }
+        );
+
+        expect(res.action).toBe('IDLE_WAIT_NEXT_SCHEDULE');
+        expect(scheduleLogged).toBe(true);
+      } finally {
+        (runScheduleMonitor as jest.Mock).mockResolvedValue(12345);
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: не вызывает schedule_monitor, если в конфиге enabled = false', async () => {
+      const testStateFile = path.join(__dirname, 'test_schedule_monitor_disabled.json');
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        (runScheduleMonitor as jest.Mock).mockClear();
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => {
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+          }) as unknown as typeof fetch
+        );
+
+        const mockConfig: OrchestratorConfig = {
+          name: 'orchestrator',
+          daily_start_time: '20:00',
+          timezone: 'Europe/Tallinn',
+          max_task_attempts: 3,
+          params: { userId: 2477, rekvId: 63, kond: 1 },
+          prompt: null,
+          schedule_monitor: { enabled: false },
+        };
+        const spyLoadConfig = jest.spyOn(require('./state.manager'), 'loadOrchestratorConfig').mockReturnValue(mockConfig);
+
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T03:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            forceRun: true,
+          }
+        );
+
+        expect(runScheduleMonitor).not.toHaveBeenCalled();
+        spyLoadConfig.mockRestore();
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: флаг taskKey точечно сбрасывает статус задачи в PENDING и запускает ее', async () => {
+      const testStateFile = path.join(__dirname, 'test_task_key_reset.json');
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        for (const task of Object.values(state.tasks)) {
+          task.status = 'SUCCESS';
+        }
+        state.tasks.getEarved.status = 'FAILED';
+        state.tasks.getEarved.attempts = 3;
+        state.tasks.getEarved.error = 'Previous run failed';
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        let dispatchedKey: string | null = null;
+        const testRegistry = {
+          getEarved: {
+            dispatch: jest.fn().mockImplementation(async (ctx) => {
+              dispatchedKey = ctx.key;
+              return 999111;
+            }),
+          },
+        };
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => {
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+          }) as unknown as typeof fetch
+        );
+
+        const res = await runOrchestratorTick(
+          { stateFilePath: testStateFile, taskKey: 'getEarved' },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T08:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            registry: testRegistry,
+          }
+        );
+
+        expect(dispatchedKey).toBe('getEarved');
+        expect(res.activeTasks).toContain('getEarved');
+
+        const reloaded = await stateManager.loadState({}, '2026-10-09');
+        expect(reloaded.tasks.getEarved.status).toBe('RUNNING');
+        expect(reloaded.tasks.getEarved.attempts).toBe(1);
+        expect(reloaded.tasks.getEarved.log_id).toBe(999111);
+        const resetEvent = reloaded.history.find((h) => h.event === 'TASK_RESET_MANUAL');
+        expect(resetEvent).toBeDefined();
+        expect(resetEvent?.task).toBe('getEarved');
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: каскадно перевооружает зависимые задачи (depends_on) при смене календарных суток', async () => {
+      const testStateFile = path.join(__dirname, 'test_cascade_rearm.json');
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.finished_at = '2026-10-08T07:15:00.000Z';
+        state.tasks.getEarved.log_id = 10101;
+        state.tasks.sendFinBitReport.status = 'SUCCESS';
+        state.tasks.sendFinBitReport.finished_at = '2026-10-08T07:20:00.000Z';
+        state.tasks.sendFinBitReport.log_id = 10102;
+        state.cycle_date = '2026-10-08';
+        state.status = 'COMPLETED';
+
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => {
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T03:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            forceRun: false,
+          }
+        );
+
+        const reloaded = await stateManager.loadState({}, '2026-10-09');
+        expect(reloaded.tasks.getEarved.status).toBe('PENDING');
+        expect(reloaded.tasks.getEarved.log_id).toBeNull();
+        expect(reloaded.tasks.sendFinBitReport.status).toBe('PENDING');
+        expect(reloaded.tasks.sendFinBitReport.log_id).toBeNull();
+
+        const rearmEvents = reloaded.history.filter((h) => h.event === 'TASK_REARMED');
+        expect(rearmEvents.some((e) => e.task === 'getEarved')).toBe(true);
+        expect(rearmEvents.some((e) => e.task === 'sendFinBitReport')).toBe(true);
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: сохраняет приоритет явно заданного task.params.logId при слиянии с parentParams', async () => {
+      const testStateFile = path.join(__dirname, 'test_param_priority.json');
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.log_id = 777;
+
+        state.tasks.sendFinBitReport.status = 'PENDING';
+        state.tasks.sendFinBitReport.params = { logId: 999 };
+
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        let dispatchedParams: Record<string, unknown> | null = null;
+        const testRegistry = {
+          sendFinBitReport: {
+            dispatch: jest.fn().mockImplementation(async (ctx) => {
+              dispatchedParams = ctx.params;
+              return 888111;
+            }),
+            resolveParentParams: (s: any) => ({ logId: s.tasks.getEarved.log_id }),
+          },
+        };
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => {
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile, taskKey: 'sendFinBitReport' },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T08:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            registry: testRegistry,
+          }
+        );
+
+        expect(dispatchedParams).toBeDefined();
+        expect((dispatchedParams as Record<string, unknown> | null)?.logId).toBe(999);
       } finally {
         if (fs.existsSync(testStateFile)) {
           try {

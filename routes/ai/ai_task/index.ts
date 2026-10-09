@@ -1,8 +1,40 @@
+import * as dns from 'dns';
 import * as dotenv from 'dotenv';
-import { genkit } from 'genkit';
-import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
 
 dotenv.config();
+
+// Исправление для Node.js 23 на Windows:
+// 1. Приоритет IPv4 для локальных вызовов телеметрии OTLP (устраняет 'fetch failed' к 127.0.0.1)
+try {
+  const originalLookup = dns.lookup;
+  Object.defineProperty(dns, 'lookup', {
+    value: (hostname: string, options: any, callback: any) => {
+      let cb = callback;
+      let opts = options;
+      if (typeof options === 'function') {
+        cb = options;
+        opts = {};
+      }
+      if (hostname === 'localhost') {
+        if (opts && (opts as dns.LookupOptions).all) {
+          return cb(null, [{ address: '127.0.0.1', family: 4 }]);
+        }
+        return cb(null, '127.0.0.1', 4);
+      }
+      return originalLookup(hostname, opts, cb);
+    },
+    configurable: true,
+    writable: true,
+  });
+} catch {
+  // Игнорируем в изолированных тестовых средах (Jest)
+}
+
+// 2. Двухстековый слушатель для Reflection Server (позволяет Genkit CLI подключаться и по ::1, и по 127.0.0.1)
+process.env.GENKIT_REFLECTION_HOST = process.env.GENKIT_REFLECTION_HOST || '::';
+
+import { genkit } from 'genkit';
+import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
 
 // Субагенты и инструменты
 import { getConfig } from './shared/api_client';
@@ -41,6 +73,11 @@ import {
   SendReportResponseSchema,
 } from './reporter/schemas';
 import { generateAndSendReportSubagent } from './reporter/agent';
+import {
+  ScheduleMonitorInputSchema,
+  ScheduleMonitorResultSchema,
+} from './schedule_monitor/schemas';
+import { runScheduleMonitorSubagent } from './schedule_monitor/agent';
 import {
   AgentLaunchDecision,
   AgentLaunchDecisionSchema,
@@ -158,6 +195,30 @@ export const reporterFlow = ai.defineFlow(
     outputSchema: SendReportResponseSchema,
   },
   async (input) => generateAndSendReportSubagent(input)
+);
+
+/**
+ * Genkit Flow: Мониторинг расписания и статусов субагентов (schedule_monitor / ai_task.agent_schedule)
+ */
+export const scheduleMonitorFlow = ai.defineFlow(
+  {
+    name: 'scheduleMonitorFlow',
+    inputSchema: ScheduleMonitorInputSchema,
+    outputSchema: ScheduleMonitorResultSchema,
+  },
+  async (input) => runScheduleMonitorSubagent(input)
+);
+
+/**
+ * Genkit Flow: Алиас потока расписания (agentScheduleFlow)
+ */
+export const agentScheduleFlow = ai.defineFlow(
+  {
+    name: 'agentScheduleFlow',
+    inputSchema: ScheduleMonitorInputSchema,
+    outputSchema: ScheduleMonitorResultSchema,
+  },
+  async (input) => runScheduleMonitorSubagent(input)
 );
 
 /**
@@ -373,6 +434,9 @@ async function main() {
   const statePathIdx = args.indexOf('--state');
   const stateFilePath = statePathIdx !== -1 ? args[statePathIdx + 1] : undefined;
 
+  const taskIdx = args.indexOf('--task');
+  const taskKey = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
+
   if (isFullRun) {
     console.log(`=== buh70 AI-Orkestraatori täistsükli käivitamine (--full) ===`);
     console.log(`Parameetrid: userId=${userId}, rekvId=${rekvId}, forceRun=${forceRun}`);
@@ -387,10 +451,14 @@ async function main() {
   } else {
     // По умолчанию: выполнение одного тика FSM
     console.log(`=== buh70 AI-Orkestraatori tikk-käivitamine (Stateless FSM Tick) ===`);
-    console.log(`Parameetrid: userId=${userId}, rekvId=${rekvId}, forceRun=${forceRun}`);
+    console.log(
+      `Parameetrid: userId=${userId}, rekvId=${rekvId}, forceRun=${forceRun}${
+        taskKey ? `, taskKey=${taskKey}` : ''
+      }`
+    );
 
     const result = await runOrchestratorTick(
-      { userId, rekvId, forceRun, stateFilePath },
+      { userId, rekvId, forceRun, stateFilePath, taskKey },
       {
         targetDateStr,
         aiGenerateFn: getAiGenerateFn(),
@@ -404,10 +472,14 @@ async function main() {
   }
 }
 
-// Запускаем CLI только если скрипт вызван напрямую
+// Запускаем CLI только если скрипт вызван напрямую и не под управлением Genkit Dev UI
 if (require.main === module) {
-  main().catch((err) => {
-    console.error('Orkestraatori käivitamise saatuslik viga:', err);
-    process.exit(1);
-  });
+  if (process.env.GENKIT_ENV === 'dev' || process.env.GENKIT_RUNTIME_ID) {
+    console.log('=== Genkit Dev UI režiim: vood on registreeritud ja ootavad Genkit UI päringuid ===');
+  } else {
+    main().catch((err) => {
+      console.error('Orkestraatori käivitamise saatuslik viga:', err);
+      process.exit(1);
+    });
+  }
 }

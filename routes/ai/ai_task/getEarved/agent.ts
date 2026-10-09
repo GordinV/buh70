@@ -64,3 +64,27 @@ export async function runGetEarvedSubagent(
     error: watchResult.error,
   });
 }
+
+export const manifest = {
+  dispatch: async (ctx: {
+    userId: number;
+    rekvId: number;
+    kond: number;
+    params: Record<string, unknown>;
+    apiClient: ApiClient;
+  }): Promise<number | null> => {
+    const finalUserId = (ctx.params?.userId as number) ?? ctx.userId;
+    const finalRekvId = (ctx.params?.rekvId as number) ?? ctx.rekvId;
+    const dateQueryFrom = ctx.params?.dateQueryFrom as string | undefined;
+
+    const res = await startGetEarved(
+      {
+        userId: finalUserId,
+        rekvId: finalRekvId,
+        dateQueryFrom,
+      },
+      ctx.apiClient
+    );
+    return res.log_id;
+  },
+};

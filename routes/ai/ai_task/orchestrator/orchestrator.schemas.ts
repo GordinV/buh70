@@ -38,6 +38,7 @@ export const AgentConfigSchema = z.object({
   schedule: TaskScheduleSchema.default(null).describe('Индивидуальное расписание запуска'),
   prompt: z.string().nullable().optional().default(null).describe('Инструкция для LLM при принятии решений'),
   max_attempts: z.number().default(3).describe('Максимальное число попыток запуска при сбое'),
+  timeout_hours: z.number().positive().optional().describe('Порог таймаута выполнения задачи в часах (по умолчанию 12)'),
   params: z.record(z.unknown()).optional().default({}).describe('Параметры по умолчанию для вызова процедуры'),
 });
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
@@ -69,6 +70,12 @@ export const OrchestratorConfigSchema = z.object({
     .optional()
     .default(null)
     .describe('Мета-инструкция для LLM при принятии решений по суточному расчетному циклу'),
+  schedule_monitor: z
+    .object({
+      enabled: z.boolean().default(true).describe('Признак включения мониторинга расписания на тиках'),
+    })
+    .optional()
+    .describe('Настройки агента мониторинга расписания и статусов'),
 });
 export type OrchestratorConfig = z.infer<typeof OrchestratorConfigSchema>;
 
@@ -172,6 +179,7 @@ export const TaskStateSchema = z.object({
   status: TaskStatusEnum.default('PENDING').describe('Текущий статус выполнения'),
   attempts: z.number().default(0).describe('Число выполненных попыток запуска'),
   max_attempts: z.number().default(3).describe('Максимальное допустимое число попыток запуска'),
+  timeout_hours: z.number().positive().optional().describe('Порог таймаута выполнения задачи в часах (по умолчанию 12)'),
   log_id: z.number().nullable().default(null).describe('ID записи в ou.logs'),
   started_at: z.string().nullable().default(null).describe('Время запуска задачи (ISO)'),
   finished_at: z.string().nullable().default(null).describe('Время окончания задачи (ISO)'),
@@ -227,6 +235,7 @@ export const OrchestratorTickInputSchema = z.object({
   forceRun: z.boolean().optional().default(false),
   stateFilePath: z.string().optional(),
   recipientEmail: z.string().optional(),
+  taskKey: z.string().optional().describe('Точечный сброс и немедленный запуск конкретной задачи (CLI флаг --task)'),
 });
 export type OrchestratorTickInput = z.input<typeof OrchestratorTickInputSchema>;
 

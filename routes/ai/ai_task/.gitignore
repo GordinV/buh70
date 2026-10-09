@@ -6,3 +6,4 @@ state/*.log
 *.log
 *.tmp
 .env
+run_tick.sh

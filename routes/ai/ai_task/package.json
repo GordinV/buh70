@@ -7,8 +7,11 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
+    "tick": "./run_tick.sh",
     "dev": "tsx index.ts",
-    "genkit:dev": "genkit start -- tsx index.ts",
+    "genkit": "genkit start -- tsx --watch index.ts",
+    "genkit:dev": "genkit start -- tsx --watch index.ts",
+    "genkit:ui": "genkit start -o -- tsx --watch index.ts",
     "test": "jest --runInBand"
   },
   "dependencies": {
@@ -22,6 +25,7 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^20.17.24",
     "@types/nodemailer": "^8.0.1",
+    "genkit-cli": "^1.44.1",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "tsx": "^4.19.3",

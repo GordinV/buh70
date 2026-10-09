@@ -46,6 +46,10 @@ module.exports = function (app) {
     // запустит отправку отчета о загруженных счетах из finbit
     app.post('/task/sendFinBitReport/', require('./raama/sendFinBitReport').main); //checkAuth
 
+    // на стороне бэкенда требуется наличие синхронного обработчика POST /task/logAgentSchedule/, выполняющего запись переданного snapshot в таблицу ou.logs под именем потока ai_task.agent_schedule
+    app.post('/task/logAgentSchedule/', require('./raama/logAgentSchedule').main); //checkAuth
+
+    // logAgentSchedule
 
     // same as main
     app.get('/', require('./login').get)

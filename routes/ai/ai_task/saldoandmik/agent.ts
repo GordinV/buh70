@@ -54,3 +54,23 @@ export async function runSaldoandmikSubagent(
     error: watchResult.error,
   });
 }
+
+export const manifest = {
+  dispatch: async (ctx: {
+    userId: number;
+    rekvId: number;
+    kond: number;
+    params: Record<string, unknown>;
+    apiClient: ApiClient;
+  }): Promise<number | null> => {
+    const finalUserId = (ctx.params?.userId as number) ?? ctx.userId;
+    const finalRekvId = (ctx.params?.rekvId as number) ?? ctx.rekvId;
+    const finalKond = (ctx.params?.kond as number) ?? ctx.kond;
+
+    const res = await startSaldoandmik(
+      { userId: finalUserId, rekvId: finalRekvId, kond: finalKond },
+      ctx.apiClient
+    );
+    return res.log_id;
+  },
+};

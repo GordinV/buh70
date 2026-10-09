@@ -23,6 +23,7 @@ export const KNOWN_AGENT_DIRS = [
   'getEarved',
   'sendFinBitReport',
   'lisa1_lisa5',
+  'schedule_monitor',
   'reporter',
 ];
 
@@ -143,6 +144,7 @@ export function buildTaskGraphFromConfigs(configs: Record<string, AgentConfig>):
       status: 'PENDING',
       attempts: 0,
       max_attempts: cfg.max_attempts ?? 3,
+      timeout_hours: cfg.timeout_hours,
       log_id: null,
       started_at: null,
       finished_at: null,
@@ -171,6 +173,9 @@ export function reconcileTasksWithConfigs(
       existing.schedule = cfg.schedule ?? null;
       existing.prompt = cfg.prompt ?? null;
       existing.max_attempts = cfg.max_attempts ?? 3;
+      if (cfg.timeout_hours !== undefined) {
+        existing.timeout_hours = cfg.timeout_hours;
+      }
       existing.params = { ...(cfg.params || {}), ...(existing.params || {}) };
     } else if (addNewTasks) {
       existingTasks[name] = {
@@ -183,6 +188,7 @@ export function reconcileTasksWithConfigs(
         status: 'PENDING',
         attempts: 0,
         max_attempts: cfg.max_attempts ?? 3,
+        timeout_hours: cfg.timeout_hours,
         log_id: null,
         started_at: null,
         finished_at: null,

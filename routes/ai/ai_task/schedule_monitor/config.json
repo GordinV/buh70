@@ -1,0 +1,14 @@
+{
+  "name": "schedule_monitor",
+  "flow": "ai_task.agent_schedule",
+  "description": "Мониторинг расписания и фиксация снимка статусов субагентов",
+  "allow_parallel": true,
+  "depends_on": [],
+  "schedule": null,
+  "prompt": null,
+  "max_attempts": 3,
+  "params": {
+    "userId": 2477,
+    "rekvId": 63
+  }
+}

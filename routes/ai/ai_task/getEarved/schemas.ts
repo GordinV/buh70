@@ -4,11 +4,11 @@ import { AsyncTaskStartResponseSchema } from '../shared/types';
 export const TASK_FLOW_GET_EARVED = 'docs.sp_loe_earved';
 
 /**
- * Возвращает дату за вчерашний день в локальном формате YYYY-MM-DD
+ * Возвращает дату выборки счетов FinBit в локальном формате YYYY-MM-DD (по умолчанию минус 2 дня)
  */
 export function getDefaultDateQueryFrom(date: Date = new Date()): string {
   const d = new Date(date);
-  d.setDate(d.getDate() - 1);
+  d.setDate(d.getDate() - 2);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -32,7 +32,7 @@ export const StartGetEarvedInputSchema = z.object({
     .string()
     .optional()
     .default(() => getDefaultDateQueryFrom())
-    .describe('Дата выборки счетов из FinBit в формате YYYY-MM-DD (по умолчанию текущая дата минус 1 день)'),
+    .describe('Дата выборки счетов из FinBit в формате YYYY-MM-DD (по умолчанию текущая дата минус 2 дня)'),
   schedule: z
     .object({
       time: z.string().default('12:30').describe('Время ежедневного запуска (HH:mm)'),
