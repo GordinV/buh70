@@ -155,6 +155,8 @@ const Sorder = {
         sqlString: `SELECT *
                     FROM cur_korder k
                         WHERE k.rekvId = $1
+                          and k.kpv >= $3::date 
+                          and k.kpv <= $4::date
                              AND coalesce(docs.usersRigths(k.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curKorder'

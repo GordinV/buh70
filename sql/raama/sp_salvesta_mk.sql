@@ -179,6 +179,8 @@ BEGIN
 
     -- вставка или апдейт docs.doc
 
+    raise notice 'sp_salvesta mk doc_id %',doc_id;
+
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
@@ -376,6 +378,8 @@ BEGIN
         END LOOP;
 
     -- правим сумму оплаты
+    raise notice 'save mk kas_muudatus %, doc_id %',kas_muudatus, doc_id;
+
     IF (kas_muudatus)
     THEN
 

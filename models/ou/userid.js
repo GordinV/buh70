@@ -4,41 +4,45 @@ module.exports = {
                    WHERE rekvid = $1`, //$1 - asutuse id
     select: [
         {
-            sql: `SELECT 'USERID'                                                                      AS doc_type_id,
-                         $2 :: INTEGER                                                                 AS userid,
-                         u.id,
-                         u.rekvid,
-                         u.kasutaja,
-                         u.ametnik,
-                         u.muud,
-                         coalesce((u.roles ->> 'is_kasutaja') :: BOOLEAN, FALSE) :: INTEGER            AS is_kasutaja,
-                         coalesce((u.roles ->> 'is_peakasutaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_peakasutaja,
-                         coalesce((u.roles ->> 'is_admin') :: BOOLEAN, FALSE) :: INTEGER               AS is_admin,
-                         coalesce((u.roles ->> 'is_vaatleja') :: BOOLEAN, FALSE) :: INTEGER            AS is_vaatleja,
-                         coalesce((u.roles ->> 'is_eel_koostaja') :: BOOLEAN, FALSE) :: INTEGER        AS is_eel_koostaja,
-                         coalesce((u.roles ->> 'is_eel_allkirjastaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_eel_allkirjastaja,
-                         coalesce((u.roles ->> 'is_eel_esitaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_eel_esitaja,
-                         coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: INTEGER     AS is_eel_aktsepterja,
-                         coalesce((u.roles ->> 'is_eel_admin') :: BOOLEAN, FALSE) :: INTEGER           AS is_eel_admin,
-                         coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE) :: INTEGER AS is_asutuste_korraldaja,
-                         coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
-                         coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
-                         coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER       AS is_ladu_kasutaja,
-                         coalesce((u.roles ->> 'is_arvestaja') :: BOOLEAN, FALSE) :: INTEGER           AS is_arvestaja,
-                         coalesce((u.roles ->> 'is_tabeli_korraldaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_tabeli_korraldaja,
-                         coalesce((u.roles ->> 'is_palga_kasutaja') :: BOOLEAN, FALSE) :: INTEGER      AS is_palga_kasutaja,
-                         coalesce((u.roles ->> 'is_pohivara_kasutaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_pohivara_kasutaja,
-                         coalesce((u.roles ->> 'is_sa_ametnik') :: BOOLEAN, FALSE) :: INTEGER          AS is_sa_ametnik,
-                         coalesce((u.roles ->> 'is_hk_ametnik') :: BOOLEAN, FALSE) :: INTEGER          AS is_hk_ametnik,
-                         (u.properties ->> 'email') :: VARCHAR(254)                                    AS email,
-                         (u.properties ->> 'port') :: TEXT                                             AS port,
-                         (u.properties ->> 'user') :: TEXT                                             AS user,
-                         (u.properties ->> 'pass') :: TEXT                                             AS pass,
-                         (u.properties ->> 'smtp') :: TEXT                                             AS smtp,
-                         (u.properties ->> 'earved') :: TEXT                                           AS earved,
-                         current_date::DATE                                                            AS kpv
-                  FROM ou.userid u
-                  WHERE id = $1`,
+            sql: `SELECT
+                      'USERID'                                                                      AS doc_type_id,
+                      $2 :: INTEGER                                                                 AS userid,
+                      u.id,
+                      u.rekvid,
+                      u.kasutaja,
+                      u.ametnik,
+                      u.muud,
+                      coalesce((u.roles ->> 'is_kasutaja') :: BOOLEAN, FALSE) :: INTEGER            AS is_kasutaja,
+                      coalesce((u.roles ->> 'is_peakasutaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_peakasutaja,
+                      coalesce((u.roles ->> 'is_admin') :: BOOLEAN, FALSE) :: INTEGER               AS is_admin,
+                      coalesce((u.roles ->> 'is_vaatleja') :: BOOLEAN, FALSE) :: INTEGER            AS is_vaatleja,
+                      coalesce((u.roles ->> 'is_eel_koostaja') :: BOOLEAN, FALSE) :: INTEGER        AS is_eel_koostaja,
+                      coalesce((u.roles ->> 'is_eel_allkirjastaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_eel_allkirjastaja,
+                      coalesce((u.roles ->> 'is_eel_esitaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_eel_esitaja,
+                      coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: INTEGER     AS is_eel_aktsepterja,
+                      coalesce((u.roles ->> 'is_eel_admin') :: BOOLEAN, FALSE) :: INTEGER           AS is_eel_admin,
+                      coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE) :: INTEGER AS is_asutuste_korraldaja,
+                      coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
+                      coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
+                      coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER       AS is_ladu_kasutaja,
+                      coalesce((u.roles ->> 'is_arvestaja') :: BOOLEAN, FALSE) :: INTEGER           AS is_arvestaja,
+                      coalesce((u.roles ->> 'is_tabeli_korraldaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_tabeli_korraldaja,
+                      coalesce((u.roles ->> 'is_palga_kasutaja') :: BOOLEAN, FALSE) :: INTEGER      AS is_palga_kasutaja,
+                      coalesce((u.roles ->> 'is_pohivara_kasutaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_pohivara_kasutaja,
+                      coalesce((u.roles ->> 'is_sa_ametnik') :: BOOLEAN, FALSE) :: INTEGER          AS is_sa_ametnik,
+                      coalesce((u.roles ->> 'is_hk_ametnik') :: BOOLEAN, FALSE) :: INTEGER          AS is_hk_ametnik,
+                      coalesce((u.roles ->> 'is_ai') :: BOOLEAN, FALSE) :: INTEGER                  AS is_ai,
+                      (u.properties ->> 'email') :: VARCHAR(254)                                    AS email,
+                      (u.properties ->> 'port') :: TEXT                                             AS port,
+                      (u.properties ->> 'user') :: TEXT                                             AS user,
+                      (u.properties ->> 'pass') :: TEXT                                             AS pass,
+                      (u.properties ->> 'smtp') :: TEXT                                             AS smtp,
+                      (u.properties ->> 'earved') :: TEXT                                           AS earved,
+                      current_date::DATE                                                            AS kpv
+                  FROM
+                      ou.userid u
+                  WHERE
+                      id = $1`,
             sqlAsNew: `SELECT
                       $1 :: INTEGER         AS id,
                       $2 :: INTEGER         AS userid,
@@ -74,10 +78,18 @@ module.exports = {
             data: []
         },
         {
-            sql: `SELECT r.id, r.regkood, r.nimetus:: VARCHAR(254), r.parentid, u.id AS user_id
-                  FROM ou.userid u
-                           INNER JOIN ou.rekv r ON r.id = u.rekvid
-                  WHERE kasutaja = $1
+            sql: `SELECT
+                      r.id,
+                      r.regkood,
+                      r.nimetus:: VARCHAR(254),
+                      r.parentid,
+                      u.id                                                                        AS user_id,
+                      case when r.parentid = 119 then left(r.nimetus, 7) else '' end::varchar(20) as tunnus
+                  FROM
+                      ou.userid              u
+                          INNER JOIN ou.rekv r ON r.id = u.rekvid
+                  WHERE
+                        kasutaja = $1
                     AND u.status <> 3
                     AND r.status <> 3`,
             query: null,

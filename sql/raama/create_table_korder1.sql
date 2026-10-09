@@ -37,17 +37,12 @@ GRANT SELECT ON TABLE docs.korder1 TO dbvaatleja;
 
 DROP INDEX if exists docs.korder1_rekv_idx;
 
-CREATE INDEX korder1_rekv_idx
-  ON docs.korder1
-  USING btree
-  (rekvid);
-
 DROP INDEX if exists docs.korder1_kpv_idx;
 
 CREATE INDEX korder1_kpv_idx
   ON docs.korder1
   USING btree
-  (kpv);
+  (rekvid, kpv);
 
 DROP INDEX if exists docs.korder1_number_idx;
 
@@ -64,7 +59,7 @@ CREATE INDEX korder1_parent_idx
   (parentid);
 
 
-CREATE INDEX korder1_asuitus_idx
+CREATE INDEX korder1_asutus_idx
   ON docs.korder1
   USING btree
   (asutusid);

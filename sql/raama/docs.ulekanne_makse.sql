@@ -60,6 +60,17 @@ BEGIN
 
     END IF;
 
+    -- контроль на  сальдо
+    -- A. Vargunin 07.05.2026
+    IF not exists (select id from lapsed.cur_lapsed_mk where id = l_mk_id and jaak >= l_summa )
+    THEN
+        -- выходим
+        error_code = 1;
+        error_message = 'Puudub MK, kus jääk > 0 või jääk < ' || l_summa::text;
+        RAISE EXCEPTION '%', error_message;
+    END IF;
+
+
     -- ищем нового пользователя в новом учреждении
     SELECT id
     INTO l_user_id
@@ -227,7 +238,7 @@ BEGIN
     IF NOT exists(
             SELECT id FROM lapsed.lapse_kaart lk WHERE parentid = l_laps_id AND lk.rekvid = l_rekvid AND lk.staatus < 3)
     THEN
-        RAISE EXCEPTION 'Viga, sihtasutusel puuduvad teenused';
+        RAISE EXCEPTION 'Sihtasutusel puuduvad teenused.';
     END IF;
 
     -- параметры нового платежа

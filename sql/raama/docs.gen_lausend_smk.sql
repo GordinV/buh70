@@ -470,7 +470,6 @@ BEGIN
                 v_journal1.lisa_k = '';
             END IF;
 
-
             -- готовим параметры
             l_json_details = l_json_details || to_jsonb(v_journal1);
 

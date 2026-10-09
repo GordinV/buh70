@@ -46,24 +46,20 @@ BEGIN
         GROUP BY opt;
 
         -- ищем счета
-
         IF coalesce(l_summa, 0) < 0 AND l_opt <> 1
         THEN
             -- перенос платежа
-            raise notice 'перенос платежа , doc_id %',doc_id;
             SELECT *
             INTO v_tulemus
             FROM docs.sp_loe_tagasimakse(doc_id, user_id);
         ELSIF l_opt = 1 AND coalesce(l_summa, 0) > 0
         THEN
             -- возврат
-            raise notice 'возврат платежа , doc_id %',doc_id;
 
             SELECT *
             INTO v_tulemus
             FROM docs.sp_loe_tagasimakse(doc_id, user_id);
         ELSE
-            raise notice 'else , doc_id %',doc_id;
 
             SELECT *
             INTO v_tulemus

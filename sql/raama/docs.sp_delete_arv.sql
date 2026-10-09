@@ -24,29 +24,37 @@ DECLARE
 
 BEGIN
 
-    SELECT d.*,
-           u.ametnik                                    AS user_name,
-           a.kpv,
-           a.id                                         AS doc_arv_id,
-           a.properties,
-           a.properties ->> 'tyyp'                      AS tyyp,
-           a.liik,
-           a.asutusid,
-           (a.properties ->> 'asendus_id')::INTEGER     AS asendus_id,
-           (a.properties -> 'doc_kreedit_arved')::JSONB AS kreedit_arved
+    SELECT
+        d.*,
+        u.ametnik                                    AS user_name,
+        a.kpv,
+        a.id                                         AS doc_arv_id,
+        a.properties,
+        a.properties ->> 'tyyp'                      AS tyyp,
+        a.liik,
+        a.asutusid,
+        (a.properties ->> 'asendus_id')::INTEGER     AS asendus_id,
+        (a.properties -> 'doc_kreedit_arved')::JSONB AS kreedit_arved
     INTO v_doc
-    FROM docs.doc d
-             LEFT OUTER JOIN ou.userid u ON u.id = user_id
-             LEFT OUTER JOIN docs.arv a ON a.parentid = d.id
-    WHERE d.id = doc_id;
+    FROM
+        docs.doc                      d
+            LEFT OUTER JOIN ou.userid u ON u.id = user_id
+            LEFT OUTER JOIN docs.arv  a ON a.parentid = d.id
+    WHERE
+        d.id = doc_id;
 
     -- проверка на пользователя и его соответствие учреждению
 
-    IF NOT exists(SELECT id
-                  FROM ou.userid u
-                  WHERE id = user_id
-                    AND u.rekvid = v_doc.rekvid
-        )
+    IF NOT exists
+    (
+        SELECT
+            id
+        FROM
+            ou.userid u
+        WHERE
+              id = user_id
+          AND u.rekvid = v_doc.rekvid
+    )
     THEN
 
         error_code = 5;
@@ -58,12 +66,17 @@ BEGIN
     END IF;
 
     -- нельзя удалять отправленный по эл. каналам счет
-    IF exists(
-            SELECT id
-            FROM docs.doc
-            WHERE id = doc_id
-              AND (history::TEXT LIKE '%"email":%'
-                OR history::TEXT LIKE '%"earve":%'))
+    IF exists
+    (
+        SELECT
+            id
+        FROM
+            docs.doc
+        WHERE
+              id = doc_id
+          AND (history::TEXT LIKE '%"email":%'
+            OR history::TEXT LIKE '%"earve":%')
+    )
     THEN
 
         error_code = 5;
@@ -73,9 +86,15 @@ BEGIN
     END IF;
 
     -- Проверка на связаность счета с переносом сальдо
-    IF exists(SELECT id
-              FROM docs.arv
-              WHERE (properties -> 'doc_kreedit_arved')::JSONB @> to_jsonb(doc_id))
+    IF exists
+    (
+        SELECT
+            id
+        FROM
+            docs.arv
+        WHERE
+            (properties -> 'doc_kreedit_arved')::JSONB @> to_jsonb(doc_id)
+    )
     THEN
 
         error_code = 5;
@@ -120,7 +139,9 @@ BEGIN
 */
     IF v_doc.tyyp IS NOT NULL AND coalesce(v_doc.tyyp, '') = 'HOOLDEKODU_ISIKU_OSA' AND v_doc.liik = 0
     THEN
-        l_tasu_id = (SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_id AND status < 3 LIMIT 1);
+        l_tasu_id = (
+                        SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_id AND status < 3 LIMIT 1
+                    );
 
     END IF;
 
@@ -128,19 +149,36 @@ BEGIN
     IF v_doc.asendus_id IS NOT NULL
     THEN
         PERFORM docs.sp_delete_journal(u.id, j.parentid)
-        FROM docs.journal j,
-             (SELECT id, rekvid
-              FROM ou.userid u
-              WHERE kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_Id)
-                AND status < 3) u
-        WHERE j.rekvid = u.rekvid
+        FROM
+            docs.journal j,
+            (
+                SELECT
+                    id,
+                    rekvid
+                FROM
+                    ou.userid u
+                WHERE
+                      kasutaja IN (
+                                      SELECT kasutaja
+                                      FROM ou.userid
+                                      WHERE id = user_Id
+                                  )
+                  AND status < 3
+            )            u
+        WHERE
+              j.rekvid = u.rekvid
           AND j.properties IS NOT NULL
           AND (j.properties ->> 'asendus_id')::INTEGER IN
-              (SELECT (a1.properties ->> 'asendus_id')::INTEGER AS asendus_id
-               FROM docs.arv1 a1
-                        INNER JOIN docs.arv a ON a.id = a1.parentid
-               WHERE a.parentid = v_doc.id
-                 AND a1.properties ->> 'asendus_id' IS NOT NULL);
+              (
+                  SELECT
+                      (a1.properties ->> 'asendus_id')::INTEGER AS asendus_id
+                  FROM
+                      docs.arv1               a1
+                          INNER JOIN docs.arv a ON a.id = a1.parentid
+                  WHERE
+                        a.parentid = v_doc.id
+                    AND a1.properties ->> 'asendus_id' IS NOT NULL
+              );
 
     END IF;
 
@@ -149,39 +187,68 @@ BEGIN
     -- docs.arv
 
     arv_history = row_to_json(row.*)
-                  FROM (SELECT a.*
-                        FROM docs.arv a
-                        WHERE a.parentid = doc_id) ROW;
+                  FROM
+                      (
+                          SELECT
+                              a.*
+                          FROM
+                              docs.arv a
+                          WHERE
+                              a.parentid = doc_id
+                      ) ROW;
 
     -- docs.arv1
 
-    arv1_history = jsonb_build_array(array(SELECT row_to_json(row.*)
-                                           FROM (SELECT a1.*
-                                                 FROM docs.arv1 a1
-                                                          INNER JOIN docs.arv a ON a.id = a1.parentid
-                                                 WHERE a.parentid = doc_id) row));
+    arv1_history = jsonb_build_array(array(SELECT
+                                               row_to_json(row.*)
+                                           FROM
+                                               (
+                                                   SELECT
+                                                       a1.*
+                                                   FROM
+                                                       docs.arv1               a1
+                                                           INNER JOIN docs.arv a ON a.id = a1.parentid
+                                                   WHERE
+                                                       a.parentid = doc_id
+                                               ) row));
     -- docs.arvtasu
 
-    arvtasu_history = jsonb_build_array(array(SELECT row_to_json(row.*)
-                                              FROM (SELECT at.*
-                                                    FROM docs.arvtasu at
-                                                             INNER JOIN docs.arv a ON a.id = at.doc_arv_id
-                                                    WHERE a.parentid = doc_id) row));
+    arvtasu_history = jsonb_build_array(array(SELECT
+                                                  row_to_json(row.*)
+                                              FROM
+                                                  (
+                                                      SELECT
+                                                          at.*
+                                                      FROM
+                                                          docs.arvtasu            at
+                                                              INNER JOIN docs.arv a ON a.id = at.doc_arv_id
+                                                      WHERE
+                                                          a.parentid = doc_id
+                                                  ) row));
 
-    SELECT row_to_json(row)
+    SELECT
+        row_to_json(row)
     INTO new_history
-    FROM (SELECT now()           AS deleted,
-                 v_doc.user_name AS user,
-                 arv_history     AS arv,
-                 arv1_history    AS arv1,
-                 arvtasu_history AS arvtasu
-         ) row;
+    FROM
+        (
+            SELECT
+                now()           AS deleted,
+                v_doc.user_name AS user,
+                arv_history     AS arv,
+                arv1_history    AS arv1,
+                arvtasu_history AS arvtasu
+        ) row;
 
     -- удаление оплат
     FOR v_mk IN
-        SELECT id, doc_tasu_id, pankkassa
-        FROM docs.arvtasu
-        WHERE (doc_arv_id = doc_id OR doc_tasu_id = doc_id)
+        SELECT
+            id,
+            doc_tasu_id,
+            pankkassa
+        FROM
+            docs.arvtasu
+        WHERE
+              (doc_arv_id = doc_id OR doc_tasu_id = doc_id)
           AND status < 3
         LOOP
             -- удаление оплат
@@ -202,22 +269,44 @@ BEGIN
 
     -- удаление связей
     UPDATE docs.doc
-    SET docs_ids = array_remove(docs_ids, v_doc.id)
-    WHERE id IN (SELECT unnest(docs_ids) FROM docs.doc WHERE id = v_doc.id)
+    SET
+        docs_ids = array_remove(docs_ids, v_doc.id)
+    WHERE
+          id IN (
+                    SELECT unnest(docs_ids)
+                    FROM docs.doc
+                    WHERE id = v_doc.id
+                )
       AND status < DOC_STATUS;
 
-    IF (SELECT (properties ->> 'arve_id') AS arve_id
-        FROM docs.arv1 a1
-        WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)
-        LIMIT 1) IS NOT NULL
+    IF (
+           SELECT
+               (properties ->> 'arve_id') AS arve_id
+           FROM
+               docs.arv1 a1
+           WHERE
+               a1.parentid IN (
+                                  SELECT id
+                                  FROM docs.arv
+                                  WHERE parentid = v_doc.id
+                              )
+           LIMIT 1
+       ) IS NOT NULL
     THEN
         -- есть ссылка, надо снять
         UPDATE docs.doc
-        SET docs_ids = array_remove(docs_ids, doc_id)
-        WHERE id IN (SELECT (a1.properties ->> 'arve_id') :: INTEGER
-                     FROM docs.arv1 a1
+        SET
+            docs_ids = array_remove(docs_ids, doc_id)
+        WHERE
+            id IN (
+                      SELECT
+                          (a1.properties ->> 'arve_id') :: INTEGER
+                      FROM
+                          docs.arv1               a1
                               INNER JOIN docs.arv a ON a.id = a1.parentid
-                     WHERE a.parentid = doc_id);
+                      WHERE
+                          a.parentid = doc_id
+                  );
     END IF;
 
     -- уберем ссылку на счет
@@ -227,18 +316,35 @@ BEGIN
     UPDATE docs.korder1 SET arvid = NULL WHERE arvid = doc_id;
 
     --поменяем статус табелей в род.плате
-    IF exists(SELECT 1 FROM pg_class WHERE relname = 'lapse_taabel')
+    IF exists
+    (
+        SELECT 1
+        FROM pg_class
+        WHERE relname = 'lapse_taabel'
+    )
     THEN
         UPDATE lapsed.lapse_taabel
-        SET staatus = 1
-        WHERE staatus = 2
+        SET
+            staatus = 1
+        WHERE
+              staatus = 2
           AND rekvid = v_doc.rekvid
           AND id IN (
-            SELECT (properties ->> 'lapse_taabel_id')::INTEGER FROM docs.arv1 WHERE parentid = v_doc.doc_arv_id
-        );
+                        SELECT (properties ->> 'lapse_taabel_id')::INTEGER
+                        FROM docs.arv1
+                        WHERE parentid = v_doc.doc_arv_id
+                    );
     END IF;
 
-    DELETE FROM docs.arv1 WHERE parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id);
+    DELETE
+    FROM
+        docs.arv1
+    WHERE
+        parentid IN (
+                        SELECT id
+                        FROM docs.arv
+                        WHERE parentid = v_doc.id
+                    );
     DELETE FROM docs.arv WHERE parentid = v_doc.id;
     --@todo констрейн на удаление
 
@@ -246,26 +352,48 @@ BEGIN
     -- Установка статуса ("Удален")  и сохранение истории
 
     UPDATE docs.doc
-    SET lastupdate = now(),
+    SET
+        lastupdate = now(),
         history    = coalesce(history, '[]') :: JSONB || new_history,
         rekvid     = v_doc.rekvid,
         status     = DOC_STATUS
-    WHERE id = doc_id;
+    WHERE
+        id = doc_id;
 
     -- Удаление данных из связанных таблиц (удаляем проводки)
 
     IF (v_doc.docs_ids IS NOT NULL)
     THEN
         PERFORM docs.sp_delete_journal(user_id, parentid)
-        FROM docs.journal
-        WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+        FROM
+            docs.journal
+        WHERE
+            parentid IN (
+                            SELECT unnest(v_doc.docs_ids)
+                        ); -- @todo процедура удаления
 
     END IF;
 
     -- удаляем ссылки на договор
-    IF exists(SELECT id FROM docs.leping1 WHERE parentid IN (SELECT unnest(v_doc.docs_ids)))
+    IF exists
+    (
+        SELECT
+            id
+        FROM
+            docs.leping1
+        WHERE
+            parentid IN (
+                            SELECT unnest(v_doc.docs_ids)
+                        )
+    )
     THEN
-        UPDATE docs.doc SET docs_ids = array_remove(docs_ids, doc_id) WHERE id IN (SELECT unnest(v_doc.docs_ids));
+        UPDATE docs.doc
+        SET
+            docs_ids = array_remove(docs_ids, doc_id)
+        WHERE
+            id IN (
+                      SELECT unnest(v_doc.docs_ids)
+                  );
     END IF;
 
     IF v_doc.tyyp IS NOT NULL AND coalesce(v_doc.tyyp, '') = 'HOOLDEKODU_ISIKU_OSA' AND v_doc.liik = 0
@@ -284,28 +412,37 @@ BEGIN
     END IF;
 
 
-/*    --удалим из кеша отчета, если он там
-    IF exists(SELECT 1 FROM pg_class WHERE relname = 'saldo_ja_kaive')
-    THEN
-        DELETE
-        FROM lapsed.saldo_ja_kaive
-        WHERE (params ->> 'kpv_end' IS NULL OR ((params ->> 'kpv_end')::DATE <= v_doc.kpv
-            OR (params ->> 'kpv_start')::DATE >= v_doc.kpv))
-          AND rekvid = v_doc.rekvid;
-    END IF;
-*/    -- удалим сссылку в табеле
+    /*    --удалим из кеша отчета, если он там
+        IF exists(SELECT 1 FROM pg_class WHERE relname = 'saldo_ja_kaive')
+        THEN
+            DELETE
+            FROM lapsed.saldo_ja_kaive
+            WHERE (params ->> 'kpv_end' IS NULL OR ((params ->> 'kpv_end')::DATE <= v_doc.kpv
+                OR (params ->> 'kpv_start')::DATE >= v_doc.kpv))
+              AND rekvid = v_doc.rekvid;
+        END IF;
+    */ -- удалим сссылку в табеле
 
-    IF exists(SELECT 1 FROM pg_class WHERE relname = 'hootaabel')
+    IF exists
+    (
+        SELECT 1
+        FROM pg_class
+        WHERE relname = 'hootaabel'
+    )
     THEN
         UPDATE hooldekodu.hootaabel
-        SET arvid      = 0,
+        SET
+            arvid      = 0,
             properties = properties || jsonb_build_object('omavalitsus_osa', 0, 'isiku_osa', 0)
-        WHERE arvid = v_doc.id;
+        WHERE
+            arvid = v_doc.id;
 
         UPDATE hooldekodu.hootaabel
-        SET sugulane_arv_id = NULL,
+        SET
+            sugulane_arv_id = NULL,
             properties      = properties || jsonb_build_object('sugulane_osa', 0)
-        WHERE sugulane_arv_id = v_doc.id;
+        WHERE
+            sugulane_arv_id = v_doc.id;
 
     END IF;
 
@@ -314,16 +451,25 @@ BEGIN
        jsonb_array_length(v_doc.kreedit_arved) > 0
     THEN
         FOR v_arved IN
-            WITH doc_ids AS (
-                SELECT jsonb_array_elements(v_doc.kreedit_arved)::INTEGER AS id
-            )
-            SELECT u.id AS user_id, doc_ids.id::INTEGER AS doc_id
-            FROM doc_ids,
-                 docs.doc d,
-                 ou.userid u
-            WHERE d.id = doc_ids.id
+            WITH
+                doc_ids AS (
+                               SELECT jsonb_array_elements(v_doc.kreedit_arved)::INTEGER AS id
+                )
+            SELECT
+                u.id                AS user_id,
+                doc_ids.id::INTEGER AS doc_id
+            FROM
+                doc_ids,
+                docs.doc d,
+                ou.userid u
+            WHERE
+                  d.id = doc_ids.id
               AND d.rekvid = u.rekvid
-              AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id)
+              AND kasutaja IN (
+                                  SELECT kasutaja
+                                  FROM ou.userid
+                                  WHERE id = user_id
+                              )
               AND u.status < 3
 
             LOOP

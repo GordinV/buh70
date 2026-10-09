@@ -19,11 +19,16 @@ DECLARE
     l_maksepaev  DATE           = params ->> 'maksepaev';
     l_selg       TEXT           = params ->> 'selg';
     l_asutus_id  INTEGER        = params ->> 'maksja_id';
-    l_tp         TEXT           = (SELECT tp
-                                   FROM libs.asutus
-                                   WHERE id = l_asutus_id
-                                     AND staatus < 3
-                                   LIMIT 1);
+    l_tp         TEXT           = (
+                                      SELECT
+                                          tp
+                                      FROM
+                                          libs.asutus
+                                      WHERE
+                                            id = l_asutus_id
+                                        AND staatus < 3
+                                      LIMIT 1
+                                  );
     l_aa         TEXT           = params ->> 'maksja_arve';
     l_asutus_aa  TEXT           = params ->> 'aa';
     l_tunnus     TEXT           = params ->> 'tunnus';
@@ -35,26 +40,46 @@ DECLARE
     json_mk1     JSONB;
     l_pank_id    INTEGER;
     l_laps_id    INTEGER        = CASE
-                                      WHEN l_arv_id IS NOT NULL THEN (SELECT parentid
-                                                                      FROM lapsed.liidestamine l
-                                                                               INNER JOIN docs.doc d ON d.id = l.docid
-                                                                      WHERE docid = l_arv_id
-                                                                        AND d.rekvid IN (SELECT userid.rekvid FROM ou.userid WHERE id = user_id)
-                                                                      LIMIT 1)
+                                      WHEN l_arv_id IS NOT NULL THEN (
+                                                                         SELECT
+                                                                             parentid
+                                                                         FROM
+                                                                             lapsed.liidestamine     l
+                                                                                 INNER JOIN docs.doc d ON d.id = l.docid
+                                                                         WHERE
+                                                                               docid = l_arv_id
+                                                                           AND d.rekvid IN (
+                                                                                               SELECT userid.rekvid
+                                                                                               FROM ou.userid
+                                                                                               WHERE id = user_id
+                                                                                           )
+                                                                         LIMIT 1
+                                      )
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_isikukood  TEXT;
     l_opt        INTEGER        = CASE WHEN l_dok = 'VMK' THEN 1 ELSE 2 END;
-    l_rekvId     INTEGER        = (SELECT rekvid
-                                   FROM ou.userid
-                                   WHERE id = user_id);
+    l_rekvId     INTEGER        = (
+                                      SELECT
+                                          rekvid
+                                      FROM
+                                          ou.userid
+                                      WHERE
+                                          id = user_id
+                                  );
     l_nom_id     INTEGER;
     v_nom_rea    RECORD;
     l_arv_jaak   NUMERIC        = 0;
     l_konto      TEXT           = CASE
-                                      WHEN exists(SELECT id
-                                                  FROM ou.rekv
-                                                  WHERE id = l_rekvId
-                                                    AND parentid = 119) THEN '10300029'
+                                      WHEN exists
+                                      (
+                                          SELECT
+                                              id
+                                          FROM
+                                              ou.rekv
+                                          WHERE
+                                                id = l_rekvId
+                                            AND parentid = 119
+                                      ) THEN '10300029'
                                       ELSE '103000' END;
 BEGIN
 
@@ -62,26 +87,33 @@ BEGIN
 
     IF (l_dokprop_id) IS NULL OR l_dokprop_id = 0
     THEN
-        l_dokprop_id = (SELECT id
-                        FROM public.com_dokprop l
-                        WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
-                          AND kood = l_dok
-                        ORDER BY id DESC
-                        LIMIT 1
-        );
+        l_dokprop_id = (
+                           SELECT
+                               id
+                           FROM
+                               public.com_dokprop l
+                           WHERE
+                                 (l.rekvId = l_rekvId OR l.rekvid IS NULL)
+                             AND kood = l_dok
+                           ORDER BY id DESC
+                           LIMIT 1
+                       );
     END IF;
 
     IF l_arv_id IS NOT NULL
     THEN
 
-        SELECT dp.details ->> 'konto'                                         AS konto,
-               a.*,
-               coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
+        SELECT
+            dp.details ->> 'konto'                                         AS konto,
+            a.*,
+            coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
         INTO v_arv
-        FROM docs.doc d
-                 INNER JOIN docs.arv a ON a.parentid = d.id
-                 LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
-        WHERE d.id = l_arv_id;
+        FROM
+            docs.doc                         d
+                INNER JOIN      docs.arv     a ON a.parentid = d.id
+                LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
+        WHERE
+            d.id = l_arv_id;
 
         doc_type_id = CASE WHEN coalesce(v_arv.liik, 0) = 0 THEN 'SMK' ELSE 'VMK' END;
         l_opt = (CASE
@@ -90,14 +122,17 @@ BEGIN
                      ELSE 1 END);
 
     ELSE
-        SELECT dp.details ->> 'konto'                                         AS konto,
-               a.*,
-               coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
+        SELECT
+            dp.details ->> 'konto'                                         AS konto,
+            a.*,
+            coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
         INTO v_arv
-        FROM docs.doc d
-                 INNER JOIN docs.arv a ON a.parentid = d.id
-                 LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
-        WHERE d.id = 99999999999999;
+        FROM
+            docs.doc                         d
+                INNER JOIN      docs.arv     a ON a.parentid = d.id
+                LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
+        WHERE
+            d.id = 99999999999999;
     END IF;
 
     -- maksepaev
@@ -112,12 +147,18 @@ BEGIN
     END IF;
 
     -- проверим на закрытый период
-    IF exists(SELECT id
-              FROM ou.aasta
-              WHERE rekvid = l_rekvId
-                AND aasta = date_part('year', l_maksepaev)
-                AND kuu = date_part('month', l_maksepaev)
-                AND kinni = 1)
+    IF exists
+    (
+        SELECT
+            id
+        FROM
+            ou.aasta
+        WHERE
+              rekvid = l_rekvId
+          AND aasta = date_part('year', l_maksepaev)
+          AND kuu = date_part('month', l_maksepaev)
+          AND kinni = 1
+    )
     THEN
         -- платеж попадает в закрытый период
         l_maksepaev = current_date;
@@ -191,61 +232,94 @@ BEGIN
     -- ищем расчетный счет учреждения
     IF l_asutus_aa IS NOT NULL
     THEN
-        l_pank_id = (SELECT id
-                     FROM ou.aa aa
-                     WHERE kassa = 1
-                       AND parentid = l_rekvId
-                       AND aa.arve::TEXT = l_asutus_aa::TEXT
-                     ORDER BY default_ DESC
-                     LIMIT 1);
+        l_pank_id = (
+                        SELECT
+                            id
+                        FROM
+                            ou.aa aa
+                        WHERE
+                              kassa = 1
+                          AND parentid = l_rekvId
+                          AND aa.arve::TEXT = l_asutus_aa::TEXT
+                        ORDER BY default_ DESC
+                        LIMIT 1
+                    );
 
     END IF;
 
     l_pank_id = CASE
                     WHEN l_pank_id IS NULL THEN ou.get_aa(l_rekvId,
-                                                          CASE WHEN doc_type_id = 'SMK' THEN 'TULUD' ELSE 'KULUD'::TEXT END)
+                                                          CASE
+                                                              WHEN doc_type_id = 'SMK' THEN 'TULUD'
+                                                              ELSE 'KULUD'::TEXT END)
                     ELSE l_pank_id END;
 
-    l_nom_id = (SELECT id
-                FROM libs.nomenklatuur n
-                WHERE rekvid = l_rekvId
-                  AND status < 3
-                  AND dok IN (l_dok, doc_type_id)
-                ORDER BY kood
-                        , id DESC
-                LIMIT 1);
+    l_nom_id = (
+                   SELECT
+                       id
+                   FROM
+                       libs.nomenklatuur n
+                   WHERE
+                         rekvid = l_rekvId
+                     AND status < 3
+                     AND dok IN (l_dok, doc_type_id)
+                   ORDER BY
+                       kood
+                     , id DESC
+                   LIMIT 1
+               );
 
     -- если род. плата , проверим на возраст и поищем подходящую номенклатуру
-    IF l_laps_id IS NOT NULL AND exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
+    IF l_laps_id IS NOT NULL AND exists
+    (
+        SELECT id
+        FROM lapsed.laps
+        WHERE id = l_laps_id AND staatus < 3
+    )
     THEN
         -- проверка на возраст
-        l_isikukood = (SELECT isikukood FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3 LIMIT 1);
+        l_isikukood = (
+                          SELECT isikukood FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3 LIMIT 1
+                      );
         IF extract('year' FROM
                    age(make_date(date_part('year', l_maksepaev)::INTEGER, 01, 01), palk.get_sunnipaev(l_isikukood))) >=
            27
         THEN
 
             -- Начиная с 27 лет, ставим 09500.
-            IF exists((SELECT id
-                       FROM libs.nomenklatuur n
-                       WHERE rekvid = l_rekvId
-                         AND status < 3
-                         AND dok IN (l_dok, doc_type_id)
-                         AND n.properties ->> 'tegev' = '09500'
-                       ORDER BY kood
-                               , id DESC
-                       LIMIT 1)
-                )
+            IF exists
+            ((
+                 SELECT
+                     id
+                 FROM
+                     libs.nomenklatuur n
+                 WHERE
+                       rekvid = l_rekvId
+                   AND status < 3
+                   AND dok IN (l_dok, doc_type_id)
+                   AND n.properties ->> 'tegev' = '09500'
+                 ORDER BY
+                     kood
+                   , id DESC
+                 LIMIT 1
+             )
+            )
             THEN
-                l_nom_id = (SELECT id
-                            FROM libs.nomenklatuur n
-                            WHERE rekvid = l_rekvId
-                              AND status < 3
-                              AND dok IN (l_dok, doc_type_id)
-                              AND n.properties ->> 'tegev' = '09500'
-                            ORDER BY kood
-                                    , id DESC
-                            LIMIT 1);
+                l_nom_id = (
+                               SELECT
+                                   id
+                               FROM
+                                   libs.nomenklatuur n
+                               WHERE
+                                     rekvid = l_rekvId
+                                 AND status < 3
+                                 AND dok IN (l_dok, doc_type_id)
+                                 AND n.properties ->> 'tegev' = '09500'
+                               ORDER BY
+                                   kood
+                                 , id DESC
+                               LIMIT 1
+                           );
 
             END IF;
 
@@ -258,14 +332,17 @@ BEGIN
     END IF;
 
     -- klassifikaatorit
-    SELECT coalesce(n.properties ->> 'tunnus', '')   AS tunnus,
-           coalesce(n.properties ->> 'tegev', '')    AS tegev,
-           coalesce(n.properties ->> 'konto', '')    AS konto,
-           coalesce(n.properties ->> 'artikkel', '') AS artikkel,
-           coalesce(n.properties ->> 'allikas', '')  AS allikas
+    SELECT
+        coalesce(n.properties ->> 'tunnus', '')   AS tunnus,
+        coalesce(n.properties ->> 'tegev', '')    AS tegev,
+        coalesce(n.properties ->> 'konto', '')    AS konto,
+        coalesce(n.properties ->> 'artikkel', '') AS artikkel,
+        coalesce(n.properties ->> 'allikas', '')  AS allikas
     INTO v_nom_rea
-    FROM libs.nomenklatuur n
-    WHERE id = l_nom_id
+    FROM
+        libs.nomenklatuur n
+    WHERE
+          id = l_nom_id
       AND status < 3;
 
     IF l_tunnus IS NOT NULL
@@ -276,13 +353,16 @@ BEGIN
 
     l_aa = CASE
                WHEN l_aa IS NULL THEN (COALESCE((
-                                                    SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
-                                                    FROM libs.asutus a,
-                                                         json_array_elements(CASE
-                                                                                 WHEN (a.properties ->> 'asutus_aa') IS NULL
-                                                                                     THEN '[]'::JSON
-                                                                                 ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
-                                                    WHERE a.id = l_asutus_id
+                                                    SELECT
+                                                        (e.element ->> 'aa') :: VARCHAR(20) AS aa
+                                                    FROM
+                                                        libs.asutus                                                                a,
+                                                        json_array_elements(CASE
+                                                                                WHEN (a.properties ->> 'asutus_aa') IS NULL
+                                                                                    THEN '[]'::JSON
+                                                                                ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
+                                                    WHERE
+                                                        a.id = l_asutus_id
                                                     LIMIT 1
                                                 ), ''))
                ELSE l_aa END;
@@ -290,66 +370,88 @@ BEGIN
     IF v_arv.id IS NOT NULL
     THEN
         -- если есть счет, то собираем строку с классфикаторами оттуда
-        SELECT 0                                                          AS id,
-               l_nom_id                                                   AS nomid,
-               l_asutus_id                                                AS asutusid,
-               CASE WHEN l_summa IS NULL THEN v_arv.jaak ELSE l_summa END AS summa,
-               l_aa :: TEXT                                               AS aa,
-               a1.kood1,
-               a1.kood2,
-               a1.kood3,
-               a1.kood4,
-               a1.kood5,
-               coalesce(v_arv.konto, a1.konto)                            AS konto,
-               a1.tp,
-               a1.tunnus,
-               a1.proj
-        FROM docs.arv1 a1
-        WHERE a1.
-                  parentid = v_arv.id
-        ORDER BY kood5
-                , kood2 DESC
-                , kood1 DESC
+        SELECT
+            0                                                          AS id,
+            l_nom_id                                                   AS nomid,
+            l_asutus_id                                                AS asutusid,
+            CASE WHEN l_summa IS NULL THEN v_arv.jaak ELSE l_summa END AS summa,
+            l_aa :: TEXT                                               AS aa,
+            a1.kood1,
+            a1.kood2,
+            a1.kood3,
+            a1.kood4,
+            a1.kood5,
+            coalesce(v_arv.konto, a1.konto)                            AS konto,
+            a1.tp,
+            a1.tunnus,
+            a1.proj
+        FROM
+            docs.arv1 a1
+        WHERE
+            a1.
+                parentid = v_arv.id
+        ORDER BY
+            kood5
+          , kood2 DESC
+          , kood1 DESC
         LIMIT 1
         INTO v_mk1;
 
     ELSE
-        SELECT 0                  AS id,
-               l_nom_id           AS nomid,
-               l_asutus_id        AS asutusid,
-               l_summa            AS summa,
-               l_aa               AS aa,
-               l_konto           AS konto,
-               v_nom_rea.tegev    AS kood1,
-               v_nom_rea.allikas  AS kood2,
-               v_nom_rea.artikkel AS kood5,
-               l_tp               AS tp,
-               v_nom_rea.tunnus
+        SELECT
+            0                  AS id,
+            l_nom_id           AS nomid,
+            l_asutus_id        AS asutusid,
+            l_summa            AS summa,
+            l_aa               AS aa,
+            l_konto            AS konto,
+            v_nom_rea.tegev    AS kood1,
+            v_nom_rea.allikas  AS kood2,
+            v_nom_rea.artikkel AS kood5,
+            l_tp               AS tp,
+            v_nom_rea.tunnus
         INTO v_mk1;
     END IF;
 
 
-    json_mk1 = array_to_json((SELECT array_agg(row_to_json(v_mk1))));
+    json_mk1 = array_to_json((
+                                 SELECT array_agg(row_to_json(v_mk1))
+                             ));
 
-    SELECT 0              AS id,
-           l_dokprop_id   AS doklausid,
-           l_pank_id      AS aa_id,
-           v_arv.parentid AS arvid,
-           l_opt          AS opt,
-           l_viitenr      AS viitenr,
-           l_number       AS number,
-           l_kpv          AS kpv,
-           l_maksepaev    AS maksepaev,
-           l_selg         AS selg,
-           NULL           AS muud,
-           json_mk1       AS "gridData",
-           l_laps_id      AS lapsid
+    SELECT
+        0              AS id,
+        l_dokprop_id   AS doklausid,
+        l_pank_id      AS aa_id,
+        v_arv.parentid AS arvid,
+        l_opt          AS opt,
+        l_viitenr      AS viitenr,
+        l_number       AS number,
+        l_kpv          AS kpv,
+        l_maksepaev    AS maksepaev,
+        l_selg         AS selg,
+        NULL           AS muud,
+        json_mk1       AS "gridData",
+        l_laps_id      AS lapsid
     INTO v_params;
 
-    SELECT row_to_json(row)
+    SELECT
+        row_to_json(row)
     INTO json_object
-    FROM (SELECT 0        AS id,
-                 v_params AS data) row;
+    FROM
+        (
+            SELECT
+                0        AS id,
+                v_params AS data
+        ) row;
+
+    if l_rekvId in (80, 81, 82, 83, 85, 94, 99, 107, 112, 114) then
+        -- keelatud
+        error_message = 'Viga: Keelatud asutused, maksja_id %',l_asutus_id ;
+        error_code = 3;
+        result = 0;
+        return;
+    end if;
+
 
     SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 

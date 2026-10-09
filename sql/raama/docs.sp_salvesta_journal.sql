@@ -137,6 +137,13 @@ BEGIN
         l_json_props = jsonb_build_object('asendus_id', doc_asendus_id, 'vn', doc_vn);
     END IF;
 
+    -- для закрытых учреждений, табеля
+    if user_rekvid in (80, 81, 82, 83, 85, 94, 99, 107, 112, 114) then
+        -- keelatud
+        return null ;
+    end if;
+
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0 OR NOT exists
     (
@@ -684,14 +691,31 @@ BEGIN
             -- сделаем связь с карточкой ребенка
             l_laps_id = lapsed.get_laps_from_viitenumber(doc_vn::TEXT);
             if not exists
-            (
-                select id from lapsed.liidestamine where parentid = l_laps_id and docid = doc_id
-            ) and l_laps_id is not null then
+               (
+                   select id from lapsed.liidestamine where parentid = l_laps_id and docid = doc_id
+               ) and l_laps_id is not null then
                 insert into lapsed.liidestamine (parentid, docid)
                 values (l_laps_id, doc_id);
             end if;
         end if;
     END IF;
+
+    if doc_id is not null and doc_id > 0 and doc_kpv < '2026-01-01'::date then
+        -- обновим представление, сделаем задачу
+        perform
+            ou.sp_salvesta_task('select docs.refresh_kaibed_public()'::text, 'Vana käibed uuendamine '::text,
+                                userid::integer) as id;
+
+        if exists
+        (
+            select nimetus from ou.rekv where id = user_rekvid and nimetus ilike '%TEST%'
+        ) then
+            -- test andmebaas, kaivitame refresh kasitsi
+            perform docs.refresh_kaibed_public();
+--            REFRESH MATERIALIZED VIEW docs.kaibed;
+        end if;
+    end if;
+
     RETURN doc_id;
 
 END;

@@ -18,9 +18,7 @@ CREATE TABLE docs.korder2
   tunnus character varying(20),
   proj character varying(20)
 )
-WITH (
-  OIDS=TRUE
-);
+;
 
 GRANT SELECT, UPDATE, INSERT ON TABLE docs.korder2 TO dbkasutaja;
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE docs.korder2 TO dbpeakasutaja;

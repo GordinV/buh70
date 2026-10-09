@@ -1,49 +1,74 @@
 module.exports = {
-    selectAsLibs: `SELECT id, nimetus::VARCHAR(254), regkood::VARCHAR(20), parentid
-                   FROM com_rekv
-                   ORDER BY nimetus`,
+    selectAsLibs: `SELECT
+                       id,
+                       nimetus::VARCHAR(254),
+                       regkood::VARCHAR(20),
+                       parentid,
+                       case when parentid = 119 then left(nimetus, 7) else '' end::varchar(20) as tunnus
+                   FROM
+                       com_rekv
+                   ORDER BY
+                       nimetus`,
     select: [{
-        sql: `SELECT 'REKV'                                                           AS doc_type_id,
-                     $2::INTEGER                                                      AS userid,
-                     r.id,
-                     r.parentid,
-                     r.nimetus::VARCHAR(254),
-                     coalesce(r.muud, nimetus)::VARCHAR(254)                          AS taisnimetus,
-                     (SELECT coalesce(rekv.muud, rekv.nimetus)::VARCHAR(254) AS nimetus
-                      FROM ou.rekv rekv
-                      WHERE rekv.id = r.parentid)                                     AS parent_asutus,
-                     r.aadress,
-                     r.email::VARCHAR(254),
-                     r.faks::VARCHAR(254),
-                     r.haldus::VARCHAR(254),
-                     r.juht::VARCHAR(254),
-                     r.raama::VARCHAR(254),
-                     r.kbmkood::VARCHAR(20),
-                     r.muud,
-                     r.regkood::VARCHAR(20),
-                     r.tel::VARCHAR(254),
-                     ((r.properties ->> 'arved')::JSONB ->> 'tahtpaev')::INTEGER      AS tahtpaev,
-                     ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)    AS ftp,
-                     ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)  AS login,
-                     ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
-                     (r.properties ->> 'earved') ::VARCHAR(254)                       AS earved,
-                     (u.properties ->> 'earved')::VARCHAR(254)                        AS earved_omniva,
-                     (r.properties ->> 'earve_asutuse_nimi')::VARCHAR(254)            AS earve_asutuse_nimi,
-                     (r.properties ->> 'earve_regkood')::VARCHAR(254)                 AS earve_regkood,
-                     coalesce((r.properties ->> 'seb_earve'), '')::VARCHAR(254)       AS seb_earve,
-                     coalesce((r.properties ->> 'swed_earve'), '')::VARCHAR(254)      AS swed_earve,
-                     (r.properties ->> 'liik') :: VARCHAR(20)                         AS liik,
-                     (r.properties ->> 'swed') ::VARCHAR(254)                         AS swed,
-                     (r.properties ->> 'seb') ::VARCHAR(254)                          AS seb,
-                     (SELECT tp
-                      FROM ou.aa
-                      WHERE parentid = $1
+        sql: `SELECT
+                  'REKV'                                                           AS doc_type_id,
+                  $2::INTEGER                                                      AS userid,
+                  r.id,
+                  r.parentid,
+                  r.nimetus::VARCHAR(254),
+                  coalesce(r.muud, nimetus)::VARCHAR(254)                          AS taisnimetus,
+                  (
+                      SELECT
+                          coalesce(rekv.muud, rekv.nimetus)::VARCHAR(254) AS nimetus
+                      FROM
+                          ou.rekv rekv
+                      WHERE
+                          rekv.id = r.parentid
+                  )                                                                AS parent_asutus,
+                  r.aadress,
+                  coalesce(r.properties ->> 'city_or_town', 'Narva')::varchar(254) as city_or_town,
+                  coalesce(r.properties ->> 'country', 'Estonia')::varchar(254)    as country,
+                  coalesce(c.ctry, 'EE')::varchar(2)                               as riigi_kood,
+                  r.email::VARCHAR(254),
+                  r.faks::VARCHAR(254),
+                  r.haldus::VARCHAR(254),
+                  r.juht::VARCHAR(254),
+                  r.raama::VARCHAR(254),
+                  r.kbmkood::VARCHAR(20),
+                  r.muud,
+                  r.regkood::VARCHAR(20),
+                  r.tel::VARCHAR(254),
+                  ((r.properties ->> 'arved')::JSONB ->> 'tahtpaev')::INTEGER      AS tahtpaev,
+                  ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)    AS ftp,
+                  ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)  AS login,
+                  ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
+                  (r.properties ->> 'earved') ::VARCHAR(254)                       AS earved,
+                  (u.properties ->> 'earved')::VARCHAR(254)                        AS earved_omniva,
+                  (r.properties ->> 'earve_asutuse_nimi')::VARCHAR(254)            AS earve_asutuse_nimi,
+                  (r.properties ->> 'earve_regkood')::VARCHAR(254)                 AS earve_regkood,
+                  coalesce((r.properties ->> 'seb_earve'), '')::VARCHAR(254)       AS seb_earve,
+                  coalesce((r.properties ->> 'swed_earve'), '')::VARCHAR(254)      AS swed_earve,
+                  (r.properties ->> 'liik') :: VARCHAR(20)                         AS liik,
+                  (r.properties ->> 'swed') ::VARCHAR(254)                         AS swed,
+                  (r.properties ->> 'seb') ::VARCHAR(254)                          AS seb,
+                  (
+                      SELECT
+                          tp
+                      FROM
+                          ou.aa
+                      WHERE
+                            parentid = $1
                         AND kassa = 2
-                      LIMIT 1)::VARCHAR(20)                                           AS oma_tp
+                      LIMIT 1
+                  )::VARCHAR(20)                                                   AS oma_tp,
+                  r.properties ->> 'API_KEY'                                       as ai_api_key
 
-              FROM ou.rekv r,
-                   ou.userid u
-              WHERE r.id = $1
+              FROM
+                  ou.rekv                         r
+                      left outer join libs.cities c on c.linn = trim(r.properties ->> 'city_or_town'),
+                  ou.userid                       u
+              WHERE
+                    r.id = $1
                 AND u.id = $2`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER        AS id,
@@ -54,6 +79,9 @@ module.exports = {
                       NULL :: VARCHAR(254) AS nimetus,
                       NULL :: VARCHAR(20)  AS kbmkood,
                       NULL :: TEXT         AS aadress,
+                  'Narva'               as city_or_town,
+                  'Estonia'                  as country,
+                  'EE'                                           as riigi_kood,                      
                       NULL :: TEXT         AS haldus,
                       NULL :: VARCHAR(254) AS tel,
                       NULL :: VARCHAR(254) AS faks,
@@ -73,54 +101,62 @@ module.exports = {
                      NULL ::VARCHAR(254)                          AS seb,
 
                      NULL :: VARCHAR(20) AS liik,
-                     NULL :: VARCHAR(120) AS parool`,
+                     NULL :: VARCHAR(120) AS parool,
+                     NULL::text as api_key`,
         query: null,
         multiple: false,
         alias: 'row',
-        data: []
+        data: [],
+        not_initial_load: false
     },
         {
-            sql: `SELECT aa.id,
-                         aa.arve,
-                         aa.nimetus,
-                         aa.default_,
-                         aa.kassa,
-                         aa.pank,
-                         aa.konto::VARCHAR(20),
-                         aa.tp,
-                         kassa::INTEGER                                                        AS kassapank,
-                         $2                                                                    AS userId,
-                         coalesce((aa.properties ->> 'kas_tulud')::BOOLEAN, FALSE)::INTEGER    AS kas_tulud,
-                         coalesce((aa.properties ->> 'kas_kulud')::BOOLEAN, FALSE)::INTEGER    AS kas_kulud,
-                         coalesce((aa.properties ->> 'kas_palk')::BOOLEAN, FALSE)::INTEGER     AS kas_palk,
-                         coalesce((aa.properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)::INTEGER AS kas_oppetasu
-                  FROM ou.Aa aa
-                  WHERE Aa.parentid = $1`,
+            sql: `SELECT
+                      aa.id,
+                      aa.arve,
+                      aa.nimetus,
+                      aa.default_,
+                      aa.kassa,
+                      aa.pank,
+                      aa.konto::VARCHAR(20),
+                      aa.tp,
+                      kassa::INTEGER                                                        AS kassapank,
+                      $2                                                                    AS userId,
+                      coalesce((aa.properties ->> 'kas_tulud')::BOOLEAN, FALSE)::INTEGER    AS kas_tulud,
+                      coalesce((aa.properties ->> 'kas_kulud')::BOOLEAN, FALSE)::INTEGER    AS kas_kulud,
+                      coalesce((aa.properties ->> 'kas_palk')::BOOLEAN, FALSE)::INTEGER     AS kas_palk,
+                      coalesce((aa.properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)::INTEGER AS kas_oppetasu
+                  FROM
+                      ou.Aa aa
+                  WHERE
+                      Aa.parentid = $1`,
             query: null,
             multiple: true,
             alias: 'details',
             data: []
         },
         {
-            sql: `SELECT c.id,
-                         c.number,
-                         c.rekvid,
-                         c.toolbar1,
-                         c.toolbar2,
-                         c.toolbar3,
-                         c.tahtpaev,
-                         coalesce((u.properties ->> 'keel')::INTEGER, 2)::INTEGER          AS keel,
-                         coalesce((u.properties ->> 'port')::VARCHAR(100))::VARCHAR(254)   AS port,
-                         coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(254)   AS smtp,
-                         coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(254)   AS user,
-                         coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(254)   AS pass,
-                         coalesce((u.properties ->> 'email')::VARCHAR(100))::VARCHAR(254)  AS email,
-                         coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
-                         coalesce((c.properties ->> 'liik')::VARCHAR(20))::VARCHAR(20)     AS liik,
-                         coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf
-                  FROM ou.config c,
-                       ou.userid u
-                  WHERE c.rekvid = $1
+            sql: `SELECT
+                      c.id,
+                      c.number,
+                      c.rekvid,
+                      c.toolbar1,
+                      c.toolbar2,
+                      c.toolbar3,
+                      c.tahtpaev,
+                      coalesce((u.properties ->> 'keel')::INTEGER, 2)::INTEGER          AS keel,
+                      coalesce((u.properties ->> 'port')::VARCHAR(100))::VARCHAR(254)   AS port,
+                      coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(254)   AS smtp,
+                      coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(254)   AS user,
+                      coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(254)   AS pass,
+                      coalesce((u.properties ->> 'email')::VARCHAR(100))::VARCHAR(254)  AS email,
+                      coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
+                      coalesce((c.properties ->> 'liik')::VARCHAR(20))::VARCHAR(20)     AS liik,
+                      coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf
+                  FROM
+                      ou.config c,
+                      ou.userid u
+                  WHERE
+                        c.rekvid = $1
                     AND u.id = $2`,
             query: null,
             multiple: false,
@@ -128,25 +164,34 @@ module.exports = {
             data: []
         },
         {
-            sql: `SELECT arve,
-                         aa.parentid                          AS omanik_id,
-                         CASE
-                             WHEN p.muud IS NOT NULL
-                                 AND exists(SELECT aa.arve
-                                            FROM ou.aa a
-                                            WHERE a.parentid = r.parentid
-                                              AND a.arve = aa.arve)
-                                 THEN p.muud
-                             WHEN r.muud IS NOT NULL
-                                 THEN r.muud
-                             WHEN r.muud IS NOT NULL
-                                 THEN r.muud
-                             ELSE r.nimetus END::VARCHAR(254) AS pay_to_name,
-                         $2                                   AS user_id
-                  FROM ou.aa aa
-                           INNER JOIN ou.rekv r ON r.id = aa.parentid
-                           LEFT OUTER JOIN ou.rekv p ON p.id = r.parentid
-                  WHERE r.id = $1
+            sql: `SELECT
+                      arve,
+                      aa.parentid                          AS omanik_id,
+                      CASE
+                          WHEN p.muud IS NOT NULL
+                              AND exists
+                               (
+                                   SELECT
+                                       aa.arve
+                                   FROM
+                                       ou.aa a
+                                   WHERE
+                                         a.parentid = r.parentid
+                                     AND a.arve = aa.arve
+                               )
+                              THEN p.muud
+                          WHEN r.muud IS NOT NULL
+                              THEN r.muud
+                          WHEN r.muud IS NOT NULL
+                              THEN r.muud
+                          ELSE r.nimetus END::VARCHAR(254) AS pay_to_name,
+                      $2                                   AS user_id
+                  FROM
+                      ou.aa                       aa
+                          INNER JOIN      ou.rekv r ON r.id = aa.parentid
+                          LEFT OUTER JOIN ou.rekv p ON p.id = r.parentid
+                  WHERE
+                        r.id = $1
                     AND aa.kassa = 1`,
             query: null,
             multiple: false,
@@ -173,20 +218,31 @@ module.exports = {
         {name: 'nimetus', type: 'C'}
     ],
     saveDoc: `select ou.sp_salvesta_rekv($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `SELECT error_code, result, error_message
-                FROM ou.sp_delete_rekv($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT
+                    error_code,
+                    result,
+                    error_message
+                FROM
+                    ou.sp_delete_rekv($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
             {id: "regkood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `SELECT $2 AS user_id,
-                           r.*
-                    FROM cur_rekv r
-                    WHERE r.status <> 3
-                      AND r.id IN (SELECT rekv_id
-                                   FROM get_asutuse_struktuur($1::INTEGER))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT
+                        $2 AS user_id,
+                        r.*
+                    FROM
+                        cur_rekv r
+                    WHERE
+                          r.status <> 3
+                      AND r.id IN (
+                                      SELECT
+                                          rekv_id
+                                      FROM
+                                          get_asutuse_struktuur($1::INTEGER)
+                                  )`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curRekv'
     },
@@ -195,6 +251,12 @@ module.exports = {
             view: 'rekv_kaart',
             params: 'id'
         },
-    ]
+    ],
+    ai : {
+        endpoint: `http://oppetasu.narva.ee:3000/ai/get_address/`,
+        type: `link`,
+        alias: `ai`
+    }
+
 
 };

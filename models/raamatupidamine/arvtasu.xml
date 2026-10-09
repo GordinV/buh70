@@ -82,4 +82,8 @@
     <sql />
     <alias />
   </getLog>
+  <ai>
+    <link />
+    <alias />
+  </ai>
 </VFPData>

@@ -95,6 +95,8 @@ BEGIN
                 -- вызывает оплату
                 result = docs.sp_tasu_arv(l_tasu_id, v_arv.id, l_user_id, l_tasu);
 
+            raise notice 'result %', result;
+
                 IF result IS NOT NULL AND result > 0
                 THEN
                     -- минусуем сумму оплаты
