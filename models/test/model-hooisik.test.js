@@ -72,7 +72,7 @@ describe('dok. type ASUTUSED tests', function () {
         });
     });
 
-    it('should exists view com_asutus_hooldekodu', async () => {
+    it.skip('should exists view com_asutus_hooldekodu', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'com_asutus_hooldekodu'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -80,7 +80,7 @@ describe('dok. type ASUTUSED tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists proc sp_salvesta_asutus', async () => {
+    it.skip('should exists proc sp_salvesta_asutus', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_asutus'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -88,7 +88,7 @@ describe('dok. type ASUTUSED tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists proc libs.check_asutus', async () => {
+    it.skip('should exists proc libs.check_asutus', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'check_asutus'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();

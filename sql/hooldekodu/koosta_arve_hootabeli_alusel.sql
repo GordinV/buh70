@@ -14,105 +14,106 @@ CREATE OR REPLACE FUNCTION hooldekodu.koosta_arve_hootaabeli_alusel(IN user_id I
 $BODY$
 
 DECLARE
-    l_rekvid                 INTEGER        = (
-                                                  SELECT
-                                                      rekvid
-                                                  FROM
-                                                      ou.userid u
-                                                  WHERE
-                                                      id = user_id
-                                                  LIMIT 1
+    l_rekvid                  INTEGER        = (
+                                                   SELECT
+                                                       rekvid
+                                                   FROM
+                                                       ou.userid u
+                                                   WHERE
+                                                       id = user_id
+                                                   LIMIT 1
     );
-    l_doklausend_id          INTEGER;
-    l_liik                   INTEGER        = 0;
-    v_taabel                 RECORD;
-    json_object              JSONB;
-    l_json_arve              JSON;
-    json_arvrea              JSONB          = '[]';
-    json_arvread             JSONB          = '[]';
-    l_tp                     TEXT           = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
+    l_doklausend_id           INTEGER;
+    l_liik                    INTEGER        = 0;
+    v_taabel                  RECORD;
+    json_object               JSONB;
+    l_json_arve               JSON;
+    json_arvrea               JSONB          = '[]';
+    json_arvread              JSONB          = '[]';
+    l_tp                      TEXT           = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
 
-    l_arv_id                 INTEGER        = 0;
-    l_number                 TEXT;
-    l_arve_summa             NUMERIC        = 0;
-    i                        INTEGER        = 1;
-    l_aa                     TEXT           = (
-                                                  SELECT
-                                                      arve
-                                                  FROM
-                                                      ou.aa
-                                                  WHERE
-                                                        parentid IN (
-                                                                        SELECT
-                                                                            rekvid
-                                                                        FROM
-                                                                            ou.userid
-                                                                        WHERE
-                                                                            id = user_id
-                                                                    )
-                                                    AND kassa = 1
-                                                  ORDER BY
-                                                      default_ DESC
-                                                  LIMIT 1
-                                              );
-    l_db_konto               TEXT           = '10300002'; -- согдасно описанию отдела культуры
-    v_isik                   RECORD;
-    l_arve_kogus             NUMERIC        = 0; -- для проверки кол-ва услуг в счете
-    l_isiku_summa_85         NUMERIC        = 0;
-    l_isiku_summa_vara       NUMERIC        = 0;
-    l_isiku_summa_muud       NUMERIC        = 0;
-    l_sugulane_summa         NUMERIC(12, 2) = 0;
-    l_arv_summa_kokku        NUMERIC        = 0;
-    l_arve_rea_summa         NUMERIC        = 0;
-    l_isiku_jaak_85          NUMERIC        = 0 ; --coalesce((SELECT pension85 FROM hooldekodu.hoojaak WHERE isikid = l_isik_id LIMIT 1), 0);
-    l_isiku_jaak_vara        NUMERIC        = 0;
-    l_isiku_jaak_muud        NUMERIC        = 0;
-    l_selgetama_summa        NUMERIC        = 0; -- суммируем не распределенный остаток счета
+    l_arv_id                  INTEGER        = 0;
+    l_number                  TEXT;
+    l_arve_summa              NUMERIC        = 0;
+    i                         INTEGER        = 1;
+    l_aa                      TEXT           = (
+                                                   SELECT
+                                                       arve
+                                                   FROM
+                                                       ou.aa
+                                                   WHERE
+                                                         parentid IN (
+                                                                         SELECT
+                                                                             rekvid
+                                                                         FROM
+                                                                             ou.userid
+                                                                         WHERE
+                                                                             id = user_id
+                                                                     )
+                                                     AND kassa = 1
+                                                   ORDER BY
+                                                       default_ DESC
+                                                   LIMIT 1
+                                               );
+    l_db_konto                TEXT           = '10300002'; -- согдасно описанию отдела культуры
+    v_isik                    RECORD;
+    l_arve_kogus              NUMERIC        = 0; -- для проверки кол-ва услуг в счете
+    l_isiku_summa_85          NUMERIC        = 0;
+    l_isiku_summa_vara        NUMERIC        = 0;
+    l_isiku_summa_muud        NUMERIC        = 0;
+    l_sugulane_summa          NUMERIC(12, 2) = 0;
+    l_arv_summa_kokku         NUMERIC        = 0;
+    l_arve_rea_summa          NUMERIC        = 0;
+    l_isiku_jaak_85           NUMERIC        = 0 ; --coalesce((SELECT pension85 FROM hooldekodu.hoojaak WHERE isikid = l_isik_id LIMIT 1), 0);
+    l_isiku_jaak_vara         NUMERIC        = 0;
+    l_isiku_jaak_muud         NUMERIC        = 0;
+    l_selgetama_summa         NUMERIC        = 0; -- суммируем не распределенный остаток счета
 
-    l_omavalitsuse_summa     NUMERIC        = 0;
-    l_umardamine             NUMERIC        = 0;
-    l_nom_id                 INTEGER;
-    l_vat                    NUMERIC        = 0;
-    l_kuu                    INTEGER        = date_part('month', l_kpv);
-    l_aasta                  INTEGER        = date_part('year', l_kpv);
-    l_paevad_kokku           NUMERIC;
-    l_kogus_kokku            NUMERIC        = 1; -- кол-во при расчете hoolduskulud
-    l_kalendri_paevad        INTEGER        = palk.get_days_of_month_in_period(l_kuu, l_aasta,
-                                                                               make_date(l_aasta, l_kuu, 01),
-                                                                               gomonth(make_date(l_aasta, l_kuu, 01), 1) -
-                                                                               1,
-                                                                               FALSE,
-                                                                               FALSE);
-    l_hoolduskulu            NUMERIC(12, 2) = (
-                                                  SELECT
-                                                      summa
-                                                  FROM
-                                                      hooldekodu.hoo_config hc
-                                                  WHERE
-                                                        hc.library = 'RIIGI_TOETUS'
-                                                    AND hc.kpv <= l_kpv
-                                                    AND hc.status < 3
-                                                  ORDER BY
-                                                      hc.id DESC
-                                                  LIMIT 1
-                                              );
-    l_taskuraha_kov          NUMERIC(12, 2) = 0;
-    l_taskuraha_details_json JSONB          = '[]'::JSONB;
-    l_taskuraha_doc_json     JSONB          = '{}'::JSONB;
-    l_journal_id             INTEGER;
-    l_correction_summa       NUMERIC        = 0;
-    l_kesk_pension           numeric        = coalesce((
-                                                           select
-                                                               summa
-                                                           from
-                                                               hooldekodu.hoo_config hc
-                                                           where
-                                                                 library = 'KESK_PENSION'
-                                                             and kpv < l_kpv
-                                                           order by
-                                                               id desc
-                                                           limit 1
-                                                       ), 826.80); -- kesk pension seisuga 01.10.2026
+    l_omavalitsuse_summa      NUMERIC        = 0;
+    l_omavalitsuse_lisa_summa NUMERIC        = 0; -- доп. сумма , если сумма счета перекрывает пенсию
+    l_umardamine              NUMERIC        = 0;
+    l_nom_id                  INTEGER;
+    l_vat                     NUMERIC        = 0;
+    l_kuu                     INTEGER        = date_part('month', l_kpv);
+    l_aasta                   INTEGER        = date_part('year', l_kpv);
+    l_paevad_kokku            NUMERIC;
+    l_kogus_kokku             NUMERIC        = 1; -- кол-во при расчете hoolduskulud
+    l_kalendri_paevad         INTEGER        = palk.get_days_of_month_in_period(l_kuu, l_aasta,
+                                                                                make_date(l_aasta, l_kuu, 01),
+                                                                                gomonth(make_date(l_aasta, l_kuu, 01), 1) -
+                                                                                1,
+                                                                                FALSE,
+                                                                                FALSE);
+    l_hoolduskulu             NUMERIC(12, 2) = (
+                                                   SELECT
+                                                       summa
+                                                   FROM
+                                                       hooldekodu.hoo_config hc
+                                                   WHERE
+                                                         hc.library = 'RIIGI_TOETUS'
+                                                     AND hc.kpv <= l_kpv
+                                                     AND hc.status < 3
+                                                   ORDER BY
+                                                       hc.id DESC
+                                                   LIMIT 1
+                                               );
+    l_taskuraha_kov           NUMERIC(12, 2) = 0;
+    l_taskuraha_details_json  JSONB          = '[]'::JSONB;
+    l_taskuraha_doc_json      JSONB          = '{}'::JSONB;
+    l_journal_id              INTEGER;
+    l_correction_summa        NUMERIC        = 0;
+    l_kesk_pension            numeric        = coalesce((
+                                                            select
+                                                                summa
+                                                            from
+                                                                hooldekodu.hoo_config hc
+                                                            where
+                                                                  library = 'KESK_PENSION'
+                                                              and kpv < l_kpv
+                                                            order by
+                                                                id desc
+                                                            limit 1
+                                                        ), 826.80); -- kesk pension seisuga 01.10.2026
 
 BEGIN
 
@@ -202,7 +203,10 @@ BEGIN
             hl.makse_viis,
             hl.bruttosissetulek,
             hl.netosissetulek,
-            hl.loppkpv
+            hl.loppkpv,
+            hl.summa - (CASE
+                            WHEN coalesce(hl.hoolduskulud, 0) = 0 THEN h.summa
+                            ELSE hl.hoolduskulud END)                     AS isiku_kulud
         FROM
             libs.asutus                         a
                 INNER JOIN hooldekodu.hootaabel ht ON ht.isikid = a.id
@@ -232,9 +236,8 @@ BEGIN
             hl.algkpv
           , ht.summa DESC
         LOOP
-
-            -- проверим на алгоритм. 0 - на конец месяца (дефолт), иначе общий остаток,
-            -- 2 - начисляется на полную сумму за минусом карманных от города
+        -- проверим на алгоритм. 0 - на конец месяца (дефолт), иначе общий остаток,
+        -- 2 - начисляется на полную сумму за минусом карманных от города
             IF v_taabel.algoritm <> 0 AND v_taabel.algoritm < 2
             THEN
                 -- используем весь остаток
@@ -539,48 +542,13 @@ BEGIN
 
             END IF;
 
-            -- Доля самоуправления (Väiksema sissetuleku hüvitis)
-            -- новая формула KokkuSumma - Hooldesekulu - ((Keskpension - isikupension)? > 0: 0)
-
-            l_omavalitsuse_summa = (case
-                                        when (l_kesk_pension - v_taabel.netosissetulek > 0)
-                                            then (l_kesk_pension - v_taabel.netosissetulek)
-                                        else 0 end);
-
-            IF
-                l_omavalitsuse_summa > 0
-            THEN
-                -- формируем строку
-                json_arvrea = '[]'::JSONB || (
-                                                 SELECT
-                                                     row_to_json(row)
-                                                 FROM
-                                                     (
-                                                         SELECT
-                                                             v_taabel.nomid                 AS nomid,
-                                                             1                              AS kogus,
-                                                             -1 * l_omavalitsuse_summa      as hind,
-                                                             -1 * l_omavalitsuse_summa      AS kbmta,
-                                                             0                              AS kbm,
-                                                             -1 * l_omavalitsuse_summa      AS summa,
-                                                             l_omavalitsuse_summa           AS omavalitsuse_osa,
-                                                             v_taabel.tegev                 AS kood1,
-                                                             v_taabel.allikas               AS kood2,
-                                                             v_taabel.rahavoog              AS kood3,
-                                                             v_taabel.artikkel              AS kood5,
-                                                             v_taabel.konto                 AS konto,
-                                                             v_taabel.tunnus,
-                                                             v_taabel.projekt,
-                                                             'Väiksema sissetuleku hüvitis' AS muud,
-                                                             l_tp                           AS tp
-                                                     ) row
-                                             ) :: JSONB;
-
-                json_arvread = json_arvread || json_arvrea;
-            END IF;
 
 -- уменьшаем сумму строки на долю родственников
             l_sugulane_summa = v_taabel.sugulane_osa;
+
+            if (coalesce((v_taabel.algoritm)::INTEGER, 0)::INTEGER) = 2 then
+                l_sugulane_summa = 0; -- Сюда включается 826,80-799,55= 26,85. У тебя в эту строчку включена и часть puudujääv osa. Её не должно быть в формуле, когда есть sululase osa
+            end if;
 
             IF l_sugulane_summa > 0
             THEN
@@ -613,6 +581,70 @@ BEGIN
                 json_arvread = json_arvread || json_arvrea;
 
             END IF;
+
+            -- Доля самоуправления (Väiksema sissetuleku hüvitis)
+            -- новая формула KokkuSumma - Hooldesekulu - ((Keskpension - isikupension)? > 0: 0)
+
+--            У тебя в строке Ööpäevaringne hooldamine omavalitsuse osa 113,25 – это 826,80 минус - пенсия 713,55. А должно быть в строке Ööpäevaringne hooldamine omavalitsuse osa 720-713,55=6,45
+
+            l_omavalitsuse_lisa_summa = (case
+                                             when (l_kesk_pension - v_taabel.netosissetulek > 0)
+                                                 then (v_taabel.isiku_kulud - v_taabel.netosissetulek)
+                                             else 0 end);
+
+
+
+            if (coalesce((v_taabel.algoritm)::INTEGER, 0)::INTEGER) = 2 and v_taabel.sugulane_osa > 0 then
+                -- уменьшим (Väiksema sissetuleku hüvitis) на долю родственников
+                l_omavalitsuse_lisa_summa = l_omavalitsuse_lisa_summa - v_taabel.sugulane_osa;
+                if l_omavalitsuse_lisa_summa < 0 then
+                    l_omavalitsuse_lisa_summa = 0;
+                end if;
+            end if;
+
+            -- считаем дополнительную строку, если пенсия не покрывает оставшуюся сумму счета
+            l_omavalitsuse_summa = (case
+                                        when (l_arv_summa_kokku - l_hoolduskulu - l_omavalitsuse_lisa_summa -
+                                              coalesce(v_taabel.sugulane_osa,0) - v_taabel.netosissetulek) > 0
+                                            then
+                                            (l_arv_summa_kokku - l_hoolduskulu - l_omavalitsuse_lisa_summa -
+                                             coalesce(v_taabel.sugulane_osa,0) - v_taabel.netosissetulek)
+                                        else
+                                            0
+                end);
+
+            IF
+                (l_omavalitsuse_lisa_summa + l_omavalitsuse_summa) > 0
+            THEN
+                -- формируем строку
+                json_arvrea = '[]'::JSONB || (
+                                                 SELECT
+                                                     row_to_json(row)
+                                                 FROM
+                                                     (
+                                                         SELECT
+                                                             v_taabel.nomid                                          AS nomid,
+                                                             1                                                       AS kogus,
+                                                             -1 * (l_omavalitsuse_lisa_summa + l_omavalitsuse_summa) as hind,
+                                                             -1 * (l_omavalitsuse_lisa_summa + l_omavalitsuse_summa) AS kbmta,
+                                                             0                                                       AS kbm,
+                                                             -1 * (l_omavalitsuse_lisa_summa + l_omavalitsuse_summa) AS summa,
+                                                             (l_omavalitsuse_lisa_summa + l_omavalitsuse_summa)      AS omavalitsuse_osa,
+                                                             v_taabel.tegev                                          AS kood1,
+                                                             v_taabel.allikas                                        AS kood2,
+                                                             v_taabel.rahavoog                                       AS kood3,
+                                                             v_taabel.artikkel                                       AS kood5,
+                                                             v_taabel.konto                                          AS konto,
+                                                             v_taabel.tunnus,
+                                                             v_taabel.projekt,
+                                                             ' omavalitsuse osa'                                     AS muud,
+                                                             l_tp                                                    AS tp
+                                                     ) row
+                                             ) :: JSONB;
+
+                json_arvread = json_arvread || json_arvrea;
+            END IF;
+
 
             -- calc arve summa
             l_arve_summa = l_arve_summa + l_arve_rea_summa - l_taskuraha_kov;
@@ -666,7 +698,7 @@ BEGIN
     SET
         properties = COALESCE(properties, '{}'::JSONB) ||
                      jsonb_build_object('isiku_osa', l_arve_summa, 'sugulane_osa', l_sugulane_summa, 'omavalitsus_osa',
-                                        l_omavalitsuse_summa)
+                                        l_omavalitsuse_summa, 'omavalitsus_osa_lisa', l_omavalitsuse_lisa_summa)
     WHERE
           isikid = l_isik_id
       AND status < 3
