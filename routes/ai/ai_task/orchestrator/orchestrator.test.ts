@@ -330,6 +330,9 @@ describe('Главный Оркестратор', () => {
             }),
           };
         }
+        if (url.includes('/task/read_log/')) {
+          return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+        }
         throw new Error(`Unexpected url: ${url}`);
       });
 
@@ -444,6 +447,9 @@ describe('Главный Оркестратор', () => {
           };
         }
 
+        if (url.includes('/task/read_log/')) {
+          return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+        }
         throw new Error(`Unexpected url: ${url}`);
       });
 
@@ -747,7 +753,7 @@ describe('Главный Оркестратор', () => {
         { stateFilePath: testStateFile, forceRun: true },
         {
           apiClient: client,
-          currentDate: new Date('2026-09-15T20:05:00.000Z'),
+          currentDate: new Date('2026-09-15T20:15:00.000Z'),
           dailyStartHour: 20,
         }
       );
@@ -1023,6 +1029,9 @@ describe('Главный Оркестратор', () => {
             }),
           };
         }
+        if (url.includes('/task/read_log/')) {
+          return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+        }
         throw new Error(`Unexpected url: ${url}`);
       });
 
@@ -1121,6 +1130,9 @@ describe('Главный Оркестратор', () => {
             }),
           };
         }
+        if (url.includes('/task/read_log/')) {
+          return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+        }
         throw new Error(`Unexpected url called: ${url}`);
       });
 
@@ -1140,7 +1152,12 @@ describe('Главный Оркестратор', () => {
       expect(tickAtNoon.activeTasks).toEqual(['getEarved']);
       expect(tickAtNoon.pendingTasks).toContain('saldoandmik');
       expect(tickAtNoon.pendingTasks).toContain('calc_arv_jaak');
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      // Один вызов read_log (guard от дубля) + один запуск getEarved
+      const dispatchCalls = mockFetch.mock.calls.filter(
+        (c: unknown[]) => !String(c[0]).includes('/task/read_log/')
+      );
+      expect(dispatchCalls).toHaveLength(1);
+      expect(String(dispatchCalls[0][0])).toContain('/task/getEarved/');
 
       const stateAfterNoon = JSON.parse(fs.readFileSync(testStateFile, 'utf8'));
       expect(stateAfterNoon.tasks.getEarved.status).toBe('RUNNING');

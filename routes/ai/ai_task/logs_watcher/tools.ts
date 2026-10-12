@@ -15,7 +15,14 @@ export async function readTaskLog(
   options?: RequestOptions
 ): Promise<ReadLogResponse> {
   const validatedInput = ReadTaskLogInputSchema.parse(input);
-  const path = `/task/read_log/${validatedInput.userId}/${encodeURIComponent(validatedInput.taskName)}`;
+  const query = new URLSearchParams();
+  if (validatedInput.logId !== undefined) query.set('log_id', String(validatedInput.logId));
+  if (validatedInput.limit !== undefined) query.set('limit', String(validatedInput.limit));
+  if (validatedInput.hours !== undefined) query.set('hours', String(validatedInput.hours));
+  const queryString = query.toString();
+  const path =
+    `/task/read_log/${validatedInput.userId}/${encodeURIComponent(validatedInput.taskName)}` +
+    (queryString ? `?${queryString}` : '');
 
   const rawResponse = await apiClient.post<unknown>(path, undefined, options);
   return ReadLogResponseSchema.parse(rawResponse);

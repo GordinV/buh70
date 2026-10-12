@@ -24,6 +24,9 @@ export const ReadLogResponseSchema = z.object({
 export const ReadTaskLogInputSchema = z.object({
   userId: z.number().describe('ID пользователя для запроса логов'),
   taskName: z.string().describe('Имя потока (например, eelarve.sp_koosta_saldoandmik)'),
+  logId: z.number().optional().describe('ID конкретной записи ou.logs (окно по времени игнорируется)'),
+  limit: z.number().optional().describe('Сколько последних записей вернуть (по умолчанию 1)'),
+  hours: z.number().optional().describe('Окно поиска по exec_start в часах (по умолчанию 48)'),
 });
 
 export const WatchTaskInputSchema = z.object({

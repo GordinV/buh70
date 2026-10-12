@@ -44,7 +44,27 @@ import {
   TaskState,
   TaskStatus,
 } from './orchestrator.schemas';
-import { checkTaskAlreadyRunToday } from './orchestrator.tools';
+import { checkTaskAlreadyRunToday, findActiveRun, toLocalDateStr, ActiveRunResult } from './orchestrator.tools';
+
+/** Grace-период после отправки запуска, в течение которого отсутствие записи в ou.logs не считается провалом */
+const NO_START_GRACE_MS = 10 * 60 * 1000;
+
+/**
+ * Защита от параллельного дубля: перед запуском/повтором проверяет ou.logs на незавершенный запуск этого flow.
+ * Возвращает state: 'running' (запуск уже идет), 'unknown' (лог недоступен — дубль не запускаем) или 'none'.
+ */
+async function guardAgainstDuplicate(
+  task: TaskState,
+  userId: number,
+  apiClient: ApiClient,
+  now: Date
+): Promise<ActiveRunResult> {
+  const timeoutHours = task.timeout_hours && task.timeout_hours > 0 ? task.timeout_hours : 12;
+  return findActiveRun(userId, task.flow, apiClient, {
+    maxAgeHours: timeoutHours,
+    now,
+  });
+}
 import {
   StateManager,
   calculateNextScheduledRun,
@@ -681,8 +701,8 @@ export async function runOrchestratorTick(
         continue;
       }
 
-      const taskFinishDateStr = sTask.finished_at ? sTask.finished_at.slice(0, 10) : null;
-      const taskStartDateStr = sTask.started_at ? sTask.started_at.slice(0, 10) : null;
+      const taskFinishDateStr = sTask.finished_at ? toLocalDateStr(sTask.finished_at, timezone) : null;
+      const taskStartDateStr = sTask.started_at ? toLocalDateStr(sTask.started_at, timezone) : null;
       const isAlreadyRunToday =
         (taskFinishDateStr && taskFinishDateStr === targetDateStr) ||
         (taskStartDateStr && taskStartDateStr === targetDateStr);
@@ -826,7 +846,8 @@ export async function runOrchestratorTick(
           task.flow,
           apiClient,
           targetDateStr,
-          minStartTime
+          minStartTime,
+          timezone
         );
 
         if (logCheck.alreadyRun) {
@@ -1024,6 +1045,20 @@ export async function runOrchestratorTick(
                 ...(task.params?.logId ? { logId: task.params.logId } : {}),
               };
 
+              const dupGuard = await guardAgainstDuplicate(task, state.params.userId, apiClient, currentDate);
+              if (dupGuard.state !== 'none') {
+                console.warn(
+                  `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
+                );
+                state.history.push({
+                  timestamp: nowIso,
+                  event: 'TASK_DUP_BLOCKED',
+                  task: key,
+                  details: `retry after failure blocked: ${dupGuard.state}, log_id: ${dupGuard.logId ?? 'n/a'}, reason: ${dupGuard.reason}`,
+                });
+                return;
+              }
+
               const logId = await dispatchTaskByKey(
                 key,
                 state.params.userId,
@@ -1094,6 +1129,17 @@ export async function runOrchestratorTick(
         // 3.2. Проверяем критерии сбоя при отсутствии даты старта (exec_start) или если задача еще не стартовала в логах
         const hasNoStartDate = !statusResult.execStart || statusResult.status === 'not_started';
         if (hasNoStartDate) {
+          // Grace-период: запуск только что отправлен, запись в ou.logs может быть еще не видна
+          const sentMs = task.started_at ? new Date(task.started_at).getTime() : NaN;
+          const sinceStartMs = currentDate.getTime() - sentMs;
+          if (!Number.isNaN(sentMs) && sinceStartMs >= 0 && sinceStartMs < NO_START_GRACE_MS) {
+            console.log(
+              `[orchestrator-tick] Ülesanne ${key}: exec_start puudub, kuid käivitusest on möödunud vaid ${Math.round(
+                sinceStartMs / 1000
+              )} s (grace ${NO_START_GRACE_MS / 60000} min). Ootame.`
+            );
+            return;
+          }
           const currentAttempts = task.attempts || 1;
           const maxAttempts = task.max_attempts || config.maxTaskAttempts || 3;
 
@@ -1118,6 +1164,20 @@ export async function runOrchestratorTick(
                 ...parentParams,
                 ...(task.params?.logId ? { logId: task.params.logId } : {}),
               };
+
+              const dupGuard = await guardAgainstDuplicate(task, state.params.userId, apiClient, currentDate);
+              if (dupGuard.state !== 'none') {
+                console.warn(
+                  `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
+                );
+                state.history.push({
+                  timestamp: nowIso,
+                  event: 'TASK_DUP_BLOCKED',
+                  task: key,
+                  details: `retry NO_START_DATE blocked: ${dupGuard.state}, log_id: ${dupGuard.logId ?? 'n/a'}, reason: ${dupGuard.reason}`,
+                });
+                return;
+              }
 
               const logId = await dispatchTaskByKey(
                 key,
@@ -1365,6 +1425,29 @@ export async function runOrchestratorTick(
       readyToStartKeys.map(async (key) => {
         const task = state.tasks[key];
         try {
+          const dupGuard = await guardAgainstDuplicate(task, state.params.userId, apiClient, currentDate);
+          if (dupGuard.state !== 'none') {
+            if (dupGuard.state === 'running') {
+              // Запуск уже идёт (например, state был потерян): берём его под наблюдение вместо дубля
+              console.warn(`[orchestrator-tick] Ülesanne ${key}: ou.logs-is on juba käimasolev käivitus (log_id: ${dupGuard.logId ?? 'n/a'}). Duplikaati ei looda.`);
+              task.status = 'RUNNING';
+              task.attempts = Math.max(task.attempts || 0, 1);
+              task.max_attempts = task.max_attempts || config.maxTaskAttempts || 3;
+              task.log_id = dupGuard.logId ?? task.log_id;
+              task.started_at = dupGuard.execStart ?? nowIso;
+              state.history.push({
+                timestamp: nowIso,
+                event: 'TASK_DUP_BLOCKED',
+                task: key,
+                details: `start blocked, adopted running log_id: ${dupGuard.logId ?? 'n/a'}, reason: ${dupGuard.reason}`,
+              });
+            } else {
+              // Статус лога неизвестен: остаёмся в PENDING до следующего тика
+              console.warn(`[orchestrator-tick] Ülesanne ${key} käivitamine edasi lükatud: ${dupGuard.reason}`);
+            }
+            return;
+          }
+
           const logId = await dispatchTaskByKey(
             key,
             state.params.userId,
