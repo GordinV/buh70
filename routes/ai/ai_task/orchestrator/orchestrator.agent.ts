@@ -384,6 +384,20 @@ export async function evaluateTaskLaunchDecision(
     apiBaseUrl: effectiveApiClient.getConfig().buh70ApiBaseUrl,
   };
 
+  // 0. Защита целостности зависимостей (Downstream Lock):
+  // Запрещено запускать родительскую задачу, если любая зависимая от нее дочерняя задача (downstream) прямо сейчас исполняется (RUNNING).
+  const runningDependents = Object.entries(state.tasks)
+    .filter(([_, depTask]) => depTask.depends_on && depTask.depends_on.includes(key) && depTask.status === 'RUNNING')
+    .map(([depKey]) => depKey);
+
+  if (runningDependents.length > 0) {
+    return {
+      should_run: false,
+      action: 'WAIT',
+      reason: `Ootel: sellest ülesandest sõltuv ülesanne (${runningDependents.join(', ')}) on veel teostamisel (RUNNING)`,
+    };
+  }
+
   // 1. Приоритет промпта: если задан prompt, руководствуемся им в первую очередь
   if (task.prompt && task.prompt.trim().length > 0) {
     if (aiGenerateFn) {
@@ -658,12 +672,26 @@ export async function runOrchestratorTick(
   const rearmedKeys = new Set<string>();
   for (const [sKey, sTask] of Object.entries(state.tasks)) {
     if (sTask.schedule && sTask.status !== 'RUNNING') {
+      // Защита Downstream Lock: не перевооружаем задачу, если зависимая от нее задача прямо сейчас исполняется (RUNNING)
+      const hasRunningDependents = Object.values(state.tasks).some(
+        (depTask) => depTask.depends_on && depTask.depends_on.includes(sKey) && depTask.status === 'RUNNING'
+      );
+      if (hasRunningDependents) {
+        console.log(`[orchestrator-tick] Skipped re-arming scheduled task ${sKey}: dependent task is still RUNNING`);
+        continue;
+      }
+
       const taskFinishDateStr = sTask.finished_at ? sTask.finished_at.slice(0, 10) : null;
       const taskStartDateStr = sTask.started_at ? sTask.started_at.slice(0, 10) : null;
+      const isAlreadyRunToday =
+        (taskFinishDateStr && taskFinishDateStr === targetDateStr) ||
+        (taskStartDateStr && taskStartDateStr === targetDateStr);
+
       const wasRunOnPreviousDay =
-        (taskFinishDateStr && taskFinishDateStr < targetDateStr) ||
-        (taskStartDateStr && taskStartDateStr < targetDateStr) ||
-        (state.cycle_date < targetDateStr && sTask.status !== 'PENDING');
+        !isAlreadyRunToday &&
+        ((taskFinishDateStr && taskFinishDateStr < targetDateStr) ||
+          (taskStartDateStr && taskStartDateStr < targetDateStr) ||
+          (state.cycle_date < targetDateStr && sTask.status !== 'PENDING'));
 
       if (wasRunOnPreviousDay) {
         console.log(`[orchestrator-tick] Re-arming scheduled task ${sKey} for new day: ${targetDateStr}`);

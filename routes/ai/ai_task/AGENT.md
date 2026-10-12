@@ -23,6 +23,8 @@ calc_arv_jaak (07:30) [автономный/вне регламента]
 Статусы задач: `PENDING → RUNNING → SUCCESS | FAILED | SKIPPED`. Статусы цикла: `IDLE | IN_PROGRESS | COMPLETED | FAILED`.
 Если предшественник в `FAILED`/`SKIPPED`, зависимые задачи каскадно переводятся в `SKIPPED`. Повторы: до `max_attempts` (по умолчанию 3), когда в логе нет `exec_start`, при ошибках или по watchdog таймаута (`timeout_hours` в `config.json`, по умолчанию 12 часов — `TASK_TIMEOUT`).
 
+**Защита целостности зависимостей (Downstream Lock):** Запрещено запускать, перезапускать или перевооружать (re-arm в `PENDING`) родительскую задачу $A$, если любая зависимая от неё дочерняя задача $B$ (`B.depends_on.includes(A)`) в данный момент находится в статусе `RUNNING`. Например, `saldoandmik` не может перезапуститься, пока выполняется зависящий от него `lisa1_lisa5`.
+
 ---
 
 ## Роли
@@ -38,11 +40,11 @@ calc_arv_jaak (07:30) [автономный/вне регламента]
 
 Обязанности за один тик:
 1. Загрузить конфиги всех агентов и слить их с состоянием. Новый агент получает `PENDING`.
-2. Проверить смену календарного дня и при необходимости начать новый цикл со сброшенными `attempts`.
+2. Проверить смену календарного дня и при необходимости начать новый цикл со сброшенными `attempts`. Посуточное перевооружение задач (`TASK_REARMED`) блокируется, если зависимые от них задачи находятся в `RUNNING`.
 3. **Cycle decision** (`evaluateCycleDecision`): LLM по `prompt` возвращает `RUN_CYCLE | WAIT_SCHEDULE | SKIP_CYCLE | PAUSE_CYCLE` и `force_run`. На `localhost`/`127.0.0.1` цикл открывается сразу.
 4. Сверка с `ou.logs` (`orchestrator.tools.ts → checkTaskAlreadyRunToday`): задача, уже выполненная сегодня (для задач с расписанием — с `exec_start >= schedule.time`), помечается `SUCCESS`.
 5. Инспекция `RUNNING`-задач (`Promise.allSettled`) и **result decision** (`evaluateTaskResultDecision`): глубокий разбор `result`. Если у агента есть `prompt`, вердикт о `SUCCESS`/`FAILED` выносит LLM. Затем повтор или `FAILED`.
-6. **Launch decision** для `PENDING` (`evaluateTaskLaunchDecision`): LLM (`RUN | WAIT | SKIP` + `dynamic_params`) либо FSM (`depends_on`, `schedule.time/day/month`, суточное окно).
+6. **Launch decision** для `PENDING` (`evaluateTaskLaunchDecision`): LLM (`RUN | WAIT | SKIP` + `dynamic_params`) либо FSM (`depends_on`, `schedule.time/day/month`, суточное окно, **Downstream Lock**: блокировка запуска в `WAIT`, если любая зависимая задача находится в статусе `RUNNING`).
 7. Параллельный запуск готовых задач через `dispatchTaskByKey`. Для `sendFinBitReport` пробрасывается `logId` родителя: `state.tasks.getEarved.log_id → params.logId`.
 8. Когда зависимые задачи завершены (`sendFinBitReport`, `lisa1_lisa5`), вызвать `reporter`, а после завершения всех расчетных задач перевести цикл в `COMPLETED` и выставить `next_scheduled_run` на завтра, `daily_start_time`.
 

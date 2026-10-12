@@ -2801,5 +2801,101 @@ describe('Главный Оркестратор', () => {
         }
       }
     });
+
+    it('evaluateTaskLaunchDecision: возвращает WAIT (Downstream Lock), если зависимая задача в RUNNING', async () => {
+      const stateManager = new StateManager();
+      const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-12');
+      state.tasks.saldoandmik.status = 'PENDING';
+      state.tasks.lisa1_lisa5.status = 'RUNNING';
+
+      const decision = await evaluateTaskLaunchDecision(
+        'saldoandmik',
+        state.tasks.saldoandmik,
+        state,
+        new Date('2026-10-12T20:30:00.000Z'),
+        20,
+        false
+      );
+
+      expect(decision.action).toBe('WAIT');
+      expect(decision.should_run).toBe(false);
+      expect(decision.reason).toContain('lisa1_lisa5');
+    });
+
+    it('runOrchestratorTick: Downstream Lock защищает родительскую задачу от перевооружения и перезапуска, пока потомок в RUNNING', async () => {
+      const testStateFile = path.join(__dirname, 'test_downstream_lock.json');
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        state.cycle_date = '2026-10-09';
+        state.status = 'IN_PROGRESS';
+        state.tasks.saldoandmik.status = 'SUCCESS';
+        state.tasks.saldoandmik.started_at = '2026-10-12T17:00:00.000Z';
+        state.tasks.saldoandmik.finished_at = '2026-10-12T17:10:00.000Z';
+        state.tasks.saldoandmik.schedule = { time: '20:00' };
+
+        // Дочерняя задача lisa1_lisa5 исполняется
+        state.tasks.lisa1_lisa5.status = 'RUNNING';
+        state.tasks.lisa1_lisa5.started_at = '2026-10-12T19:30:00.000Z';
+        state.tasks.lisa1_lisa5.log_id = 8546972;
+
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        let saldoandmikDispatched = false;
+        const testRegistry = {
+          saldoandmik: {
+            flow: 'eelarve.sp_koosta_saldoandmik',
+            dispatch: async () => {
+              saldoandmikDispatched = true;
+              return 99999;
+            },
+          },
+          lisa1_lisa5: {
+            flow: 'eelarve.salvesta_lisa_1_5_kontrol',
+            dispatch: async () => 99998,
+          },
+        };
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                status: 200,
+                result: [{ status: 'running', exec_start: '2026-10-12T19:30:00.000Z' }],
+              }),
+            };
+          }) as unknown as typeof fetch
+        );
+
+        // Тик в 20:00:04 UTC (23:00 local)
+        const tickTime = new Date('2026-10-12T20:00:04.100Z');
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: tickTime,
+            targetDateStr: '2026-10-12',
+            registry: testRegistry,
+            forceRun: false,
+          }
+        );
+
+        const updated: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+
+        // saldoandmik не должен быть перезапущен
+        expect(saldoandmikDispatched).toBe(false);
+        expect(updated.tasks.saldoandmik.status).toBe('SUCCESS');
+        expect(updated.tasks.lisa1_lisa5.status).toBe('RUNNING');
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
   });
 });
