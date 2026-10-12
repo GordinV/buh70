@@ -376,7 +376,7 @@ sequenceDiagram
     },
     "reporter": {
       "flow": "email_report",
-      "depends_on": ["saldoandmik", "calc_arv_jaak", "getEarved", "sendFinBitReport", "lisa1_lisa5"],
+      "depends_on": ["sendFinBitReport", "lisa1_lisa5"],
       "allow_parallel": false,
       "schedule": null,
       "status": "PENDING",
@@ -709,7 +709,7 @@ sequenceDiagram
 ```
 
 #### 6. Итоговый отчет (`reporter/config.json`)
-Строго последовательный финальный поток (`allow_parallel: false`), ожидающий завершения всех расчетных процедур графа:
+Строго последовательный финальный поток (`allow_parallel: false`), ожидающий завершения предшествующих расчетных процедур регламента (`sendFinBitReport` и `lisa1_lisa5`):
 ```json
 {
   "name": "reporter",
@@ -717,9 +717,6 @@ sequenceDiagram
   "description": "Формирование и отправка сводного email-отчета по результатам цикла",
   "allow_parallel": false,
   "depends_on": [
-    "saldoandmik",
-    "calc_arv_jaak",
-    "getEarved",
     "sendFinBitReport",
     "lisa1_lisa5"
   ],

@@ -4,9 +4,6 @@
   "description": "Формирование и отправка сводного email-отчета по результатам цикла",
   "allow_parallel": false,
   "depends_on": [
-    "saldoandmik",
-    "calc_arv_jaak",
-    "getEarved",
     "sendFinBitReport",
     "lisa1_lisa5"
   ],

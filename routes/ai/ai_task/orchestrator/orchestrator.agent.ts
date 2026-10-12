@@ -1394,7 +1394,7 @@ export async function runOrchestratorTick(
     );
   }
 
-  // 6. Проверка завершения всех расчетных потоков и вызов reporter
+  // 6. Проверка готовности reporter по его зависимостям (depends_on) и вызов reporter
   const calcTasks = Object.keys(state.tasks).filter((k) => k !== 'reporter' && k !== 'schedule_monitor');
   const allCalcFinished = calcTasks.every((k) => {
     const s = state.tasks[k].status;
@@ -1404,8 +1404,18 @@ export async function runOrchestratorTick(
   const anyFailed = calcTasks.some((k) => state.tasks[k].status === 'FAILED');
   const overallSuccess = !anyFailed;
 
-  if (allCalcFinished && state.tasks.reporter?.status === 'PENDING') {
-    console.log(`[orchestrator-tick] Kõik arvestused tehtud, lõpparuande saatmine e-postiga`);
+  const reporterTask = state.tasks.reporter;
+  const reporterDeps = reporterTask?.depends_on || [];
+  const reporterDepsFinished =
+    reporterDeps.length > 0
+      ? reporterDeps.every((depKey) => {
+          const s = state.tasks[depKey]?.status;
+          return s === 'SUCCESS' || s === 'FAILED' || s === 'SKIPPED';
+        })
+      : allCalcFinished;
+
+  if (reporterDepsFinished && reporterTask?.status === 'PENDING') {
+    console.log(`[orchestrator-tick] Reporter sõltuvused täidetud, aruande saatmine e-postiga`);
 
     const steps: ReportStepDetail[] = calcTasks.map((k) => {
       const t = state.tasks[k];
@@ -1444,27 +1454,29 @@ export async function runOrchestratorTick(
       state.tasks.reporter.error = msg;
     }
 
-    state.status = overallSuccess ? 'COMPLETED' : 'FAILED';
-    const [dh, dm] = dailyStartTime.split(':').map(Number);
-    let earliestMinutes = dh * 60 + (dm || 0);
-    for (const task of Object.values(state.tasks)) {
-      if (task.schedule?.time) {
-        const [h, m] = task.schedule.time.split(':').map(Number);
-        const total = h * 60 + m;
-        if (total < earliestMinutes) {
-          earliestMinutes = total;
+    if (allCalcFinished) {
+      state.status = overallSuccess ? 'COMPLETED' : 'FAILED';
+      const [dh, dm] = dailyStartTime.split(':').map(Number);
+      let earliestMinutes = dh * 60 + (dm || 0);
+      for (const task of Object.values(state.tasks)) {
+        if (task.schedule?.time) {
+          const [h, m] = task.schedule.time.split(':').map(Number);
+          const total = h * 60 + m;
+          if (total < earliestMinutes) {
+            earliestMinutes = total;
+          }
         }
       }
-    }
-    const nextHour = Math.floor(earliestMinutes / 60);
-    const nextMinute = earliestMinutes % 60;
-    state.next_scheduled_run = calculateNextScheduledRun(targetDateStr, nextHour, nextMinute);
+      const nextHour = Math.floor(earliestMinutes / 60);
+      const nextMinute = earliestMinutes % 60;
+      state.next_scheduled_run = calculateNextScheduledRun(targetDateStr, nextHour, nextMinute);
 
-    state.history.push({
-      timestamp: nowIso,
-      event: overallSuccess ? 'CYCLE_COMPLETED' : 'CYCLE_FAILED',
-      details: `next_scheduled_run: ${state.next_scheduled_run}`,
-    });
+      state.history.push({
+        timestamp: nowIso,
+        event: overallSuccess ? 'CYCLE_COMPLETED' : 'CYCLE_FAILED',
+        details: `next_scheduled_run: ${state.next_scheduled_run}`,
+      });
+    }
   } else if (allCalcFinished && state.status === 'IN_PROGRESS' && state.tasks.reporter?.status !== 'PENDING') {
     state.status = overallSuccess ? 'COMPLETED' : 'FAILED';
     if (!state.next_scheduled_run) {

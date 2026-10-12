@@ -293,7 +293,7 @@ export function getDefaultTaskGraph(baseDir?: string): Record<string, TaskState>
     },
     reporter: {
       flow: 'email_report',
-      depends_on: ['saldoandmik', 'calc_arv_jaak', 'getEarved', 'sendFinBitReport', 'lisa1_lisa5'],
+      depends_on: ['sendFinBitReport', 'lisa1_lisa5'],
       allow_parallel: false,
       schedule: null,
       prompt: null,

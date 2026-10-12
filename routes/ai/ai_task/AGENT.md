@@ -15,9 +15,9 @@
 
 ```
 getEarved (07:00) ──► sendFinBitReport ─┐
-calc_arv_jaak (07:30) ──────────────────┤
-saldoandmik (20:00) ──► lisa1_lisa5 ────┼──► reporter (когда все задачи в терминальном статусе)
-                                        ┘
+                                        ├──► reporter (после завершения утреннего блока и lisa1_lisa5)
+saldoandmik (20:00) ──► lisa1_lisa5 ────┘
+calc_arv_jaak (07:30) [автономный/вне регламента]
 ```
 
 Статусы задач: `PENDING → RUNNING → SUCCESS | FAILED | SKIPPED`. Статусы цикла: `IDLE | IN_PROGRESS | COMPLETED | FAILED`.
@@ -44,7 +44,7 @@ saldoandmik (20:00) ──► lisa1_lisa5 ────┼──► reporter (к�
 5. Инспекция `RUNNING`-задач (`Promise.allSettled`) и **result decision** (`evaluateTaskResultDecision`): глубокий разбор `result`. Если у агента есть `prompt`, вердикт о `SUCCESS`/`FAILED` выносит LLM. Затем повтор или `FAILED`.
 6. **Launch decision** для `PENDING` (`evaluateTaskLaunchDecision`): LLM (`RUN | WAIT | SKIP` + `dynamic_params`) либо FSM (`depends_on`, `schedule.time/day/month`, суточное окно).
 7. Параллельный запуск готовых задач через `dispatchTaskByKey`. Для `sendFinBitReport` пробрасывается `logId` родителя: `state.tasks.getEarved.log_id → params.logId`.
-8. Когда все расчётные задачи завершены, вызвать `reporter`, перевести цикл в `COMPLETED` и выставить `next_scheduled_run` на завтра, `daily_start_time`.
+8. Когда зависимые задачи завершены (`sendFinBitReport`, `lisa1_lisa5`), вызвать `reporter`, а после завершения всех расчетных задач перевести цикл в `COMPLETED` и выставить `next_scheduled_run` на завтра, `daily_start_time`.
 
 ### 2. `logs_watcher/` — наблюдатель логов (служебный субагент)
 
@@ -70,7 +70,7 @@ saldoandmik (20:00) ──► lisa1_lisa5 ────┼──► reporter (к�
 | Агент | Endpoint | Flow в `ou.logs` | Зависимости | Расписание | Prompt | Роль |
 |---|---|---|---|---|---|---|
 | `saldoandmik` | `/task/calcKondSaldoandmik/` | `eelarve.sp_koosta_saldoandmik` | — | 20:00 | нет | Сводный сальдоандмик (`user_id`, `rekv_id`, `kond`) |
-| `calc_arv_jaak` | `/task/calcArvJaak/` | `docs.check_arv_jaak` | — | 07:30 | нет (`prompt_test` для теста) | Пересчёт сальдо и остатков счетов |
+| `calc_arv_jaak` | `/task/calcArvJaak/` | `docs.check_arv_jaak` | — | 07:30 | нет (`prompt_test` для теста) | Пересчёт сальдо и остатков счетов (вне регламентного цикла) |
 | `lisa1_lisa5` | `/task/calcLisa1Lisa5/` | `eelarve.salvesta_lisa_1_5_kontrol` | `saldoandmik` | — | нет | Контрольные формы Lisa 1 / Lisa 5 |
 | `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `docs.sp_loe_earved` | — | 07:00 | нет | Импорт e-счетов из FinBit (userId: 11770 — сервисный аккаунт FinBit в buh70). Ответ `Arveid ei leitud` считается успехом с `log_id = 0` |
 | `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `getEarved` | — | **да** (оценка результата рассылки) | Дочерний агент `getEarved`: рассылает уведомления получателям импортированных счетов. Без `logId` родителя пропускается (`SKIP`) |
@@ -78,8 +78,8 @@ saldoandmik (20:00) ──► lisa1_lisa5 ────┼──► reporter (к�
 ### 4. `reporter/` — итоговая отчётность
 
 - `agent.ts → generateAndSendReportSubagent`, `tools.ts`: `formatReportMarkdown`, `formatReportHtml`, `sanitizeReportText`, `sendReportEmail` (nodemailer, `SMTP_*`, `REPORT_EMAIL_FROM/TO`).
-- Запускается оркестратором, когда все остальные задачи в `SUCCESS | FAILED | SKIPPED`. `depends_on` в конфиге — перечень всех расчётных агентов.
-- Получает по каждому шагу статус, `logId`, длительность, `error`, `resultSummary` и `overallSuccess` (нет ни одного `FAILED`).
+- Запускается оркестратором, когда его предшественники (`sendFinBitReport` и `lisa1_lisa5`) перешли в терминальный статус (`SUCCESS | FAILED | SKIPPED`). `depends_on` в конфиге: `["sendFinBitReport", "lisa1_lisa5"]`.
+- Получает по каждому шагу статус, `logId`, длительность, `error`, `resultSummary` и `overallSuccess`.
 - Вызывается не через `dispatchTaskByKey`, а в отдельном блоке тика. `allow_parallel: false`.
 
 ---

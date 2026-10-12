@@ -1370,7 +1370,7 @@ describe('Главный Оркестратор', () => {
 
       expect(configs.lisa1_lisa5.depends_on).toEqual(['saldoandmik']);
       expect(configs.reporter.allow_parallel).toBe(false);
-      expect(configs.reporter.depends_on).toEqual(['saldoandmik', 'calc_arv_jaak', 'getEarved', 'sendFinBitReport', 'lisa1_lisa5']);
+      expect(configs.reporter.depends_on).toEqual(['sendFinBitReport', 'lisa1_lisa5']);
     });
 
     it('getDefaultTaskGraph должен формировать валидный граф задач на базе config.json', () => {
@@ -1379,7 +1379,7 @@ describe('Главный Оркестратор', () => {
       expect(graph.getEarved.schedule).toEqual({ time: '07:00' });
       expect(graph.sendFinBitReport.status).toBe('PENDING');
       expect(graph.sendFinBitReport.depends_on).toEqual(['getEarved']);
-      expect(graph.reporter.depends_on.length).toBe(5);
+      expect(graph.reporter.depends_on.length).toBe(2);
     });
 
     it('reconcileTasksWithConfigs должен обновлять декларативные поля, сохраняя runtime-состояние задачи', () => {
