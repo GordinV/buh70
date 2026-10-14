@@ -224,7 +224,18 @@ with
                                                                          ELSE q.lopp_kpv END AS kpv2,
                                                                      CASE
                                                                          WHEN month(p.kpv1) = month(p.kpv2)
-                                                                             THEN p.paevad
+                                                                             THEN
+                                                                             --p.paevad
+                                                                             palk.get_days_of_month_in_period(
+                                                                                     kuu,
+                                                                                     aasta,
+                                                                                     p.kpv1,
+                                                                                     p.kpv2,
+                                                                                     false,
+                                                                                     puudumiste_liik = 'PUHKUS' and
+                                                                                     pt.vs_kooded <@
+                                                                                     array ['P','IP'])
+
 
                                                                          WHEN p.kpv1 >= q.alg_kpv AND MONTH(p.kpv1) = MONTH(q.alg_kpv)
                                                                              THEN palk.get_days_of_month_in_period(
@@ -234,9 +245,11 @@ with
                                                                                  (q.alg_kpv +
                                                                                   INTERVAL
                                                                                       '1 month')::DATE - 1,
-                                                                                 TRUE,
+                                                                                 puudumiste_liik <>
+                                                                                 'HAIGUS', -- БЫЛО тру 13.10.2026
                                                                                  puudumiste_liik =
-                                                                                 'PUHKUS')
+                                                                                 'PUHKUS' and pt.vs_kooded <@
+                                                                                              array ['P','IP'])
                                                                          WHEN
                                                                              MONTH(p.kpv1) <
                                                                              MONTH(q.alg_kpv) AND
@@ -247,9 +260,11 @@ with
                                                                                  aasta,
                                                                                  make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
                                                                                  p.kpv2,
-                                                                                 TRUE,
+                                                                                 puudumiste_liik <>
+                                                                                 'HAIGUS', -- БЫЛО тру 13.10.2026
                                                                                  puudumiste_liik =
-                                                                                 'PUHKUS')
+                                                                                 'PUHKUS' and pt.vs_kooded <@
+                                                                                              array ['P','IP'])
                                                                          WHEN p.kpv1 > q.alg_kpv
                                                                              THEN 0
                                                                          ELSE palk.get_days_of_month_in_period(
@@ -257,9 +272,11 @@ with
                                                                                  aasta,
                                                                                  make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
                                                                                  q.lopp_kpv,
-                                                                                 TRUE,
+                                                                                 puudumiste_liik <>
+                                                                                 'HAIGUS', -- БЫЛО тру 13.10.2026
                                                                                  puudumiste_liik =
-                                                                                 'PUHKUS')
+                                                                                 'PUHKUS' and pt.vs_kooded <@
+                                                                                              array ['P','IP'])
                                                                          END                 AS paevad,
 
                                                                      p.puudumiste_liik,
@@ -287,17 +304,119 @@ with
                                                                      params                                  ps
                                                                  WHERE
                                                                        p.status <> 'deleted'
+                                                                   and daterange(LEAST(p.kpv1, p.kpv2),
+                                                                                 GREATEST(p.kpv1, p.kpv2), '[]') &&
+                                                                       daterange(LEAST(ps.kpv_1, ps.kpv_2),
+                                                                                 GREATEST(ps.kpv_1, ps.kpv_2), '[]')
+                                                                   AND q.lepingid = p.lepingid
+                                                                   AND q.kuu >= MONTH(p.kpv1)
+                                                                   AND q.kuu <= MONTH(p.kpv2)
+                                                             ),
+                                                   qryKorPkPuudu AS (
+                                                                 SELECT
+                                                                     p.id                    AS p_id,
+                                                                     q.alg_kpv,
+                                                                     q.lopp_kpv,
+                                                                     pk.kpv1                 AS kpv_1,
+                                                                     pk.kpv2                 AS kpv_2,
+                                                                     CASE
+                                                                         WHEN p.kpv1 >= q.alg_kpv AND month(p.kpv1) = month(q.alg_kpv)
+                                                                             THEN p.kpv1
+                                                                         ELSE q.alg_kpv END  AS kpv1,
+                                                                     CASE
+                                                                         WHEN p.kpv2 <= q.lopp_kpv AND MONTH(p.kpv2) = MONTH(q.lopp_kpv)
+                                                                             THEN p.kpv2
+                                                                         ELSE q.lopp_kpv END AS kpv2,
+                                                                     CASE
+                                                                         WHEN month(pk.kpv1) = month(pk.kpv2)
+                                                                             THEN -1 * palk.get_days_of_month_in_period(
+                                                                                 kuu,
+                                                                                 aasta,
+                                                                                 pk.kpv1,
+                                                                                 pk.kpv2,
+                                                                                 false,
+                                                                                 puudumiste_liik = 'PUHKUS')
+
+                                                                         WHEN pk.kpv1 >= q.alg_kpv AND MONTH(pk.kpv1) = MONTH(q.alg_kpv)
+                                                                             THEN -1 * palk.get_days_of_month_in_period(
+                                                                                 kuu,
+                                                                                 aasta,
+                                                                                 pk.kpv1,
+                                                                                 (q.alg_kpv +
+                                                                                  INTERVAL
+                                                                                      '1 month')::DATE - 1,
+                                                                                 false,
+                                                                                 puudumiste_liik = 'PUHKUS')
+                                                                         WHEN
+                                                                             MONTH(pk.kpv1) <
+                                                                             MONTH(q.alg_kpv) AND
+                                                                             MONTH(pk.kpv2) =
+                                                                             MONTH(q.lopp_kpv)
+                                                                             THEN -1 * palk.get_days_of_month_in_period(
+                                                                                 kuu,
+                                                                                 aasta,
+                                                                                 make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
+                                                                                 pk.kpv2,
+                                                                                 false,
+                                                                                 puudumiste_liik =
+                                                                                 'PUHKUS')
+                                                                         WHEN pk.kpv1 > q.alg_kpv
+                                                                             THEN 0
+                                                                         ELSE -1 * palk.get_days_of_month_in_period(
+                                                                                 kuu,
+                                                                                 aasta,
+                                                                                 make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1),
+                                                                                 q.lopp_kpv,
+                                                                                 false,
+                                                                                 puudumiste_liik =
+                                                                                 'PUHKUS')
+                                                                         END                 AS paevad,
+
+                                                                     p.puudumiste_liik,
+                                                                     p.lepingid,
+                                                                     p.tyyp,
+                                                                     pt.kas_kehtiv,
+                                                                     pt.vs_kooded,
+                                                                     q.kuu,
+                                                                     q.aasta
+                                                                 FROM
+                                                                     (
+                                                                         SELECT
+                                                                             kuu,
+                                                                             aasta,
+                                                                             make_date(aasta, qryKuu.kuu, 1) alg_kpv,
+                                                                             ((make_date(aasta, qryKuu.kuu, 1) + INTERVAL '1 month')::DATE -
+                                                                              1)::DATE AS                    lopp_kpv,
+                                                                             lepingid
+                                                                         FROM
+                                                                             qryKuu
+                                                                     )                                           q,
+                                                                     palk.puudumine                              p
+                                                                         inner join palk.com_puudumiste_tyyp     pt
+                                                                                    on pt.liik = p.puudumiste_liik and pt.id = p.tyyp,
+                                                                     params                                      ps,
+                                                                     jsonb_to_recordset(p.properties -> 'pk') AS pk(kpv1 date, kpv2 date, paevad integer)
+                                                                 WHERE
+                                                                       p.status <> 'deleted'
+                                                                   and p.properties ->> 'pk' is not null
                                                                    AND q.alg_kpv >= ps.kpv_1
                                                                    AND q.lopp_kpv <= ps.kpv_2
-                                                                   AND p.kpv1 >= ps.kpv_1
-                                                                   AND p.kpv2 <= ps.kpv_2
+                                                                       --AND p.kpv1 >= ps.kpv_1
+                                                                       --AND p.kpv2 <= ps.kpv_2
+                                                                   AND daterange(p.kpv1, p.kpv2, '[]') &&
+                                                                       daterange(ps.kpv_1, ps.kpv_2, '[]')
                                                                    AND q.lepingid = p.lepingid
                                                                    AND q.kuu >= MONTH(p.kpv1)
                                                                    AND q.kuu <= MONTH(p.kpv2)
                                                              )
+
                                                SELECT *
                                                FROM
                                                    qryKorPuudu q
+                                               union all
+                                               SELECT *
+                                               FROM
+                                                   qryKorPkPuudu q
                       )
                   -- разбиваем дни по периодам
                   SELECT
@@ -359,7 +478,7 @@ with
                           SELECT
                               p.kuu,
                               p.aasta,
-                              p.paevad,
+                              sum(p.paevad) as paevad,
                               p.puudumiste_liik,
                               p.tyyp,
                               p.vs_kooded,
@@ -367,12 +486,20 @@ with
                               p.lepingid
                           FROM
                               puudumised_paevad             p
-                                  INNER JOIN palk.tooleping t ON t.id = p.lepingid
-                                  AND p.paevad > 0,
+                                  INNER JOIN palk.tooleping t ON t.id = p.lepingid,
+--                                  AND p.paevad > 0,
                                                             params
 --                     AND p.puudumiste_liik = 'PUHKUS'
                           WHERE
                               t.rekvid = params.rekv_id
+                          group by
+                              p.kuu,
+                              p.aasta,
+                              p.puudumiste_liik,
+                              p.tyyp,
+                              p.vs_kooded,
+                              p.kas_kehtiv,
+                              p.lepingid
                       ) qry,
                         params
                   WHERE
@@ -963,13 +1090,15 @@ FROM
                               qryPalkOper po,
                               params      p
                           WHERE
-                                (po.konto IN (
-                                                 SELECT
-                                                     unnest(p.puhkused_kontod)
-                                             )
-                                    OR left(po.konto, 6) IN ('500153', '500203', '103560')
-                                    )
-                            and po.konto not in  (select unnest(p.eri_kontod)) -- выделим их в отдельную запись
+                              (po.konto IN (
+                                               SELECT
+                                                   unnest(p.puhkused_kontod)
+                                           )
+                                  OR left(po.konto, 6) IN ('500153', '500203', '103560')
+                                  )
+                            and po.konto not in (
+                                                    select unnest(p.eri_kontod)
+                                                ) -- выделим их в отдельную запись
                             AND po.liik = 1
                           GROUP BY lepingid, po.liik
                           UNION ALL
@@ -1336,376 +1465,377 @@ FROM
                                 lepingid,
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] && qryPuudumine.vs_kooded) AS haig_1,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_1,
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_2,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_2,
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_3,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_4,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_5,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_6,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS' and
-                                              array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                              qryPuudumine.vs_kooded)                                        AS haig_7,
+                                              array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                              qryPuudumine.vs_kooded)                             AS haig_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_8,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_9,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_10,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_11,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS'
-                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH'] &&
-                                        qryPuudumine.vs_kooded)                                              AS haig_12,
+                                    and array ['AH', 'H', 'HD', 'HL', 'HP', 'PH', 'TI'] &&
+                                        qryPuudumine.vs_kooded)                                   AS haig_12,
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
 --                                                  AND tyyp = 1
                                     and array ['P'] && qryPuudumine.vs_kooded
-                                    )                                                                        AS puhk1_1,
+                                    )                                                             AS puhk1_1,
                                 -- pohipuhkus
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     --AND tyyp = 1
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_2,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_2,
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_3,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_4,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_5,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_6,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_7,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_8,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_9,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_10,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_11,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['P'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk1_12,
+                                        qryPuudumine.vs_kooded)                                   AS puhk1_12,
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     --AND tyyp = 2
                                     and array ['ÕP'] && qryPuudumine.vs_kooded
-                                    )                                                                        AS puhk2_1,
+                                    )                                                             AS puhk2_1,
                                 -- Õppepuhkus
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_2,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_2,
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_3,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_4,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_5,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_6,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_7,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_8,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_9,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_10,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_11,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['ÕP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk2_12,
+                                        qryPuudumine.vs_kooded)                                   AS puhk2_12,
                                 -- Tasustamata puhkus
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     --AND tyyp = 3
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_1,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_1,
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_2,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_2,
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_3,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_4,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_5,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_6,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_7,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_8,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_9,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_10,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_11,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['A','TP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk3_12,
+                                        qryPuudumine.vs_kooded)                                   AS puhk3_12,
                                 -- Muud puhkused
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_1,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_1,
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_2,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_2,
                                 -- oma arvelt
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_3,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_4,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_5,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_6,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_7,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_8,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_9,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_10,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_11,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['AP', 'AT', 'IP', 'MTV', 'PIH', 'PL', 'S', 'TE', 'V', 'VK'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk4_12,
+                                        qryPuudumine.vs_kooded)                                   AS puhk4_12,
                                 -- Sotsiaalsed puhkused
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_1,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_1,
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_2,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_2,
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_3,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_4,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_5,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_6,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_7,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_8,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_9,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_10,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_11,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS'
                                     and array ['EMP', 'LHP', 'LP', 'PLP', 'VP', 'TLP'] &&
-                                        qryPuudumine.vs_kooded)                                              AS puhk5_12,
+                                        qryPuudumine.vs_kooded)                                   AS puhk5_12,
 
                                 -- Koolitus
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_1,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_1,
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_2,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_2,
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_3,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_4,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_5,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_6,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_7,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_8,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_9,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_10,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_11,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOOLITUS'
-                                    and array ['K'] && qryPuudumine.vs_kooded)                               AS kom_12,
+                                    and array ['K'] && qryPuudumine.vs_kooded)                    AS kom_12,
                                 -- Muud
                                 sum(paevad1)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_1,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_1,
                                 sum(paevad2)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_2,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_2,
                                 sum(paevad3)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_3,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_3,
                                 sum(paevad4)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_4,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_4,
                                 sum(paevad5)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_5,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_5,
                                 sum(paevad6)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_6,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_6,
                                 sum(paevad7)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_7,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_7,
                                 sum(paevad8)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_8,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_8,
                                 sum(paevad9)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_9,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_9,
                                 sum(paevad10)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_10,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_10,
                                 sum(paevad11)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_11,
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_11,
                                 sum(paevad12)
                                 FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU'
-                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded)            AS muu_12
+                                    and array ['STR', 'L', 'EKK', 'M'] && qryPuudumine.vs_kooded) AS muu_12
                             FROM
                                 qryPuudumine
                             GROUP BY lepingid
@@ -1730,8 +1860,9 @@ GRANT EXECUTE ON FUNCTION palk.palk_kaart_2025( DATE, DATE, INTEGER, INTEGER ) T
 select * from ou.rekv where nimetus like '%21%'
 
 SELECT *
-FROM palk.palk_kaart_2025__('2025-01-01', '2025-10-31',89, 0 :: INTEGER)
-where isik ilike '%Jefimova Irina%'
+FROM palk.palk_kaart_2025('2026-01-01', '2026-09-30', 75, 0 :: INTEGER)
+WHERE isik ILIKE '%Gorkova Natalja %'
+  AND '2026-01-01' <= '2026-09-30';
 
 
 union all
