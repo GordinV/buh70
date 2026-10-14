@@ -15,7 +15,8 @@ import { runLisa1Lisa5Subagent } from '../lisa1_lisa5/agent';
 import { startLisa1Lisa5 } from '../lisa1_lisa5/tools';
 import { TASK_FLOW_LISA1_LISA5 } from '../lisa1_lisa5/schemas';
 import { AgentManifest, buildAgentRegistry } from '../shared/agent_registry';
-import { TaskStatusCheckResult, checkTaskStatus } from '../logs_watcher/agent';
+import { TaskStatusCheckResult, checkTaskStatus, inspectLogExecutionResult } from '../logs_watcher/agent';
+import { readTaskLog } from '../logs_watcher/tools';
 import { generateAndSendReportSubagent } from '../reporter/agent';
 import { runScheduleMonitor } from '../schedule_monitor/agent';
 import { sanitizeReportText } from '../reporter/tools';
@@ -1505,7 +1506,7 @@ export async function runOrchestratorTick(
     );
   }
 
-  // 6. Проверка готовности reporter по его зависимостям (depends_on) и вызов reporter
+  // 6. Проверка готовности reporter по расписанию (08:00) / зависимостям и вызов reporter
   const calcTasks = Object.keys(state.tasks).filter((k) => k !== 'reporter' && k !== 'schedule_monitor');
   const allCalcFinished = calcTasks.every((k) => {
     const s = state.tasks[k].status;
@@ -1523,26 +1524,104 @@ export async function runOrchestratorTick(
           const s = state.tasks[depKey]?.status;
           return s === 'SUCCESS' || s === 'FAILED' || s === 'SKIPPED';
         })
+      : reporterTask?.schedule
+      ? true
       : allCalcFinished;
 
-  if (reporterDepsFinished && reporterTask?.status === 'PENDING') {
-    console.log(`[orchestrator-tick] Reporter sõltuvused täidetud, aruande saatmine e-postiga`);
+  const reporterScheduleCheck = reporterTask?.schedule
+    ? isTaskScheduleReady(reporterTask.schedule, currentDate, timezone)
+    : { ready: true, shouldSkip: false };
+  const reporterScheduleReady =
+    effectiveForceRun ||
+    selectedTaskKey === 'reporter' ||
+    (reporterScheduleCheck.ready && !reporterScheduleCheck.shouldSkip);
 
-    const steps: ReportStepDetail[] = calcTasks.map((k) => {
-      const t = state.tasks[k];
-      const stepStatus: ReportStepDetail['status'] =
-        t.status === 'SUCCESS' ? 'SUCCESS' : t.status === 'FAILED' ? 'FAILED' : 'SKIPPED';
-      return {
-        stepName: t.flow,
-        status: stepStatus,
-        logId: t.log_id ?? undefined,
-        execStart: t.started_at ?? undefined,
-        execEnd: t.finished_at ?? undefined,
-        durationMs: t.duration_ms ?? undefined,
-        error: t.error ?? undefined,
-        resultSummary: t.result_summary ?? undefined,
-      };
-    });
+  const isReporterTriggerReady =
+    reporterTask?.status === 'PENDING' &&
+    reporterScheduleReady &&
+    reporterDepsFinished;
+
+  if (isReporterTriggerReady && reporterTask) {
+    console.log(`[orchestrator-tick] Reporter käivitamine: koostatakse viimase 24h koondaruanne (graafik 08:00)`);
+
+    const steps: ReportStepDetail[] = await Promise.all(
+      calcTasks.map(async (k) => {
+        const t = state.tasks[k];
+        let stepLog: any = null;
+
+        if (apiClient && t?.flow) {
+          try {
+            const taskUserId =
+              typeof t.params?.userId === 'number'
+                ? t.params.userId
+                : Number(state.params.userId) || 2477;
+            const logRes = await readTaskLog(
+              {
+                userId: taskUserId,
+                taskName: t.flow,
+                hours: 24,
+                limit: 1,
+              },
+              apiClient
+            );
+            if (logRes?.data && logRes.data.length > 0) {
+              stepLog = logRes.data[0];
+            }
+          } catch {
+            // fallback to state.tasks
+          }
+        }
+
+        if (stepLog && stepLog.exec_start) {
+          let durationMs: number | undefined;
+          if (stepLog.exec_start && stepLog.exec_end) {
+            const start = new Date(stepLog.exec_start).getTime();
+            const end = new Date(stepLog.exec_end).getTime();
+            if (!isNaN(start) && !isNaN(end) && end >= start) {
+              durationMs = end - start;
+            }
+          }
+          const inspectResult = inspectLogExecutionResult(stepLog);
+          const logStatus: ReportStepDetail['status'] =
+            stepLog.status === 'success' && !inspectResult.hasErrors
+              ? 'SUCCESS'
+              : stepLog.status === 'failed' || stepLog.status === 'error' || inspectResult.hasErrors
+              ? 'FAILED'
+              : stepLog.exec_end
+              ? 'SUCCESS'
+              : 'RUNNING';
+
+          const logId = typeof stepLog.id === 'number' ? stepLog.id : undefined;
+
+          return {
+            stepName: t.flow,
+            status: logStatus,
+            logId,
+            execStart: stepLog.exec_start ?? undefined,
+            execEnd: stepLog.exec_end ?? undefined,
+            durationMs: durationMs ?? (t.duration_ms ?? undefined),
+            error: inspectResult.errorDetails || stepLog.error || t.error || undefined,
+            resultSummary: inspectResult.resultSummary || t.result_summary || undefined,
+          };
+        }
+
+        const stepStatus: ReportStepDetail['status'] =
+          t.status === 'SUCCESS' ? 'SUCCESS' : t.status === 'FAILED' ? 'FAILED' : 'SKIPPED';
+
+        return {
+          stepName: t.flow,
+          status: stepStatus,
+          logId: t.log_id ?? undefined,
+          execStart: t.started_at ?? undefined,
+          execEnd: t.finished_at ?? undefined,
+          durationMs: t.duration_ms ?? undefined,
+          error: t.error ?? undefined,
+          resultSummary: t.result_summary ?? (t.status === 'SKIPPED' ? 'Vahele jäetud' : undefined),
+        };
+      })
+    );
+
+    const reportOverallSuccess = !steps.some((s) => s.status === 'FAILED');
 
     try {
       await generateAndSendReportSubagent({
@@ -1550,14 +1629,17 @@ export async function runOrchestratorTick(
         rekvId: state.params.rekvId,
         executionDate: targetDateStr,
         steps,
-        overallSuccess,
-        notes: overallSuccess
-          ? 'Kõik rutiinsed arvestused on edukalt lõpetatud.'
-          : 'Mõned rutiinsed arvestused lõppesid vigadega.',
+        overallSuccess: reportOverallSuccess,
+        notes: reportOverallSuccess
+          ? 'Kõik viimase 24h rutiinsed arvestused on edukalt lõpetatud.'
+          : 'Mõned viimase 24h rutiinsed arvestused lõppesid vigadega.',
         recipientEmail,
       });
       state.tasks.reporter.status = 'SUCCESS';
       state.tasks.reporter.finished_at = nowIso;
+      state.tasks.reporter.result_summary = reportOverallSuccess
+        ? 'Viimase 24h koondaruanne edukalt saadetud'
+        : 'Viimase 24h koondaruanne saadetud (ilmnesid vead)';
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[orchestrator-tick] Viga aruande saatmisel: ${msg}`);

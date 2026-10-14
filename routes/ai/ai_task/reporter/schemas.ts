@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const ReportStepDetailSchema = z.object({
   stepName: z.string(),
-  status: z.enum(['SKIPPED', 'SUCCESS', 'FAILED', 'TIMEOUT']),
+  status: z.enum(['SKIPPED', 'SUCCESS', 'FAILED', 'TIMEOUT', 'RUNNING', 'PENDING']),
   logId: z.number().optional(),
   execStart: z.string().optional(),
   execEnd: z.string().optional(),

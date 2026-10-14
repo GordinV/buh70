@@ -14,10 +14,10 @@
 ## Граф задач (DAG)
 
 ```
-getEarved (07:00) ──► sendFinBitReport ─┐
-                                        ├──► reporter (после завершения утреннего блока и lisa1_lisa5)
-saldoandmik (20:00) ──► lisa1_lisa5 ────┘
-calc_arv_jaak (07:30) [автономный/вне регламента]
+getEarved (07:00) ──► sendFinBitReport
+calc_arv_jaak (07:30)
+reporter (08:00) [ежедневный сводный отчет за последние 24 часа]
+saldoandmik (20:00) ──► lisa1_lisa5
 ```
 
 Статусы задач: `PENDING → RUNNING → SUCCESS | FAILED | SKIPPED`. Статусы цикла: `IDLE | IN_PROGRESS | COMPLETED | FAILED`.
@@ -46,7 +46,7 @@ calc_arv_jaak (07:30) [автономный/вне регламента]
 5. Инспекция `RUNNING`-задач (`Promise.allSettled`) и **result decision** (`evaluateTaskResultDecision`): глубокий разбор `result`. Если у агента есть `prompt`, вердикт о `SUCCESS`/`FAILED` выносит LLM. Затем повтор или `FAILED`.
 6. **Launch decision** для `PENDING` (`evaluateTaskLaunchDecision`): LLM (`RUN | WAIT | SKIP` + `dynamic_params`) либо FSM (`depends_on`, `schedule.time/day/month`, суточное окно, **Downstream Lock**: блокировка запуска в `WAIT`, если любая зависимая задача находится в статусе `RUNNING`).
 7. Параллельный запуск готовых задач через `dispatchTaskByKey`. Для `sendFinBitReport` пробрасывается `logId` родителя: `state.tasks.getEarved.log_id → params.logId`.
-8. Когда зависимые задачи завершены (`sendFinBitReport`, `lisa1_lisa5`), вызвать `reporter`, а после завершения всех расчетных задач перевести цикл в `COMPLETED` и выставить `next_scheduled_run` на завтра, `daily_start_time`.
+8. По расписанию в 08:00 (или по завершении расчетного цикла) запускается `reporter`, который опрашивает `ou.logs` за последние 24 часа по всем агентам (`exec_start`, `exec_end`, `durationMs`, `status`, ошибки/итоги) и отправляет email-отчет. После завершения всех задач суточный цикл переходит в `COMPLETED` с выставлением `next_scheduled_run`.
 
 ### 2. `logs_watcher/` — наблюдатель логов (служебный субагент)
 

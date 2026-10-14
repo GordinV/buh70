@@ -293,9 +293,9 @@ export function getDefaultTaskGraph(baseDir?: string): Record<string, TaskState>
     },
     reporter: {
       flow: 'email_report',
-      depends_on: ['sendFinBitReport', 'lisa1_lisa5'],
+      depends_on: [],
       allow_parallel: false,
-      schedule: null,
+      schedule: { time: '08:00' },
       prompt: null,
       params: {},
       status: 'PENDING',

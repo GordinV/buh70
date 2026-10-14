@@ -1,13 +1,12 @@
 {
   "name": "reporter",
   "flow": "email_report",
-  "description": "Формирование и отправка сводного email-отчета по результатам цикла",
+  "description": "Формирование и отправка сводного email-отчета о работе агентов за последние сутки",
   "allow_parallel": false,
-  "depends_on": [
-    "sendFinBitReport",
-    "lisa1_lisa5"
-  ],
-  "schedule": null,
+  "depends_on": [],
+  "schedule": {
+    "time": "08:00"
+  },
   "prompt": null,
   "max_attempts": 3,
   "params": {}

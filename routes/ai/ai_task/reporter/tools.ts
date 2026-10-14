@@ -63,6 +63,29 @@ export function sanitizeReportText(text?: string | null): string | undefined {
 }
 
 /**
+ * Formats an ISO date/time string into a human-readable local Tallinn time (DD.MM.YYYY HH:mm:ss)
+ */
+export function formatDateTime(isoOrDateStr?: string | null, timezone = 'Europe/Tallinn'): string {
+  if (!isoOrDateStr) return '—';
+  try {
+    const d = new Date(isoOrDateStr);
+    if (isNaN(d.getTime())) return String(isoOrDateStr);
+    return new Intl.DateTimeFormat('et-EE', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(d);
+  } catch {
+    return String(isoOrDateStr);
+  }
+}
+
+/**
  * Форматирует отчет в удобный текстовый Markdown-вид на эстонском языке
  * (без отображения ID пользователя и учреждения)
  */
@@ -79,6 +102,10 @@ export function formatReportMarkdown(input: GenerateReportInput): string {
         ? '✅'
         : step.status === 'SKIPPED'
         ? '⏭️'
+        : step.status === 'RUNNING'
+        ? '⏳'
+        : step.status === 'PENDING'
+        ? '🕒'
         : '❌';
 
     const statusLabel =
@@ -88,6 +115,10 @@ export function formatReportMarkdown(input: GenerateReportInput): string {
         ? 'VAHELE JÄETUD'
         : step.status === 'TIMEOUT'
         ? 'AEGUS'
+        : step.status === 'RUNNING'
+        ? 'TÖÖS'
+        : step.status === 'PENDING'
+        ? 'OOTEL'
         : 'EBAÕNNESTUS';
 
     const cleanSummary = sanitizeReportText(step.resultSummary);
@@ -96,6 +127,8 @@ export function formatReportMarkdown(input: GenerateReportInput): string {
     md += `- ${icon} **${step.stepName}**: \`${statusLabel}\``;
     if (step.logId) md += ` (logi ID: ${step.logId})`;
     if (step.durationMs) md += ` (kestus: ${(step.durationMs / 1000).toFixed(1)} s)`;
+    if (step.execStart) md += `\n  - *Algus:* ${formatDateTime(step.execStart)}`;
+    if (step.execEnd) md += `\n  - *Lõpp:* ${formatDateTime(step.execEnd)}`;
     if (cleanSummary) md += `\n  - *Tulemus:* ${cleanSummary}`;
     if (cleanError) md += `\n  - *Viga:* ${cleanError}`;
     md += `\n`;
@@ -120,15 +153,27 @@ export function formatReportHtml(input: GenerateReportInput): string {
   let rowsHtml = '';
   for (const step of input.steps) {
     const stepColor =
-      step.status === 'SUCCESS' ? '#2e7d32' : step.status === 'SKIPPED' ? '#757575' : '#d32f2f';
+      step.status === 'SUCCESS'
+        ? '#2e7d32'
+        : step.status === 'SKIPPED'
+        ? '#757575'
+        : step.status === 'RUNNING'
+        ? '#1976d2'
+        : step.status === 'PENDING'
+        ? '#f57c00'
+        : '#d32f2f';
 
     const statusLabel =
       step.status === 'SUCCESS'
-        ? 'Õnneestus'
+        ? 'Õnnestus'
         : step.status === 'SKIPPED'
         ? 'Vahele jäetud'
         : step.status === 'TIMEOUT'
         ? 'Aegus'
+        : step.status === 'RUNNING'
+        ? 'Töös'
+        : step.status === 'PENDING'
+        ? 'Ootel'
         : 'Ebaõnnestus';
 
     const cleanSummary = sanitizeReportText(step.resultSummary);
@@ -141,8 +186,10 @@ export function formatReportHtml(input: GenerateReportInput): string {
           ${cleanSummary ? `<br/><span style="font-size: 12px; color: #555;">${cleanSummary}</span>` : ''}
         </td>
         <td style="padding: 8px; border-bottom: 1px solid #ddd; color: ${stepColor}; font-weight: bold;">${statusLabel}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${step.logId ? step.logId : '—'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${formatDateTime(step.execStart)}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${formatDateTime(step.execEnd)}</td>
         <td style="padding: 8px; border-bottom: 1px solid #ddd;">${step.durationMs ? (step.durationMs / 1000).toFixed(1) + ' s' : '—'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${step.logId ? step.logId : '—'}</td>
         <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #d32f2f;">${cleanError ? cleanError : '—'}</td>
       </tr>
     `;
@@ -151,7 +198,7 @@ export function formatReportHtml(input: GenerateReportInput): string {
   const cleanNotes = sanitizeReportText(input.notes);
 
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; color: #333;">
+    <div style="font-family: Arial, sans-serif; max-width: 760px; margin: 0 auto; color: #333;">
       <h2 style="color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 8px;">
         buh70 rutiinsete arvestuste aruanne
       </h2>
@@ -168,8 +215,10 @@ export function formatReportHtml(input: GenerateReportInput): string {
           <tr style="background-color: #f5f5f5; text-align: left;">
             <th style="padding: 8px; border-bottom: 2px solid #ddd;">Ülesanne</th>
             <th style="padding: 8px; border-bottom: 2px solid #ddd;">Staatus</th>
-            <th style="padding: 8px; border-bottom: 2px solid #ddd;">Logi ID</th>
+            <th style="padding: 8px; border-bottom: 2px solid #ddd;">Algus</th>
+            <th style="padding: 8px; border-bottom: 2px solid #ddd;">Lõpp</th>
             <th style="padding: 8px; border-bottom: 2px solid #ddd;">Kestus</th>
+            <th style="padding: 8px; border-bottom: 2px solid #ddd;">Logi ID</th>
             <th style="padding: 8px; border-bottom: 2px solid #ddd;">Viga</th>
           </tr>
         </thead>

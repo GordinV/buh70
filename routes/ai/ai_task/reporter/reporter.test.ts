@@ -160,4 +160,48 @@ describe('Субагент reporter (Email)', () => {
     expect(html).not.toContain('выполнена успешно');
     expect(html).toContain('Edukalt täidetud');
   });
+
+  it('formatReportMarkdown и formatReportHtml должны отображать старт сервиса, его завершение, срок исполнения и статус', () => {
+    const detailInput = {
+      userId: 2477,
+      rekvId: 63,
+      executionDate: '2026-10-14',
+      overallSuccess: true,
+      steps: [
+        {
+          stepName: 'docs.sp_loe_earved',
+          status: 'SUCCESS' as const,
+          logId: 889901,
+          execStart: '2026-10-14T04:00:00.000Z',
+          execEnd: '2026-10-14T04:00:15.500Z',
+          durationMs: 15500,
+          resultSummary: '3 e-arvet imporditud',
+        },
+        {
+          stepName: 'docs.check_arv_jaak',
+          status: 'RUNNING' as const,
+          logId: 889902,
+          execStart: '2026-10-14T04:30:00.000Z',
+          resultSummary: 'Arvutamine pooleli',
+        },
+      ],
+      notes: 'Kõik viimase 24h rutiinsed arvestused on edukalt lõpetatud.',
+    };
+
+    const md = formatReportMarkdown(detailInput);
+    expect(md).toContain('Algus:*');
+    expect(md).toContain('Lõpp:*');
+    expect(md).toContain('(kestus: 15.5 s)');
+    expect(md).toContain('`ÕNNESTUS`');
+    expect(md).toContain('`TÖÖS`');
+
+    const html = formatReportHtml(detailInput);
+    expect(html).toContain('Algus');
+    expect(html).toContain('Lõpp');
+    expect(html).toContain('Kestus');
+    expect(html).toContain('15.5 s');
+    expect(html).toContain('Õnnestus');
+    expect(html).toContain('Töös');
+    expect(html).toContain('889901');
+  });
 });

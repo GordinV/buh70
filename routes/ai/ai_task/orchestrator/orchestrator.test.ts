@@ -1387,7 +1387,8 @@ describe('Главный Оркестратор', () => {
 
       expect(configs.lisa1_lisa5.depends_on).toEqual(['saldoandmik']);
       expect(configs.reporter.allow_parallel).toBe(false);
-      expect(configs.reporter.depends_on).toEqual(['sendFinBitReport', 'lisa1_lisa5']);
+      expect(configs.reporter.depends_on).toEqual([]);
+      expect(configs.reporter.schedule).toEqual({ time: '08:00' });
     });
 
     it('getDefaultTaskGraph должен формировать валидный граф задач на базе config.json', () => {
@@ -1396,7 +1397,8 @@ describe('Главный Оркестратор', () => {
       expect(graph.getEarved.schedule).toEqual({ time: '07:00' });
       expect(graph.sendFinBitReport.status).toBe('PENDING');
       expect(graph.sendFinBitReport.depends_on).toEqual(['getEarved']);
-      expect(graph.reporter.depends_on.length).toBe(2);
+      expect(graph.reporter.depends_on.length).toBe(0);
+      expect(graph.reporter.schedule).toEqual({ time: '08:00' });
     });
 
     it('reconcileTasksWithConfigs должен обновлять декларативные поля, сохраняя runtime-состояние задачи', () => {
@@ -2906,6 +2908,142 @@ describe('Главный Оркестратор', () => {
         expect(saldoandmikDispatched).toBe(false);
         expect(updated.tasks.saldoandmik.status).toBe('SUCCESS');
         expect(updated.tasks.lisa1_lisa5.status).toBe('RUNNING');
+      } finally {
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: reporter запускается по расписанию 08:00 и собирает данные из ou.logs за последние 24 часа', async () => {
+      const testStateFile = path.join(__dirname, 'test_state_reporter_8am.json');
+      const testState: OrchestratorState = {
+        version: 1,
+        cycle_date: '2026-10-14',
+        status: 'IN_PROGRESS',
+        last_tick_at: null,
+        next_scheduled_run: null,
+        params: { userId: 2477, rekvId: 63, kond: 1 },
+        tasks: {
+          saldoandmik: {
+            flow: 'eelarve.sp_koosta_saldoandmik',
+            depends_on: [],
+            allow_parallel: true,
+            schedule: null,
+            prompt: null,
+            params: {},
+            status: 'SUCCESS',
+            attempts: 1,
+            max_attempts: 3,
+            log_id: 101,
+            started_at: '2026-10-13T17:00:00.000Z',
+            finished_at: '2026-10-13T17:01:00.000Z',
+            duration_ms: 60000,
+            error: null,
+          },
+          calc_arv_jaak: {
+            flow: 'docs.check_arv_jaak',
+            depends_on: [],
+            allow_parallel: true,
+            schedule: null,
+            prompt: null,
+            params: {},
+            status: 'SUCCESS',
+            attempts: 1,
+            max_attempts: 3,
+            log_id: 102,
+            started_at: '2026-10-14T04:30:00.000Z',
+            finished_at: '2026-10-14T04:30:10.000Z',
+            duration_ms: 10000,
+            error: null,
+          },
+          reporter: {
+            flow: 'email_report',
+            depends_on: [],
+            allow_parallel: false,
+            schedule: { time: '08:00' },
+            prompt: null,
+            params: {},
+            status: 'PENDING',
+            attempts: 0,
+            max_attempts: 3,
+            log_id: null,
+            started_at: null,
+            finished_at: null,
+            duration_ms: null,
+            error: null,
+          },
+        },
+        history: [],
+      };
+      fs.writeFileSync(testStateFile, JSON.stringify(testState, null, 2), 'utf-8');
+
+      try {
+        const mockFetch = jest.fn().mockImplementation(async (url: string) => {
+          if (url.includes('/task/read_log/')) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                error_code: 0,
+                result: 1,
+                error_message: null,
+                data: [
+                  {
+                    id: 9988,
+                    flow: 'docs.check_arv_jaak',
+                    status: 'success',
+                    exec_start: '2026-10-14T04:30:00.000Z',
+                    exec_end: '2026-10-14T04:30:10.000Z',
+                    result: null,
+                    response: 'OK',
+                    error: null,
+                  },
+                ],
+              }),
+            };
+          }
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ status: 200, result: 1 }),
+          };
+        });
+
+        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, mockFetch as unknown as typeof fetch);
+
+        // 1. До 08:00 (например, в 07:45 local / 04:45 UTC): reporter ожидает в PENDING
+        const before8Am = new Date('2026-10-14T04:45:00.000Z');
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: before8Am,
+            targetDateStr: '2026-10-14',
+            forceRun: false,
+          }
+        );
+
+        let stateAfterEarlyTick: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+        expect(stateAfterEarlyTick.tasks.reporter.status).toBe('PENDING');
+
+        // 2. В 08:00 local (05:00 UTC): reporter срабатывает и завершается SUCCESS
+        const at8Am = new Date('2026-10-14T05:00:00.000Z');
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: at8Am,
+            targetDateStr: '2026-10-14',
+            forceRun: false,
+          }
+        );
+
+        let stateAfter8Am: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+        expect(stateAfter8Am.tasks.reporter.status).toBe('SUCCESS');
+        expect(stateAfter8Am.tasks.reporter.finished_at).toBeTruthy();
       } finally {
         if (fs.existsSync(testStateFile)) {
           try {
