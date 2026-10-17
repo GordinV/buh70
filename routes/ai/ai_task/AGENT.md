@@ -14,6 +14,7 @@
 ## Граф задач (DAG)
 
 ```
+read_mail (06:00)
 getEarved (07:00) ──► sendFinBitReport
 calc_arv_jaak (07:30)
 reporter (08:00) [ежедневный сводный отчет за последние 24 часа]
@@ -36,24 +37,24 @@ saldoandmik (20:00) ──► lisa1_lisa5
 | Точка входа | `runOrchestratorTick` (`orchestrator.agent.ts`); Genkit flow `orchestratorTickFlow`; CLI `node dist/index.js [--force] [--user N] [--rekv N] [--date YYYY-MM-DD] [--state path]` |
 | Устаревший режим | `runOrchestrator` / `--full`: последовательный блокирующий прогон всех субагентов с `watchTaskUntilDone` |
 | Конфиг | `orchestrator/config.json`: `daily_start_time` (20:00), `timezone` (Europe/Tallinn), `max_task_attempts`, `params`, `prompt` |
-| Состояние | `state.manager.ts` — чтение/валидация (Zod)/атомарная запись `state/orchestrator_state.json`, сброс при смене дня |
+| Состояние | `state.manager.ts` — чтение/валидация (Zod)/атомарная запись `state/orchestrator_state.json`, динамическое обнаружение `<agent>/config.json`, фильтрация служебных каталогов (`EXCLUDED_NON_DAG_DIRS`), сброс при смене дня |
 
 Обязанности за один тик:
-1. Загрузить конфиги всех агентов и слить их с состоянием. Новый агент получает `PENDING`.
+1. Загрузить конфиги всех расчётных агентов и слить их с состоянием (`reconcileTasksWithConfigs`). Новый агент получает `PENDING`, служебные не-DAG каталоги (`logs_watcher`, `schedule_monitor`) исключаются из `state.tasks`.
 2. Проверить смену календарного дня и при необходимости начать новый цикл со сброшенными `attempts`. Посуточное перевооружение задач (`TASK_REARMED`) блокируется, если зависимые от них задачи находятся в `RUNNING`.
 3. **Cycle decision** (`evaluateCycleDecision`): LLM по `prompt` возвращает `RUN_CYCLE | WAIT_SCHEDULE | SKIP_CYCLE | PAUSE_CYCLE` и `force_run`. На `localhost`/`127.0.0.1` цикл открывается сразу.
-4. Сверка с `ou.logs` (`orchestrator.tools.ts → checkTaskAlreadyRunToday`): задача, уже выполненная сегодня (для задач с расписанием — с `exec_start >= schedule.time`), помечается `SUCCESS`.
-5. Инспекция `RUNNING`-задач (`Promise.allSettled`) и **result decision** (`evaluateTaskResultDecision`): глубокий разбор `result`. Если у агента есть `prompt`, вердикт о `SUCCESS`/`FAILED` выносит LLM. Затем повтор или `FAILED`.
+4. Сверка с `ou.logs` (`orchestrator.tools.ts → checkTaskAlreadyRunToday`): задача, уже выполненная сегодня (для задач с расписанием — с `exec_start >= schedule.time`), помечается `SUCCESS`. При всех обращениях к `ou.logs` (`checkTaskAlreadyRunToday`, `checkTaskStatus`, `guardAgainstDuplicate`, `reporter`) используется индивидуальный `task.params?.userId ?? state.params.userId` (`resolveTaskUserId`).
+5. Инспекция `RUNNING`-задач и **result decision** (`evaluateTaskResultDecision`): глубокий разбор `result`. Если у агента есть `prompt`, вердикт о `SUCCESS`/`FAILED` выносит LLM. Затем повтор или `FAILED`.
 6. **Launch decision** для `PENDING` (`evaluateTaskLaunchDecision`): LLM (`RUN | WAIT | SKIP` + `dynamic_params`) либо FSM (`depends_on`, `schedule.time/day/month`, суточное окно, **Downstream Lock**: блокировка запуска в `WAIT`, если любая зависимая задача находится в статусе `RUNNING`).
-7. Параллельный запуск готовых задач через `dispatchTaskByKey`. Для `sendFinBitReport` пробрасывается `logId` родителя: `state.tasks.getEarved.log_id → params.logId`.
-8. По расписанию в 08:00 (или по завершении расчетного цикла) запускается `reporter`, который опрашивает `ou.logs` за последние 24 часа по всем агентам (`exec_start`, `exec_end`, `durationMs`, `status`, ошибки/итоги) и отправляет email-отчет. После завершения всех задач суточный цикл переходит в `COMPLETED` с выставлением `next_scheduled_run`.
+7. Параллельный запуск готовых задач через `dispatchTaskByKey` (с предварительной защитой от параллельного дубля `guardAgainstDuplicate`). Для зависимых задач пробрасываются параметры родителя через `manifest.resolveParentParams(state)` (например, `state.tasks.getEarved.log_id → params.logId` для `sendFinBitReport`).
+8. По расписанию в 08:00 запускается `reporter`, который опрашивает `ou.logs` за последние 24 часа по всем расчётным агентам (`exec_start`, `exec_end`, `durationMs`, `status`, ошибки/итоги), вызывает `manifest.enrichReportStep(stepLog, task)` для агент-специфичного обогащения отчёта и отправляет email-отчет. После завершения всех задач суточный цикл переходит в `COMPLETED` с выставлением актуального `next_scheduled_run`.
 
 ### 2. `logs_watcher/` — наблюдатель логов (служебный субагент)
 
 - `tools.ts → readTaskLog`: `POST /task/read_log/:user_id/:task_name`.
 - `agent.ts → inspectLogExecutionResult`: глубокая инспекция `error`/`result`/`response`. Ищет скрытые ошибки при формальном `status: success` (например, `success: false` или `connect ETIMEDOUT` в элементах массива). Возвращает `hasErrors`, `errorDetails`, `resultSummary`.
 - `agent.ts → watchTaskUntilDone`: блокирующий цикл опроса (`TASK_POLL_INTERVAL_MS`, `TASK_TIMEOUT_MS`). Используется только в `--full`-режиме и в `run*Subagent`.
-- Не имеет `config.json` и не входит в DAG.
+- Не имеет `config.json` и не входит в DAG (`EXCLUDED_NON_DAG_DIRS`).
 
 ### 2.1. `schedule_monitor/` — монитор расписания и статусов (служебный субагент)
 
@@ -61,26 +62,48 @@ saldoandmik (20:00) ──► lisa1_lisa5
 - `tools.ts → logAgentSchedule`: вызов `POST /task/logAgentSchedule/` (`ou.logs`, `flow = 'ai_task.agent_schedule'`).
 - `agent.ts → runScheduleMonitorSubagent`: основной исполнитель субагента (вход: `userId`, `rekvId`, опционально `state` или `stateFilePath`), возвращает `ScheduleMonitorResult` (`logId`, `status`, `snapshot`).
 - `index.ts`: зарегистрированы Genkit flows `scheduleMonitorFlow` и `agentScheduleFlow` для запуска через Genkit CLI/Dev UI/Reflection API.
-- `agent.ts → manifest`: экспортирует `manifest` для совместимости с реестром агентов.
+- `agent.ts → manifest`: экспортирует `manifest` для совместимости с вызовом через CLI/Genkit.
 - `agent.ts → runScheduleMonitor`: вызывается оркестратором на каждом тике (включая ранние выходы `IDLE_WAIT_NEXT_SCHEDULE`). Ошибки не прерывают тик.
-- Не имеет `config.json` и не входит в DAG. Настраивается через `orchestrator/config.json` (`schedule_monitor.enabled`).
+- Не имеет `config.json` и не входит в DAG (`EXCLUDED_NON_DAG_DIRS`). Настраивается через `orchestrator/config.json` (`schedule_monitor.enabled`).
 
 ### 3. Расчётные субагенты (исполнители)
 
-Все устроены одинаково: `schemas.ts` (Zod-вход/выход + константа `TASK_FLOW_*`), `tools.ts` (`start*` — неблокирующий POST), `agent.ts` (`run*Subagent` — запуск и ожидание через `logs_watcher`), `config.json`, тест.
+Все устроены одинаково: `schemas.ts` (Zod-вход/выход + константа `TASK_FLOW_*`), `tools.ts` (`start*` — неблокирующий POST), `agent.ts` (`run*Subagent` + `manifest: AgentManifest`), `config.json`, тест.
 
 | Агент | Endpoint | Flow в `ou.logs` | Зависимости | Расписание | Prompt | Роль |
 |---|---|---|---|---|---|---|
 | `saldoandmik` | `/task/calcKondSaldoandmik/` | `eelarve.sp_koosta_saldoandmik` | — | 20:00 | нет | Сводный сальдоандмик (`user_id`, `rekv_id`, `kond`) |
 | `calc_arv_jaak` | `/task/calcArvJaak/` | `docs.check_arv_jaak` | — | 07:30 | нет (`prompt_test` для теста) | Пересчёт сальдо и остатков счетов (вне регламентного цикла) |
+| `read_mail` | `/task/readMail/` | `mail.read_mail_errors` | — | 06:00 | нет (`prompt: null`) | Анализ входящей почты на ошибки недоставки счетов клиентам (Mail Delivery Failure). Снимает отметку отправки в БД (`docs.tuhista_arve_saatmise_staatus`) и отправляет алерт при `Muud vead` |
 | `lisa1_lisa5` | `/task/calcLisa1Lisa5/` | `eelarve.salvesta_lisa_1_5_kontrol` | `saldoandmik` | — | нет | Контрольные формы Lisa 1 / Lisa 5 |
-| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `docs.sp_loe_earved` | — | 07:00 | нет | Импорт e-счетов из FinBit (userId: 11770 — сервисный аккаунт FinBit в buh70). Ответ `Arveid ei leitud` считается успехом с `log_id = 0` |
+| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `docs.sp_loe_earved` | — | 07:00 | нет | Импорт e-счетов из FinBit (`params.userId: 11770` — сервисный аккаунт FinBit в buh70). Ответ `Arveid ei leitud` считается успехом с `log_id = 0` |
 | `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `getEarved` | — | **да** (оценка результата рассылки) | Дочерний агент `getEarved`: рассылает уведомления получателям импортированных счетов. Без `logId` родителя пропускается (`SKIP`) |
+
+### 3.1. `read_mail/` — монитор недоставки счетов по e-mail (расчётный субагент)
+
+- **Назначение:** Автономная обработка сообщений о сбоях доставки электронной почты со счетами покупателям (NDR / Non-Delivery Reports / Bounce notices: `Mail Delivery Subsystem`, `Mailer-Daemon`, `Undelivered Mail Returned to Sender`).
+- **Схема работы:**
+  1. Вызывается оркестратором через API `POST /task/readMail/` ежедневно в 06:00 (до сводного отчета в 08:00). В `read_mail/config.json` задан `"prompt": null`, чтобы оркестратор запускал задачу строго по детерминированному расписанию `06:00`.
+  2. Подключается к IMAP-серверу входящей почты и инкрементально считывает новые bounce-сообщения (дата последнего чтения фиксируется в `state/read_mail_state.json`).
+  3. Парсит тело письма и диагностические заголовки/коды SMTP (`RFC 3464` / `RFC 2047`), определяя номер счета (`doc_number`), адрес получателя (`recipient_email`) и причину ошибки.
+  4. Классифицирует ошибку по 4 стандартным статусам:
+     - `Aadressi viga` — некорректный или несуществующий ящик получателя (`5.1.1`, User unknown, Invalid mailbox, No such user).
+     - `Domeeni viga` — недоступный или несуществующий почтовый домен (`5.1.2`, Host/Domain not found, DNS error).
+     - `Postkast täis` — переполнение почтового ящика клиента (`5.2.2`, Quota exceeded, Mailbox full).
+     - `Muud vead` — любые прочие нестандартные сбои (спам-блокировки `5.7.1`, временные сетевые отказы, отказы ретрансляции и т.д.).
+  5. Для каждого проблемного счета вызывает в БД процедуру `docs.tuhista_arve_saatmise_staatus(doc_id, doc_number, reason)`, сбрасывая признак отправки счета, чтобы в учетной системе бухгалтер увидел необходимость актуализации контакта или повторной отправки.
+  6. **Мгновенные алерты (Alerting):** Если ошибка отнесена к категории `Muud vead` (не подпадающей под типовые правила), агент немедленно отправляет e-mail уведомление с перечнем проблемных счетов (номер счета, email, причина) администраторам на адреса `vladislav.gordin@gmail.com` и `andrei.vargunin@narva.ee`.
+  7. Фиксирует полный структурированный результат разбора в `ou.logs` (`flow = 'mail.read_mail_errors'`) под ключом `result`, откуда его подхватывает `reporter` через хук `manifest.enrichReportStep`.
+- **Архитектурная реализация:**
+  - Полностью **in-process на бэкенде `buh70` (Node.js 13.14.0)** через встроенный низкоуровневый TLS-клиент (`tls`), без внешних npm-библиотек и без вызова внешних процессов/воркеров.
+  - Поддерживает безопасную потоковую работу с UTF-8 буквами и IMAP literal buffers (`Buffer.byteLength`).
 
 ### 4. `reporter/` — итоговая отчётность
 
 - `agent.ts → generateAndSendReportSubagent`, `tools.ts`: `formatReportMarkdown`, `formatReportHtml`, `sanitizeReportText`, `sendReportEmail` (nodemailer, `SMTP_*`, `REPORT_EMAIL_FROM/TO`).
-- Запускается оркестратором, когда его предшественники (`sendFinBitReport` и `lisa1_lisa5`) перешли в терминальный статус (`SUCCESS | FAILED | SKIPPED`). `depends_on` в конфиге: `["sendFinBitReport", "lisa1_lisa5"]`.
+- Запускается оркестратором строго по расписанию в 08:00 (даже если цикл запущен с `forceRun`, расписание `08:00` у `reporter` соблюдается, если не передан явно `taskKey: 'reporter'`).
+- Опрашивает `ou.logs` за последние 24 часа по всем расчётным агентам (`saldoandmik`, `calc_arv_jaak`, `getEarved`, `sendFinBitReport`, `read_mail`, `lisa1_lisa5`) с учётом их индивидуального `params.userId`.
+- **Интеграция с агентами через `enrichReportStep`:** Оркестратор вызывает `registry[key]?.enrichReportStep?.(stepLog, task)`. Для `read_mail` этот хук извлекает ошибки недоставки счетов из `mail.read_mail_errors` (`mailErrors`) и формирует эстонский `resultSummary`, а `reporter` включает в ежедневный отчет отдельную таблицу **«📧 Tuvastatud vigased e-posti aadressid»** (`Arve nr`, `Saaja e-post`, `Staatus`, `Põhjus`).
 - Получает по каждому шагу статус, `logId`, длительность, `error`, `resultSummary` и `overallSuccess`.
 - Вызывается не через `dispatchTaskByKey`, а в отдельном блоке тика. `allow_parallel: false`.
 
@@ -88,16 +111,16 @@ saldoandmik (20:00) ──► lisa1_lisa5
 
 ## Как добавить нового агента
 
-Благодаря реестру агентов (`shared/agent_registry.ts`), правка кода оркестратора `orchestrator.agent.ts` больше **не требуется**:
+Благодаря динамическому реестру агентов (`shared/agent_registry.ts`) и автообнаружению в `orchestrator/state.manager.ts`, правка кода оркестратора `orchestrator.agent.ts`, `state.manager.ts` или `shared/agent_registry.ts` **не требуется**:
 
 1. Создать каталог `<agent>/` с `schemas.ts`, `tools.ts` (`start<Agent>` → `POST /task/<endpoint>/`), `agent.ts`, `config.json`, `<agent>.test.ts`.
 2. В `<agent>/agent.ts` экспортировать `manifest: AgentManifest`:
    - `dispatch(ctx)`: вызов `start<Agent>` с передачей параметров (`userId`, `rekvId`, `kond`, `params`, `apiClient`).
    - `resolveParentParams(state)` (опционально): если нужны параметры от родительской задачи (например, `logId` от `getEarved`).
-3. В `<agent>/config.json` настроить `flow`, `schedule`, `depends_on`, `timeout_hours` (по умолчанию 12 часов) и т.д. `Dockerfile` копирует все конфиги автоматически через стадию `/configs`.
-4. Добавить агента в `depends_on` у `reporter/config.json`.
-5. При необходимости зарегистрировать Genkit flow в `index.ts`.
-6. На стороне `buh70` реализовать эндпоинт `/task/<endpoint>/`: он должен писать в `ou.logs` под именем `flow` и возвращать `{ status, log_id }`.
+   - `enrichReportStep(stepLog, task)` (опционально): если нужно обогатить строку в сводном отчёте `reporter` (например, `mailErrors` или кастомный `resultSummary`).
+3. В `<agent>/config.json` настроить `flow`, `schedule`, `depends_on`, `prompt` (`null` для детерминированного запуска по расписанию), `params` (включая индивидуальный `userId`, если процедура пишет в `ou.logs` под сервисным пользователем), `timeout_hours` (по умолчанию 12 часов). `Dockerfile` копирует все конфиги автоматически через стадию `/configs`.
+4. При необходимости зарегистрировать Genkit flow в `index.ts`.
+5. На стороне `buh70` реализовать эндпоинт `/task/<endpoint>/`: он должен писать в `ou.logs` под именем `flow` и возвращать `{ status, log_id }`.
 
 ## Правила для разработчика и AI-ассистента
 

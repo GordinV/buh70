@@ -23,9 +23,21 @@ export const KNOWN_AGENT_DIRS = [
   'getEarved',
   'sendFinBitReport',
   'lisa1_lisa5',
-  'schedule_monitor',
   'reporter',
 ];
+
+/**
+ * Служебные каталоги, которые не являются расчетными задачами DAG (state.tasks)
+ */
+const EXCLUDED_NON_DAG_DIRS = new Set([
+  'node_modules',
+  'dist',
+  'state',
+  'orchestrator',
+  'shared',
+  'logs_watcher',
+  'schedule_monitor',
+]);
 
 /**
  * Определяет корневую директорию модуля ai_task для поиска конфигураций агентов
@@ -99,20 +111,16 @@ export function loadAllAgentConfigs(baseDir?: string): Record<string, AgentConfi
     }
   }
 
-  // 2. Сканируем поддиректории root на случай появления новых агентов
+  // 2. Динамически сканируем поддиректории root для автоматического подключения новых агентов
   try {
     if (fs.existsSync(root)) {
       const entries = fs.readdirSync(root, { withFileTypes: true });
       for (const entry of entries) {
         if (
           entry.isDirectory() &&
+          !entry.name.startsWith('.') &&
           !KNOWN_AGENT_DIRS.includes(entry.name) &&
-          entry.name !== 'node_modules' &&
-          entry.name !== 'dist' &&
-          entry.name !== 'state' &&
-          entry.name !== 'orchestrator' &&
-          entry.name !== 'shared' &&
-          entry.name !== 'logs_watcher'
+          !EXCLUDED_NON_DAG_DIRS.has(entry.name)
         ) {
           const cfg = loadAgentConfig(entry.name, root);
           if (cfg) {
@@ -164,6 +172,13 @@ export function reconcileTasksWithConfigs(
   configs: Record<string, AgentConfig>,
   addNewTasks: boolean = true
 ): void {
+  // Очищаем служебные не-DAG агенты, если они ранее попали в сохраненный state
+  for (const excludedKey of EXCLUDED_NON_DAG_DIRS) {
+    if (existingTasks[excludedKey]) {
+      delete existingTasks[excludedKey];
+    }
+  }
+
   for (const [name, cfg] of Object.entries(configs)) {
     const existing = existingTasks[name];
     if (existing) {
@@ -368,6 +383,7 @@ export function resetCycleForNewDay(
     ...state,
     cycle_date: newDateStr,
     status: 'IN_PROGRESS',
+    next_scheduled_run: null,
     tasks,
     history: [
       ...state.history.slice(-50), // Храним последние 50 событий

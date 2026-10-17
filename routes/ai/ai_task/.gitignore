@@ -2,8 +2,12 @@ node_modules/
 dist/
 state/*.json
 !state/.gitkeep
+read_mail/state/*.json
+!read_mail/state/.gitkeep
 state/*.log
 *.log
 *.tmp
 .env
+.env.example
+.genkit/
 run_tick.sh

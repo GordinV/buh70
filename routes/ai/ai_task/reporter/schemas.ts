@@ -9,6 +9,19 @@ export const ReportStepDetailSchema = z.object({
   durationMs: z.number().optional(),
   error: z.string().optional(),
   resultSummary: z.string().optional(),
+  mailErrors: z
+    .array(
+      z.object({
+        status: z.string().optional(),
+        reason: z.string().optional(),
+        doc_number: z.string().optional(),
+        invoice_number: z.string().optional(),
+        recipient_email: z.string().optional(),
+        reference_number: z.string().optional(),
+        failed_at: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 export const GenerateReportInputSchema = z.object({

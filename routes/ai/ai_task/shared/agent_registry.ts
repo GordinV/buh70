@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ApiClient } from './api_client';
-import { OrchestratorState } from '../orchestrator/orchestrator.schemas';
+import { OrchestratorState, TaskState } from '../orchestrator/orchestrator.schemas';
 import { resolveAiTaskRootDir } from '../orchestrator/state.manager';
+import { ReportStepDetail } from '../reporter/schemas';
 
 /**
  * Контекст, передаваемый в manifest.dispatch() при запуске или повторе задачи
@@ -32,10 +33,20 @@ export interface AgentManifest {
    * Чистая функция без побочных эффектов. При отсутствии данных возвращает {}.
    */
   resolveParentParams?: (state: OrchestratorState) => Record<string, unknown>;
+
+  /**
+   * Опционально: обогащение данных шага для итогового отчета reporter
+   * на основе записи из ou.logs и состояния задачи (без модификации ядра оркестратора).
+   */
+  enrichReportStep?: (
+    stepLog: Record<string, unknown> | null,
+    task: TaskState
+  ) => Partial<ReportStepDetail>;
 }
 
 /**
- * Известные статические поддиректории агентов (базовый набор)
+ * Известные статические поддиректории агентов (базовый набор).
+ * Новые агенты обнаруживаются автоматически через сканирование подкаталогов ai_task.
  */
 export const KNOWN_SUBAGENTS = [
   'saldoandmik',
@@ -43,7 +54,6 @@ export const KNOWN_SUBAGENTS = [
   'getEarved',
   'sendFinBitReport',
   'lisa1_lisa5',
-  'schedule_monitor',
 ];
 
 /**

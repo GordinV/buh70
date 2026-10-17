@@ -66,6 +66,10 @@ async function guardAgainstDuplicate(
     now,
   });
 }
+
+function resolveTaskUserId(task: TaskState, defaultUserId: number): number {
+  return typeof task.params?.userId === 'number' ? task.params.userId : defaultUserId;
+}
 import {
   StateManager,
   calculateNextScheduledRun,
@@ -843,7 +847,7 @@ export async function runOrchestratorTick(
       if (!isAlreadySuccessToday) {
         const minStartTime = task.schedule?.time || undefined;
         const logCheck = await checkTaskAlreadyRunToday(
-          state.params.userId,
+          resolveTaskUserId(task, state.params.userId),
           task.flow,
           apiClient,
           targetDateStr,
@@ -992,7 +996,7 @@ export async function runOrchestratorTick(
     await Promise.all(
       runningKeys.map(async (key) => {
         const task = state.tasks[key];
-        const statusResult = await checkTaskStatus(state.params.userId, task.flow, apiClient);
+        const statusResult = await checkTaskStatus(resolveTaskUserId(task, state.params.userId), task.flow, apiClient);
 
         // 3.1. Если задача завершилась (в логах status === 'success' или status === 'failed')
         if (statusResult.status === 'success' || statusResult.status === 'failed') {
@@ -1046,7 +1050,7 @@ export async function runOrchestratorTick(
                 ...(task.params?.logId ? { logId: task.params.logId } : {}),
               };
 
-              const dupGuard = await guardAgainstDuplicate(task, state.params.userId, apiClient, currentDate);
+              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
               if (dupGuard.state !== 'none') {
                 console.warn(
                   `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
@@ -1166,7 +1170,7 @@ export async function runOrchestratorTick(
                 ...(task.params?.logId ? { logId: task.params.logId } : {}),
               };
 
-              const dupGuard = await guardAgainstDuplicate(task, state.params.userId, apiClient, currentDate);
+              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
               if (dupGuard.state !== 'none') {
                 console.warn(
                   `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
@@ -1426,7 +1430,7 @@ export async function runOrchestratorTick(
       readyToStartKeys.map(async (key) => {
         const task = state.tasks[key];
         try {
-          const dupGuard = await guardAgainstDuplicate(task, state.params.userId, apiClient, currentDate);
+          const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
           if (dupGuard.state !== 'none') {
             if (dupGuard.state === 'running') {
               // Запуск уже идёт (например, state был потерян): берём его под наблюдение вместо дубля
@@ -1532,7 +1536,7 @@ export async function runOrchestratorTick(
     ? isTaskScheduleReady(reporterTask.schedule, currentDate, timezone)
     : { ready: true, shouldSkip: false };
   const reporterScheduleReady =
-    effectiveForceRun ||
+    (!reporterTask?.schedule && effectiveForceRun) ||
     selectedTaskKey === 'reporter' ||
     (reporterScheduleCheck.ready && !reporterScheduleCheck.shouldSkip);
 
@@ -1551,10 +1555,7 @@ export async function runOrchestratorTick(
 
         if (apiClient && t?.flow) {
           try {
-            const taskUserId =
-              typeof t.params?.userId === 'number'
-                ? t.params.userId
-                : Number(state.params.userId) || 2477;
+            const taskUserId = resolveTaskUserId(t, Number(state.params.userId) || 2477);
             const logRes = await readTaskLog(
               {
                 userId: taskUserId,
@@ -1593,6 +1594,10 @@ export async function runOrchestratorTick(
 
           const logId = typeof stepLog.id === 'number' ? stepLog.id : undefined;
 
+          const enriched = registry[k]?.enrichReportStep?.(stepLog as Record<string, unknown>, t) ?? {};
+          const summaryText =
+            enriched.resultSummary || inspectResult.resultSummary || t.result_summary || undefined;
+
           return {
             stepName: t.flow,
             status: logStatus,
@@ -1601,12 +1606,15 @@ export async function runOrchestratorTick(
             execEnd: stepLog.exec_end ?? undefined,
             durationMs: durationMs ?? (t.duration_ms ?? undefined),
             error: inspectResult.errorDetails || stepLog.error || t.error || undefined,
-            resultSummary: inspectResult.resultSummary || t.result_summary || undefined,
+            ...enriched,
+            resultSummary: summaryText,
           };
         }
 
         const stepStatus: ReportStepDetail['status'] =
           t.status === 'SUCCESS' ? 'SUCCESS' : t.status === 'FAILED' ? 'FAILED' : 'SKIPPED';
+
+        const enrichedFallback = registry[k]?.enrichReportStep?.(null, t) ?? {};
 
         return {
           stepName: t.flow,
@@ -1616,7 +1624,11 @@ export async function runOrchestratorTick(
           execEnd: t.finished_at ?? undefined,
           durationMs: t.duration_ms ?? undefined,
           error: t.error ?? undefined,
-          resultSummary: t.result_summary ?? (t.status === 'SKIPPED' ? 'Vahele jäetud' : undefined),
+          ...enrichedFallback,
+          resultSummary:
+            enrichedFallback.resultSummary ??
+            t.result_summary ??
+            (t.status === 'SKIPPED' ? 'Vahele jäetud' : undefined),
         };
       })
     );
@@ -1672,7 +1684,7 @@ export async function runOrchestratorTick(
     }
   } else if (allCalcFinished && state.status === 'IN_PROGRESS' && state.tasks.reporter?.status !== 'PENDING') {
     state.status = overallSuccess ? 'COMPLETED' : 'FAILED';
-    if (!state.next_scheduled_run) {
+    if (!state.next_scheduled_run || new Date(state.next_scheduled_run).getTime() <= currentDate.getTime()) {
       const [dh, dm] = dailyStartTime.split(':').map(Number);
       let earliestMinutes = dh * 60 + (dm || 0);
       for (const task of Object.values(state.tasks)) {
