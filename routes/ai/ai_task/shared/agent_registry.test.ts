@@ -11,6 +11,7 @@ describe('Agent Registry (shared/agent_registry.ts)', () => {
     expect(registry).toHaveProperty('sendFinBitReport');
     expect(registry).toHaveProperty('lisa1_lisa5');
     expect(registry).toHaveProperty('schedule_monitor');
+    expect(registry).toHaveProperty('read_mail');
 
     expect(typeof registry['saldoandmik'].dispatch).toBe('function');
     expect(typeof registry['calc_arv_jaak'].dispatch).toBe('function');
@@ -18,6 +19,7 @@ describe('Agent Registry (shared/agent_registry.ts)', () => {
     expect(typeof registry['sendFinBitReport'].dispatch).toBe('function');
     expect(typeof registry['lisa1_lisa5'].dispatch).toBe('function');
     expect(typeof registry['schedule_monitor'].dispatch).toBe('function');
+    expect(typeof registry['read_mail'].dispatch).toBe('function');
   });
 
   it('sendFinBitReport manifest должен определять resolveParentParams и извлекать log_id родителя getEarved', () => {

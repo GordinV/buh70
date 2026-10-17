@@ -45,9 +45,15 @@ module.exports = function (app) {
     app.post('/task/getEarved/', require('./raama/getEarvedFromFinBit').main); //checkAuth
     // запустит отправку отчета о загруженных счетах из finbit
     app.post('/task/sendFinBitReport/', require('./raama/sendFinBitReport').main); //checkAuth
+    // запустит чтение почты и поиск ошибок доставки счетов (read_mail)
+    app.post('/task/readMail/', require('./raama/readMail').main); //checkAuth
 
     // на стороне бэкенда требуется наличие синхронного обработчика POST /task/logAgentSchedule/, выполняющего запись переданного snapshot в таблицу ou.logs под именем потока ai_task.agent_schedule
     app.post('/task/logAgentSchedule/', require('./raama/logAgentSchedule').main); //checkAuth
+
+    // новая tsd
+    app.post(['/palk/calcTSDXML', '/palk/calcTSDXML/', '//palk/calcTSDXML'], require('./palk/calcTSDXML').main); //checkAuth
+
 
     // logAgentSchedule
 

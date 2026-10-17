@@ -12,12 +12,14 @@
     "genkit": "genkit start -- tsx --watch index.ts",
     "genkit:dev": "genkit start -- tsx --watch index.ts",
     "genkit:ui": "genkit start -o -- tsx --watch index.ts",
+    "read-mail": "node dist/read_mail/run_agent.js",
     "test": "jest --runInBand"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.28.0",
     "dotenv": "^16.4.7",
     "genkit": "^1.42.0",
+    "imapflow": "^2.4.2",
     "nodemailer": "^10.0.9",
     "zod": "^3.24.2"
   },

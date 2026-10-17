@@ -204,4 +204,58 @@ describe('Субагент reporter (Email)', () => {
     expect(html).toContain('Töös');
     expect(html).toContain('889901');
   });
+
+  it('formatReportMarkdown и formatReportHtml должны включать отчет о работе агента read_mail (список ошибок доставки)', () => {
+    const readMailInput = {
+      userId: 2477,
+      rekvId: 63,
+      executionDate: '2026-10-17',
+      overallSuccess: true,
+      steps: [
+        {
+          stepName: 'mail.read_mail_errors',
+          status: 'SUCCESS' as const,
+          logId: 8546642,
+          execStart: '2026-10-17T09:42:00.000Z',
+          execEnd: '2026-10-17T09:42:01.500Z',
+          durationMs: 1500,
+          resultSummary: 'Tuvastatud 2 saatmise tõrget',
+          mailErrors: [
+            {
+              doc_number: '073-7745',
+              recipient_email: 'emoldova@yandex.ru',
+              status: 'Aadressi viga',
+              reason: 'Kliendi soov muuta e-posti aadress: lootuseeva@gmail.com',
+            },
+            {
+              doc_number: '095-9641',
+              recipient_email: 'makrem.benabdallahh@bk.ru',
+              status: 'Aadressi viga',
+              reason: 'Message was not accepted -- invalid mailbox.',
+            },
+          ],
+        },
+      ],
+      notes: 'Kõik viimase 24h rutiinsed arvestused on edukalt lõpetatud.',
+      recipientEmail: 'accountant@buh70.ee',
+    };
+
+    const md = formatReportMarkdown(readMailInput);
+    expect(md).toContain('mail.read_mail_errors');
+    expect(md).toContain('Tuvastatud vigased e-posti aadressid (2 tk)');
+    expect(md).toContain('073-7745');
+    expect(md).toContain('emoldova@yandex.ru');
+    expect(md).toContain('lootuseeva@gmail.com');
+    expect(md).toContain('095-9641');
+    expect(md).toContain('makrem.benabdallahh@bk.ru');
+
+    const html = formatReportHtml(readMailInput);
+    expect(html).toContain('mail.read_mail_errors');
+    expect(html).toContain('Tuvastatud vigased e-posti aadressid (2 tk)');
+    expect(html).toContain('073-7745');
+    expect(html).toContain('emoldova@yandex.ru');
+    expect(html).toContain('lootuseeva@gmail.com');
+    expect(html).toContain('095-9641');
+    expect(html).toContain('makrem.benabdallahh@bk.ru');
+  });
 });

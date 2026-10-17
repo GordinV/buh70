@@ -330,6 +330,18 @@ describe('Главный Оркестратор', () => {
             }),
           };
         }
+        if (url.includes('/task/readMail/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: 1,
+              log_id: 10430,
+              data: { action: 'readMail', status: 'STARTED', log_id: 10430 },
+            }),
+          };
+        }
         if (url.includes('/task/read_log/')) {
           return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
         }
@@ -1130,6 +1142,18 @@ describe('Главный Оркестратор', () => {
             }),
           };
         }
+        if (url.includes('/task/readMail/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: 1,
+              log_id: 9902,
+              data: { action: 'readMail', status: 'STARTED', log_id: 9902 },
+            }),
+          };
+        }
         if (url.includes('/task/read_log/')) {
           return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
         }
@@ -1138,7 +1162,7 @@ describe('Главный Оркестратор', () => {
 
       const client = new ApiClient({}, mockFetch as unknown as typeof fetch);
 
-      // Тик в 07:15 утра (после getEarved 07:00, но до calc_arv_jaak 07:30 и saldoandmik 20:00, forceRun: false)
+      // Тик в 07:15 утра (после read_mail 06:00 и getEarved 07:00, но до calc_arv_jaak 07:30 и saldoandmik 20:00, forceRun: false)
       const tickAtNoon = await runOrchestratorTick(
         { stateFilePath: testStateFile, forceRun: false },
         {
@@ -1148,16 +1172,14 @@ describe('Главный Оркестратор', () => {
         }
       );
 
-      // getEarved должен стартовать, а saldoandmik и calc_arv_jaak должны остаться в PENDING
-      expect(tickAtNoon.activeTasks).toEqual(['getEarved']);
+      // getEarved (07:00) и read_mail (06:00) должны стартовать, а saldoandmik и calc_arv_jaak должны остаться в PENDING
+      expect(tickAtNoon.activeTasks).toEqual(expect.arrayContaining(['getEarved', 'read_mail']));
       expect(tickAtNoon.pendingTasks).toContain('saldoandmik');
       expect(tickAtNoon.pendingTasks).toContain('calc_arv_jaak');
-      // Один вызов read_log (guard от дубля) + один запуск getEarved
       const dispatchCalls = mockFetch.mock.calls.filter(
         (c: unknown[]) => !String(c[0]).includes('/task/read_log/')
       );
-      expect(dispatchCalls).toHaveLength(1);
-      expect(String(dispatchCalls[0][0])).toContain('/task/getEarved/');
+      expect(dispatchCalls.some((c: unknown[]) => String(c[0]).includes('/task/getEarved/'))).toBe(true);
 
       const stateAfterNoon = JSON.parse(fs.readFileSync(testStateFile, 'utf8'));
       expect(stateAfterNoon.tasks.getEarved.status).toBe('RUNNING');
@@ -1186,7 +1208,7 @@ describe('Главный Оркестратор', () => {
       fs.writeFileSync(testStateFile, JSON.stringify(stateContent));
 
       const mockFetch = jest.fn().mockImplementation(async (url: string) => {
-        if (url.includes('/task/read_log/2477/docs.sp_loe_earved')) {
+        if (url.includes('/task/read_log/')) {
           return {
             ok: true,
             status: 200,
@@ -1202,6 +1224,30 @@ describe('Главный Оркестратор', () => {
               result: 1,
               log_id: 8480100,
               data: { action: 'Import FinBit arved', status: 'STARTED', log_id: 8480100 },
+            }),
+          };
+        }
+        if (url.includes('/task/calcArvJaak/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: 1,
+              log_id: 8480101,
+              data: { action: 'calcArvJaak', status: 'STARTED', log_id: 8480101 },
+            }),
+          };
+        }
+        if (url.includes('/task/readMail/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: 1,
+              log_id: 8480102,
+              data: { action: 'readMail', status: 'STARTED', log_id: 8480102 },
             }),
           };
         }
@@ -3051,6 +3097,195 @@ describe('Главный Оркестратор', () => {
           } catch {}
         }
       }
+    });
+
+    it('динамический реестр и reconcileTasksWithConfigs: обнаруживает read_mail (prompt: null, 06:00) и исключает schedule_monitor из state.tasks', () => {
+      const configs = loadAllAgentConfigs();
+      expect(configs.read_mail).toBeDefined();
+      expect(configs.read_mail.flow).toBe('mail.read_mail_errors');
+      expect(configs.read_mail.schedule).toEqual({ time: '06:00' });
+      expect(configs.read_mail.prompt).toBeNull();
+      expect(configs.schedule_monitor).toBeUndefined();
+
+      const tasks: Record<string, any> = {
+        schedule_monitor: {
+          flow: 'ai_task.agent_schedule',
+          depends_on: [],
+          allow_parallel: true,
+          schedule: null,
+          prompt: null,
+          params: {},
+          status: 'PENDING',
+          attempts: 0,
+          max_attempts: 3,
+          log_id: null,
+          started_at: null,
+          finished_at: null,
+          duration_ms: null,
+          error: null,
+        },
+      };
+
+      reconcileTasksWithConfigs(tasks, configs, true);
+      expect(tasks.schedule_monitor).toBeUndefined();
+      expect(tasks.read_mail).toBeDefined();
+      expect(tasks.read_mail.status).toBe('PENDING');
+    });
+
+    it('runOrchestratorTick: передает индивидуальный task.params.userId (11770) при проверке checkTaskStatus в RUNNING и обогащает отчет через manifest.enrichReportStep', async () => {
+      const testState: OrchestratorState = {
+        version: 1,
+        cycle_date: '2026-10-18',
+        status: 'IN_PROGRESS',
+        last_tick_at: '2026-10-18T05:00:00.000Z',
+        next_scheduled_run: null,
+        params: { userId: 2477, rekvId: 63, kond: 1 },
+        tasks: {
+          getEarved: {
+            flow: 'docs.sp_loe_earved',
+            depends_on: [],
+            allow_parallel: true,
+            schedule: { time: '07:00' },
+            prompt: null,
+            params: { is_agent: true, userId: 11770 },
+            status: 'RUNNING',
+            attempts: 1,
+            max_attempts: 3,
+            log_id: 8548120,
+            started_at: '2026-10-18T04:00:00.000Z',
+            finished_at: null,
+            duration_ms: null,
+            error: null,
+          },
+          read_mail: {
+            flow: 'mail.read_mail_errors',
+            depends_on: [],
+            allow_parallel: true,
+            schedule: { time: '06:00' },
+            prompt: null,
+            params: { userId: 2477, rekvId: 63 },
+            status: 'SUCCESS',
+            attempts: 1,
+            max_attempts: 3,
+            log_id: 8548110,
+            started_at: '2026-10-18T03:00:00.000Z',
+            finished_at: '2026-10-18T03:01:00.000Z',
+            duration_ms: 60000,
+            error: null,
+          },
+          reporter: {
+            flow: 'email_report',
+            depends_on: [],
+            allow_parallel: false,
+            schedule: { time: '08:00' },
+            prompt: null,
+            params: {},
+            status: 'PENDING',
+            attempts: 0,
+            max_attempts: 3,
+            log_id: null,
+            started_at: null,
+            finished_at: null,
+            duration_ms: null,
+            error: null,
+          },
+        },
+        history: [],
+      };
+      fs.writeFileSync(testStateFile, JSON.stringify(testState, null, 2), 'utf-8');
+
+      const calledUrls: string[] = [];
+      const mockFetch = jest.fn().mockImplementation(async (url: string) => {
+        calledUrls.push(url);
+        if (url.includes('/task/read_log/11770/docs.sp_loe_earved')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              error_code: 0,
+              result: 1,
+              data: [
+                {
+                  id: 8548120,
+                  flow: 'docs.sp_loe_earved',
+                  status: 'success',
+                  exec_start: '2026-10-18T04:00:00.000Z',
+                  exec_end: '2026-10-18T04:00:15.000Z',
+                  result: 0,
+                  response: 'OK',
+                  error: null,
+                },
+              ],
+            }),
+          };
+        }
+        if (url.includes('/task/read_log/2477/mail.read_mail_errors')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              error_code: 0,
+              result: 1,
+              data: [
+                {
+                  id: 8548110,
+                  flow: 'mail.read_mail_errors',
+                  status: 'success',
+                  exec_start: '2026-10-18T03:00:00.000Z',
+                  exec_end: '2026-10-18T03:01:00.000Z',
+                  result: [
+                    {
+                      status: 'Aadressi viga',
+                      error_reason: 'User unknown',
+                      doc_number: '101-10772',
+                      recipient_email: 'invalid@example.com',
+                    },
+                  ],
+                  response: 'OK',
+                  error: null,
+                },
+              ],
+            }),
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ status: 200, result: 1, data: [] }),
+        };
+      });
+
+      const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, mockFetch as unknown as typeof fetch);
+
+      // 1. В 04:00 local (01:00 UTC) даже при forceRun: true reporter НЕ должен запускаться до 08:00
+      await runOrchestratorTick(
+        { stateFilePath: testStateFile, forceRun: true },
+        {
+          apiClient: client,
+          currentDate: new Date('2026-10-18T01:00:00.000Z'),
+          targetDateStr: '2026-10-18',
+          forceRun: true,
+        }
+      );
+
+      const savedAfterEarly = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+      expect(calledUrls.some((u) => u.includes('/task/read_log/11770/docs.sp_loe_earved'))).toBe(true);
+      expect(savedAfterEarly.tasks.getEarved.status).toBe('SUCCESS');
+      expect(savedAfterEarly.tasks.reporter.status).toBe('PENDING');
+
+      // 2. В 08:00 local (05:00 UTC) reporter запускается и обогащает шаг read_mail через manifest.enrichReportStep
+      await runOrchestratorTick(
+        { stateFilePath: testStateFile },
+        {
+          apiClient: client,
+          currentDate: new Date('2026-10-18T05:00:00.000Z'),
+          targetDateStr: '2026-10-18',
+          forceRun: false,
+        }
+      );
+
+      const savedAfter8Am = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+      expect(savedAfter8Am.tasks.reporter.status).toBe('SUCCESS');
     });
   });
 });

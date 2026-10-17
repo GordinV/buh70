@@ -1,0 +1,16 @@
+{
+  "name": "read_mail",
+  "flow": "mail.read_mail_errors",
+  "description": "Чтение входящей почты, анализ уведомлений о сбоях доставки счетов клиенту (bounce notice) и извлечение данных",
+  "allow_parallel": true,
+  "depends_on": [],
+  "schedule": {
+    "time": "06:00"
+  },
+  "prompt": null,
+  "max_attempts": 3,
+  "params": {
+    "userId": 2477,
+    "rekvId": 63
+  }
+}
