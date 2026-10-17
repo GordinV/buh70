@@ -79,6 +79,14 @@ import {
 } from './schedule_monitor/schemas';
 import { runScheduleMonitorSubagent } from './schedule_monitor/agent';
 import {
+  ReadMailInputSchema,
+  ReadMailResultSchema,
+  MailDeliveryError,
+  MailDeliveryErrorSchema,
+} from './read_mail/schemas';
+import { runReadMailSubagent } from './read_mail/agent';
+import { parseDeliveryFailureText } from './read_mail/tools';
+import {
   AgentLaunchDecision,
   AgentLaunchDecisionSchema,
   CycleDecision,
@@ -220,6 +228,63 @@ export const agentScheduleFlow = ai.defineFlow(
   },
   async (input) => runScheduleMonitorSubagent(input)
 );
+
+/**
+ * Genkit Flow: Чтение входящей почты и поиск ошибок доставки счетов (readMailFlow)
+ */
+export const readMailFlow = ai.defineFlow(
+  {
+    name: 'readMailFlow',
+    inputSchema: ReadMailInputSchema,
+    outputSchema: ReadMailResultSchema,
+  },
+  async (input) =>
+    runReadMailSubagent(input, {
+      aiGenerateFn: getAiReadMailGenerateFn(),
+    })
+);
+
+/**
+ * Формирует функцию анализа содержимого писем через Gemini (Genkit), если API ключ задан в окружении
+ */
+function getAiReadMailGenerateFn() {
+  if (!config.geminiApiKey) {
+    return undefined;
+  }
+  return async (emailText: string): Promise<MailDeliveryError | null> => {
+    // В тестовом режиме эмулируем быстрый детерминированный разбор
+    if (config.geminiApiKey.startsWith('mock_')) {
+      return parseDeliveryFailureText(emailText);
+    }
+
+    try {
+      const response = await ai.generate({
+        model: configuredModelName,
+        prompt: `You are an intelligent email analyzer for invoice delivery failure notices in budget accounting system buh70.
+Analyze the following email text (which may contain bounce notices, MAILER-DAEMON messages, or forwarded notifications of invoices):
+---
+${emailText}
+---
+Extract structured data:
+- status: string, MUST be one of the four categories:
+    * "Aadressi viga" (for bad address, user unknown, mailbox does not exist, 550 5.1.1)
+    * "Domeeni viga" (for domain lookup error, host not found, DNS/MX failure)
+    * "Postkast täis" (for mailbox full, quota exceeded, 552/452)
+    * "Muud vead" (for any other error or failure)
+- reason: concise explanation of delivery failure (e.g. "Domain lookup error", "User unknown")
+- doc_number: document or invoice number (e.g. "101-10772")
+- invoice_number: identical to doc_number
+- recipient_email: email address to which invoice delivery failed
+- reference_number: reference number (viitenumber) if present in text`,
+        output: { schema: MailDeliveryErrorSchema },
+      });
+      return response.output ?? null;
+    } catch (err) {
+      console.warn('[readMailFlow] Genkit ai.generate error, fallback to regex:', err);
+      return parseDeliveryFailureText(emailText);
+    }
+  };
+}
 
 /**
  * Формирует функцию генерации решений через Gemini (Genkit), если API ключ задан в окружении

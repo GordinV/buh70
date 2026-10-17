@@ -44,6 +44,7 @@ export const KNOWN_SUBAGENTS = [
   'sendFinBitReport',
   'lisa1_lisa5',
   'schedule_monitor',
+  'read_mail',
 ];
 
 /**

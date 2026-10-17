@@ -1593,6 +1593,21 @@ export async function runOrchestratorTick(
 
           const logId = typeof stepLog.id === 'number' ? stepLog.id : undefined;
 
+          let mailErrorsList: ReportStepDetail['mailErrors'] = undefined;
+          if (t.flow === 'mail.read_mail_errors' || k === 'read_mail') {
+            if (Array.isArray(stepLog.result)) {
+              mailErrorsList = stepLog.result;
+            }
+          }
+
+          let summaryText = inspectResult.resultSummary || t.result_summary || undefined;
+          if ((t.flow === 'mail.read_mail_errors' || k === 'read_mail') && mailErrorsList) {
+            summaryText =
+              mailErrorsList.length > 0
+                ? `Tuvastatud ${mailErrorsList.length} saatmise tõrget`
+                : 'Uusi saatmise tõrkeid ei leitud';
+          }
+
           return {
             stepName: t.flow,
             status: logStatus,
@@ -1601,12 +1616,20 @@ export async function runOrchestratorTick(
             execEnd: stepLog.exec_end ?? undefined,
             durationMs: durationMs ?? (t.duration_ms ?? undefined),
             error: inspectResult.errorDetails || stepLog.error || t.error || undefined,
-            resultSummary: inspectResult.resultSummary || t.result_summary || undefined,
+            resultSummary: summaryText,
+            mailErrors: mailErrorsList,
           };
         }
 
         const stepStatus: ReportStepDetail['status'] =
           t.status === 'SUCCESS' ? 'SUCCESS' : t.status === 'FAILED' ? 'FAILED' : 'SKIPPED';
+
+        let mailErrorsFallback: ReportStepDetail['mailErrors'] = undefined;
+        if (t.flow === 'mail.read_mail_errors' || k === 'read_mail') {
+          if (Array.isArray(t.params?.result)) {
+            mailErrorsFallback = t.params.result as any;
+          }
+        }
 
         return {
           stepName: t.flow,
@@ -1617,6 +1640,7 @@ export async function runOrchestratorTick(
           durationMs: t.duration_ms ?? undefined,
           error: t.error ?? undefined,
           resultSummary: t.result_summary ?? (t.status === 'SKIPPED' ? 'Vahele jäetud' : undefined),
+          mailErrors: mailErrorsFallback,
         };
       })
     );

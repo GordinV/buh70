@@ -131,6 +131,17 @@ export function formatReportMarkdown(input: GenerateReportInput): string {
     if (step.execEnd) md += `\n  - *Lõpp:* ${formatDateTime(step.execEnd)}`;
     if (cleanSummary) md += `\n  - *Tulemus:* ${cleanSummary}`;
     if (cleanError) md += `\n  - *Viga:* ${cleanError}`;
+
+    if (step.mailErrors && step.mailErrors.length > 0) {
+      md += `\n  - *Tuvastatud vigased e-posti aadressid (${step.mailErrors.length} tk):*\n`;
+      for (const me of step.mailErrors) {
+        const nr = me.doc_number || me.invoice_number || 'N/A';
+        const em = me.recipient_email || '—';
+        const st = me.status || 'Muud vead';
+        const rsn = me.reason || '—';
+        md += `    - Arve: \`${nr}\` | Saaja: \`${em}\` | Staatus: \`${st}\` | Põhjus: ${rsn}\n`;
+      }
+    }
     md += `\n`;
   }
 
@@ -193,6 +204,42 @@ export function formatReportHtml(input: GenerateReportInput): string {
         <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #d32f2f;">${cleanError ? cleanError : '—'}</td>
       </tr>
     `;
+
+    if (step.mailErrors && step.mailErrors.length > 0) {
+      rowsHtml += `
+      <tr>
+        <td colspan="7" style="padding: 8px 16px 12px 16px; background-color: #fafafa; border-bottom: 2px solid #ddd;">
+          <div style="font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #444;">
+            📧 Tuvastatud vigased e-posti aadressid (${step.mailErrors.length} tk):
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; background: #fff;">
+            <thead>
+              <tr style="background: #f0f0f0; text-align: left;">
+                <th style="padding: 4px 8px; border: 1px solid #ddd;">Arve nr</th>
+                <th style="padding: 4px 8px; border: 1px solid #ddd;">Saaja e-post</th>
+                <th style="padding: 4px 8px; border: 1px solid #ddd;">Staatus</th>
+                <th style="padding: 4px 8px; border: 1px solid #ddd;">Veateade / Põhjus</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${step.mailErrors
+                .map(
+                  (me) => `
+                <tr>
+                  <td style="padding: 4px 8px; border: 1px solid #ddd; font-weight: bold;">${me.doc_number || me.invoice_number || 'N/A'}</td>
+                  <td style="padding: 4px 8px; border: 1px solid #ddd;">${me.recipient_email || '—'}</td>
+                  <td style="padding: 4px 8px; border: 1px solid #ddd; color: #d32f2f; font-weight: bold;">${me.status || 'Muud vead'}</td>
+                  <td style="padding: 4px 8px; border: 1px solid #ddd; color: #555;">${me.reason || '—'}</td>
+                </tr>
+              `
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </td>
+      </tr>
+      `;
+    }
   }
 
   const cleanNotes = sanitizeReportText(input.notes);

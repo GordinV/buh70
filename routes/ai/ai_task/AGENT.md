@@ -16,6 +16,7 @@
 ```
 getEarved (07:00) ──► sendFinBitReport
 calc_arv_jaak (07:30)
+read_mail (07:45)
 reporter (08:00) [ежедневный сводный отчет за последние 24 часа]
 saldoandmik (20:00) ──► lisa1_lisa5
 ```
@@ -73,14 +74,36 @@ saldoandmik (20:00) ──► lisa1_lisa5
 |---|---|---|---|---|---|---|
 | `saldoandmik` | `/task/calcKondSaldoandmik/` | `eelarve.sp_koosta_saldoandmik` | — | 20:00 | нет | Сводный сальдоандмик (`user_id`, `rekv_id`, `kond`) |
 | `calc_arv_jaak` | `/task/calcArvJaak/` | `docs.check_arv_jaak` | — | 07:30 | нет (`prompt_test` для теста) | Пересчёт сальдо и остатков счетов (вне регламентного цикла) |
+| `read_mail` | `/task/readMail/` | `mail.read_mail_errors` | — | 07:45 | **да** (анализ bounce notice) | Анализ входящей почты на ошибки недоставки счетов клиентам (Mail Delivery Failure). Снимает отметку отправки в БД (`docs.tuhista_arve_saatmise_staatus`) и отправляет алерт при `Muud vead` |
 | `lisa1_lisa5` | `/task/calcLisa1Lisa5/` | `eelarve.salvesta_lisa_1_5_kontrol` | `saldoandmik` | — | нет | Контрольные формы Lisa 1 / Lisa 5 |
 | `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `docs.sp_loe_earved` | — | 07:00 | нет | Импорт e-счетов из FinBit (userId: 11770 — сервисный аккаунт FinBit в buh70). Ответ `Arveid ei leitud` считается успехом с `log_id = 0` |
 | `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `getEarved` | — | **да** (оценка результата рассылки) | Дочерний агент `getEarved`: рассылает уведомления получателям импортированных счетов. Без `logId` родителя пропускается (`SKIP`) |
 
+### 3.1. `read_mail/` — монитор недоставки счетов по e-mail (расчётный субагент)
+
+- **Назначение:** Автономная обработка сообщений о сбоях доставки электронной почты со счетами покупателям (NDR / Non-Delivery Reports / Bounce notices: `Mail Delivery Subsystem`, `Mailer-Daemon`, `Undelivered Mail Returned to Sender`).
+- **Схема работы:**
+  1. Вызывается оркестратором через API `POST /task/readMail/` ежедневно в 07:45 (до сводного отчета в 08:00).
+  2. Подключается к IMAP-серверу входящей почты и инкрементально считывает новые bounce-сообщения (дата последнего чтения фиксируется в `state/read_mail_state.json`).
+  3. Парсит тело письма и диагностические заголовки/коды SMTP (`RFC 3464` / `RFC 2047`), определяя номер счета (`doc_number`), адрес получателя (`recipient_email`) и причину ошибки.
+  4. Классифицирует ошибку по 4 стандартным статусам:
+     - `Aadressi viga` — некорректный или несуществующий ящик получателя (`5.1.1`, User unknown, Invalid mailbox, No such user).
+     - `Domeeni viga` — недоступный или несуществующий почтовый домен (`5.1.2`, Host/Domain not found, DNS error).
+     - `Postkast täis` — переполнение почтового ящика клиента (`5.2.2`, Quota exceeded, Mailbox full).
+     - `Muud vead` — любые прочие нестандартные сбои (спам-блокировки `5.7.1`, временные сетевые отказы, отказы ретрансляции и т.д.).
+  5. Для каждого проблемного счета вызывает в БД процедуру `docs.tuhista_arve_saatmise_staatus(doc_id, doc_number, reason)`, сбрасывая признак отправки счета, чтобы в учетной системе бухгалтер увидел необходимость актуализации контакта или повторной отправки.
+  6. **Мгновенные алерты (Alerting):** Если ошибка отнесена к категории `Muud vead` (не подпадающей под типовые правила), агент немедленно отправляет e-mail уведомление с перечнем проблемных счетов (номер счета, email, причина) администраторам на адреса `vladislav.gordin@gmail.com` и `andrei.vargunin@narva.ee`.
+  7. Фиксирует полный структурированный результат разбора в `ou.logs` (`flow = 'mail.read_mail_errors'`) под ключом `result`, откуда его подхватывает `reporter`.
+- **Архитектурная реализация:**
+  - Полностью **in-process на бэкенде `buh70` (Node.js 13.14.0)** через встроенный низкоуровневый TLS-клиент (`tls`), без внешних npm-библиотек и без вызова внешних процессов/воркеров.
+  - Поддерживает безопасную потоковую работу с UTF-8 буквами и IMAP literal buffers (`Buffer.byteLength`).
+
 ### 4. `reporter/` — итоговая отчётность
 
 - `agent.ts → generateAndSendReportSubagent`, `tools.ts`: `formatReportMarkdown`, `formatReportHtml`, `sanitizeReportText`, `sendReportEmail` (nodemailer, `SMTP_*`, `REPORT_EMAIL_FROM/TO`).
-- Запускается оркестратором, когда его предшественники (`sendFinBitReport` и `lisa1_lisa5`) перешли в терминальный статус (`SUCCESS | FAILED | SKIPPED`). `depends_on` в конфиге: `["sendFinBitReport", "lisa1_lisa5"]`.
+- Запускается оркестратором по расписанию в 08:00 (или когда предшественники завершили расчетный цикл).
+- Опрашивает `ou.logs` за последние 24 часа по всем агентам (`saldoandmik`, `calc_arv_jaak`, `getEarved`, `sendFinBitReport`, `read_mail`, `lisa1_lisa5`).
+- **Интеграция с `read_mail`:** Автоматически извлекает ошибки недоставки счетов из `mail.read_mail_errors` (`stepLog.mailErrors`) и включает в ежедневный отчет отдельную таблицу **«📧 Tuvastatud vigased e-posti aadressid»** (`Arve nr`, `Saaja e-post`, `Staatus`, `Põhjus`).
 - Получает по каждому шагу статус, `logId`, длительность, `error`, `resultSummary` и `overallSuccess`.
 - Вызывается не через `dispatchTaskByKey`, а в отдельном блоке тика. `allow_parallel: false`.
 

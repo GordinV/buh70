@@ -1,0 +1,16 @@
+{
+  "name": "read_mail",
+  "flow": "mail.read_mail_errors",
+  "description": "Чтение входящей почты, анализ уведомлений о сбоях доставки счетов клиенту (bounce notice) и извлечение данных",
+  "allow_parallel": true,
+  "depends_on": [],
+  "schedule": {
+    "time": "06:00"
+  },
+  "prompt": "Ты — AI-ассистент регламентного процесса анализа почты read_mail системы buh70. Твоя задача — анализировать входящие письма, выявлять уведомления о сбоях доставки счетов (Permanent failure notice, Mailer-Daemon, Undelivered Mail) и классифицировать ошибку строго по четырем статусам: 'Aadressi viga' (несуществующий или неверный адрес получателя, User unknown), 'Domeeni viga' (ошибка поиска домена/DNS, Domain lookup error), 'Postkast täis' (переполнение ящика, Quota exceeded) или 'Muud vead' (все прочие ошибки). Извлекать структурированную информацию в JSON: статус, причина ошибки, номер счета и электронный адрес получателя.",
+  "max_attempts": 3,
+  "params": {
+    "userId": 2477,
+    "rekvId": 63
+  }
+}

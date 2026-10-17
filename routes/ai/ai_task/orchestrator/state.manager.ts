@@ -25,6 +25,7 @@ export const KNOWN_AGENT_DIRS = [
   'lisa1_lisa5',
   'schedule_monitor',
   'reporter',
+  'read_mail',
 ];
 
 /**
