@@ -118,7 +118,7 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
         }
         // 2. Отправка отчета при наличии ошибок со статусом "Muud vead" на vladislav.gordin@gmail.com и andrei.vargunin@narva.ee
         var otherErrors = deliveryErrors.filter(function (e) {
-            return e && e.status === 'Muud vead';
+            return e && e.status === 'Muud vead' && hasValidDocNumber(e.doc_number || e.invoice_number);
         });
         if (otherErrors.length > 0) {
             try {
@@ -139,19 +139,31 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
 }
 
 /**
+ * Проверка наличия валидного номера счета (исключаем пустые значения, 'N/A', 'UNKNOWN')
+ */
+function hasValidDocNumber(docNumber) {
+    if (!docNumber) return false;
+    var normalized = String(docNumber).trim().toUpperCase();
+    return normalized.length > 0 && normalized !== 'N/A' && normalized !== 'UNKNOWN';
+}
+
+/**
  * Отправка отчета об ошибках "Muud vead" на vladislav.gordin@gmail.com и andrei.vargunin@narva.ee
  * Отчет включает номер счета, адрес получателя и причину ошибки
  */
 async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) {
-    if (!otherErrors || otherErrors.length === 0) return null;
+    var validErrors = (otherErrors || []).filter(function (e) {
+        return e && hasValidDocNumber(e.doc_number || e.invoice_number);
+    });
+    if (validErrors.length === 0) return null;
 
-    console.log('[readMail] Sending "Muud vead" alert for ' + otherErrors.length + ' error(s) to ' + ALERT_EMAILS.join(', '));
+    console.log('[readMail] Sending "Muud vead" alert for ' + validErrors.length + ' error(s) to ' + ALERT_EMAILS.join(', '));
 
     var rowsText = '';
     var rowsHtml = '';
 
-    for (var i = 0; i < otherErrors.length; i++) {
-        var err = otherErrors[i];
+    for (var i = 0; i < validErrors.length; i++) {
+        var err = validErrors[i];
         var docNum = err.doc_number || err.invoice_number || 'N/A';
         var recip = err.recipient_email || 'unknown';
         var rsn = err.reason || 'Määramata saatmise tõrge';
@@ -165,7 +177,7 @@ async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) 
     }
 
     var textContent = 'buh70: E-posti kohaletoimetamise määramata vead (Muud vead)\n\n' +
-        'Tuvastati ' + otherErrors.length + ' teadet, mis ei vasta tavalistele vigadele ja vajavad täiendavat kontrolli:\n\n' +
+        'Tuvastati ' + validErrors.length + ' teadet, mis ei vasta tavalistele vigadele ja vajavad täiendavat kontrolli:\n\n' +
         rowsText + '\n' +
         (logId ? 'Logi ID süsteemis: ' + logId + '\n' : '') +
         'Aeg: ' + new Date().toISOString() + '\n';
@@ -174,7 +186,7 @@ async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) 
         '<h2 style="color: #d32f2f; border-bottom: 2px solid #d32f2f; padding-bottom: 6px;">' +
         'buh70: E-posti saatmise vead (Muud vead)' +
         '</h2>' +
-        '<p>Tuvastati <strong>' + otherErrors.length + '</strong> teadet, mis ei vasta standardsetele vigadele ja vajavad käsitsi ülevaatamist:</p>' +
+        '<p>Tuvastati <strong>' + validErrors.length + '</strong> teadet, mis ei vasta standardsetele vigadele ja vajavad käsitsi ülevaatamist:</p>' +
         '<table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;">' +
         '<thead>' +
         '<tr style="background-color: #f5f5f5; text-align: left;">' +
@@ -246,7 +258,9 @@ async function executeReadMailProcess(params) {
         var parsedDirect = [];
         for (var i = 0; i < inputTexts.length; i++) {
             var res = parseIncomingEmail(inputTexts[i]);
-            if (res) parsedDirect.push(res);
+            if (res && hasValidDocNumber(res.doc_number || res.invoice_number)) {
+                parsedDirect.push(res);
+            }
         }
         return parsedDirect;
     }
@@ -268,7 +282,7 @@ async function executeReadMailProcess(params) {
     // 5. Инкрементальная фильтрация: только письма >= 01.10.2026 и новее state.lastReadDate
     var newEmails = filterNewEmails(rawEmails, state, params.forceSinceDate);
 
-    // 6. Парсинг каждого входящего письма
+    // 6. Парсинг каждого входящего письма (игнорируем письма без валидного номера счета)
     var deliveryErrors = [];
     for (var j = 0; j < newEmails.length; j++) {
         var email = newEmails[j];
@@ -277,7 +291,7 @@ async function executeReadMailProcess(params) {
             date: email.date
         });
 
-        if (errorInfo) {
+        if (errorInfo && hasValidDocNumber(errorInfo.doc_number || errorInfo.invoice_number)) {
             deliveryErrors.push(errorInfo);
         }
     }
@@ -841,7 +855,7 @@ async function executeCalculation(userId, rekvId, params) {
         }
 
         var otherErrors = deliveryErrors.filter(function (e) {
-            return e && e.status === 'Muud vead';
+            return e && e.status === 'Muud vead' && hasValidDocNumber(e.doc_number || e.invoice_number);
         });
         if (otherErrors.length > 0) {
             try {
@@ -885,6 +899,7 @@ exports.decodeMimeWords = decodeMimeWords;
 exports.decodeQuotedPrintable = decodeQuotedPrintable;
 exports.decodeEmailBody = decodeEmailBody;
 exports.parseIncomingEmail = parseIncomingEmail;
+exports.hasValidDocNumber = hasValidDocNumber;
 exports.filterNewEmails = filterNewEmails;
 exports.loadReadMailState = loadReadMailState;
 exports.saveReadMailState = saveReadMailState;

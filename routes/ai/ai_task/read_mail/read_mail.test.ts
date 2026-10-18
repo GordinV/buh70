@@ -501,7 +501,7 @@ Delivery Status: Quota exceeded`,
       expect(result).toHaveLength(1);
     });
 
-    it('НЕ должен вызывать docs.tuhista_arve_saatmise_staatus, если ошибок доставки не найдено', async () => {
+    it('НЕ должен вызывать docs.tuhista_arve_saatmise_staatus и должен игнорировать письма без номера счета', async () => {
       const mockCreateLog = jest.fn().mockResolvedValue({
         error_code: 0,
         result: 1,
@@ -509,6 +509,7 @@ Delivery Status: Quota exceeded`,
       });
       const mockEndLog = jest.fn().mockResolvedValue(undefined);
       const mockTuhista = jest.fn().mockResolvedValue({ error_code: 0, result: 1, data: [] });
+      const mockSendAlert = jest.fn().mockResolvedValue(null);
 
       const result = await runReadMailSubagent(
         {
@@ -521,17 +522,16 @@ Delivery Status: Quota exceeded`,
           createLogFn: mockCreateLog,
           endLogFn: mockEndLog,
           tuhistaStaatusFn: mockTuhista,
+          sendAlertFn: mockSendAlert as any,
         }
       );
 
       expect(mockCreateLog).toHaveBeenCalled();
-      // Письмо должно быть расшифровано и записано в лог в любом случае
-      expect(result).toHaveLength(1);
-      expect(result[0].reason).toContain('Normal incoming letter');
-      expect(result[0].doc_number).toBe('N/A');
-      expect(mockEndLog).toHaveBeenCalledWith(98766, 'success', null, result);
-      // Но tuhista не вызывается, так как нет реального номера счета
+      // Письма без номера счета игнорируются
+      expect(result).toHaveLength(0);
+      expect(mockEndLog).toHaveBeenCalledWith(98766, 'success', null, []);
       expect(mockTuhista).not.toHaveBeenCalled();
+      expect(mockSendAlert).not.toHaveBeenCalled();
     });
 
     it('должен вызывать endLog со статусом failed и сообщением об ошибке в случае сбоя', async () => {
@@ -625,7 +625,7 @@ LmNvbQoK0KEg0YPQstCw0LbQtdC90LjQtdC8LMKgINCV0LLQsCDQnNC+0LvQtNC+0LLQsAo=
       expect(parsed.reason).toContain('lootuseeva@gmail.com');
     });
 
-    it('runReadMailSubagent должен включать ВСЕ поступившие письма в результат (расшифровка каждого письма)', async () => {
+    it('runReadMailSubagent должен включать ВСЕ поступившие письма с номерами счетов в результат', async () => {
       const emailClientReply = {
         uid: 10,
         date: new Date('2026-10-15T16:47:11.000Z'),
@@ -718,7 +718,37 @@ Subject: Re: Saadan dokument nr. 073-7745, 0730178202
       expect(res.messageId).toBe('<test-alert-123@buh70.ee>');
     });
 
-    it('runReadMailSubagent должен автоматически отправлять оповещение при обнаружении ошибки Muud vead', async () => {
+    it('sendOtherErrorsAlertEmail НЕ должен отправлять email, если у ошибок нет номера счета (N/A или UNKNOWN)', async () => {
+      const mockSendMail = jest.fn();
+      const mockTransporter: any = {
+        sendMail: mockSendMail,
+      };
+
+      const res = await sendOtherErrorsAlertEmail(
+        [
+          {
+            status: 'Muud vead',
+            reason: 'Normal incoming letter without bounce errors',
+            doc_number: 'N/A',
+            invoice_number: 'N/A',
+            recipient_email: 'unknown@client.ee',
+          },
+          {
+            status: 'Muud vead',
+            reason: 'Another general message',
+            doc_number: 'UNKNOWN',
+            invoice_number: 'UNKNOWN',
+            recipient_email: 'info@client.ee',
+          },
+        ],
+        { transporter: mockTransporter }
+      );
+
+      expect(res).toBeNull();
+      expect(mockSendMail).not.toHaveBeenCalled();
+    });
+
+    it('runReadMailSubagent должен автоматически отправлять оповещение при обнаружении ошибки Muud vead с номером счета', async () => {
       const mockSendAlert = jest.fn().mockResolvedValue({ messageId: 'alert-ok' });
 
       const emailMuudVead = {
