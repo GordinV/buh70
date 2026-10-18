@@ -991,13 +991,13 @@ export async function executeReadMailCore(
 
     const deliveryErrors: MailDeliveryError[] = [];
 
-    // 5. Анализ содержимого писем
+    // 5. Анализ содержимого писем (игнорируем письма без валидного номера счета)
     for (const email of newEmails) {
       const errorInfo = validated.useAi
         ? await parseDeliveryFailureWithAi(email.text, options.aiGenerateFn, email)
         : await parseDeliveryFailureWithAi(email.text, undefined, email);
 
-      if (errorInfo) {
+      if (errorInfo && hasValidDocNumber(errorInfo.doc_number || errorInfo.invoice_number)) {
         deliveryErrors.push(errorInfo);
       }
     }
@@ -1031,8 +1031,8 @@ export async function executeReadMailCore(
         console.warn('[read_mail] Failed to update end log hook:', endErr);
       }
 
-      const hasInvoicesToCancel = finalResult.some(
-        (r) => r.doc_number && r.doc_number !== 'N/A' && r.doc_number !== 'UNKNOWN'
+      const hasInvoicesToCancel = finalResult.some((r) =>
+        hasValidDocNumber(r.doc_number || r.invoice_number)
       );
       if (hasInvoicesToCancel && options.tuhistaStaatusFn) {
         try {
@@ -1044,7 +1044,9 @@ export async function executeReadMailCore(
     }
 
     // 8. Отправка отчета об ошибках "Muud vead" на vladislav.gordin@gmail.com и andrei.vargunin@narva.ee
-    const otherErrors = finalResult.filter((r) => r.status === 'Muud vead');
+    const otherErrors = finalResult.filter(
+      (r) => r.status === 'Muud vead' && hasValidDocNumber(r.doc_number || r.invoice_number)
+    );
     if (otherErrors.length > 0) {
       if (options.sendAlertFn) {
         try {
@@ -1078,6 +1080,15 @@ export async function executeReadMailCore(
 }
 
 /**
+ * Проверка наличия валидного номера счета (исключаем пустые значения, 'N/A', 'UNKNOWN')
+ */
+export function hasValidDocNumber(docNumber?: string | null): boolean {
+  if (!docNumber) return false;
+  const normalized = String(docNumber).trim().toUpperCase();
+  return normalized.length > 0 && normalized !== 'N/A' && normalized !== 'UNKNOWN';
+}
+
+/**
  * Обратно-совместимые заглушки хуков БД
  */
 export async function createLog(
@@ -1108,16 +1119,19 @@ export async function sendOtherErrorsAlertEmail(
   otherErrors: MailDeliveryError[],
   options: { transporter?: Transporter; logId?: number | null } = {}
 ): Promise<any> {
-  if (!otherErrors || otherErrors.length === 0) return null;
+  const validErrors = (otherErrors || []).filter((err) =>
+    hasValidDocNumber(err.doc_number || err.invoice_number)
+  );
+  if (validErrors.length === 0) return null;
 
   console.log(
-    `[read_mail] Sending "Muud vead" alert for ${otherErrors.length} error(s) to ${ALERT_EMAILS.join(', ')}`
+    `[read_mail] Sending "Muud vead" alert for ${validErrors.length} error(s) to ${ALERT_EMAILS.join(', ')}`
   );
 
   let rowsText = '';
   let rowsHtml = '';
 
-  for (const err of otherErrors) {
+  for (const err of validErrors) {
     const docNum = err.doc_number || err.invoice_number || 'N/A';
     const recip = err.recipient_email || 'unknown';
     const rsn = err.reason || 'Määramata saatmise tõrge';
@@ -1132,7 +1146,7 @@ export async function sendOtherErrorsAlertEmail(
 
   const textContent =
     `buh70: E-posti kohaletoimetamise määramata vead (Muud vead)\n\n` +
-    `Tuvastati ${otherErrors.length} teadet, mis ei vasta tavalistele vigadele ja vajavad täiendavat kontrolli:\n\n` +
+    `Tuvastati ${validErrors.length} teadet, mis ei vasta tavalistele vigadele ja vajavad täiendavat kontrolli:\n\n` +
     rowsText +
     `\n` +
     (options.logId ? `Logi ID süsteemis: ${options.logId}\n` : '') +
@@ -1143,7 +1157,7 @@ export async function sendOtherErrorsAlertEmail(
       <h2 style="color: #d32f2f; border-bottom: 2px solid #d32f2f; padding-bottom: 6px;">
         buh70: E-posti saatmise vead (Muud vead)
       </h2>
-      <p>Tuvastati <strong>${otherErrors.length}</strong> teadet, mis ei vasta standardsetele vigadele ja vajavad käsitsi ülevaatamist:</p>
+      <p>Tuvastati <strong>${validErrors.length}</strong> teadet, mis ei vasta standardsetele vigadele ja vajavad käsitsi ülevaatamist:</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;">
         <thead>
           <tr style="background-color: #f5f5f5; text-align: left;">
