@@ -834,8 +834,10 @@ export async function runOrchestratorTick(
 
   // 1.4. Проверка суточного регламента и сверка с логами (ou.logs Reconciliation)
   if (!hasRunningTasks && (state.status === 'COMPLETED' || state.status === 'FAILED')) {
-    // Проверяем задачи с индивидуальным расписанием (schedule.time), чье время уже наступило сегодня
-    const dueScheduledTasks = Object.entries(state.tasks).filter(([_, task]) => {
+    // Проверяем задачи с индивидуальным расписанием (schedule.time), чье время уже наступило сегодня.
+    // Исключаем reporter и schedule_monitor: они служебные, reporter не пишет в ou.logs
+    const dueScheduledTasks = Object.entries(state.tasks).filter(([key, task]) => {
+      if (key === 'reporter' || key === 'schedule_monitor') return false;
       if (!task.schedule) return false;
       const schedCheck = isTaskScheduleReady(task.schedule, currentDate, timezone);
       return schedCheck.ready && !schedCheck.shouldSkip;
@@ -963,7 +965,7 @@ export async function runOrchestratorTick(
     const hasScheduledTaskReady = Object.values(state.tasks).some((task) => {
       if (task.status !== 'PENDING') return false;
       if (!task.schedule) return false;
-      const schedCheck = isTaskScheduleReady(task.schedule, currentDate);
+      const schedCheck = isTaskScheduleReady(task.schedule, currentDate, timezone);
       return schedCheck.ready && !schedCheck.shouldSkip;
     });
 
@@ -1532,6 +1534,9 @@ export async function runOrchestratorTick(
       ? true
       : allCalcFinished;
 
+  const reporterFinishDate = reporterTask?.finished_at ? toLocalDateStr(reporterTask.finished_at, timezone) : null;
+  const isReporterAlreadyRunToday = reporterFinishDate === targetDateStr && reporterTask?.status === 'SUCCESS';
+
   const reporterScheduleCheck = reporterTask?.schedule
     ? isTaskScheduleReady(reporterTask.schedule, currentDate, timezone)
     : { ready: true, shouldSkip: false };
@@ -1542,6 +1547,7 @@ export async function runOrchestratorTick(
 
   const isReporterTriggerReady =
     reporterTask?.status === 'PENDING' &&
+    (!isReporterAlreadyRunToday || selectedTaskKey === 'reporter') &&
     reporterScheduleReady &&
     reporterDepsFinished;
 

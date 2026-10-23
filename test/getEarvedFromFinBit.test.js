@@ -1,32 +1,20 @@
 'use strict';
 
 const db = require('../libs/db');
-const getXMLFile = require('../routes/ai/e-arved/getXMLFile');
-const XMLtoJson = require('../routes/ai/e-arved/xml_to_json');
-const executePostTask = require('../routes/task/executePostTask');
+db.queryDb = jest.fn();
 
-jest.mock('../libs/db', () => ({
-    queryDb: jest.fn()
-}));
-jest.mock('../routes/ai/e-arved/getXMLFile', () => jest.fn());
-jest.mock('../routes/ai/e-arved/xml_to_json', () => jest.fn());
-jest.mock('../routes/task/executePostTask', () => ({
-    executeTask: jest.fn()
-}));
+const executePostTask = require('../routes/task/executePostTask');
+executePostTask.executeTask = jest.fn();
 
 const getEarvedFromFinBit = require('../routes/raama/getEarvedFromFinBit');
-const getFinArvedFromFinBit = require('../routes/raama/getFinArvedFromFinBit');
+const getXMLFile = jest.fn();
+const XMLtoJson = jest.fn();
+getEarvedFromFinBit.deps.getXMLFile = getXMLFile;
+getEarvedFromFinBit.deps.XMLtoJson = XMLtoJson;
 
-describe('getEarvedFromFinBit and getFinArvedFromFinBit unit tests', () => {
+describe('getEarvedFromFinBit unit tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-    });
-
-    test('getFinArvedFromFinBit re-exports getEarvedFromFinBit correctly', () => {
-        expect(getFinArvedFromFinBit.post).toBe(getEarvedFromFinBit.post);
-        expect(getFinArvedFromFinBit.checkIsAgent).toBe(getEarvedFromFinBit.checkIsAgent);
-        expect(getFinArvedFromFinBit.FLOW_NAME).toBe('docs.sp_loe_earved');
-        expect(getFinArvedFromFinBit.ROBOT_USER).toBe('Earved robot');
     });
 
     test('checkIsAgent correctly detects agent flag in various formats', () => {
@@ -160,9 +148,13 @@ describe('getEarvedFromFinBit and getFinArvedFromFinBit unit tests', () => {
         expect(db.queryDb.mock.calls[2][0]).toContain('docs.sp_loe_earved');
         expect(db.queryDb.mock.calls[2][1][0]).toBe(2477);
 
-        // Проверяем фиксацию успешного завершения в ou.logs
+        // Проверяем фиксацию успешного завершения в ou.logs с сохранением result и response
         expect(db.queryDb.mock.calls[3][0]).toContain('update ou.logs');
-        expect(db.queryDb.mock.calls[3][1]).toEqual(['success', null, 8888]);
+        expect(db.queryDb.mock.calls[3][1][0]).toBe('success');
+        expect(db.queryDb.mock.calls[3][1][1]).toBeNull();
+        expect(db.queryDb.mock.calls[3][1][2]).toContain('"totalImported":1');
+        expect(db.queryDb.mock.calls[3][1][3]).toContain('Imporditud 1 arvet');
+        expect(db.queryDb.mock.calls[3][1][4]).toBe(8888);
     });
 
     test('Агентский режим без явного userId: находит пользователя robot и использует его user_id', async () => {
@@ -219,9 +211,14 @@ describe('getEarvedFromFinBit and getFinArvedFromFinBit unit tests', () => {
         expect(db.queryDb.mock.calls[1][1]).toEqual([63, 777, 'docs.sp_loe_earved']);
         // docs.sp_loe_earved использовал l_userId = 777
         expect(db.queryDb.mock.calls[2][1][0]).toBe(777);
+
+        // endLog зафиксировал успех в ou.logs
+        expect(db.queryDb.mock.calls[3][0]).toContain('update ou.logs');
+        expect(db.queryDb.mock.calls[3][1][0]).toBe('success');
+        expect(db.queryDb.mock.calls[3][1][4]).toBe(9999);
     });
 
-    test('Множественные учреждения (агентский режим): опрашивает все учреждения и выполняет последовательный запрос select docs.sp_loe_earved(...); select docs.sp_loe_earved(...)', async () => {
+    test('Множественные учреждения (агентский режим): опрашивает все учреждения и выполняет последовательный параметризованный вызов docs.sp_loe_earved для каждого пакета', async () => {
         const mockReq = {
             query: {},
             body: { is_agent: true },
@@ -245,11 +242,15 @@ describe('getEarvedFromFinBit and getFinArvedFromFinBit unit tests', () => {
             .mockReturnValueOnce(Promise.resolve({
                 data: [{ id: 5555 }]
             }))
-            // 3. combined sp_loe_earved
+            // 3. sp_loe_earved для первого учреждения (rekv 63)
             .mockReturnValueOnce(Promise.resolve({
-                data: [{ error_code: 0, result: 1, error_message: 'Success' }]
+                data: [{ error_code: 0, result: 1, error_message: 'Success 63' }]
             }))
-            // 4. endLog
+            // 4. sp_loe_earved для второго учреждения (rekv 119)
+            .mockReturnValueOnce(Promise.resolve({
+                data: [{ error_code: 0, result: 1, error_message: 'Success 119' }]
+            }))
+            // 5. endLog
             .mockReturnValueOnce(Promise.resolve({
                 data: [{ id: 5555 }]
             }));
@@ -281,16 +282,21 @@ describe('getEarvedFromFinBit and getFinArvedFromFinBit unit tests', () => {
 
         await new Promise((resolve) => setTimeout(resolve, 50));
 
-        // Проверяем фоновый вызов docs.sp_loe_earved: сформирован комбинированный SQL с двумя вызовами
-        const combinedCallSql = db.queryDb.mock.calls[2][0];
-        expect(combinedCallSql).toContain('select docs.sp_loe_earved(2477::integer');
-        expect(combinedCallSql).toContain('select docs.sp_loe_earved(777::integer');
-        expect(combinedCallSql).toContain('INV-63-1');
-        expect(combinedCallSql).toContain('INV-119-1');
+        // Проверяем последовательные параметризованные вызовы docs.sp_loe_earved для каждого учреждения
+        expect(db.queryDb.mock.calls[2][0]).toContain('SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB)');
+        expect(db.queryDb.mock.calls[2][1][0]).toBe(2477);
+        expect(db.queryDb.mock.calls[2][1][1]).toContain('INV-63-1');
 
-        // Проверяем фиксацию в ou.logs
-        expect(db.queryDb.mock.calls[3][0]).toContain('update ou.logs');
-        expect(db.queryDb.mock.calls[3][1]).toEqual(['success', null, 5555]);
+        expect(db.queryDb.mock.calls[3][0]).toContain('SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB)');
+        expect(db.queryDb.mock.calls[3][1][0]).toBe(777);
+        expect(db.queryDb.mock.calls[3][1][1]).toContain('INV-119-1');
+
+        // Проверяем фиксацию в ou.logs: сохранено общее число счетов 2
+        expect(db.queryDb.mock.calls[4][0]).toContain('update ou.logs');
+        expect(db.queryDb.mock.calls[4][1][0]).toBe('success');
+        expect(db.queryDb.mock.calls[4][1][1]).toBeNull();
+        expect(db.queryDb.mock.calls[4][1][2]).toContain('"totalImported":2');
+        expect(db.queryDb.mock.calls[4][1][4]).toBe(5555);
     });
 
     test('Множественные учреждения (не агентский режим): формирует последовательный SQL в ou.sp_salvesta_task', async () => {

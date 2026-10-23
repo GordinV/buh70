@@ -76,7 +76,7 @@ saldoandmik (20:00) ──► lisa1_lisa5
 | `calc_arv_jaak` | `/task/calcArvJaak/` | `docs.check_arv_jaak` | — | 07:30 | нет (`prompt_test` для теста) | Пересчёт сальдо и остатков счетов (вне регламентного цикла) |
 | `read_mail` | `/task/readMail/` | `mail.read_mail_errors` | — | 06:00 | нет (`prompt: null`) | Анализ входящей почты на ошибки недоставки счетов клиентам (Mail Delivery Failure). Снимает отметку отправки в БД (`docs.tuhista_arve_saatmise_staatus`) и отправляет алерт при `Muud vead` |
 | `lisa1_lisa5` | `/task/calcLisa1Lisa5/` | `eelarve.salvesta_lisa_1_5_kontrol` | `saldoandmik` | — | нет | Контрольные формы Lisa 1 / Lisa 5 |
-| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `docs.sp_loe_earved` | — | 07:00 | нет | Импорт e-счетов из FinBit (`params.userId: 11770` — сервисный аккаунт FinBit в buh70). Ответ `Arveid ei leitud` считается успехом с `log_id = 0` |
+| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `docs.sp_loe_earved` | — | 07:00 | нет | Импорт e-счетов из FinBit (`params.userId: 11770` — сервисный аккаунт FinBit в buh70). Пишет в `ou.logs` подробный `result` (`totalFetched`, `totalImported`, `invoiceNumbers`, `batches`) и `response`. Ответ `Arveid ei leitud` считается успехом с `log_id = 0` |
 | `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `getEarved` | — | **да** (оценка результата рассылки) | Дочерний агент `getEarved`: рассылает уведомления получателям импортированных счетов. Без `logId` родителя пропускается (`SKIP`) |
 
 ### 3.1. `read_mail/` — монитор недоставки счетов по e-mail (расчётный субагент)
@@ -101,7 +101,8 @@ saldoandmik (20:00) ──► lisa1_lisa5
 ### 4. `reporter/` — итоговая отчётность
 
 - `agent.ts → generateAndSendReportSubagent`, `tools.ts`: `formatReportMarkdown`, `formatReportHtml`, `sanitizeReportText`, `sendReportEmail` (nodemailer, `SMTP_*`, `REPORT_EMAIL_FROM/TO`).
-- Запускается оркестратором строго по расписанию в 08:00 (даже если цикл запущен с `forceRun`, расписание `08:00` у `reporter` соблюдается, если не передан явно `taskKey: 'reporter'`).
+- **Строгий запуск 1 раз в сутки в 08:00:** Запускается оркестратором строго по расписанию в 08:00 (даже если цикл запущен с `forceRun`, расписание `08:00` у `reporter` соблюдается, если не передан явно `taskKey: 'reporter'`).
+- **Защита от повторного запуска в 17:00 / во второй половине дня:** После успешной отправки отчёта (`status: 'SUCCESS'` и `finished_at` за сегодняшний день) повторный запуск в текущих сутках блокируется (`!isReporterAlreadyRunToday`). Агент `reporter` исключён из сверки `ou.logs` (Step 1.4), так как является нотификатором и не пишет в `ou.logs` (что ранее приводило к сбросу в `PENDING` и ложному запуску в 17:00). Кроме того, `resetCycleForNewDay` сохраняет статус выполненных за сегодняшний день задач.
 - Опрашивает `ou.logs` за последние 24 часа по всем расчётным агентам (`saldoandmik`, `calc_arv_jaak`, `getEarved`, `sendFinBitReport`, `read_mail`, `lisa1_lisa5`) с учётом их индивидуального `params.userId`.
 - **Интеграция с агентами через `enrichReportStep`:** Оркестратор вызывает `registry[key]?.enrichReportStep?.(stepLog, task)`. Для `read_mail` этот хук извлекает ошибки недоставки счетов из `mail.read_mail_errors` (`mailErrors`) и формирует эстонский `resultSummary`, а `reporter` включает в ежедневный отчет отдельную таблицу **«📧 Tuvastatud vigased e-posti aadressid»** (`Arve nr`, `Saaja e-post`, `Staatus`, `Põhjus`).
 - Получает по каждому шагу статус, `logId`, длительность, `error`, `resultSummary` и `overallSuccess`.
