@@ -3090,6 +3090,22 @@ describe('Главный Оркестратор', () => {
         let stateAfter8Am: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
         expect(stateAfter8Am.tasks.reporter.status).toBe('SUCCESS');
         expect(stateAfter8Am.tasks.reporter.finished_at).toBeTruthy();
+
+        // 3. В 17:00 local (14:00 UTC): reporter НЕ перезапускается, статус остается SUCCESS
+        const at5Pm = new Date('2026-10-14T14:00:00.000Z');
+        await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          {
+            apiClient: client,
+            currentDate: at5Pm,
+            targetDateStr: '2026-10-14',
+            forceRun: false,
+          }
+        );
+
+        let stateAfter5Pm: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
+        expect(stateAfter5Pm.tasks.reporter.status).toBe('SUCCESS');
+        expect(stateAfter5Pm.tasks.reporter.finished_at).toBe(stateAfter8Am.tasks.reporter.finished_at);
       } finally {
         if (fs.existsSync(testStateFile)) {
           try {

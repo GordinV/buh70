@@ -1,8 +1,10 @@
 'use strict';
 const getNow = require('./../../libs/getNow');
 const db = require("../../libs/db");
-const getXMLFile = require('../ai/e-arved/getXMLFile');
-const XMLtoJson = require('../ai/e-arved/xml_to_json');
+const deps = {
+    getXMLFile: require('../ai/e-arved/getXMLFile'),
+    XMLtoJson: require('../ai/e-arved/xml_to_json')
+};
 const { executeTask } = require('../task/executePostTask');
 
 const FLOW_NAME = 'docs.sp_loe_earved';
@@ -96,8 +98,8 @@ const post = async (req, res) => {
             console.log('itemRekvId, itemUserId',itemRekvId, itemUserId);
 
             try {
-                const xml = await getXMLFile(hash, earvedHost, execDate);
-                const json = await XMLtoJson(xml, { rekvid: itemRekvId, userid: itemUserId });
+                const xml = await deps.getXMLFile(hash, earvedHost, execDate);
+                const json = await deps.XMLtoJson(xml, { rekvid: itemRekvId, userid: itemUserId });
 
                 console.log('json',json);
 
@@ -128,7 +130,12 @@ const post = async (req, res) => {
                         emptyLogId = logResult.data[0].id;
                     }
                     if (emptyLogId) {
-                        await endLog(emptyLogId, 'success', null);
+                        await endLog(emptyLogId, 'success', null, {
+                            totalFetched: 0,
+                            totalImported: 0,
+                            error_message: 'Arveid ei leitud (0 arvet)',
+                            batches: []
+                        });
                     }
                 } catch (logErr) {
                     console.error('[getEarvedFromFinBit] Error creating empty log:', logErr);
@@ -273,8 +280,8 @@ async function runCalculationInBackground(logId, userId, batchesOrJson) {
         const calcResult = await loeEarved(userId, batchesOrJson);
         console.log(`[getEarvedFromFinBit] Background sp_loe_earved finished successfully. log_id: ${logId}`, calcResult);
 
-        // Фиксируем успешное завершение
-        await endLog(logId, 'success');
+        // Фиксируем успешное завершение и сохраняем детали импорта в ou.logs
+        await endLog(logId, 'success', null, calcResult);
     } catch (error) {
         console.error(`[getEarvedFromFinBit] Background sp_loe_earved failed. log_id: ${logId}`, error);
 
@@ -288,48 +295,98 @@ async function runCalculationInBackground(logId, userId, batchesOrJson) {
 }
 
 /**
+ * Извлекает номера счетов из массива JSON документов FinBit
+ */
+function extractInvoiceNumbers(jsonArray) {
+    if (!Array.isArray(jsonArray)) return [];
+    const numbers = [];
+    for (const item of jsonArray) {
+        if (!item || typeof item !== 'object') continue;
+        const nr = (item.data && item.data.number) ? item.data.number : item.number;
+        if (nr) numbers.push(String(nr).trim());
+    }
+    return numbers;
+}
+
+/**
  * Выполняет SQL-запрос docs.sp_loe_earved к БД
  * Поддерживает:
  * 1. Одиночный батч или массив счетов: SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB);
- * 2. Массив батчей от нескольких учреждений: последовательное выполнение составным SQL запросом вида:
- *    select docs.sp_loe_earved(user1, $$json1$$); select docs.sp_loe_earved(user2, $$json2$$);
+ * 2. Массив батчей от нескольких учреждений: последовательное параметризованное выполнение
+ *    SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB) в цикле с агрегацией результата.
  */
 async function loeEarved(userId, jsonOrBatches) {
     try {
         const isBatchList = Array.isArray(jsonOrBatches) && jsonOrBatches.length > 0 && ('json' in jsonOrBatches[0]);
 
         if (isBatchList) {
-            if (jsonOrBatches.length === 1) {
-                const single = jsonOrBatches[0];
-                const targetUserId = single.userId || userId;
-                const sql = `SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB);`;
-                const jsonText = typeof single.json === 'string' ? single.json : JSON.stringify(single.json);
-                console.log('start sp_loe_earved for userId:', targetUserId);
-                const l_result = await db.queryDb(sql, [targetUserId, jsonText], null, null, null, null, config);
+            const sql = `SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB);`;
+            const batchResults = [];
+            const rawRows = [];
+            const allInvoiceNumbers = [];
+            const messages = [];
+            let totalFetched = 0;
+            let totalImported = 0;
+
+            for (const b of jsonOrBatches) {
+                const bUserId = b.userId || userId;
+                const parsedArray = typeof b.json === 'string' ? JSON.parse(b.json) : b.json;
+                const fetchedCount = Array.isArray(parsedArray) ? parsedArray.length : 0;
+                const batchInvoiceNumbers = extractInvoiceNumbers(parsedArray);
+                const jsonText = typeof b.json === 'string' ? b.json : JSON.stringify(b.json);
+
+                console.log('start sp_loe_earved for userId:', bUserId, 'rekvId:', b.rekvId);
+                const l_result = await db.queryDb(sql, [bUserId, jsonText], null, null, null, null, config);
                 console.log('finish sp_loe_earved', l_result);
 
-                if (l_result && l_result.error_code && l_result.error_code !== 0) {
-                    throw new Error(l_result.error_message || `docs.sp_loe_earved returned error code ${l_result.error_code}`);
+                const row = (l_result && Array.isArray(l_result.data) && l_result.data[0])
+                    ? l_result.data[0]
+                    : (l_result || {});
+                const errCode = Number(row.error_code ?? (l_result && l_result.error_code) ?? 0);
+                const errMsg = row.error_message || (l_result && l_result.error_message) || null;
+
+                if (errCode !== 0 || errMsg === 'Puudub õigused') {
+                    throw new Error(errMsg || `docs.sp_loe_earved returned error code ${errCode}`);
                 }
-                return l_result;
+
+                const importedCount = (row.result !== undefined && row.result !== null)
+                    ? Number(row.result)
+                    : fetchedCount;
+
+                totalFetched += fetchedCount;
+                totalImported += importedCount;
+                allInvoiceNumbers.push(...batchInvoiceNumbers);
+                if (errMsg) {
+                    messages.push(errMsg.trim());
+                }
+                if (row) {
+                    rawRows.push(row);
+                }
+
+                batchResults.push({
+                    rekvId: b.rekvId,
+                    userId: bUserId,
+                    fetched: fetchedCount,
+                    imported: importedCount,
+                    invoiceNumbers: batchInvoiceNumbers,
+                    message: errMsg
+                });
             }
 
-            // Множество учреждений: формируем составной последовательный SQL-запрос
-            // select docs.sp_loe_earved(parameters); select docs.sp_loe_earved(parameters);
-            const sqlStatements = jsonOrBatches.map(b => {
-                const bUserId = b.userId || userId;
-                const jsonText = typeof b.json === 'string' ? b.json : JSON.stringify(b.json);
-                return `select docs.sp_loe_earved(${bUserId}::integer, $$${jsonText}$$::jsonb);`;
-            });
-            const combinedSql = sqlStatements.join(' ');
-            console.log(`[getEarvedFromFinBit] start combined sp_loe_earved for ${jsonOrBatches.length} institutions:`, combinedSql.slice(0, 150));
-            const l_result = await db.queryDb(combinedSql, null, null, null, null, null, config);
-            console.log('finish combined sp_loe_earved', l_result);
+            const summaryMessage = messages.length > 0
+                ? `Imporditud ${totalImported} arvet (leitud: ${totalFetched}). ${messages.join(' ')}`
+                : `Imporditud ${totalImported} arvet (leitud: ${totalFetched})`;
 
-            if (l_result && l_result.error_code && l_result.error_code !== 0) {
-                throw new Error(l_result.error_message || `docs.sp_loe_earved returned error code ${l_result.error_code}`);
-            }
-            return l_result;
+            return {
+                error_code: 0,
+                result: totalImported,
+                totalFetched,
+                totalImported,
+                invoiceNumbers: allInvoiceNumbers,
+                error_message: summaryMessage,
+                batches: batchResults,
+                data: rawRows
+            };
         }
 
         if (typeof userId === 'string' && userId.toLowerCase().startsWith('select')) {
@@ -337,16 +394,38 @@ async function loeEarved(userId, jsonOrBatches) {
         }
 
         const sql = `SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB);`;
+        const parsedArray = typeof jsonOrBatches === 'string' ? JSON.parse(jsonOrBatches) : jsonOrBatches;
+        const fetchedCount = Array.isArray(parsedArray) ? parsedArray.length : 0;
+        const invoiceNumbers = extractInvoiceNumbers(parsedArray);
         const jsonText = typeof jsonOrBatches === 'string' ? jsonOrBatches : JSON.stringify(jsonOrBatches);
 
         console.log('start sp_loe_earved for userId:', userId);
         const l_result = await db.queryDb(sql, [userId, jsonText], null, null, null, null, config);
         console.log('finish sp_loe_earved', l_result);
 
-        if (l_result && l_result.error_code && l_result.error_code !== 0) {
-            throw new Error(l_result.error_message || `docs.sp_loe_earved returned error code ${l_result.error_code}`);
+        const row = (l_result && Array.isArray(l_result.data) && l_result.data[0])
+            ? l_result.data[0]
+            : (l_result || {});
+        const errCode = Number(row.error_code ?? (l_result && l_result.error_code) ?? 0);
+        const errMsg = row.error_message || (l_result && l_result.error_message) || null;
+
+        if (errCode !== 0 || errMsg === 'Puudub õigused') {
+            throw new Error(errMsg || `docs.sp_loe_earved returned error code ${errCode}`);
         }
-        return l_result;
+
+        const importedCount = (row.result !== undefined && row.result !== null)
+            ? Number(row.result)
+            : fetchedCount;
+
+        return {
+            error_code: 0,
+            result: importedCount,
+            totalFetched: fetchedCount,
+            totalImported: importedCount,
+            invoiceNumbers,
+            error_message: errMsg || `Imporditud ${importedCount} arvet (leitud: ${fetchedCount})`,
+            data: l_result && l_result.data ? l_result.data : [row]
+        };
     } catch (error) {
         throw new Error(`DB Query failed: ${error.message}`);
     }
@@ -371,18 +450,44 @@ async function createLog(rekvId, userId, flowName = FLOW_NAME) {
 }
 
 /**
- * Логгирование окончания задачи в ou.logs (успех / ошибка)
+ * Логгирование окончания задачи в ou.logs (успех / ошибка) с сохранением result и response
  */
-async function endLog(logId, status = 'success', errorMessage = null) {
+async function endLog(logId, status = 'success', errorMessage = null, resultData = null) {
     if (!logId) return;
 
+    let resultJson = null;
+    let responseText = null;
+
+    if (resultData !== null && resultData !== undefined) {
+        if (typeof resultData === 'object') {
+            responseText = resultData.error_message || resultData.response || resultData.tulemused ||
+                (resultData.totalImported !== undefined
+                    ? `Imporditud ${resultData.totalImported} arvet (leitud: ${resultData.totalFetched ?? resultData.totalImported})`
+                    : null);
+            try {
+                resultJson = JSON.stringify(resultData);
+            } catch (e) {
+                resultJson = JSON.stringify({ raw: String(resultData) });
+            }
+        } else {
+            responseText = String(resultData);
+            resultJson = JSON.stringify({ message: responseText });
+        }
+    }
+
     const sql = `update ou.logs
-                 set propertis = propertis || jsonb_build_object('exec_end', (clock_timestamp()), 'status', $1::text, 'error', $2::text)
-                 where id = $3;`;
+                 set propertis = propertis || jsonb_build_object(
+                     'exec_end', (clock_timestamp()),
+                     'status', $1::text,
+                     'error', $2::text
+                 )
+                 || case when $3::text is not null then jsonb_build_object('result', $3::jsonb) else '{}'::jsonb end
+                 || case when $4::text is not null then jsonb_build_object('response', $4::text) else '{}'::jsonb end
+                 where id = $5;`;
 
     try {
-        console.log('start endLog for id:', logId, 'status:', status);
-        await db.queryDb(sql, [status, errorMessage, logId], null, null, null, null, config);
+        console.log('start endLog for id:', logId, 'status:', status, 'response:', responseText);
+        await db.queryDb(sql, [status, errorMessage, resultJson, responseText, logId], null, null, null, null, config);
         console.log('finish endLog');
     } catch (error) {
         throw new Error(`DB Query failed: ${error.message}`);
@@ -430,8 +535,8 @@ async function executeCalculation(userId, execDate = getNow()) {
             if (!hash) continue;
 
             try {
-                const xml = await getXMLFile(hash, earvedHost, execDate);
-                const json = await XMLtoJson(xml, { rekvid: itemRekvId, userid: itemUserId });
+                const xml = await deps.getXMLFile(hash, earvedHost, execDate);
+                const json = await deps.XMLtoJson(xml, { rekvid: itemRekvId, userid: itemUserId });
 
                 if (json && Array.isArray(json) && json.length > 0) {
                     batches.push({
@@ -456,7 +561,7 @@ async function executeCalculation(userId, execDate = getNow()) {
         const result = await loeEarved(l_userId, batches);
         console.log('Calculation result:', result);
 
-        await endLog(logId, 'success');
+        await endLog(logId, 'success', null, result);
         console.log('Finished log id:', logId);
         return result;
     } catch (error) {
@@ -491,3 +596,4 @@ exports.endLog = endLog;
 exports.FLOW_NAME = FLOW_NAME;
 exports.ROBOT_USER = ROBOT_USER;
 exports.checkIsAgent = checkIsAgent;
+exports.deps = deps;

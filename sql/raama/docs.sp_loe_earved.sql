@@ -28,6 +28,8 @@ DECLARE
     l_log_changes     jsonb   = '[]'::jsonb;
 
 BEGIN
+    error_code = 0;
+    result = 0;
 
     -- проверка размерности массива
     IF l_arved is null or jsonb_array_length(l_arved) = 0
@@ -51,6 +53,7 @@ BEGIN
 
     if l_rekv_id is null then
         -- нет прав, выходим
+        error_code = 4;
         result = 0;
         error_message = 'Puudub õigused';
         RETURN;
@@ -355,6 +358,7 @@ BEGIN
                                          l_rekv_id);
 
             if coalesce(l_doc_id, 0) > 0 then
+                result = coalesce(result, 0) + 1;
                 PERFORM docs.gen_lausend_arv(l_doc_id, l_virtual_user_id);
 
                 -- сохраним bpm omniva
@@ -367,7 +371,7 @@ BEGIN
             end if;
             l_log_changes = l_log_changes::jsonb || jsonb_build_object('doc_id', l_doc_id, 'doc', l_json_doc);
             error_message =
-                    coalesce(error_message, '') || 'Arve nr.' || (l_doc ->> 'number')::text || ' importeeritud' + '\r';
+                    coalesce(error_message, '') || 'Arve nr.' || coalesce((l_doc ->> 'number')::text, '') || ' importeeritud (id: ' || coalesce(l_doc_id, 0)::text || '); ';
             l_doc_details = '[]'::jsonb;
             l_json_doc = null;
         END LOOP;

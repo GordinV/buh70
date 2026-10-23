@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { toLocalDateStr } from './orchestrator.tools';
 import {
   AgentConfig,
   AgentConfigSchema,
@@ -378,7 +379,24 @@ export function resetCycleForNewDay(
   newDateStr: string,
   baseDir?: string
 ): OrchestratorState {
-  const tasks = getDefaultTaskGraph(baseDir);
+  const defaultTasks = getDefaultTaskGraph(baseDir);
+  // Сохраняем состояние задач, которые уже завершились за новые календарные сутки (newDateStr)
+  const tasks: Record<string, TaskState> = {};
+  for (const [key, defaultTask] of Object.entries(defaultTasks)) {
+    const existing = state.tasks[key];
+    const finishedToday =
+      existing &&
+      existing.finished_at &&
+      toLocalDateStr(existing.finished_at) === newDateStr &&
+      (existing.status === 'SUCCESS' || existing.status === 'SKIPPED');
+
+    if (finishedToday) {
+      tasks[key] = { ...existing };
+    } else {
+      tasks[key] = defaultTask;
+    }
+  }
+
   return OrchestratorStateSchema.parse({
     ...state,
     cycle_date: newDateStr,
