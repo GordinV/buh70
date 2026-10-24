@@ -493,3 +493,22 @@ npm run build
 - [ ] Имя агента добавлено в `KNOWN_SUBAGENTS` ([`shared/agent_registry.ts`](file:///c:/development/buh70/routes/ai/ai_task/shared/agent_registry.ts)) и в `depends_on` у [`reporter/config.json`](file:///c:/development/buh70/routes/ai/ai_task/reporter/config.json).
 - [ ] На бэкенде `buh70` реализован неблокирующий эндпоинт `POST /task/<endpoint>/`, создающий запись в `ou.logs` с указанным `flow`.
 - [ ] Успешно проходят `npm run typecheck`, `npm test` и `npm run build`.
+
+---
+
+## 9. Навигация по кодовой базе и экономия токенов (Graphify)
+
+Для оптимизации расхода токенов при исследовании архитектуры `buh70` и графа задач `ai_task` глобально установлен плагин **Graphify** (`C:\Users\Laptop\.gemini\config\skills\graphify\SKILL.md`).
+
+### Рекомендации по использованию:
+1. **Построение локального графа зависимостей:**
+   ```bash
+   graphify .              # Полный AST-анализ проекта (формирует каталог graphify-out/)
+   graphify update .       # Инкрементальное обновление графа после изменения файлов
+   ```
+2. **Точечный поиск связей вместо чтения тяжелых файлов целиком:**
+   - Кратчайший путь вызовов: `graphify path "<Source>" "<Target>"` (например, `graphify path "getEarved" "sendFinBitReport"`).
+   - Смысловой поиск по графу: `graphify query "<вопрос по архитектуре>"`.
+   - Анализ зависимостей узла: `graphify explain "<функция_или_модуль>"`.
+3. **Правило расхода контекста:**
+   - Если сгенерирован `graphify-out/graph.json`, для архитектурных вопросов сначала запрашивайте подграф через `graphify query`, что предотвращает засорение контекста простынями исходных текстов.
