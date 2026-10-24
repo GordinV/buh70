@@ -342,7 +342,10 @@ async function loeEarved(userId, jsonOrBatches) {
                 const row = (l_result && Array.isArray(l_result.data) && l_result.data[0])
                     ? l_result.data[0]
                     : (l_result || {});
-                const errCode = Number(row.error_code ?? (l_result && l_result.error_code) ?? 0);
+                const rawErrCode = (row.error_code !== undefined && row.error_code !== null)
+                    ? row.error_code
+                    : ((l_result && l_result.error_code !== undefined && l_result.error_code !== null) ? l_result.error_code : 0);
+                const errCode = Number(rawErrCode);
                 const errMsg = row.error_message || (l_result && l_result.error_message) || null;
 
                 if (errCode !== 0 || errMsg === 'Puudub õigused') {
@@ -406,7 +409,10 @@ async function loeEarved(userId, jsonOrBatches) {
         const row = (l_result && Array.isArray(l_result.data) && l_result.data[0])
             ? l_result.data[0]
             : (l_result || {});
-        const errCode = Number(row.error_code ?? (l_result && l_result.error_code) ?? 0);
+        const rawErrCode = (row.error_code !== undefined && row.error_code !== null)
+            ? row.error_code
+            : ((l_result && l_result.error_code !== undefined && l_result.error_code !== null) ? l_result.error_code : 0);
+        const errCode = Number(rawErrCode);
         const errMsg = row.error_message || (l_result && l_result.error_message) || null;
 
         if (errCode !== 0 || errMsg === 'Puudub õigused') {
@@ -460,9 +466,12 @@ async function endLog(logId, status = 'success', errorMessage = null, resultData
 
     if (resultData !== null && resultData !== undefined) {
         if (typeof resultData === 'object') {
+            const fetchedCountText = (resultData.totalFetched !== undefined && resultData.totalFetched !== null)
+                ? resultData.totalFetched
+                : resultData.totalImported;
             responseText = resultData.error_message || resultData.response || resultData.tulemused ||
                 (resultData.totalImported !== undefined
-                    ? `Imporditud ${resultData.totalImported} arvet (leitud: ${resultData.totalFetched ?? resultData.totalImported})`
+                    ? `Imporditud ${resultData.totalImported} arvet (leitud: ${fetchedCountText})`
                     : null);
             try {
                 resultJson = JSON.stringify(resultData);
