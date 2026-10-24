@@ -10,6 +10,12 @@
 - **Неблокирующий запуск.** Эндпоинты запуска создают запись в `ou.logs`, стартуют фоновую процедуру и сразу возвращают `log_id`. Статус задачи проверяется на следующих тиках через `POST /task/read_log/:user_id/:task_name`.
 - **Конфигурация без пересборки.** `orchestrator/config.json` и `<agent>/config.json` читаются на каждом тике: время, зависимости, `prompt`, `params`.
 - **Два режима решений.** Если в конфиге задан `prompt`, решение принимает Gemini (`ai.generate`, structured output). Если `prompt: null`, работают детерминированные правила FSM. Без `GEMINI_API_KEY` LLM не используется. Ключ `mock_*` включает эмуляцию LLM (`index.ts`).
+- **Среда выполнения и совместимость Node.js (Critical):**
+  - **Микросервис `ai_task`:** TypeScript / ES2022, работает в Docker-контейнере `buh70-ai-task` на базе **Node.js 20+ LTS (`node:20-alpine`)**. Сборка через `npm run build` (`tsc`).
+  - **Основной бэкенд `buh70` (`routes/`, `models/`, `libs/`, запускаемый в PM2):** Работает на **legacy Node.js (версии < 14)**. В коде бэкенда (`.js`) **СТРОГО ЗАПРЕЩЕНО** использовать операторы ES2020+:
+    - **Запрещен `??` (Nullish coalescing):** приводит к фатальному `SyntaxError: Unexpected token ?`. Вместо него использовать явные проверки `(x !== undefined && x !== null ? x : fallback)`.
+    - **Запрещен `?.` (Optional chaining):** приводит к `SyntaxError: Unexpected token .`. Вместо него использовать `(x && x.y)`.
+    - Код бэкенда должен быть совместим со стандартом ES6 / CommonJS.
 
 ## Граф задач (DAG)
 
