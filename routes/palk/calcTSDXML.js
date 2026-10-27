@@ -136,8 +136,9 @@ async function convertToXML(tsdData, options = {}) {
     const nowDate = formatDate(options.createdDate || new Date());
     const periodCoveredStart = formatDate(firstRow.kpv1 || options.kpv1);
     const periodCoveredEnd = formatDate(firstRow.kpv2 || options.kpv2);
-    const docDate = formatDate(options.documentDate || firstRow.kpv2);
-    const earningDate = formatDate(options.earningDate || moment(periodCoveredStart).subtract(1, 'days'));
+    const docDate = formatDate(options.documentDate || firstRow.kpv2 || options.kpv2);
+    const earningDate = formatDate(options.earningDate || firstRow.kpv2 || options.kpv2);
+
     const uniqueId = `${regkood}-${moment().format('YYYY-MM-DDTHH:mm:ss')}`;
     const creator = options.creator || 'Buh70';
     const sourceApp = options.sourceApplication || 'Raamatupidamistarkvara Buh70';
