@@ -3,24 +3,26 @@ DROP FUNCTION IF EXISTS palk.tsd_lisa_2026(DATE, DATE, INTEGER, INTEGER);
 CREATE OR REPLACE FUNCTION palk.tsd_lisa_2026(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER DEFAULT 0)
     RETURNS TABLE
             (
-                sektsioon     VARCHAR(20),
-                tululiik      VARCHAR(20),
-                vana_tululiik VARCHAR(50),
-                isikukood     VARCHAR(20),
-                isik          VARCHAR(254),
-                summa         NUMERIC(14, 2),
-                tm            NUMERIC(14, 2),
-                sm            NUMERIC(14, 2),
-                tki           NUMERIC(14, 2),
-                pm            NUMERIC(14, 2),
-                tka           NUMERIC(14, 2),
-                tulubaas      NUMERIC(14, 2),
-                mvt_kood      VARCHAR(20),
-                sm_arv        INTEGER,
-                arv_min_sots  NUMERIC(14, 2),
-                min_sots_alus NUMERIC(14, 2),
-                kas_pensionar INTEGER,
-                vm_summa      numeric(14, 2) -- ceмма к выплате
+                sektsioon       VARCHAR(20),
+                tululiik        VARCHAR(20),
+                vana_tululiik   VARCHAR(50),
+                isikukood       VARCHAR(20),
+                isik            VARCHAR(254),
+                summa           NUMERIC(14, 2),
+                tm              NUMERIC(14, 2),
+                sm              NUMERIC(14, 2),
+                tki             NUMERIC(14, 2),
+                pm              NUMERIC(14, 2),
+                tka             NUMERIC(14, 2),
+                tulubaas        NUMERIC(14, 2),
+                mvt_kood        VARCHAR(20),
+                sm_arv          INTEGER,
+                arv_min_sots    NUMERIC(14, 2),
+                min_sots_alus   NUMERIC(14, 2),
+                kas_pensionar   INTEGER,
+                vm_summa        NUMERIC(14, 2), -- сумма к выплате
+                tagasimakse_kpv DATE,           -- дата исходной выплаты прошлого периода для TSD02
+                smvmsk          NUMERIC(14, 2)  -- TSD_SMVMSK (сохранение минимального соцналога)
             )
 AS
 $BODY$
@@ -194,14 +196,16 @@ WITH
                             )
                     AND po.period IS NULL
                     AND po.rekvid IN (
-                                         SELECT rekv_id
-                                         FROM rekv_ids
+                                         SELECT
+                                             rekv_id
+                                         FROM
+                                             rekv_ids
                                      )
                   GROUP BY
                       po.lepingid, po.rekvid
               ),
-    -- Основные начисления заработной платы и выплат (liik = 1)
-    qryPoIds AS (
+    -- Поток 1: Основные начисления и положительные корректировки (без TSD02)
+    qryPoIds_Regular AS (
                   SELECT
                       po.lepingid,
                       po.tululiik,
@@ -211,7 +215,9 @@ WITH
                       sum(po.tootumaks)::NUMERIC(14, 2) AS tki,
                       sum(po.pensmaks)::NUMERIC(14, 2)  AS pm,
                       sum(po.tka)::NUMERIC(14, 2)       AS tka,
-                      sum(po.tulubaas)::NUMERIC(14, 2)  AS tulubaas
+                      sum(po.tulubaas)::NUMERIC(14, 2)  AS tulubaas,
+                      NULL::DATE                        AS tagasimakse_kpv,
+                      0::NUMERIC(14, 2)                 AS smvmsk
                   FROM
                       params,
                       docs.doc d
@@ -220,10 +226,12 @@ WITH
                   WHERE
                         d.status <> 3
                     AND d.rekvid IN (
-                                        SELECT rekv_id
-                                        FROM rekv_ids
+                                        SELECT
+                                            rekv_id
+                                        FROM
+                                            rekv_ids
                                     )
-                    AND po.period IS NULL
+                    AND (po.period IS NULL OR po.summa >= 0)
                     AND (
                             (po.properties ->> 'maksekpv' IS NULL AND po.kpv >= params.kpv1 AND po.kpv <= params.kpv2)
                                 OR
@@ -234,21 +242,71 @@ WITH
                   GROUP BY
                       po.lepingid, po.tululiik
               ),
+    -- Поток 2: Отрицательные корректировки выплат прошлых периодов (возвраты / удержания с TSD02)
+    qryPoIds_Refund AS (
+                  SELECT
+                      po.lepingid,
+                      po.tululiik,
+                      -abs(sum(po.summa))::NUMERIC(14, 2)     AS summa,
+                      -abs(sum(po.tulumaks))::NUMERIC(14, 2)  AS tm,
+                      -abs(sum(po.sotsmaks))::NUMERIC(14, 2)  AS sm,
+                      -abs(sum(po.tootumaks))::NUMERIC(14, 2) AS tki,
+                      -abs(sum(po.pensmaks))::NUMERIC(14, 2)  AS pm,
+                      -abs(sum(po.tka))::NUMERIC(14, 2)       AS tka,
+                      -abs(sum(po.tulubaas))::NUMERIC(14, 2)  AS tulubaas,
+                      COALESCE(po.period, params.kpv1)::DATE  AS tagasimakse_kpv,
+                      coalesce((SELECT sum(p_min.sotsmaks)
+                                FROM palk.palk_oper p_min
+                                         INNER JOIN libs.library pl_min ON pl_min.id = p_min.libId
+                                WHERE YEAR(p_min.kpv) = year(po.period)
+                                  AND MONTH(p_min.kpv) = month(po.period)
+                                  AND p_min.lepingid = po.lepingid
+                                  AND pl_min.properties::JSONB ->> 'liik' = '5'), 0)::NUMERIC(14, 2) AS smvmsk
+                  FROM
+                      params,
+                      docs.doc d
+                          INNER JOIN palk.palk_oper po ON po.parentid = d.id
+                          INNER JOIN com_palklib pl ON pl.id = po.libid AND pl.liik = 1
+                  WHERE
+                        d.status <> 3
+                    AND d.rekvid IN (
+                                        SELECT
+                                            rekv_id
+                                        FROM
+                                            rekv_ids
+                                    )
+                    AND po.period IS NOT NULL
+                    AND po.summa < 0
+                    AND (
+                            (po.properties ->> 'maksekpv' IS NULL AND po.kpv >= params.kpv1 AND po.kpv <= params.kpv2)
+                                OR
+                            (po.properties ->> 'maksekpv' IS NOT NULL
+                                AND (po.properties ->> 'maksekpv')::date >= params.kpv1
+                                AND (po.properties ->> 'maksekpv')::date <= params.kpv2)
+                            )
+                  GROUP BY
+                      po.lepingid, po.tululiik, po.period, params.kpv1
+              ),
+    qryPoIds AS (
+                  SELECT * FROM qryPoIds_Regular
+                  UNION ALL
+                  SELECT * FROM qryPoIds_Refund
+              ),
     -- Данные по сотрудникам с начислениями
     qryPo AS (
                   SELECT
-                      t.parentid                        AS isik_id,
-                      a.regkood                         AS isikukood,
-                      a.nimetus                         AS isik,
-                      po.tululiik                       AS vana_tululiik,
-                      COALESCE(m.apa_kood, po.tululiik) AS tululiik,
+                      t.parentid                                                AS isik_id,
+                      a.regkood                                                 AS isikukood,
+                      a.nimetus                                                 AS isik,
+                      po.tululiik                                               AS vana_tululiik,
+                      COALESCE(m.apa_kood, po.tululiik)                         AS tululiik,
                       COALESCE(
                               m.sektsioon,
                               CASE
                                   WHEN po.tululiik ~ '^[678][0-9]{2,3}$' THEN 'EE0201003'
                                   ELSE 'EE0201001'
                                   END
-                      )                                 AS sektsioon,
+                      )                                                         AS sektsioon,
                       po.summa,
                       po.tm,
                       po.sm,
@@ -256,18 +314,29 @@ WITH
                       po.pm,
                       po.tka,
                       po.tulubaas,
-                      COALESCE(l.tun2, 0)::INTEGER      AS sm_arv,
-                      -- Мин. соцналог относится к основным видам дохода (10, 13, 15, 17)
+                      COALESCE(l.tun2, 0)::INTEGER                              AS sm_arv,
+                      -- Мин. соцналог относится к основным видам дохода (10, 13, 15, 17) и только к обычным строкам (не возвратам)
                       CASE
-                          WHEN COALESCE(m.apa_kood, po.tululiik) IN ('10', '13', '15', '17')
+                          WHEN po.tagasimakse_kpv IS NULL
+                               AND COALESCE(m.apa_kood, po.tululiik) IN ('10', '13', '15', '17')
                               THEN COALESCE(ms.arv_min_sots, 0)
                           ELSE 0
-                          END::NUMERIC(14, 2)           AS arv_min_sots,
+                          END::NUMERIC(14, 2)                                   AS arv_min_sots,
                       CASE
-                          WHEN COALESCE(m.apa_kood, po.tululiik) IN ('10', '13', '15', '17')
+                          WHEN po.tagasimakse_kpv IS NULL
+                               AND COALESCE(m.apa_kood, po.tululiik) IN ('10', '13', '15', '17')
                               THEN COALESCE(ms.min_sots_alus, 0)
                           ELSE 0
-                          END::NUMERIC(14, 2)           AS min_sots_alus
+                          END::NUMERIC(14, 2)                                   AS min_sots_alus,
+                      coalesce((t.properties ->> 'varem_pensioon')::integer, 0) as varem_pensioon,
+                      po.tagasimakse_kpv,
+                      -- smvmsk разрешен только для видов выплат с kuumäär (10, 13, 15, 17) по правилу KR_SM_14
+                      CASE
+                          WHEN po.tagasimakse_kpv IS NOT NULL
+                               AND COALESCE(m.apa_kood, po.tululiik) IN ('10', '13', '15', '17')
+                              THEN po.smvmsk
+                          ELSE 0
+                          END::NUMERIC(14, 2)                                   AS smvmsk
                   FROM
                       palk.tooleping                           t
                           INNER JOIN      libs.asutus          a ON a.id = t.parentid
@@ -279,29 +348,35 @@ WITH
                   WHERE
                         t.resident = 1
                     AND t.rekvid IN (
-                                        SELECT rekv_id
-                                        FROM rekv_ids
+                                        SELECT
+                                            rekv_id
+                                        FROM
+                                            rekv_ids
                                     )
               ),
     -- Сотрудники с договором без выплат в отчетном периоде, но с обязанностью по мин. соцналогу
     qryZeroSalaryMinSots AS (
                   SELECT
-                      t.parentid               AS isik_id,
-                      a.regkood                AS isikukood,
-                      a.nimetus                AS isik,
-                      '10'::VARCHAR(20)        AS vana_tululiik,
-                      '10'::VARCHAR(20)        AS tululiik,
-                      'EE0201001'::VARCHAR(20) AS sektsioon,
-                      0::NUMERIC(14, 2)        AS summa,
-                      0::NUMERIC(14, 2)        AS tm,
-                      0::NUMERIC(14, 2)        AS sm,
-                      0::NUMERIC(14, 2)        AS tki,
-                      0::NUMERIC(14, 2)        AS pm,
-                      0::NUMERIC(14, 2)        AS tka,
-                      0::NUMERIC(14, 2)        AS tulubaas,
-                      1::INTEGER               AS sm_arv,
+                      t.parentid                                                AS isik_id,
+                      a.regkood                                                 AS isikukood,
+                      a.nimetus                                                 AS isik,
+                      '10'::VARCHAR(20)                                         AS vana_tululiik,
+                      '10'::VARCHAR(20)                                         AS tululiik,
+                      'EE0201001'::VARCHAR(20)                                  AS sektsioon,
+                      0::NUMERIC(14, 2)                                         AS summa,
+                      0::NUMERIC(14, 2)                                         AS tm,
+                      0::NUMERIC(14, 2)                                         AS sm,
+                      0::NUMERIC(14, 2)                                         AS tki,
+                      0::NUMERIC(14, 2)                                         AS pm,
+                      0::NUMERIC(14, 2)                                         AS tka,
+                      0::NUMERIC(14, 2)                                         AS tulubaas,
+                      1::INTEGER                                                AS sm_arv,
                       ms.arv_min_sots,
-                      ms.min_sots_alus
+                      ms.min_sots_alus,
+                      coalesce((t.properties ->> 'varem_pensioon')::integer, 0) as varem_pensioon,
+                      NULL::DATE                                                AS tagasimakse_kpv,
+                      0::NUMERIC(14, 2)                                         AS smvmsk
+
                   FROM
                       qryMinSots                    ms
                           INNER JOIN palk.tooleping t ON t.id = ms.lepingid
@@ -309,12 +384,16 @@ WITH
                   WHERE
                         t.resident = 1
                     AND t.rekvid IN (
-                                        SELECT rekv_id
-                                        FROM rekv_ids
+                                        SELECT
+                                            rekv_id
+                                        FROM
+                                            rekv_ids
                                     )
                     AND ms.lepingid NOT IN (
-                                               SELECT lepingid
-                                               FROM qryPoIds
+                                               SELECT
+                                                   lepingid
+                                               FROM
+                                                   qryPoIds
                                            )
               ),
     all_rows AS (
@@ -340,11 +419,14 @@ SELECT
     COALESCE(sum(r.tka), 0)::NUMERIC(14, 2)                AS tka,
     COALESCE(sum(r.tulubaas), 0)::NUMERIC(14, 2)           AS tulubaas,
     CASE
-        WHEN COALESCE(sum(r.tulubaas), 0) > 0 THEN
+        WHEN COALESCE(sum(r.tulubaas), 0) <> 0 THEN
             CASE
+                when (r.varem_pensioon)::boolean then 'MVT_650'
                 WHEN palk.kas_soodustus_mvt(r.isikukood, (
-                                                             SELECT kpv1
-                                                             FROM params
+                                                             SELECT
+                                                                 kpv1
+                                                             FROM
+                                                                 params
                                                          )) THEN 'MVT_650'
                 ELSE 'MVT_610'
                 END
@@ -355,18 +437,23 @@ SELECT
     COALESCE(max(r.min_sots_alus), 0)::NUMERIC(14, 2)      AS min_sots_alus,
     CASE
         WHEN palk.kas_soodustus_mvt(r.isikukood, (
-                                                     SELECT kpv1
-                                                     FROM params
+                                                     SELECT
+                                                         kpv1
+                                                     FROM
+                                                         params
                                                  )) THEN 1
         ELSE 0
         END::INTEGER                                       AS kas_pensionar,
-    (COALESCE(sum(r.summa), 0) - COALESCE(sum(r.tm), 0) - COALESCE(sum(r.pm), 0) - COALESCE(sum(r.tki), 0))::NUMERIC(14, 2) AS vm_summa
+    (COALESCE(sum(r.summa), 0) - COALESCE(sum(r.tm), 0) - COALESCE(sum(r.pm), 0) -
+     COALESCE(sum(r.tki), 0))::NUMERIC(14, 2)              AS vm_summa,
+    r.tagasimakse_kpv,
+    COALESCE(max(r.smvmsk), 0)::NUMERIC(14, 2)             AS smvmsk
 FROM
     all_rows r
 GROUP BY
-    r.sektsioon, r.tululiik, r.isikukood, r.isik
+    r.sektsioon, r.tululiik, r.isikukood, r.isik, r.varem_pensioon, r.tagasimakse_kpv
 ORDER BY
-    r.sektsioon, r.isikukood, r.tululiik;
+    r.sektsioon, r.isikukood, r.tululiik, r.tagasimakse_kpv NULLS FIRST;
 $BODY$
     LANGUAGE SQL
     VOLATILE
@@ -379,8 +466,8 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_2026( DATE, DATE, INTEGER, INTEGER ) TO 
 /*
 -- Тестовый вызов функции:
 SELECT *
-FROM palk.tsd_lisa_2026('2026-08-01'::DATE, '2026-08-31'::DATE, 108, 0)
-where isikukood = '47612063714'
+FROM palk.tsd_lisa_2026('2026-10-01'::DATE, '2026-10-31'::DATE, 108, 0)
+where isikukood = '46109023722'
 
 ;
 */

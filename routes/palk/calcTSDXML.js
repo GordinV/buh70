@@ -242,6 +242,7 @@ async function convertToXML(tsdData, options = {}) {
 
             // 4. amount
             const summa = Number(row.summa || 0);
+            const isRefund = summa < 0;
             entryDetail.ele('gl-cor:amount', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(summa));
 
             // 5. identifierReference
@@ -255,69 +256,86 @@ async function convertToXML(tsdData, options = {}) {
             entryDetail.ele('gl-cor:documentDate', { contextRef: 'now' }, docDate);
 
             // 7. measurable
-            // 7.1. Sündmus TSD01
+            // 7.1. Sündmus TSD01 (Arvestuse kuupäev)
             const eventMeasurable = entryDetail.ele('gl-bus:measurable');
             eventMeasurable.ele('gl-bus:measurableID', { contextRef: 'now' }, 'TSD01');
             eventMeasurable.ele('gl-bus:measurableIDSchema', { contextRef: 'now' }, 'SYNDMUS2017ap');
             eventMeasurable.ele('gl-bus:measurableStartDateTime', { contextRef: 'now' }, earningDate);
 
-            // 7.2. Maksuvaba tulu (MVT)
+            // 7.2. Tagasimakse sündmus TSD02 (ainult negatiivsete summade puhul sektsioonides EE0201001 ja EE0201002, KR_YLD_14, KR_YLD_32)
+            if (isRefund && section !== 'EE0201003') {
+                const refundDate = formatDate(row.tagasimakse_kpv || row.period || earningDate);
+                const refundMeasurable = entryDetail.ele('gl-bus:measurable');
+                refundMeasurable.ele('gl-bus:measurableID', { contextRef: 'now' }, 'TSD02');
+                refundMeasurable.ele('gl-bus:measurableIDSchema', { contextRef: 'now' }, 'SYNDMUS2017ap');
+                refundMeasurable.ele('gl-bus:measurableStartDateTime', { contextRef: 'now' }, refundDate);
+            }
+
+            // 7.3. Maksuvaba tulu (MVT)
             const tulubaas = Number(row.tulubaas || 0);
-            if (tulubaas > 0 && row.mvt_kood) {
+            if (tulubaas !== 0 && row.mvt_kood) {
                 const mvtMeasurable = entryDetail.ele('gl-bus:measurable');
                 mvtMeasurable.ele('gl-bus:measurableDescription', { contextRef: 'now' }, row.mvt_kood);
                 mvtMeasurable.ele('gl-bus:measurableQuantity', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(tulubaas));
             }
 
-            // 7.3. Sotsiaalmaksu arvestuse alus (TSD_SMVM)
+            // 7.4. Sotsiaalmaksu arvestuse alus (TSD_SMVM)
             const smArv = Number(row.sm_arv || 0);
-            if (smArv > 0 && summa > 0) {
+            if (smArv > 0 && summa !== 0) {
                 const smvmMeasurable = entryDetail.ele('gl-bus:measurable');
                 smvmMeasurable.ele('gl-bus:measurableDescription', { contextRef: 'now' }, 'TSD_SMVM');
                 smvmMeasurable.ele('gl-bus:measurableQuantity', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(summa));
             }
 
-            // 7.4. Sotsiaalmaksu kuumäära suurendus (TSD_KUUMSUURENDUS)
+            // 7.5. Sotsiaalmaksu kuumäära suurendus (TSD_KUUMSUURENDUS) - ainult tavaliste väljamaksete puhul
             const arvMinSots = Number(row.arv_min_sots || 0);
             const minSotsAlus = Number(row.min_sots_alus || 0);
-            if (arvMinSots > 0 && minSotsAlus > 0) {
+            if (!isRefund && arvMinSots > 0 && minSotsAlus > 0) {
                 const kuumMeasurable = entryDetail.ele('gl-bus:measurable');
                 kuumMeasurable.ele('gl-bus:measurableDescription', { contextRef: 'now' }, 'TSD_KUUMSUURENDUS');
                 kuumMeasurable.ele('gl-bus:measurableQuantity', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(minSotsAlus));
             }
 
+            // 7.6. Sotsiaalmaksu vähendus kuumäära säilimisega (TSD_SMVMSK, KR_SM_13) - ainult tagasimaksete puhul
+            const smvmsk = Number(row.smvmsk || 0);
+            if (isRefund && smvmsk !== 0) {
+                const smvmskMeasurable = entryDetail.ele('gl-bus:measurable');
+                smvmskMeasurable.ele('gl-bus:measurableDescription', { contextRef: 'now' }, 'TSD_SMVMSK');
+                smvmskMeasurable.ele('gl-bus:measurableQuantity', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(-Math.abs(smvmsk)));
+            }
+
             // 8. taxes (vastavalt XSD järjekorrale: taxAmount, seejärel taxCode)
             const sm = Number(row.sm || 0);
-            const totalSm = sm + arvMinSots;
-            if (totalSm > 0) {
+            const totalSm = isRefund ? sm : (sm + arvMinSots);
+            if (totalSm !== 0) {
                 const smTax = entryDetail.ele('gl-cor:taxes');
                 smTax.ele('gl-cor:taxAmount', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(totalSm));
                 smTax.ele('gl-cor:taxCode', { contextRef: 'now' }, 'TSD_SM');
             }
 
             const pm = Number(row.pm || 0);
-            if (pm > 0) {
+            if (pm !== 0) {
                 const pmTax = entryDetail.ele('gl-cor:taxes');
                 pmTax.ele('gl-cor:taxAmount', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(pm));
                 pmTax.ele('gl-cor:taxCode', { contextRef: 'now' }, 'TSD_KP');
             }
 
             const tki = Number(row.tki || 0);
-            if (tki > 0) {
+            if (tki !== 0) {
                 const tkiTax = entryDetail.ele('gl-cor:taxes');
                 tkiTax.ele('gl-cor:taxAmount', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(tki));
                 tkiTax.ele('gl-cor:taxCode', { contextRef: 'now' }, 'TSD_TK');
             }
 
             const tka = Number(row.tka || 0);
-            if (tka > 0) {
+            if (tka !== 0) {
                 const tkaTax = entryDetail.ele('gl-cor:taxes');
                 tkaTax.ele('gl-cor:taxAmount', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(tka));
                 tkaTax.ele('gl-cor:taxCode', { contextRef: 'now' }, 'TSD_TTK');
             }
 
             const tm = Number(row.tm || 0);
-            if (tm > 0 || String(row.tululiik) === '24') {
+            if (tm !== 0 || String(row.tululiik) === '24') {
                 const tmTax = entryDetail.ele('gl-cor:taxes');
                 tmTax.ele('gl-cor:taxAmount', { contextRef: 'now', decimals: '2', unitRef: 'eur' }, formatAmount(tm));
                 tmTax.ele('gl-cor:taxCode', { contextRef: 'now' }, 'TSD_KTM');
@@ -439,6 +457,49 @@ async function validateXML(xmlString) {
                 throw new Error(`accountSub TOIMINGUTYYP2023ap puudub (${lineNum})`);
             }
 
+            // Kontrollime näitajaid (measurable) ja tagasimakseid (TSD02)
+            const rawMeas = d['gl-bus:measurable'] || d['measurable'];
+            const measList = rawMeas ? (Array.isArray(rawMeas) ? rawMeas : [rawMeas]) : [];
+            let hasTSD02 = false;
+            let tsd02StartDate = '';
+            let hasSmvmsk = false;
+
+            for (const m of measList) {
+                const mid = getText(m['gl-bus:measurableID'] || m['measurableID']);
+                const mdesc = getText(m['gl-bus:measurableDescription'] || m['measurableDescription']);
+                if (mid === 'TSD02') {
+                    hasTSD02 = true;
+                    tsd02StartDate = getText(m['gl-bus:measurableStartDateTime'] || m['measurableStartDateTime']);
+                }
+                if (mdesc === 'TSD_SMVMSK') {
+                    hasSmvmsk = true;
+                }
+            }
+
+            // MTA Reegel KR_YLD_32: EE0201003 sektsioonis ei tohi TSD02 olla määratud
+            if (hasTSD02 && entryNum === 'EE0201003') {
+                throw new Error(`Sektsioonis EE0201003 ei tohi tagasimakse tunnus (TSD02) olla määratud (${lineNum})`);
+            }
+
+            // MTA Reegel KR_YLD_14: TSD02 puhul peab olema tagastamise aluseks oleva algse väljamakse kuupäev määratud
+            if (hasTSD02 && !tsd02StartDate) {
+                throw new Error(`Tagasimakse korral (TSD02) peab algse väljamakse kuupäev olema määratud (${lineNum})`);
+            }
+
+            // MTA Reegel KR_SM_13: TSD_SMVMSK on lubatud ainult koos TSD02-ga
+            if (hasSmvmsk && !hasTSD02) {
+                throw new Error(`TSD_SMVMSK on lubatud ainult tagasimakse (TSD02) korral (${lineNum})`);
+            }
+
+            // MTA Reeglid KR_YLD_24 ja KR_YLD_30: summade märk sõltuvalt TSD02 olemasolust
+            const amountVal = Number(getText(d['gl-cor:amount'] || d['amount']) || 0);
+            if (hasTSD02 && amountVal > 0) {
+                throw new Error(`Tagasimakse (TSD02) korral peab summa olema negatiivne või 0 (${lineNum})`);
+            }
+            if (!hasTSD02 && entryNum !== 'EE0201003' && amountVal < 0) {
+                throw new Error(`Tavalise väljamakse korral (ilma TSD02) peab summa olema positiivne või 0 (${lineNum})`);
+            }
+
             // Kontrollime makse (taxes) kui olemas
             const rawTaxes = d['gl-cor:taxes'] || d['taxes'];
             if (rawTaxes) {
@@ -451,6 +512,10 @@ async function validateXML(xmlString) {
                     const amount = getText(t['gl-cor:taxAmount'] || t['taxAmount']);
                     if (isNaN(Number(amount))) {
                         throw new Error(`Vigane maksu summa: ${amount} tehingus ${lineNum}`);
+                    }
+                    const taxNum = Number(amount);
+                    if (hasTSD02 && taxNum > 0) {
+                        throw new Error(`Tagasimakse (TSD02) korral peab maksu ${code} summa olema negatiivne või 0 (${lineNum})`);
                     }
                 }
             }
