@@ -44,6 +44,8 @@ description: >-
 - **Облачный сервис валидации XML (`check-xml`):** [`C:\development\buh70\routes\ai\e-tsd\check_xml\main.py`](file:///C:/development/buh70/routes/ai/e-tsd/check_xml/main.py)
   - Endpoint: `https://check-xml-1088344506167.europe-north1.run.app` (GCP проект: `project-76db5b4b-6de8-4e1f-b88`, регион: `europe-north1`)
 - **Парсер JSON-ответов на клиенте FoxPro:** [`C:\development\buh62\proc\jsonParse.prg`](file:///C:/development/buh62/proc/jsonParse.prg)
+- **Генератор XLS-отчета сверки `saadetud_tsd.xml` и `error_report.xml` (VFP 8.0):** [`C:\development\buh62\proc\calc_tsd_2026_report_xls.prg`](file:///C:/development/buh62/proc/calc_tsd_2026_report_xls.prg)
+- **План и спецификация сверки ошибок MTA (`tsd_veade_analuus.md`):** [`C:\development\buh70\routes\ai\e-tsd\tsd_veade_analuus.md`](file:///C:/development/buh70/routes/ai/e-tsd/tsd_veade_analuus.md)
 
 ---
 
@@ -65,6 +67,19 @@ description: >-
    - Порядок тегов XSD строго: `<taxAmount>` ПЕРЕД `<taxCode>`!
    - Допустимые коды налогов: `TSD_SM`, `TSD_KP`, `TSD_TK`, `TSD_TTK`, `TSD_KTM`.
 
+7. **Корректировки и возвраты выплат прошлых периодов (бывшая форма Lisa 1b):**
+   В APA-TSD 2026 отдельной формы Lisa 1b нет, данные передаются отдельными проводками `<gl-cor:entryDetail>` внутри секций `EE0201001` (резиденты) или `EE0201002` (нерезиденты):
+   - **Отрицательные корректировки (возвраты, удержания, сторно выплат прошлых месяцев):**
+     - Все суммы (`gl-cor:amount`, базы `measurableQuantity`, налоги `taxAmount`) обязаны быть **строго отрицательными (`<= 0`)** (правило MTA `KR_YLD_24`). Обычные выплаты регулируются правилом `KR_YLD_30` (только `>= 0`).
+     - **Событие `TSD02` (Tagasimakse tunnus):** Обязательно добавляется блок `<gl-bus:measurable>` с `measurableID = 'TSD02'` (классификатор `SYNDMUS2017ap`), в котором в `<gl-bus:measurableStartDateTime>` **обязательно указывается дата исходной выплаты прошлого периода** (правило MTA `KR_YLD_14`).
+     - В секции `EE0201003` (ESD) указывать событие `TSD02` категорически **запрещено** (правило MTA `KR_YLD_32`).
+     - **Сохранение минимального соцналога (`TSD_SMVMSK`):** Если в исходном периоде у работодателя сохранялось минимальное обязательство по соцналогу (бывший код 1400 формы Lisa 1b), передается показатель `<gl-bus:measurable>` с кодом `TSD_SMVMSK` (`measurableQuantity < 0`). Показатель `TSD_SMVMSK` разрешен **только** для строк с `TSD02` (правило `KR_SM_13`) и только для видов выплат, где предусмотрен минимальный соцналог (правило `KR_SM_14`).
+     - Формула соцналога с учетом возврата (правило `KR_SM_04`):
+       `SM = (TSD_SMVM - TSD_OPTV_SM_VAHENDUS - TSD_KUUMVAHENDUS + TSD_KUUMSUURENDUS - TSD_SMVMSK) * Määr%`.
+   - **Положительные корректировки (доначисления за прошлые периоды):**
+     - По кассовому методу TSD передаются как обычные выплаты с положительной суммой (`gl-cor:amount > 0`) **без блока `TSD02`**. В `TSD01` указывается дата начисления перерасчета, в `documentDate` — дата выплаты в текущем периоде.
+   - **Запрет смешивания в одну проводку:** Запрещено объединять (сальдировать) текущие начисления и возвраты прошлых периодов в один `entryDetail`. Каждая операция возврата с датой прошлого периода должна подаваться отдельной проводкой со своим `TSD02`.
+
 ---
 
 ## 3. Архитектура облачного валидатора `check-xml` и AI-аудита (Gemini)
@@ -85,3 +100,29 @@ description: >-
    ```powershell
    gcloud run deploy check-xml --source "C:\development\buh70\routes\ai\e-tsd\check_xml" --region europe-north1 --project project-76db5b4b-6de8-4e1f-b88 --memory 1Gi --allow-unauthenticated
    ```
+
+---
+
+## 4. Правила и ограничения сверки `saadetud_tsd.xml` и `error_report.xml` в VFP 8.0
+
+При формировании сводной таблицы `.xls` из отправленной декларации (`saadetud_tsd.xml`, формат XBRL GL) и рапорта обратной связи MTA (`error_report.xml`, схема `feedbackReport.xsd`) на стороне Visual FoxPro 8.0 ([`calc_tsd_2026_report_xls.prg`](file:///C:/development/buh62/proc/calc_tsd_2026_report_xls.prg)) действуют следующие технические ограничения и бизнес-правила:
+
+1. **Ограничения парсинга XML и экспорта XLS в VFP 8.0:**
+   - Штатная функция `XMLTOCURSOR()` в VFP 8.0 **не поддерживает** иерархические многоуровневые структуры и пространства имен XBRL GL (`gl-cor:`, `gl-bus:`). Для чтения обоих файлов обязательно используется COM-объект **`MSXML2.DOMDocument`**.
+   - Штатная выгрузка `COPY TO ... TYPE XL5` игнорирует поля типа `Memo` и обрезает строковые поля до **254 символов** (`C(254)`). Поэтому для сохранения полных текстов ошибок MTA (`<info>`, `<info_EN>`, `<info_RU>`) и цветовой маркировки ошибочных строк поверх базовой выгрузки `TYPE XL5` используется постобработка через **`CREATEOBJECT("Excel.Application")`** (с безопасным fallback на `XL5`, если MS Excel не установлен).
+
+2. **Обязательный предконтроль соответствия двух файлов друг другу:**
+   Перед слиянием данных из `saadetud_tsd.xml` и `error_report.xml` проверяется:
+   - **Регистрационный код организации (`regkood`):** совпадение `<xbrli:identifier>` и `<gl-bus:organizationIdentifier>` внутри `saadetud_tsd.xml`, соответствие рег. коду текущего учреждения в VFP (`qryRekv.regkood` / `v_rekv.regkood` / параметру `tcExpectedRegkood`) и рег. коду в `error_report.xml` (если присутствует).
+   - **Количество операций:** общее число транзакций `<gl-cor:entryDetail>` в `saadetud_tsd.xml` обязано совпадать с числом проверенных строк `<validation>` и `<responseData>/<entryDetail>` в `error_report.xml` (например, `73 == 73`).
+   - **Идентификаторы строк и личные коды:** каждый ключ `sektsioon` (`entryNumber`) + `lineInternalId` (`Tehing_1..N`) из `error_report.xml` должен существовать в `saadetud_tsd.xml`, а личный код (`EE` + 11 цифр), упомянутый в тексте ошибки `<info>`, должен совпадать с `<gl-cor:identifierCode>` соответствующей строки в `saadetud_tsd.xml`.
+
+3. **Поведение при несоответствии файлов:**
+   - Если хотя бы одна из проверок соответствия не пройдена (не совпадает рег. код организации, количество операций или ключи `Tehing_N`), слияние файлов **блокируется**.
+   - Пользователю выдается предупреждение (`MESSAGEBOX` и заметная шапка в `.xls`) о том, что файлы не соответствуют друг другу, с перечислением причин расхождения.
+   - В этом случае таблица `.xls` формируется **только из ошибок** файла `error_report.xml` (`errorLevel <> "OK"` или код `<data>` не начинается с `TSD_`).
+
+4. **Поведение при пустом или не заданном файле ошибок (`error_report.xml` отсутствует):**
+   - Путь к файлу декларации по умолчанию фиксирован как `C:\temp\buh60\EDOK\tsd_2026.xml` (выходной файл по умолчанию — `C:\temp\buh60\EDOK\tsd_2026_report.xls`).
+   - Если файл ошибок не выбран пользователем в диалоге `GETFILE()`, не передан в параметре `tcErrorReportXml`, не существует на диске или пуст (ошибок нет), выполнение **не прерывается**: таблица `.xls` формируется целиком на основании данных декларации (`tsd_2026.xml`) со статусом `status = "OK"` по всем операциям.
+   - После формирования и сохранения `.xls` файла он автоматически открывается через `launch_xls(lcOutputXls, JUSTPATH(lcOutputXls))` (`ShellExecute`).
