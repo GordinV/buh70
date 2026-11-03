@@ -30,7 +30,7 @@ module.exports = {
                                  (to_char(log.email, 'DD.MM.YYYY HH24:MI:SS')) is not null
                                 then 'Saadetud e-postiga'
                             when (log.status is null or log.status = '') and
-                                 (to_char(log.print, 'DD.MM.YYYY HH24:MI:SS')) is not null then 'Trükitatud'
+                                 (to_char(log.print, 'DD.MM.YYYY HH24:MI:SS')) is not null then 'Saadetud paberil'
                             else log.status end                                        as status,
                         to_char(log.email, 'DD.MM.YYYY HH24:MI:SS')                    AS email,
                         to_char(log.earve, 'DD.MM.YYYY HH24:MI:SS')                    AS earve,
