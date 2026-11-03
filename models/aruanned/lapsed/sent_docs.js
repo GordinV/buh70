@@ -9,7 +9,7 @@ module.exports = {
             {id: "saaja_email", name: "Saaja email", width: "13%"},
             {id: "print", name: "Prinditud", width: "8%"},
             {id: "email", name: "Emailitud", width: "8%"},
-            {id: "status", name: "E-kirja saatmise staatus", width: "10%"},
+            {id: "status", name: "Saatmise staatus", width: "10%"},
             {id: "earve", name: "Saadetud e-arvega", width: "8%"},
             {id: "asutus", name: "Asutus", width: "8%"},
         ],
