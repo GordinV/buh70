@@ -23,7 +23,15 @@ module.exports = {
                         c.regkood                                                      AS saaja_isikukood,
                         c.nimetus                                                      AS saaja_nimi,
                         coalesce(log.email_aadress, c.email)::TEXT                     AS saaja_email,
-                        coalesce(log.status, 'Edukalt') ::text as status,
+                        case
+                            when (log.status is null or log.status = '') and
+                                 to_char(log.earve, 'DD.MM.YYYY HH24:MI:SS') is not null then 'Saadetud e-arvena'
+                            when (log.status is null or log.status = '') and
+                                 (to_char(log.email, 'DD.MM.YYYY HH24:MI:SS')) is not null
+                                then 'Saadetud e-postiga'
+                            when (log.status is null or log.status = '') and
+                                 (to_char(log.print, 'DD.MM.YYYY HH24:MI:SS')) is not null then 'Trükitatud'
+                            else log.status end                                        as status,
                         to_char(log.email, 'DD.MM.YYYY HH24:MI:SS')                    AS email,
                         to_char(log.earve, 'DD.MM.YYYY HH24:MI:SS')                    AS earve,
                         to_char(log.print, 'DD.MM.YYYY HH24:MI:SS')                    AS print,
