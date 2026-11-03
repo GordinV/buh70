@@ -51,7 +51,7 @@ module.exports = {
                                             get_asutuse_struktuur($1)
                                     )
                     ORDER BY
-                        r.nimetus, a.kpv, a.number
+                        r.nimetus, a.kpv desc, a.number
         `,     // $1 - rekvid, $3 - kond
         params: '',
         alias: 'sent_docs_report'
