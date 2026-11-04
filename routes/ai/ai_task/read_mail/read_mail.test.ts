@@ -803,6 +803,73 @@ Remote host said: 550 User unknown`;
       expect(parsed.source_subject).toBe('Undelivered Mail Returned to Sender');
     });
 
+    it('parseIncomingEmail корректно обрабатывает многострочные заголовки Subject (RFC 2822 folding)', () => {
+      const foldedSample = `From: MAILER-DAEMON@narva.ee
+To: oppetasu@narva.ee
+Subject: Undelivered Mail
+    Returned to Sender
+Date: Wed, 14 Oct 2026 10:15:00 +0300
+
+Teema: Saadan dokument nr. 073-7745
+Saaja: client1@gmail.com
+Remote host said: 550 User unknown`;
+
+      const parsed = readMailBackend.parseIncomingEmail(foldedSample);
+      expect(parsed).toBeDefined();
+      expect(parsed.subject).toBe('Undelivered Mail Returned to Sender');
+    });
+
+    it('escapeHtml защищает HTML-таблицу от искажения угловыми скобками адресов', () => {
+      expect(readMailBackend.escapeHtml('<info@narva.ee> & "test"')).toBe(
+        '&lt;info@narva.ee&gt; &amp; &quot;test&quot;'
+      );
+    });
+
+    it('notifyAccountantsAboutFailedInvoices дедуплицирует повторные ошибки по одному и тому же счету', async () => {
+      const mockSendMail = jest.fn().mockResolvedValue({ messageId: 'dedup-test' });
+      const mockTransporter = { sendMail: mockSendMail } as any;
+
+      const cancelResults = [
+        {
+          doc_number: '073-7745',
+          doc_id: 101,
+          recipient_email: 'client1@gmail.com',
+          status: 'success',
+          email: 'buhgalter1@narva.ee',
+        },
+        {
+          doc_number: '073-7745', // Дубликат того же счета
+          doc_id: 101,
+          recipient_email: 'client1@gmail.com',
+          status: 'success',
+          email: 'buhgalter1@narva.ee',
+        },
+      ];
+
+      const deliveryErrors = [
+        {
+          doc_number: '073-7745',
+          recipient_email: 'client1@gmail.com',
+          status: 'Aadressi viga',
+          reason: '<client1@gmail.com>: 550 User unknown',
+          subject: 'Saadan arve 073-7745',
+        },
+      ];
+
+      const res = await readMailBackend.notifyAccountantsAboutFailedInvoices(
+        cancelResults,
+        deliveryErrors,
+        555,
+        mockTransporter
+      );
+
+      expect(res.groupedCount).toBe(1);
+      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      const call = mockSendMail.mock.calls[0][0];
+      expect(call.subject).toContain('1 tk'); // Должен быть 1 счет после дедупликации!
+      expect(call.html).toContain('&lt;client1@gmail.com&gt;'); // escapeHtml сработал
+    });
+
     it('notifyAccountantsAboutFailedInvoices группирует счета по email ответственного бухгалтера и рассылает отчеты', async () => {
       const mockSendMail = jest.fn().mockResolvedValue({ messageId: 'msg-test-123' });
       const mockTransporter = { sendMail: mockSendMail } as any;
