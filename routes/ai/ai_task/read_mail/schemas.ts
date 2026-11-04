@@ -27,6 +27,7 @@ export const MailDeliveryErrorSchema = z.object({
   recipient_email: z.string().describe('Электронный адрес получателя счета'),
   reference_number: z.string().optional().describe('Ссылочный номер счета (viitenumber), если присутствует'),
   failed_at: z.string().optional().describe('Дата/время отправки или ошибки доставки'),
+  subject: z.string().optional().describe('Тема письма (Subject)'),
   source_subject: z.string().optional().describe('Тема исходного или пересланного письма'),
 });
 

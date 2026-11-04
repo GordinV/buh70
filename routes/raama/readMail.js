@@ -102,6 +102,15 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
         });
 
         console.log('[readMail] Background execution finished successfully. log_id: ' + logId + ', errors found: ' + deliveryErrors.length);
+        if (deliveryErrors && deliveryErrors.length > 0) {
+            for (var d = 0; d < deliveryErrors.length; d++) {
+                var de = deliveryErrors[d];
+                console.log('[readMail] Vigane arve: ' + de.doc_number + 
+                            ' | Teema: "' + (de.subject || de.source_subject || '') + 
+                            '" | Saaja: ' + de.recipient_email + 
+                            ' | Staatus: ' + de.status);
+            }
+        }
 
         // Фиксируем успешное завершение в ou.logs с деталями результата
         await endLog(logId, 'success', null, deliveryErrors);
@@ -110,8 +119,18 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
         if (deliveryErrors && deliveryErrors.length > 0) {
             try {
                 var cancelSql = 'SELECT docs.tuhista_arve_saatmise_staatus($1::INTEGER) AS result;';
-                await db.queryDb(cancelSql, [logId], null, null, null, null, config);
+                var cancelRes = await db.queryDb(cancelSql, [logId], null, null, null, null, config);
                 console.log('[readMail] Successfully called docs.tuhista_arve_saatmise_staatus for log_id: ' + logId);
+
+                var cancelItems = (cancelRes && cancelRes.data && cancelRes.data[0] && cancelRes.data[0].result)
+                    ? cancelRes.data[0].result
+                    : [];
+                if (typeof cancelItems === 'string') {
+                    try { cancelItems = JSON.parse(cancelItems); } catch (parseErr) {}
+                }
+
+                // Отправляем персональные отчеты каждому ответственному бухгалтеру
+                await notifyAccountantsAboutFailedInvoices(cancelItems, deliveryErrors, logId);
             } catch (tuhistaErr) {
                 console.error('[readMail] Error calling docs.tuhista_arve_saatmise_staatus for log_id ' + logId + ':', tuhistaErr);
             }
@@ -145,6 +164,203 @@ function hasValidDocNumber(docNumber) {
     if (!docNumber) return false;
     var normalized = String(docNumber).trim().toUpperCase();
     return normalized.length > 0 && normalized !== 'N/A' && normalized !== 'UNKNOWN';
+}
+
+/**
+ * Получение SMTP-транспортера nodemailer
+ */
+function getMailTransporter(customTransporter) {
+    if (customTransporter) return customTransporter;
+
+    var smtpHost = process.env.SMTP_HOST || 'mail.narva.ee';
+    var smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 25;
+    var smtpUser = process.env.SMTP_USER || 'oppetasu';
+    var smtpPass = process.env.SMTP_PASS || 'wbt5OcIhvmD8';
+    var isSecure = smtpPort === 465;
+
+    return nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: isSecure,
+        auth: {
+            user: smtpUser,
+            pass: smtpPass
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
+}
+
+/**
+ * Отправка персонализированного отчета ответственному бухгалтеру о недоставленных счетах
+ */
+async function sendAccountantNotificationEmail(accountantEmail, invoices, logId, customTransporter) {
+    if (!accountantEmail || !invoices || invoices.length === 0) return null;
+
+    var transporter = getMailTransporter(customTransporter);
+
+    var rowsText = '';
+    var rowsHtml = '';
+
+    for (var i = 0; i < invoices.length; i++) {
+        var inv = invoices[i];
+        var docNum = inv.doc_number || inv.invoice_number || 'N/A';
+        var recip = inv.recipient_email || 'teadmata';
+        var rsn = inv.reason || 'Kättetoimetamise tõrge';
+        var subj = inv.subject || inv.source_subject || '-';
+
+        rowsText += '- Arve nr: ' + docNum + ' | Kliendi e-post: ' + recip + ' | Põhjus: ' + rsn + ' | Teema: ' + subj + '\n';
+        rowsHtml += '<tr>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + docNum + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd;">' + recip + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f;">' + rsn + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #555;">' + subj + '</td>' +
+            '</tr>';
+    }
+
+    var textContent = 'Tere!\n\n' +
+        'Teavitame, et järgmisi Teie koostatud arveid ei õnnestunud e-posti teel kliendile kätte toimetada ' +
+        'ja nende saatmise staatus süsteemis buh70 on tühistatud:\n\n' +
+        rowsText + '\n' +
+        (logId ? 'Süsteemi logi ID: ' + logId + '\n' : '') +
+        'Palun kontrollige klientide e-posti aadresse ja vajadusel saatke arved uuesti.\n';
+
+    var htmlContent = '<div style="font-family: Arial, sans-serif; color: #333; max-width: 750px;">' +
+        '<h3 style="color: #c62828; border-bottom: 2px solid #c62828; padding-bottom: 6px;">' +
+        'buh70: Kättetoimetamata arvete teavitus (' + invoices.length + ' tk)' +
+        '</h3>' +
+        '<p>Tere!</p>' +
+        '<p>Teavitame, et järgmisi Teie koostatud arveid ei õnnestunud e-posti teel kohale toimetada ja nende saatmise staatus on süsteemis <strong>tühistatud</strong>:</p>' +
+        '<table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;">' +
+        '<thead>' +
+        '<tr style="background-color: #f5f5f5; text-align: left;">' +
+        '<th style="padding: 8px; border: 1px solid #ddd;">Arve number</th>' +
+        '<th style="padding: 8px; border: 1px solid #ddd;">Kliendi e-post</th>' +
+        '<th style="padding: 8px; border: 1px solid #ddd;">Tagastamise põhjus</th>' +
+        '<th style="padding: 8px; border: 1px solid #ddd;">Kirja teema</th>' +
+        '</tr>' +
+        '</thead>' +
+        '<tbody>' +
+        rowsHtml +
+        '</tbody>' +
+        '</table>' +
+        '<p style="margin-top: 14px;">Palun kontrollige kontaktandmeid ja saatke arved vajadusel uuesti.</p>' +
+        (logId ? '<p style="font-size: 12px; color: #888;">Logi ID: ' + logId + '</p>' : '') +
+        '</div>';
+
+    var mailOptions = {
+        from: process.env.REPORT_EMAIL_FROM || 'oppetasu@narva.ee',
+        to: accountantEmail,
+        subject: 'buh70: Kättetoimetamata arved (' + invoices.length + ' tk)',
+        text: textContent,
+        html: htmlContent
+    };
+
+    try {
+        console.log('[readMail] Sending returned invoices notification to accountant: ' + accountantEmail + ' (' + invoices.length + ' invoices)');
+        var info = await transporter.sendMail(mailOptions);
+        console.log('[readMail] Notification email successfully sent to ' + accountantEmail + ':', info.messageId || info.response);
+        return info;
+    } catch (sendErr) {
+        console.error('[readMail] Failed to send notification to accountant ' + accountantEmail + ':', sendErr.message);
+        throw sendErr;
+    }
+}
+
+/**
+ * Группирует возвращенные счета по email ответственного бухгалтера и отправляет персональные отчеты
+ */
+async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryErrors, logId, customTransporter) {
+    if (!cancelResults) return { groupedCount: 0, missingEmailCount: 0, results: {} };
+    var items = Array.isArray(cancelResults) ? cancelResults : [];
+    if (typeof cancelResults === 'string') {
+        try {
+            items = JSON.parse(cancelResults);
+        } catch (e) {
+            console.error('[readMail] Failed to parse cancelResults JSON:', e);
+            items = [];
+        }
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+        return { groupedCount: 0, missingEmailCount: 0, results: {} };
+    }
+
+    // Составляем карту деталей из deliveryErrors
+    var errorDetailsMap = {};
+    if (deliveryErrors && Array.isArray(deliveryErrors)) {
+        for (var i = 0; i < deliveryErrors.length; i++) {
+            var err = deliveryErrors[i];
+            if (err && (err.doc_number || err.invoice_number)) {
+                var key = String(err.doc_number || err.invoice_number).trim().toUpperCase();
+                errorDetailsMap[key] = err;
+            }
+        }
+    }
+
+    // Группировка по email бухгалтера
+    var groupsByEmail = {};
+    var missingEmailInvoices = [];
+
+    for (var j = 0; j < items.length; j++) {
+        var row = items[j];
+        if (!row || row.status !== 'success') continue;
+
+        var accountantEmail = row.email && typeof row.email === 'string' ? row.email.trim().toLowerCase() : null;
+        var docKey = String(row.doc_number || '').trim().toUpperCase();
+        var origErr = errorDetailsMap[docKey] || {};
+
+        var invoiceEntry = {
+            doc_number: row.doc_number || origErr.doc_number || 'N/A',
+            doc_id: row.doc_id || null,
+            recipient_email: row.recipient_email || origErr.recipient_email || 'teadmata',
+            status: origErr.status || 'Tagastatud',
+            reason: origErr.reason || 'Kättetoimetamise tõrge',
+            subject: origErr.subject || origErr.source_subject || ''
+        };
+
+        if (accountantEmail && accountantEmail.indexOf('@') !== -1) {
+            if (!groupsByEmail[accountantEmail]) {
+                groupsByEmail[accountantEmail] = [];
+            }
+            groupsByEmail[accountantEmail].push(invoiceEntry);
+        } else {
+            missingEmailInvoices.push(invoiceEntry);
+        }
+    }
+
+    if (missingEmailInvoices.length > 0) {
+        var unassignedDocNums = missingEmailInvoices.map(function (m) { return m.doc_number; }).join(', ');
+        console.warn('[readMail] Arved ilma vastutava raamatupidaja e-postita (' + missingEmailInvoices.length + ' tk): ' + unassignedDocNums);
+    }
+
+    var sentResults = {};
+    var emailKeys = Object.keys(groupsByEmail);
+    for (var k = 0; k < emailKeys.length; k++) {
+        var accEmail = emailKeys[k];
+        var invoices = groupsByEmail[accEmail];
+        try {
+            var sendRes = await sendAccountantNotificationEmail(accEmail, invoices, logId, customTransporter);
+            sentResults[accEmail] = {
+                success: true,
+                count: invoices.length,
+                messageId: sendRes ? (sendRes.messageId || sendRes.response) : null
+            };
+        } catch (sendErr) {
+            console.error('[readMail] Failed to send report to accountant ' + accEmail + ':', sendErr.message);
+            sentResults[accEmail] = {
+                success: false,
+                count: invoices.length,
+                error: sendErr.message
+            };
+        }
+    }
+
+    return {
+        groupedCount: emailKeys.length,
+        missingEmailCount: missingEmailInvoices.length,
+        results: sentResults
+    };
 }
 
 /**
@@ -202,27 +418,7 @@ async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) 
         (logId ? '<p style="margin-top: 14px; font-size: 13px; color: #666;">Logi ID süsteemis: ' + logId + '</p>' : '') +
         '</div>';
 
-    var transporter = customTransporter;
-    if (!transporter) {
-        var smtpHost = process.env.SMTP_HOST || 'mail.narva.ee';
-        var smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 25;
-        var smtpUser = process.env.SMTP_USER || 'oppetasu';
-        var smtpPass = process.env.SMTP_PASS || 'wbt5OcIhvmD8';
-        var isSecure = smtpPort === 465;
-
-        transporter = nodemailer.createTransport({
-            host: smtpHost,
-            port: smtpPort,
-            secure: isSecure,
-            auth: {
-                user: smtpUser,
-                pass: smtpPass
-            },
-            tls: {
-                rejectUnauthorized: false
-            }
-        });
-    }
+    var transporter = getMailTransporter(customTransporter);
 
     try {
         var mailOptions = {
@@ -259,6 +455,10 @@ async function executeReadMailProcess(params) {
         for (var i = 0; i < inputTexts.length; i++) {
             var res = parseIncomingEmail(inputTexts[i]);
             if (res && hasValidDocNumber(res.doc_number || res.invoice_number)) {
+                console.log('[readMail] Tuvastatud vigane saatmine: arve nr: ' + res.doc_number + 
+                            ', teema: "' + (res.subject || res.source_subject || '') + 
+                            '", saaja: ' + res.recipient_email + 
+                            ', staatus: ' + res.status);
                 parsedDirect.push(res);
             }
         }
@@ -292,6 +492,10 @@ async function executeReadMailProcess(params) {
         });
 
         if (errorInfo && hasValidDocNumber(errorInfo.doc_number || errorInfo.invoice_number)) {
+            console.log('[readMail] Tuvastatud vigane saatmine: arve nr: ' + errorInfo.doc_number + 
+                        ', teema: "' + (errorInfo.subject || errorInfo.source_subject || '') + 
+                        '", saaja: ' + errorInfo.recipient_email + 
+                        ', staatus: ' + errorInfo.status);
             deliveryErrors.push(errorInfo);
         }
     }
@@ -693,6 +897,7 @@ function parseIncomingEmail(rawEmail, meta) {
         recipient_email: recipientEmail,
         reference_number: refNumber,
         failed_at: dateStr,
+        subject: subject,
         source_subject: subject
     };
 }
@@ -847,8 +1052,18 @@ async function executeCalculation(userId, rekvId, params) {
         if (deliveryErrors && deliveryErrors.length > 0) {
             try {
                 var cancelSql = 'SELECT docs.tuhista_arve_saatmise_staatus($1::INTEGER) AS result;';
-                await db.queryDb(cancelSql, [logId], null, null, null, null, config);
+                var cancelRes = await db.queryDb(cancelSql, [logId], null, null, null, null, config);
                 console.log('[readMail] Successfully called docs.tuhista_arve_saatmise_staatus for log_id: ' + logId);
+
+                var cancelItems = (cancelRes && cancelRes.data && cancelRes.data[0] && cancelRes.data[0].result)
+                    ? cancelRes.data[0].result
+                    : [];
+                if (typeof cancelItems === 'string') {
+                    try { cancelItems = JSON.parse(cancelItems); } catch (parseErr) {}
+                }
+
+                // Отправляем персональные отчеты каждому ответственному бухгалтеру
+                await notifyAccountantsAboutFailedInvoices(cancelItems, deliveryErrors, logId, params.transporter);
             } catch (tuhistaErr) {
                 console.error('[readMail] Error calling docs.tuhista_arve_saatmise_staatus for log_id ' + logId + ':', tuhistaErr);
             }
@@ -904,6 +1119,9 @@ exports.filterNewEmails = filterNewEmails;
 exports.loadReadMailState = loadReadMailState;
 exports.saveReadMailState = saveReadMailState;
 exports.sendOtherErrorsAlertEmail = sendOtherErrorsAlertEmail;
+exports.getMailTransporter = getMailTransporter;
+exports.sendAccountantNotificationEmail = sendAccountantNotificationEmail;
+exports.notifyAccountantsAboutFailedInvoices = notifyAccountantsAboutFailedInvoices;
 exports.ALERT_EMAILS = ALERT_EMAILS;
 exports.createLog = createLog;
 exports.endLog = endLog;
