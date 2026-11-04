@@ -167,6 +167,19 @@ function hasValidDocNumber(docNumber) {
 }
 
 /**
+ * Экранирование HTML-спецсимволов (защита от потери содержимого <email@narva.ee> в таблицах писем)
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
  * Получение SMTP-транспортера nodemailer
  */
 function getMailTransporter(customTransporter) {
@@ -212,10 +225,10 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
 
         rowsText += '- Arve nr: ' + docNum + ' | Kliendi e-post: ' + recip + ' | Põhjus: ' + rsn + ' | Teema: ' + subj + '\n';
         rowsHtml += '<tr>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + docNum + '</td>' +
-            '<td style="padding: 8px; border: 1px solid #ddd;">' + recip + '</td>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f;">' + rsn + '</td>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #555;">' + subj + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + escapeHtml(docNum) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd;">' + escapeHtml(recip) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f;">' + escapeHtml(rsn) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #555;">' + escapeHtml(subj) + '</td>' +
             '</tr>';
     }
 
@@ -323,9 +336,22 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
             if (!groupsByEmail[accountantEmail]) {
                 groupsByEmail[accountantEmail] = [];
             }
-            groupsByEmail[accountantEmail].push(invoiceEntry);
+            // Дедупликация счетов в рамках группы одного бухгалтера
+            var alreadyInGroup = groupsByEmail[accountantEmail].some(function (existing) {
+                return String(existing.doc_number).trim() === String(invoiceEntry.doc_number).trim() &&
+                       String(existing.recipient_email).trim().toLowerCase() === String(invoiceEntry.recipient_email).trim().toLowerCase();
+            });
+            if (!alreadyInGroup) {
+                groupsByEmail[accountantEmail].push(invoiceEntry);
+            }
         } else {
-            missingEmailInvoices.push(invoiceEntry);
+            var alreadyMissing = missingEmailInvoices.some(function (existing) {
+                return String(existing.doc_number).trim() === String(invoiceEntry.doc_number).trim() &&
+                       String(existing.recipient_email).trim().toLowerCase() === String(invoiceEntry.recipient_email).trim().toLowerCase();
+            });
+            if (!alreadyMissing) {
+                missingEmailInvoices.push(invoiceEntry);
+            }
         }
     }
 
@@ -334,13 +360,14 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
         console.warn('[readMail] Arved ilma vastutava raamatupidaja e-postita (' + missingEmailInvoices.length + ' tk): ' + unassignedDocNums);
     }
 
+    var sharedTransporter = getMailTransporter(customTransporter);
     var sentResults = {};
     var emailKeys = Object.keys(groupsByEmail);
     for (var k = 0; k < emailKeys.length; k++) {
         var accEmail = emailKeys[k];
         var invoices = groupsByEmail[accEmail];
         try {
-            var sendRes = await sendAccountantNotificationEmail(accEmail, invoices, logId, customTransporter);
+            var sendRes = await sendAccountantNotificationEmail(accEmail, invoices, logId, sharedTransporter);
             sentResults[accEmail] = {
                 success: true,
                 count: invoices.length,
@@ -386,9 +413,9 @@ async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) 
 
         rowsText += '- Arve nr: ' + docNum + ' | Saaja: ' + recip + ' | Põhjus: ' + rsn + '\n';
         rowsHtml += '<tr>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + docNum + '</td>' +
-            '<td style="padding: 8px; border: 1px solid #ddd;">' + recip + '</td>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f;">' + rsn + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + escapeHtml(docNum) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd;">' + escapeHtml(recip) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f;">' + escapeHtml(rsn) + '</td>' +
             '</tr>';
     }
 
@@ -823,8 +850,8 @@ function parseIncomingEmail(rawEmail, meta) {
     if (headerEndIdx === -1) headerEndIdx = rawEmail.indexOf('\n\n');
     var headerSection = headerEndIdx !== -1 ? rawEmail.substring(0, headerEndIdx) : '';
 
-    var subjectMatch = headerSection.match(/^Subject:\s*(.*)$/im);
-    var subject = subjectMatch ? decodeMimeWords(subjectMatch[1].trim()) : '';
+    var subjectMatch = headerSection.match(/^Subject:\s*([^\r\n]+(?:\r?\n[ \t]+[^\r\n]+)*)/im);
+    var subject = subjectMatch ? decodeMimeWords(subjectMatch[1].replace(/\r?\n[ \t]+/g, ' ').trim()) : '';
 
     var fromMatch = headerSection.match(/^From:\s*(.*)$/im);
     var from = fromMatch ? decodeMimeWords(fromMatch[1].trim()) : '';
@@ -1120,6 +1147,7 @@ exports.loadReadMailState = loadReadMailState;
 exports.saveReadMailState = saveReadMailState;
 exports.sendOtherErrorsAlertEmail = sendOtherErrorsAlertEmail;
 exports.getMailTransporter = getMailTransporter;
+exports.escapeHtml = escapeHtml;
 exports.sendAccountantNotificationEmail = sendAccountantNotificationEmail;
 exports.notifyAccountantsAboutFailedInvoices = notifyAccountantsAboutFailedInvoices;
 exports.ALERT_EMAILS = ALERT_EMAILS;

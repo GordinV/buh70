@@ -9,12 +9,14 @@ DECLARE
     l_rekv_id     INTEGER;
     l_doc_id      INTEGER;
     l_response    JSONB = '[]'::JSONB; -- результат
-    l_email       text;
+    l_email       TEXT;
 BEGIN
     -- 1. Считываем результат работы агента и учреждение из ou.logs
     SELECT
+        l.rekvid,
         l.propertis -> 'result'
     INTO
+        l_rekv_id,
         l_jsonb_arved
     FROM
         ou.logs l
@@ -38,25 +40,27 @@ BEGIN
                                                    doc_number TEXT,
                                                    status TEXT,
                                                    reason TEXT,
-                                                   recipient_email TEXT
+                                                   recipient_email TEXT,
+                                                   subject TEXT
                 )
         LOOP
 
-            raise notice 'v_arv_rida.doc_number %, l_rekv_id %, v_arv_rida.recipient_email %',v_arv_rida.doc_number, l_rekv_id, v_arv_rida.recipient_email;
-
             l_doc_id := NULL;
-            l_email = NULL;
+            l_email := NULL;
+
+            raise notice 'v_arv_rida.doc_number %, l_rekv_id %, v_arv_rida.recipient_email %', v_arv_rida.doc_number, l_rekv_id, v_arv_rida.recipient_email;
 
             -- 3. Ищем документ счета с фильтрацией по номеру, учреждению и адресу получателя
+            -- Используем LEFT JOIN ou.userid, чтобы счет аннулировался даже если автор не найден или удален
             SELECT
                 d.id,
                 d.rekvid,
-                u.properties ->> 'email' as email
+                (u.properties::jsonb ->> 'email')::TEXT AS email
             INTO l_doc_id, l_rekv_id, l_email
             FROM
                 docs.arv                 a
                     INNER JOIN docs.doc  d ON d.id = a.parentid
-                    inner join ou.userid u on u.id = a.userid
+                    LEFT JOIN ou.userid  u ON u.id = a.userid
             WHERE
                   trim(a.number) = trim(v_arv_rida.doc_number)
               AND EXISTS
@@ -83,20 +87,24 @@ BEGIN
                 -- Обновляем историю в docs.doc: заменяем email на email_error с сохранением статуса и причины
                 UPDATE docs.doc
                 SET
-                    history = history || jsonb_build_object('email_error_3', now(), 'info', v_arv_rida.reason, 'status',
-                                                            v_arv_rida.status)
+                    history = coalesce(history, '[]'::JSONB) || jsonb_build_object(
+                            'email_error_3', now(),
+                            'info', v_arv_rida.reason,
+                            'status', v_arv_rida.status
+                        )
                 WHERE
                     id = l_doc_id;
 
-                raise notice 'update l_doc_id %',l_doc_id;
+                raise notice 'update l_doc_id %', l_doc_id;
 
-                -- 5. Обновляем детализацию ошибки в ou.logs по событию отправки счета
+                -- 5. Обновляем детализацию ошибки в ou.logs по событию отправки счета (включая subject)
                 UPDATE ou.logs
                 SET
                     changes = jsonb_build_object(
                                       'status', v_arv_rida.status,
                                       'reason', v_arv_rida.reason,
                                       'email', v_arv_rida.recipient_email,
+                                      'subject', v_arv_rida.subject,
                                       'cancelled_at', clock_timestamp()
                               ) || coalesce(changes, '{}'::JSONB)
                 WHERE
@@ -104,8 +112,7 @@ BEGIN
                   AND propertis ->> 'table' = 'arv'
                   AND propertis ->> 'event' = 'email';
 
-                raise notice 'update ou.logs l_log_id %',l_log_id;
-
+                raise notice 'update ou.logs l_log_id %', l_log_id;
 
                 -- Добавляем успешный результат в ответ
                 l_response := l_response || jsonb_build_object(
@@ -113,7 +120,8 @@ BEGIN
                         'doc_id', l_doc_id,
                         'recipient_email', v_arv_rida.recipient_email,
                         'status', 'success',
-                        'email', l_email);
+                        'email', l_email,
+                        'subject', v_arv_rida.subject);
             ELSE
                 -- Счет не найден
                 l_response := l_response || jsonb_build_object(
