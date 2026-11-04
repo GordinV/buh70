@@ -661,7 +661,7 @@ export function parseDeliveryFailureText(rawText: string): MailDeliveryError | n
     recipient_email: recipientEmail,
     ...(referenceNumber ? { reference_number: referenceNumber } : {}),
     ...(failedAt ? { failed_at: failedAt } : {}),
-    ...(sourceSubject ? { source_subject: sourceSubject } : {}),
+    ...(sourceSubject ? { source_subject: sourceSubject, subject: sourceSubject } : {}),
   };
 
   return MailDeliveryErrorSchema.parse(result);
@@ -818,7 +818,7 @@ export function parseIncomingEmail(
     recipient_email: recipientEmail || 'unknown@client.ee',
     ...(referenceNumber ? { reference_number: referenceNumber } : {}),
     ...(failedAt ? { failed_at: failedAt } : {}),
-    ...(subject ? { source_subject: subject } : {}),
+    ...(subject ? { source_subject: subject, subject: subject } : {}),
   };
 
   return MailDeliveryErrorSchema.parse(result);

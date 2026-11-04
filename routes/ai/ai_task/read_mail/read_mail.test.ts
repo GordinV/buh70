@@ -782,5 +782,153 @@ Error: Unexpected custom MTA error 554 Transaction failed`,
       expect(passedErrors[0].recipient_email).toBe('strange.error@mail.ru');
     });
   });
+
+  describe('readMail.js - Уведомления ответственных бухгалтеров и тема письма в логах', () => {
+    const readMailBackend = require('../../../raama/readMail');
+
+    it('parseIncomingEmail должен содержать тему письма в полях subject и source_subject', () => {
+      const rawSample = `From: Mail Delivery System <mailer-daemon@narva.ee>
+To: oppetasu@narva.ee
+Subject: Undelivered Mail Returned to Sender
+Date: Wed, 14 Oct 2026 10:15:00 +0300
+
+Teema: Saadan dokument nr. 073-7745
+Saaja: client1@gmail.com
+Remote host said: 550 User unknown`;
+
+      const parsed = readMailBackend.parseIncomingEmail(rawSample);
+      expect(parsed).toBeDefined();
+      expect(parsed.doc_number).toBe('073-7745');
+      expect(parsed.subject).toBe('Undelivered Mail Returned to Sender');
+      expect(parsed.source_subject).toBe('Undelivered Mail Returned to Sender');
+    });
+
+    it('notifyAccountantsAboutFailedInvoices группирует счета по email ответственного бухгалтера и рассылает отчеты', async () => {
+      const mockSendMail = jest.fn().mockResolvedValue({ messageId: 'msg-test-123' });
+      const mockTransporter = { sendMail: mockSendMail } as any;
+
+      const cancelResults = [
+        {
+          doc_number: '073-7745',
+          doc_id: 101,
+          recipient_email: 'client1@gmail.com',
+          status: 'success',
+          email: 'buhgalter1@narva.ee',
+        },
+        {
+          doc_number: '073-7746',
+          doc_id: 102,
+          recipient_email: 'client2@mail.ee',
+          status: 'success',
+          email: 'buhgalter1@narva.ee',
+        },
+        {
+          doc_number: '095-9641',
+          doc_id: 103,
+          recipient_email: 'client3@yandex.ru',
+          status: 'success',
+          email: 'buhgalter2@narva.ee',
+        },
+        {
+          doc_number: '098-10566',
+          doc_id: 104,
+          recipient_email: 'client4@narva.ee',
+          status: 'success',
+          email: null, // Без email бухгалтера
+        },
+        {
+          doc_number: '999-9999',
+          recipient_email: 'missing@domain.ee',
+          status: 'error_not_found',
+          email: 'buhgalter3@narva.ee',
+        },
+      ];
+
+      const deliveryErrors = [
+        {
+          doc_number: '073-7745',
+          recipient_email: 'client1@gmail.com',
+          status: 'Aadressi viga',
+          reason: 'User unknown 550',
+          subject: 'Saadan arve 073-7745',
+        },
+        {
+          doc_number: '073-7746',
+          recipient_email: 'client2@mail.ee',
+          status: 'Postkast täis',
+          reason: 'Quota exceeded',
+          subject: 'Saadan arve 073-7746',
+        },
+        {
+          doc_number: '095-9641',
+          recipient_email: 'client3@yandex.ru',
+          status: 'Domeeni viga',
+          reason: 'Domain lookup error',
+          subject: 'Saadan arve 095-9641',
+        },
+        {
+          doc_number: '098-10566',
+          recipient_email: 'client4@narva.ee',
+          status: 'Aadressi viga',
+          reason: 'Invalid mailbox',
+          subject: 'Saadan arve 098-10566',
+        },
+      ];
+
+      const res = await readMailBackend.notifyAccountantsAboutFailedInvoices(
+        cancelResults,
+        deliveryErrors,
+        12345,
+        mockTransporter
+      );
+
+      expect(res.groupedCount).toBe(2);
+      expect(res.missingEmailCount).toBe(1); // 098-10566 без email
+      expect(mockSendMail).toHaveBeenCalledTimes(2);
+
+      // Проверяем вызов для buhgalter1@narva.ee (2 счета)
+      const call1 = mockSendMail.mock.calls.find(
+        (c: any) => c[0].to === 'buhgalter1@narva.ee'
+      );
+      expect(call1).toBeDefined();
+      expect(call1[0].subject).toContain('2 tk');
+      expect(call1[0].text).toContain('073-7745');
+      expect(call1[0].text).toContain('073-7746');
+      expect(call1[0].html).toContain('client1@gmail.com');
+      expect(call1[0].html).toContain('client2@mail.ee');
+      expect(call1[0].text).toContain('Süsteemi logi ID: 12345');
+
+      // Проверяем вызов для buhgalter2@narva.ee (1 счет)
+      const call2 = mockSendMail.mock.calls.find(
+        (c: any) => c[0].to === 'buhgalter2@narva.ee'
+      );
+      expect(call2).toBeDefined();
+      expect(call2[0].subject).toContain('1 tk');
+      expect(call2[0].text).toContain('095-9641');
+      expect(call2[0].html).toContain('client3@yandex.ru');
+    });
+
+    it('notifyAccountantsAboutFailedInvoices корректно обрабатывает пустые или некорректные входные данные', async () => {
+      const mockTransporter = { sendMail: jest.fn() } as any;
+
+      const resEmpty = await readMailBackend.notifyAccountantsAboutFailedInvoices(
+        [],
+        [],
+        null,
+        mockTransporter
+      );
+      expect(resEmpty.groupedCount).toBe(0);
+      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+
+      const resNull = await readMailBackend.notifyAccountantsAboutFailedInvoices(
+        null,
+        null,
+        null,
+        mockTransporter
+      );
+      expect(resNull.groupedCount).toBe(0);
+      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+    });
+  });
 });
 
