@@ -25,6 +25,20 @@ async function getRekvList() {
 }
 
 /**
+ * Безопасный парсинг JSON данных из результата БД
+ */
+function parseDbData(data) {
+    if (typeof data === 'string') {
+        try {
+            return JSON.parse(data);
+        } catch (e) {
+            return data;
+        }
+    }
+    return data;
+}
+
+/**
  * GET обработчик формы запроса viitenumber
  */
 exports.get = async (req, res) => {
@@ -40,6 +54,7 @@ exports.get = async (req, res) => {
             hash: hash,
             rekvList: rekvList,
             tyypList: TYYP_LIST,
+            inputViitenumber: '',
             selectedRekv: '',
             selectedTyyp: '1',
             objektNumber: '',
@@ -61,37 +76,46 @@ exports.post = async (req, res) => {
         return res.status(403).send('Juurdepääs keelatud: vigane turvakood');
     }
 
-    const { rekv_id, tyyp, objekt_number } = req.body;
+    const { viitenumber, rekv_id, tyyp, objekt_number } = req.body;
+    const viiteVal = (viitenumber || '').trim();
+    const objektVal = (objekt_number || '').trim();
+    const rekvVal = rekv_id ? String(rekv_id).trim() : '';
+
+    const hasViite = viiteVal.length > 0;
+    const hasParams = (rekvVal.length > 0 && objektVal.length > 0);
+
     let result = null;
     let errorMessage = null;
 
-    console.log('params:', rekv_id, tyyp, objekt_number);
-
     try {
-        if (!rekv_id || !objekt_number || !objekt_number.trim()) {
-            errorMessage = 'Kõik väljad peavad olema täidetud';
+        if (hasViite && hasParams) {
+            errorMessage = 'Täida kas viitenumber VÕI vali asutus ja dokumendi number (mõlemat korraga ei saa täita)';
+        } else if (!hasViite && !hasParams) {
+            errorMessage = 'Sisesta viitenumber või täida asutus ja dokumendi number';
+        } else if (hasViite) {
+            // Режим 1: Обратный поиск по viitenumber
+            const sql = 'SELECT libs.get_data_from_viitenumber($1::TEXT) AS data';
+            const qryRes = await db.queryDb(sql, [viiteVal]);
+
+            if (qryRes && qryRes.data && qryRes.data.length > 0) {
+                result = parseDbData(qryRes.data[0].data);
+                if (result && !result.viitenumber) {
+                    result.viitenumber = viiteVal;
+                }
+            } else {
+                errorMessage = 'Andmeid ei leitud';
+            }
         } else {
+            // Режим 2: Прямой расчет viitenumber по реквизитам
             const sql = 'SELECT libs.get_viitenumber_from_regkood($1::INTEGER, $2::TEXT, $3::TEXT) AS data';
             const qryRes = await db.queryDb(sql, [
-                parseInt(rekv_id, 10),
-                objekt_number.trim(),
+                parseInt(rekvVal, 10),
+                objektVal,
                 tyyp || '1'
             ]);
 
-            console.log('qryRes:', qryRes);
-
             if (qryRes && qryRes.data && qryRes.data.length > 0) {
-                let rowData = qryRes.data[0].data;
-                if (typeof rowData === 'string') {
-                    try {
-                        rowData = JSON.parse(rowData);
-                    } catch (e) {
-                        // оставить как есть
-                    }
-                }
-                result = rowData;
-                console.log('result:', result);
-
+                result = parseDbData(qryRes.data[0].data);
             } else {
                 errorMessage = 'Andmeid ei leitud';
             }
@@ -103,9 +127,10 @@ exports.post = async (req, res) => {
             hash: hash,
             rekvList: rekvList,
             tyypList: TYYP_LIST,
-            selectedRekv: rekv_id,
+            inputViitenumber: viiteVal,
+            selectedRekv: rekvVal,
             selectedTyyp: tyyp || '1',
-            objektNumber: objekt_number || '',
+            objektNumber: objektVal,
             result: result,
             error: errorMessage
         });
@@ -117,9 +142,10 @@ exports.post = async (req, res) => {
             hash: hash,
             rekvList: rekvList,
             tyypList: TYYP_LIST,
-            selectedRekv: rekv_id,
+            inputViitenumber: viiteVal,
+            selectedRekv: rekvVal,
             selectedTyyp: tyyp || '1',
-            objektNumber: objekt_number || '',
+            objektNumber: objektVal,
             result: null,
             error: 'Päringu teostamisel tekkis viga'
         });
