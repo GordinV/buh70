@@ -13,7 +13,7 @@ html(lang="et")
         padding: 40px 20px;
       }
       .container {
-        max-width: 600px;
+        max-width: 640px;
         margin: 0 auto;
         background: #ffffff;
         padding: 30px;
@@ -27,8 +27,52 @@ html(lang="et")
         border-bottom: 2px solid #edf2f7;
         padding-bottom: 12px;
       }
+      .section-box {
+        background: #fafbfc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+        transition: opacity 0.2s ease, background-color 0.2s ease;
+      }
+      .section-box.is-disabled {
+        opacity: 0.45;
+        background-color: #edf2f7;
+        pointer-events: none;
+      }
+      .section-title {
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #4a5568;
+        margin-bottom: 12px;
+      }
+      .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 14px 0;
+        color: #718096;
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .divider::before, .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #cbd5e0;
+      }
+      .divider:not(:empty)::before {
+        margin-right: 12px;
+      }
+      .divider:not(:empty)::after {
+        margin-left: 12px;
+      }
       .form-group {
-        margin-bottom: 18px;
+        margin-bottom: 14px;
+      }
+      .form-group:last-child {
+        margin-bottom: 0;
       }
       label {
         display: block;
@@ -50,7 +94,17 @@ html(lang="et")
         border-color: #3182ce;
         outline: none;
       }
+      select:disabled, input[type="text"]:disabled {
+        background-color: #edf2f7;
+        cursor: not-allowed;
+      }
+      .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 18px;
+      }
       .btn-submit {
+        flex: 1;
         background-color: #2b6cb0;
         color: #fff;
         border: none;
@@ -59,11 +113,24 @@ html(lang="et")
         font-weight: 600;
         border-radius: 4px;
         cursor: pointer;
-        width: 100%;
         transition: background-color 0.2s ease;
       }
       .btn-submit:hover {
         background-color: #2c5282;
+      }
+      .btn-reset {
+        background-color: #e2e8f0;
+        color: #4a5568;
+        border: none;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+      .btn-reset:hover {
+        background-color: #cbd5e0;
       }
       .alert-error {
         background-color: #fed7d7;
@@ -107,32 +174,46 @@ html(lang="et")
       }
   body
     .container
-      h2 Viitenumbri arvestamine
+      h2 Viitenumbri arvestamine ja päring
 
       if error
         .alert-error
           strong Viga: 
           span= error
 
-      form(action="/" + hash + "/viitenumber", method="POST")
-        .form-group
-          label(for="rekv_id") Asutus:
-          select(name="rekv_id", id="rekv_id", required)
-            option(value="") -- Vali asutus --
-            each item in rekvList
-              option(value=item.id, selected=(selectedRekv == item.id))= item.nimetus
+      form(action="/" + hash + "/viitenumber", method="POST", id="viiteForm")
+        // Блок 1: Обратный поиск по Viitenumber
+        .section-box#viiteSection
+          .section-title 1. Otsing viitenumbri järgi
+          .form-group
+            label(for="viitenumber") Viitenumber:
+            input(type="text", name="viitenumber", id="viitenumber", value=inputViitenumber, placeholder="nt 3066087775166")
 
-        .form-group
-          label(for="tyyp") Dokument / Tüüp:
-          select(name="tyyp", id="tyyp", required)
-            each item in tyypList
-              option(value=item.id, selected=(selectedTyyp == item.id))= item.name
+        .divider VÕI
 
-        .form-group
-          label(for="objekt_number") Dokumendi number või reg. kood:
-          input(type="text", name="objekt_number", id="objekt_number", value=objektNumber, placeholder="Sisesta reg.kood, isikukood või dokumendi nr", required)
+        // Блок 2: Прямой расчет по реквизитам
+        .section-box#paramsSection
+          .section-title 2. Viitenumbri arvestamine andmete järgi
+          .form-group
+            label(for="rekv_id") Asutus:
+            select(name="rekv_id", id="rekv_id")
+              option(value="") -- Vali asutus --
+              each item in rekvList
+                option(value=item.id, selected=(selectedRekv == item.id))= item.nimetus
 
-        button.btn-submit(type="submit") Arvesta viitenumber
+          .form-group
+            label(for="tyyp") Dokument / Tüüp:
+            select(name="tyyp", id="tyyp")
+              each item in tyypList
+                option(value=item.id, selected=(selectedTyyp == item.id))= item.name
+
+          .form-group
+            label(for="objekt_number") Dokumendi number või reg. kood:
+            input(type="text", name="objekt_number", id="objekt_number", value=objektNumber, placeholder="Sisesta reg.kood, isikukood või dokumendi nr")
+
+        .button-group
+          button.btn-submit(type="submit") Soorita päring
+          button.btn-reset(type="button", id="btnReset") Tühjenda väljad
 
       if result
         .card-result
@@ -153,3 +234,63 @@ html(lang="et")
               .result-row
                 strong Selgitus: 
                 span= result.selgitus
+
+    script(type="text/javascript").
+      document.addEventListener('DOMContentLoaded', function () {
+        var viiteInput = document.getElementById('viitenumber');
+        var rekvSelect = document.getElementById('rekv_id');
+        var tyypSelect = document.getElementById('tyyp');
+        var objektInput = document.getElementById('objekt_number');
+        var viiteSection = document.getElementById('viiteSection');
+        var paramsSection = document.getElementById('paramsSection');
+        var btnReset = document.getElementById('btnReset');
+
+        function updateState() {
+          var hasViite = viiteInput.value.trim().length > 0;
+          var hasParams = (rekvSelect.value.trim().length > 0) || (objektInput.value.trim().length > 0);
+
+          if (hasViite) {
+            // Lock params block
+            rekvSelect.disabled = true;
+            tyypSelect.disabled = true;
+            objektInput.disabled = true;
+            paramsSection.classList.add('is-disabled');
+
+            viiteInput.disabled = false;
+            viiteSection.classList.remove('is-disabled');
+          } else if (hasParams) {
+            // Lock viite block
+            viiteInput.disabled = true;
+            viiteSection.classList.add('is-disabled');
+
+            rekvSelect.disabled = false;
+            tyypSelect.disabled = false;
+            objektInput.disabled = false;
+            paramsSection.classList.remove('is-disabled');
+          } else {
+            // Unlock all
+            viiteInput.disabled = false;
+            rekvSelect.disabled = false;
+            tyypSelect.disabled = false;
+            objektInput.disabled = false;
+            viiteSection.classList.remove('is-disabled');
+            paramsSection.classList.remove('is-disabled');
+          }
+        }
+
+        viiteInput.addEventListener('input', updateState);
+        rekvSelect.addEventListener('change', updateState);
+        objektInput.addEventListener('input', updateState);
+
+        btnReset.addEventListener('click', function () {
+          viiteInput.value = '';
+          rekvSelect.value = '';
+          tyypSelect.value = '1';
+          objektInput.value = '';
+          updateState();
+          viiteInput.focus();
+        });
+
+        // Initialize state on load
+        updateState();
+      });
