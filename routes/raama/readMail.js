@@ -158,6 +158,99 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
 }
 
 /**
+ * Проверка, является ли статус ошибки "Muud vead"
+ */
+function isMuudVeadStatus(status) {
+    if (!status) return false;
+    var s = String(status).trim().toLowerCase();
+    return s === 'muud vead' || s === 'muud_vead' || s === 'muudvead';
+}
+
+/**
+ * Определение, относится ли входящее письмо к рассылке извещений (automailerTeatis)
+ */
+function isTeatisEmail(text, subject) {
+    var combined = (text || '') + ' ' + (subject || '');
+    if (/maksevõla|maksevola/i.test(combined)) return true;
+    if (/\bteatis(?:e|ed|t)?\b/i.test(combined)) return true;
+    if (/automailerTeatis/i.test(combined)) return true;
+
+    // В automailerTeatis subject: "Saadan dokument nr. <number>" (без запятой и без viitenr)
+    // В automailer subject: "Saadan dokument nr. <number>, <viitenr>"
+    if (/Saadan\s+dokument\s+nr\./i.test(combined)) {
+        if (!/Saadan\s+dokument\s+nr\.[^,\r\n]+,/i.test(combined)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Проверка, является ли ошибка извещением (TEATIS)
+ */
+function isTeatisError(err) {
+    if (!err) return false;
+    if (err.doc_type && String(err.doc_type).trim().toUpperCase() === 'TEATIS') {
+        return true;
+    }
+    return isTeatisEmail(
+        (err.body || '') + ' ' + (err.body_text || '') + ' ' + (err.reason || ''),
+        (err.subject || '') + ' ' + (err.source_subject || '')
+    );
+}
+
+/**
+ * Построение строк таблицы HTML для отчета об ошибках
+ */
+function buildErrorRowsHtml(errors, isTeatisTable) {
+    var html = '';
+    for (var i = 0; i < errors.length; i++) {
+        var err = errors[i];
+        var docNum = err.doc_number || err.invoice_number || (isTeatisTable ? 'TEATIS' : 'N/A');
+        var recip = err.recipient_email || 'unknown';
+        var rsn = err.reason || 'Määramata saatmise tõrge';
+        var subj = err.subject || err.source_subject || '-';
+        var bodyText = err.body || err.body_text || err.email_body || '';
+
+        html += '<tr>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; vertical-align: top;">' + escapeHtml(docNum) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; vertical-align: top;">' + escapeHtml(recip) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f; vertical-align: top;">' + escapeHtml(rsn) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #555; vertical-align: top;">' + escapeHtml(subj) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; vertical-align: top;">' +
+            '<div style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; font-family: Consolas, monospace; font-size: 11px; background: #fafafa; padding: 6px; border: 1px solid #eee;">' +
+            escapeHtml(bodyText || '-') +
+            '</div>' +
+            '</td>' +
+            '</tr>';
+    }
+    return html;
+}
+
+/**
+ * Построение текстового блока для отчета об ошибках
+ */
+function buildErrorRowsText(errors, isTeatisTable) {
+    var text = '';
+    for (var i = 0; i < errors.length; i++) {
+        var err = errors[i];
+        var docNum = err.doc_number || err.invoice_number || (isTeatisTable ? 'TEATIS' : 'N/A');
+        var recip = err.recipient_email || 'unknown';
+        var rsn = err.reason || 'Määramata saatmise tõrge';
+        var subj = err.subject || err.source_subject || '-';
+        var bodyText = err.body || err.body_text || err.email_body || '';
+
+        text += '--------------------------------------------------\n' +
+            (isTeatisTable ? 'Teatise nr: ' : 'Arve nr: ') + docNum + '\n' +
+            'Saaja: ' + recip + '\n' +
+            'Põhjus: ' + rsn + '\n' +
+            'Teema: ' + subj + '\n' +
+            'Kirja sisu:\n' + (bodyText ? bodyText : '-') + '\n\n';
+    }
+    return text;
+}
+
+/**
  * Проверка наличия валидного номера счета (исключаем пустые значения, 'N/A', 'UNKNOWN')
  */
 function hasValidDocNumber(docNumber) {
@@ -211,13 +304,23 @@ function getMailTransporter(customTransporter) {
 async function sendAccountantNotificationEmail(accountantEmail, invoices, logId, customTransporter) {
     if (!accountantEmail || !invoices || invoices.length === 0) return null;
 
+    // Исключаем счета со статусом "Muud vead"
+    var validInvoices = invoices.filter(function (inv) {
+        return inv && !isMuudVeadStatus(inv.status);
+    });
+
+    if (validInvoices.length === 0) {
+        console.log('[readMail] No eligible invoices to notify accountant ' + accountantEmail + ' (all filtered out). Skipping email.');
+        return null;
+    }
+
     var transporter = getMailTransporter(customTransporter);
 
     var rowsText = '';
     var rowsHtml = '';
 
-    for (var i = 0; i < invoices.length; i++) {
-        var inv = invoices[i];
+    for (var i = 0; i < validInvoices.length; i++) {
+        var inv = validInvoices[i];
         var docNum = inv.doc_number || inv.invoice_number || 'N/A';
         var recip = inv.recipient_email || 'teadmata';
         var rsn = inv.reason || 'Kättetoimetamise tõrge';
@@ -241,7 +344,7 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
 
     var htmlContent = '<div style="font-family: Arial, sans-serif; color: #333; max-width: 750px;">' +
         '<h3 style="color: #c62828; border-bottom: 2px solid #c62828; padding-bottom: 6px;">' +
-        'buh70: Kättetoimetamata arvete teavitus (' + invoices.length + ' tk)' +
+        'buh70: Kättetoimetamata arvete teavitus (' + validInvoices.length + ' tk)' +
         '</h3>' +
         '<p>Tere!</p>' +
         '<p>Teavitame, et järgmisi Teie koostatud arveid ei õnnestunud e-posti teel kohale toimetada ja nende saatmise staatus on süsteemis <strong>tühistatud</strong>:</p>' +
@@ -265,13 +368,13 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
     var mailOptions = {
         from: process.env.REPORT_EMAIL_FROM || 'oppetasu@narva.ee',
         to: accountantEmail,
-        subject: 'buh70: Kättetoimetamata arved (' + invoices.length + ' tk)',
+        subject: 'buh70: Kättetoimetamata arved (' + validInvoices.length + ' tk)',
         text: textContent,
         html: htmlContent
     };
 
     try {
-        console.log('[readMail] Sending returned invoices notification to accountant: ' + accountantEmail + ' (' + invoices.length + ' invoices)');
+        console.log('[readMail] Sending returned invoices notification to accountant: ' + accountantEmail + ' (' + validInvoices.length + ' invoices)');
         var info = await transporter.sendMail(mailOptions);
         console.log('[readMail] Notification email successfully sent to ' + accountantEmail + ':', info.messageId || info.response);
         return info;
@@ -323,11 +426,25 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
         var docKey = String(row.doc_number || '').trim().toUpperCase();
         var origErr = errorDetailsMap[docKey] || {};
 
+        var invoiceStatus = origErr.status || 'Tagastatud';
+
+        // Исключаем счета со статусом "Muud vead" из извещения бухгалтеру
+        if (isMuudVeadStatus(invoiceStatus) || isMuudVeadStatus(origErr.status) || isMuudVeadStatus(row.error_status)) {
+            console.log('[readMail] Skipping invoice ' + (row.doc_number || origErr.doc_number) + ' with status "' + invoiceStatus + '" from accountant notification');
+            continue;
+        }
+
+        // Исключаем извещения (TEATIS), так как бухгалтерам рассылаются только их счета
+        if (isTeatisError(origErr) || (origErr.doc_type && origErr.doc_type === 'TEATIS')) {
+            console.log('[readMail] Skipping teatis ' + (row.doc_number || origErr.doc_number) + ' from accountant notification');
+            continue;
+        }
+
         var invoiceEntry = {
             doc_number: row.doc_number || origErr.doc_number || 'N/A',
             doc_id: row.doc_id || null,
             recipient_email: row.recipient_email || origErr.recipient_email || 'teadmata',
-            status: origErr.status || 'Tagastatud',
+            status: invoiceStatus,
             reason: origErr.reason || 'Kättetoimetamise tõrge',
             subject: origErr.subject || origErr.source_subject || ''
         };
@@ -365,14 +482,25 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
     var emailKeys = Object.keys(groupsByEmail);
     for (var k = 0; k < emailKeys.length; k++) {
         var accEmail = emailKeys[k];
-        var invoices = groupsByEmail[accEmail];
+        var invoices = (groupsByEmail[accEmail] || []).filter(function (inv) {
+            return inv && !isMuudVeadStatus(inv.status);
+        });
+
+        // Если других счетов нет, то пустое извещение не направляем
+        if (invoices.length === 0) {
+            console.log('[readMail] Accountant ' + accEmail + ' has 0 eligible invoices. Skipping email.');
+            continue;
+        }
+
         try {
             var sendRes = await sendAccountantNotificationEmail(accEmail, invoices, logId, sharedTransporter);
-            sentResults[accEmail] = {
-                success: true,
-                count: invoices.length,
-                messageId: sendRes ? (sendRes.messageId || sendRes.response) : null
-            };
+            if (sendRes) {
+                sentResults[accEmail] = {
+                    success: true,
+                    count: invoices.length,
+                    messageId: sendRes ? (sendRes.messageId || sendRes.response) : null
+                };
+            }
         } catch (sendErr) {
             console.error('[readMail] Failed to send report to accountant ' + accEmail + ':', sendErr.message);
             sentResults[accEmail] = {
@@ -384,7 +512,7 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
     }
 
     return {
-        groupedCount: emailKeys.length,
+        groupedCount: Object.keys(sentResults).length,
         missingEmailCount: missingEmailInvoices.length,
         results: sentResults
     };
@@ -392,7 +520,8 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
 
 /**
  * Отправка отчета об ошибках "Muud vead" на vladislav.gordin@gmail.com и andrei.vargunin@narva.ee
- * Отчет включает номер счета, адрес получателя и причину ошибки
+ * Отчет включает номер счета/извещения, адрес получателя, причину ошибки, тему и тело исходного письма.
+ * Письма со счетами и извещениями (automailerTeatis) разделены в отдельные таблицы.
  */
 async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) {
     var validErrors = (otherErrors || []).filter(function (e) {
@@ -400,49 +529,81 @@ async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) 
     });
     if (validErrors.length === 0) return null;
 
-    console.log('[readMail] Sending "Muud vead" alert for ' + validErrors.length + ' error(s) to ' + ALERT_EMAILS.join(', '));
+    var invoiceErrors = validErrors.filter(function (e) {
+        return !isTeatisError(e);
+    });
+    var teatisErrors = validErrors.filter(function (e) {
+        return isTeatisError(e);
+    });
 
-    var rowsText = '';
-    var rowsHtml = '';
+    console.log('[readMail] Sending "Muud vead" alert for ' + validErrors.length + ' error(s) (Arved: ' + invoiceErrors.length + ', Teatised: ' + teatisErrors.length + ') to ' + ALERT_EMAILS.join(', '));
 
-    for (var i = 0; i < validErrors.length; i++) {
-        var err = validErrors[i];
-        var docNum = err.doc_number || err.invoice_number || 'N/A';
-        var recip = err.recipient_email || 'unknown';
-        var rsn = err.reason || 'Määramata saatmise tõrge';
+    var textContent = 'buh70: E-posti saatmise vead (Muud vead)\n\n' +
+        'Tuvastati ' + validErrors.length + ' teadet (Arved: ' + invoiceErrors.length + ' tk, Teatised: ' + teatisErrors.length + ' tk), ' +
+        'mis ei vasta tavalistele vigadele ja vajavad täiendavat kontrolli:\n\n';
 
-        rowsText += '- Arve nr: ' + docNum + ' | Saaja: ' + recip + ' | Põhjus: ' + rsn + '\n';
-        rowsHtml += '<tr>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + escapeHtml(docNum) + '</td>' +
-            '<td style="padding: 8px; border: 1px solid #ddd;">' + escapeHtml(recip) + '</td>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f;">' + escapeHtml(rsn) + '</td>' +
-            '</tr>';
+    if (invoiceErrors.length > 0) {
+        textContent += '=== ARVED (СЧЕТА) (' + invoiceErrors.length + ' tk) ===\n' +
+            buildErrorRowsText(invoiceErrors, false) + '\n';
     }
 
-    var textContent = 'buh70: E-posti kohaletoimetamise määramata vead (Muud vead)\n\n' +
-        'Tuvastati ' + validErrors.length + ' teadet, mis ei vasta tavalistele vigadele ja vajavad täiendavat kontrolli:\n\n' +
-        rowsText + '\n' +
-        (logId ? 'Logi ID süsteemis: ' + logId + '\n' : '') +
+    if (teatisErrors.length > 0) {
+        textContent += '=== TEATISED (ИЗВЕЩЕНИЯ - automailerTeatis) (' + teatisErrors.length + ' tk) ===\n' +
+            buildErrorRowsText(teatisErrors, true) + '\n';
+    }
+
+    textContent += (logId ? 'Logi ID süsteemis: ' + logId + '\n' : '') +
         'Aeg: ' + new Date().toISOString() + '\n';
 
-    var htmlContent = '<div style="font-family: Arial, sans-serif; color: #333; max-width: 650px;">' +
+    var htmlContent = '<div style="font-family: Arial, sans-serif; color: #333; max-width: 950px;">' +
         '<h2 style="color: #d32f2f; border-bottom: 2px solid #d32f2f; padding-bottom: 6px;">' +
         'buh70: E-posti saatmise vead (Muud vead)' +
         '</h2>' +
-        '<p>Tuvastati <strong>' + validErrors.length + '</strong> teadet, mis ei vasta standardsetele vigadele ja vajavad käsitsi ülevaatamist:</p>' +
-        '<table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;">' +
-        '<thead>' +
-        '<tr style="background-color: #f5f5f5; text-align: left;">' +
-        '<th style="padding: 8px; border: 1px solid #ddd;">Arve number</th>' +
-        '<th style="padding: 8px; border: 1px solid #ddd;">Saaja e-post</th>' +
-        '<th style="padding: 8px; border: 1px solid #ddd;">Veateade / Põhjus</th>' +
-        '</tr>' +
-        '</thead>' +
-        '<tbody>' +
-        rowsHtml +
-        '</tbody>' +
-        '</table>' +
-        (logId ? '<p style="margin-top: 14px; font-size: 13px; color: #666;">Logi ID süsteemis: ' + logId + '</p>' : '') +
+        '<p>Tuvastati <strong>' + validErrors.length + '</strong> teadet (' +
+        'Arved: ' + invoiceErrors.length + ' tk, Teatised: ' + teatisErrors.length + ' tk), ' +
+        'mis ei vasta standardsetele vigadele ja vajavad käsitsi ülevaatamist:</p>';
+
+    if (invoiceErrors.length > 0) {
+        htmlContent += '<h3 style="color: #1a237e; margin-top: 20px; border-bottom: 2px solid #1a237e; padding-bottom: 4px;">' +
+            'Arved (счета) - ' + invoiceErrors.length + ' tk' +
+            '</h3>' +
+            '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">' +
+            '<thead>' +
+            '<tr style="background-color: #f5f5f5; text-align: left;">' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 14%;">Arve number</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 20%;">Saaja e-post</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 18%;">Veateade / Põhjus</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 20%;">Teema</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 28%;">Kirja sisu</th>' +
+            '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+            buildErrorRowsHtml(invoiceErrors, false) +
+            '</tbody>' +
+            '</table>';
+    }
+
+    if (teatisErrors.length > 0) {
+        htmlContent += '<h3 style="color: #b71c1c; margin-top: 25px; border-bottom: 2px solid #b71c1c; padding-bottom: 4px;">' +
+            'Teatised (извещения - automailerTeatis) - ' + teatisErrors.length + ' tk' +
+            '</h3>' +
+            '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">' +
+            '<thead>' +
+            '<tr style="background-color: #fff3e0; text-align: left;">' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 14%;">Teatise / Dok nr</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 20%;">Saaja e-post</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 18%;">Veateade / Põhjus</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 20%;">Teema</th>' +
+            '<th style="padding: 8px; border: 1px solid #ddd; width: 28%;">Kirja sisu</th>' +
+            '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+            buildErrorRowsHtml(teatisErrors, true) +
+            '</tbody>' +
+            '</table>';
+    }
+
+    htmlContent += (logId ? '<p style="margin-top: 18px; font-size: 13px; color: #666;">Logi ID süsteemis: ' + logId + '</p>' : '') +
         '</div>';
 
     var transporter = getMailTransporter(customTransporter);
@@ -451,7 +612,7 @@ async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) 
         var mailOptions = {
             from: process.env.REPORT_EMAIL_FROM || 'oppetasu@narva.ee',
             to: ALERT_EMAILS.join(', '),
-            subject: 'buh70: E-posti kohaletoimetamise vead (Muud vead)',
+            subject: 'buh70: E-posti saatmise vead (Muud vead)',
             text: textContent,
             html: htmlContent
         };
@@ -864,9 +1025,23 @@ function parseIncomingEmail(rawEmail, meta) {
                        (from ? 'From: ' + from + '\n' : '') +
                        decodedBody;
 
+    // Определение типа документа: извещение (automailerTeatis) или счет
+    var isTeatis = isTeatisEmail(combinedText, subject);
+    var docType = isTeatis ? 'TEATIS' : 'ARV';
+
     // 1. Поиск номера счета (напр. 073-7745, 095-9641, 098-10566)
     var docMatch = combinedText.match(/\b(\d{3}-\d{4,6})\b/);
     var docNumber = docMatch ? docMatch[1] : null;
+
+    // Если это извещение и номер в формате счета не найден, извлекаем номер извещения
+    if (!docNumber && isTeatis) {
+        var teatisDocMatch = combinedText.match(/(?:Saadan\s+dokument\s+nr\.?|Teatis\s*(?:nr\.?)?|Number:\s*NR-?)\s*([a-zA-Z0-9\-_/]+)/i);
+        if (teatisDocMatch) {
+            docNumber = teatisDocMatch[1].trim();
+        } else {
+            docNumber = 'TEATIS';
+        }
+    }
 
     // 2. Поиск viitenumber
     var refMatch = combinedText.match(/\b(0\d{2}0\d{6,7})\b/);
@@ -919,13 +1094,16 @@ function parseIncomingEmail(rawEmail, meta) {
     return {
         status: status,
         reason: reason,
+        doc_type: docType,
         doc_number: docNumber || 'N/A',
         invoice_number: docNumber || 'N/A',
         recipient_email: recipientEmail,
         reference_number: refNumber,
         failed_at: dateStr,
         subject: subject,
-        source_subject: subject
+        source_subject: subject,
+        body: decodedBody || rawEmail || '',
+        body_text: decodedBody || rawEmail || ''
     };
 }
 
@@ -1142,6 +1320,9 @@ exports.decodeQuotedPrintable = decodeQuotedPrintable;
 exports.decodeEmailBody = decodeEmailBody;
 exports.parseIncomingEmail = parseIncomingEmail;
 exports.hasValidDocNumber = hasValidDocNumber;
+exports.isMuudVeadStatus = isMuudVeadStatus;
+exports.isTeatisEmail = isTeatisEmail;
+exports.isTeatisError = isTeatisError;
 exports.filterNewEmails = filterNewEmails;
 exports.loadReadMailState = loadReadMailState;
 exports.saveReadMailState = saveReadMailState;
