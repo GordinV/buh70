@@ -63,7 +63,11 @@ module.exports = function (app) {
 
     app.post('/', require('./login').post);
 
-//login logic
+    // viitenumber
+    app.get('/:hash/viitenumber', require('./get_viitenumber').get);
+    app.post('/:hash/viitenumber', require('./get_viitenumber').post);
+
+    // login logic
     app.get('/login', require('./login').get);
 
     app.post('/login', require('./login').post);
