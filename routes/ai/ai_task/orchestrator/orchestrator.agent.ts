@@ -394,6 +394,21 @@ export async function evaluateTaskLaunchDecision(
 
   const schedCheckForContext = isTaskScheduleReady(task.schedule, currentDate);
 
+  // Обеспечиваем наличие родительских параметров (например, logId от getEarved):
+  const effectiveParams: Record<string, unknown> = {
+    ...((task.params as Record<string, unknown>) || {}),
+  };
+  if (!effectiveParams.logId && task.depends_on && task.depends_on.length > 0) {
+    for (const depKey of task.depends_on) {
+      const depTask = state.tasks[depKey];
+      if (depTask && depTask.log_id) {
+        effectiveParams.logId = depTask.log_id;
+        break;
+      }
+    }
+  }
+  task.params = effectiveParams;
+
   const context: DecisionContext = {
     currentServerTime: currentDate.toISOString(),
     localTime: localTimeFormatted,
@@ -401,7 +416,7 @@ export async function evaluateTaskLaunchDecision(
     timezone: effectiveTimezone,
     isScheduleDue: schedCheckForContext.ready && !schedCheckForContext.shouldSkip,
     agentName: key,
-    params: (task.params as Record<string, unknown>) || {},
+    params: effectiveParams,
     schedule: task.schedule,
     dependenciesState: depsState,
     attempts: task.attempts || 0,
@@ -901,6 +916,16 @@ export async function runOrchestratorTick(
     for (const [pKey, pTask] of promptTasks) {
       if (options.aiGenerateFn) {
         try {
+          let parentParams: Record<string, unknown> = {};
+          try {
+            parentParams = registry[pKey]?.resolveParentParams?.(state) ?? {};
+          } catch {
+            parentParams = {};
+          }
+          if (Object.keys(parentParams).length > 0) {
+            pTask.params = { ...(pTask.params || {}), ...parentParams };
+          }
+
           const decision = await evaluateTaskLaunchDecision(
             pKey,
             pTask,
@@ -1381,6 +1406,24 @@ export async function runOrchestratorTick(
       continue;
     }
 
+    // Подтягиваем родительские параметры (Parent Context Forwarding) ДО принятия решения LLM/FSM,
+    // чтобы DecisionContext содержал актуальный logId предшественника
+    let parentParams: Record<string, unknown> = {};
+    try {
+      parentParams = registry[key]?.resolveParentParams?.(state) ?? {};
+    } catch {
+      parentParams = {};
+    }
+
+    if (Object.keys(parentParams).length > 0) {
+      console.log(`[orchestrator-tick] Parent params for ${key}:`, JSON.stringify(parentParams));
+    }
+
+    task.params = {
+      ...(task.params || {}),
+      ...parentParams,
+    };
+
     const isTargetTaskKey = Boolean(selectedTaskKey && key === selectedTaskKey);
     const taskForceRun = effectiveForceRun || isTargetTaskKey;
 
@@ -1416,22 +1459,6 @@ export async function runOrchestratorTick(
       if (decision.dynamic_params) {
         task.params = { ...(task.params || {}), ...decision.dynamic_params };
       }
-
-      let parentParams: Record<string, unknown> = {};
-      try {
-        parentParams = registry[key]?.resolveParentParams?.(state) ?? {};
-      } catch {
-        parentParams = {};
-      }
-
-      if (Object.keys(parentParams).length > 0) {
-        console.log(`[orchestrator-tick] Parent params for ${key}:`, JSON.stringify(parentParams));
-      }
-
-      task.params = {
-        ...(task.params || {}),
-        ...parentParams,
-      };
 
       readyToStartKeys.push(key);
     } else {
