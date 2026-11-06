@@ -671,6 +671,8 @@ export async function runOrchestratorTick(
   const nowIso = currentDate.toISOString();
   console.log(`[orchestrator-tick] Käivitamine kuupäeval: ${targetDateStr}, hetkeolek: ${state.status}`);
 
+  const rearmedKeys = new Set<string>();
+
   // Ручной точечный сброс конкретной задачи по CLI/параметру taskKey
   const selectedTaskKey = options.taskKey || validated.taskKey;
   if (selectedTaskKey && state.tasks[selectedTaskKey]) {
@@ -683,18 +685,17 @@ export async function runOrchestratorTick(
     targetTask.finished_at = null;
     targetTask.duration_ms = null;
     targetTask.error = null;
+    if (targetTask.params && 'logId' in targetTask.params) {
+      delete (targetTask.params as Record<string, unknown>).logId;
+    }
     state.history.push({
       timestamp: nowIso,
       event: 'TASK_RESET_MANUAL',
       task: selectedTaskKey,
       details: `Task manually reset via taskKey option`,
     });
+    rearmedKeys.add(selectedTaskKey);
   }
-
-  // 1.1.1. Посуточное перевооружение задач с расписанием (schedule):
-  // Если наступили новые сутки (targetDateStr > state.cycle_date) или задача со schedule уже завершилась в прошлый день,
-  // переводим ее в PENDING для повторного запуска в назначенный час нового дня
-  const rearmedKeys = new Set<string>();
   for (const [sKey, sTask] of Object.entries(state.tasks)) {
     if (sTask.schedule && sTask.status !== 'RUNNING') {
       // Защита Downstream Lock: не перевооружаем задачу, если зависимая от нее задача прямо сейчас исполняется (RUNNING)
@@ -1046,10 +1047,13 @@ export async function runOrchestratorTick(
                 parentParams = {};
               }
 
+              if (Object.keys(parentParams).length > 0) {
+                console.log(`[orchestrator-tick] Parent params for ${key}:`, JSON.stringify(parentParams));
+              }
+
               task.params = {
                 ...(task.params || {}),
                 ...parentParams,
-                ...(task.params?.logId ? { logId: task.params.logId } : {}),
               };
 
               const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
@@ -1166,10 +1170,13 @@ export async function runOrchestratorTick(
                 parentParams = {};
               }
 
+              if (Object.keys(parentParams).length > 0) {
+                console.log(`[orchestrator-tick] Parent params for ${key}:`, JSON.stringify(parentParams));
+              }
+
               task.params = {
                 ...(task.params || {}),
                 ...parentParams,
-                ...(task.params?.logId ? { logId: task.params.logId } : {}),
               };
 
               const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
@@ -1277,10 +1284,13 @@ export async function runOrchestratorTick(
                   parentParams = {};
                 }
 
+                if (Object.keys(parentParams).length > 0) {
+                  console.log(`[orchestrator-tick] Parent params for ${key}:`, JSON.stringify(parentParams));
+                }
+
                 task.params = {
                   ...(task.params || {}),
                   ...parentParams,
-                  ...(task.params?.logId ? { logId: task.params.logId } : {}),
                 };
 
                 const logId = await dispatchTaskByKey(
@@ -1413,10 +1423,14 @@ export async function runOrchestratorTick(
       } catch {
         parentParams = {};
       }
+
+      if (Object.keys(parentParams).length > 0) {
+        console.log(`[orchestrator-tick] Parent params for ${key}:`, JSON.stringify(parentParams));
+      }
+
       task.params = {
         ...(task.params || {}),
         ...parentParams,
-        ...(task.params?.logId ? { logId: task.params.logId } : {}),
       };
 
       readyToStartKeys.push(key);
