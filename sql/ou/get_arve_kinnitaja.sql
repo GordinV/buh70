@@ -19,22 +19,116 @@ WITH
             l.id,
             l.rekvid,
             l.user_id,
-            -- Безопасное определение временного диапазона импорта с буфером 5 минут для защиты от рассинхронизации транзакций
+            l.changes,
+            l.propertis,
+            coalesce(
+                l.propertis ->> 'response',
+                l.propertis -> 'result' ->> 'error_message',
+                ''
+            ) AS log_message,
             coalesce(
                 (l.propertis ->> 'exec_start')::timestamptz,
                 clock_timestamp()
-            ) - interval '5 minutes' AS time_start,
+            ) - interval '30 minutes' AS time_start,
             coalesce(
                 (l.propertis ->> 'exec_end')::timestamptz,
                 clock_timestamp()
-            ) + interval '5 minutes' AS time_end
+            ) + interval '30 minutes' AS time_end
         FROM ou.logs l
         WHERE l.id = l_log_id
           AND l.propertis ->> 'flow' = 'docs.sp_loe_earved'
         LIMIT 1
     ),
+    -- Извлекаем явные ID созданных документов:
+    -- 1) Из changes ({ "doc_id": 8787823, ... })
+    -- 2) Из строки ответа / сообщений батчей "Arve nr.304688 importeeritud (id: 8787823); ..."
+    target_doc_ids AS (
+        SELECT (c ->> 'doc_id')::integer AS doc_id
+        FROM log_data ld,
+             jsonb_array_elements(
+                 CASE
+                     WHEN jsonb_typeof(ld.changes) = 'array' THEN ld.changes
+                     ELSE '[]'::jsonb
+                 END
+             ) c
+        WHERE (c ->> 'doc_id') IS NOT NULL AND (c ->> 'doc_id')::integer > 0
+
+        UNION
+
+        SELECT m[1]::integer AS doc_id
+        FROM log_data ld,
+             regexp_matches(ld.log_message, 'id:\s*(\d+)', 'g') m
+
+        UNION
+
+        SELECT m[1]::integer AS doc_id
+        FROM log_data ld,
+             jsonb_array_elements(
+                 CASE
+                     WHEN jsonb_typeof(ld.propertis -> 'result' -> 'batches') = 'array'
+                         THEN ld.propertis -> 'result' -> 'batches'
+                     ELSE '[]'::jsonb
+                 END
+             ) b,
+             regexp_matches(coalesce(b ->> 'message', ''), 'id:\s*(\d+)', 'g') m
+    ),
+    -- Резервный источник: список номеров счетов из batches/invoiceNumbers
+    target_invoice_numbers AS (
+        SELECT DISTINCT ltrim(rtrim(num.value)) AS number
+        FROM log_data ld,
+             jsonb_array_elements_text(
+                 CASE
+                     WHEN jsonb_typeof(ld.propertis -> 'result' -> 'invoiceNumbers') = 'array'
+                         THEN ld.propertis -> 'result' -> 'invoiceNumbers'
+                     ELSE '[]'::jsonb
+                 END
+             ) AS num(value)
+        WHERE num.value IS NOT NULL AND ltrim(rtrim(num.value)) <> ''
+    ),
     arved AS (
+        -- Приоритет 1: выборка по точным doc_id (не зависит от таймзон и времени создания)
         SELECT
+            d.id                                                  AS doc_id,
+            d.created,
+            coalesce(d.rekvid, a.rekvid)                          AS rekvid,
+            ltrim(rtrim(d.bpm -> 'omniva' -> -1 ->> 'isik'))::text AS raamatupidaja,
+            ltrim(rtrim(a.number))                                AS number,
+            ltrim(rtrim(k.nimetus))                               AS kontr_agent,
+            ld.user_id                                            AS log_user_id
+        FROM
+            target_doc_ids tdi
+            INNER JOIN docs.doc d ON d.id = tdi.doc_id
+            INNER JOIN docs.arv a ON a.parentid = d.id
+            INNER JOIN libs.asutus k ON k.id = a.asutusid
+            CROSS JOIN log_data ld
+
+        UNION
+
+        -- Приоритет 2 (fallback): если ID документов не распарсились, ищем по номерам счетов и окну времени
+        SELECT
+            d.id                                                  AS doc_id,
+            d.created,
+            coalesce(d.rekvid, a.rekvid)                          AS rekvid,
+            ltrim(rtrim(d.bpm -> 'omniva' -> -1 ->> 'isik'))::text AS raamatupidaja,
+            ltrim(rtrim(a.number))                                AS number,
+            ltrim(rtrim(k.nimetus))                               AS kontr_agent,
+            ld.user_id                                            AS log_user_id
+        FROM
+            log_data ld
+            INNER JOIN target_invoice_numbers tin ON TRUE
+            INNER JOIN docs.arv a ON ltrim(rtrim(a.number)) = tin.number
+            INNER JOIN docs.doc d ON d.id = a.parentid
+            INNER JOIN libs.asutus k ON k.id = a.asutusid
+        WHERE
+            NOT EXISTS (SELECT 1 FROM target_doc_ids)
+            AND d.created >= ld.time_start
+            AND d.created <= ld.time_end
+
+        UNION
+
+        -- Приоритет 3 (fallback): если и номеров счетов нет, поиск по окну времени
+        SELECT
+            d.id                                                  AS doc_id,
             d.created,
             coalesce(d.rekvid, a.rekvid)                          AS rekvid,
             ltrim(rtrim(d.bpm -> 'omniva' -> -1 ->> 'isik'))::text AS raamatupidaja,
@@ -47,11 +141,10 @@ WITH
             INNER JOIN docs.doc d ON d.id = a.parentid
             INNER JOIN libs.asutus k ON k.id = a.asutusid
         WHERE
-            -- Проверка попадания времени создания документа в диапазон импорта
-            (
-                d.created >= ld.time_start
-                AND d.created <= ld.time_end
-            )
+            NOT EXISTS (SELECT 1 FROM target_doc_ids)
+            AND NOT EXISTS (SELECT 1 FROM target_invoice_numbers)
+            AND d.created >= ld.time_start
+            AND d.created <= ld.time_end
     )
 SELECT
     jsonb_agg(
@@ -61,15 +154,16 @@ SELECT
             'asutus', ltrim(rtrim(r.nimetus))
         )
     ) AS arved,
-    -- Приоритет email: 1) бухгалтер из BPM, 2) пользователь запустивший импорт, 3) робот учреждения, 4) учреждение
+    -- Приоритет email: 1) бухгалтер из BPM, 2) пользователь запустивший импорт, 3) робот учреждения, 4) учреждение, 5) дефолтный email
     coalesce(
         u.email,
         log_u.email,
         smtp.email,
-        r.properties ->> 'email'
+        r.properties ->> 'email',
+        'noreply@narva.ee'
     )::text AS email,
-    smtp.smtp,
-    smtp.smtp_port,
+    coalesce(smtp.smtp, 'smtp.zone.eu')::text AS smtp,
+    coalesce(smtp.smtp_port, '465')::text AS smtp_port,
     smtp.smtp_pass,
     coalesce(smtp.smtp_user, 'palk')::text AS smtp_user
 
@@ -123,10 +217,11 @@ GROUP BY
         u.email,
         log_u.email,
         smtp.email,
-        r.properties ->> 'email'
+        r.properties ->> 'email',
+        'noreply@narva.ee'
     ),
-    smtp.smtp,
-    smtp.smtp_port,
+    coalesce(smtp.smtp, 'smtp.zone.eu'),
+    coalesce(smtp.smtp_port, '465'),
     smtp.smtp_pass,
     coalesce(smtp.smtp_user, 'palk')
 ;
@@ -145,6 +240,6 @@ GRANT EXECUTE ON FUNCTION docs.get_arve_kinnitaja(INTEGER) TO dbvaatleja;
 /*
 
 SELECT *
-FROM docs.get_arve_kinnitaja(8129348)
+FROM docs.get_arve_kinnitaja(8561010)
 
 */
