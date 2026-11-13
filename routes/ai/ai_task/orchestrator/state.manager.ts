@@ -300,7 +300,7 @@ export function getDefaultTaskGraph(baseDir?: string): Record<string, TaskState>
       allow_parallel: true,
       schedule: null,
       prompt: null,
-      params: { userId: 2477, rekvId: 63, dryRun: true, maxCalls: 10 },
+      params: { userId: 2477, rekvId: 63, dryRun: false, maxCalls: 10 },
       status: 'PENDING',
       attempts: 0,
       max_attempts: 2,
