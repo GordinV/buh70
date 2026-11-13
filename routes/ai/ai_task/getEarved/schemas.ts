@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 
-export const TASK_FLOW_GET_EARVED = 'docs.sp_loe_earved';
+export const TASK_FLOW_GET_EARVED = 'getEarved';
 
 /**
  * Возвращает дату выборки счетов FinBit в локальном формате YYYY-MM-DD (по умолчанию минус 2 дня)

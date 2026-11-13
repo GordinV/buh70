@@ -1,0 +1,19 @@
+{
+  "name": "inforegister",
+  "flow": "getInforegister",
+  "description": "Получение из Inforegister (платный API, каждый вызов тратит годовой лимит) данных организаций, отсутствующих в libs.asutus (result.missing лога check_asutus). При dryRun=false сохраняет их через libs.sp_salvesta_asutus. Закрытые организации, коды не из 8 цифр и не найденные в реестре не сохраняются (result.items). Запускается после check_asutus",
+  "prompt": null,
+  "allow_parallel": true,
+  "depends_on": [
+    "check_asutus"
+  ],
+  "schedule": null,
+  "max_attempts": 2,
+  "params": {
+    "userId": 11770,
+    "rekvId": 63,
+    "dryRun": true,
+    "maxCalls": 10,
+    "insecureTls": true
+  }
+}

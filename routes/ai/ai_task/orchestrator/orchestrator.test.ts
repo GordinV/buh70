@@ -13,6 +13,8 @@ import {
 import { TASK_FLOW_SALDOANDMIK } from '../saldoandmik/schemas';
 import { TASK_FLOW_CALC_ARV_JAAK } from '../calc_arv_jaak/schemas';
 import { TASK_FLOW_GET_EARVED } from '../getEarved/schemas';
+import { TASK_FLOW_CHECK_ASUTUS } from '../check_asutus/schemas';
+import { TASK_FLOW_IMPORT_EARVED } from '../import_earved/schemas';
 import { TASK_FLOW_SEND_FIN_BIT_REPORT } from '../sendFinBitReport/schemas';
 import { TASK_FLOW_LISA1_LISA5 } from '../lisa1_lisa5/schemas';
 import {
@@ -93,7 +95,9 @@ describe('Главный Оркестратор', () => {
 
           let flow = TASK_FLOW_SALDOANDMIK;
           if (url.includes('docs.check_arv_jaak')) flow = TASK_FLOW_CALC_ARV_JAAK;
-          if (url.includes('docs.sp_loe_earved')) flow = TASK_FLOW_GET_EARVED;
+          if (url.includes('/getEarved')) flow = TASK_FLOW_GET_EARVED;
+          if (url.includes('checkAsutusAvailability')) flow = TASK_FLOW_CHECK_ASUTUS;
+          if (url.includes('docs.sp_loe_earved')) flow = TASK_FLOW_IMPORT_EARVED;
           if (url.includes('sendFinBitReport')) flow = TASK_FLOW_SEND_FIN_BIT_REPORT;
           if (url.includes('salvesta_lisa_1_5_kontrol')) flow = TASK_FLOW_LISA1_LISA5;
 
@@ -108,6 +112,10 @@ describe('Главный Оркестратор', () => {
                   status: 'success',
                   exec_start: '2026-09-14T10:00:00.000Z',
                   exec_end: '2026-09-14T10:10:00.000Z',
+                  ...(flow === TASK_FLOW_CHECK_ASUTUS ? { result: { missing: [], totalMissing: 0, source_log_id: 104 } } : {}),
+                  ...(flow === TASK_FLOW_IMPORT_EARVED
+                    ? { result: { totalFetched: 1, totalImported: 1, totalSkipped: 0, skipped: [], missing: [] } }
+                    : {}),
                 },
               ],
             }),
@@ -156,6 +164,34 @@ describe('Главный Оркестратор', () => {
           };
         }
 
+        // Проверка контр-агентов (check_asutus)
+        if (url.includes('/task/checkAsutusAvailability/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: 1,
+              log_id: 106,
+              data: { action: 'checkAsutusAvailability', status: 'STARTED', log_id: 106 },
+            }),
+          };
+        }
+
+        // Разбор и сохранение счетов (import_earved)
+        if (url.includes('/task/importEarved/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: 1,
+              log_id: 107,
+              data: { action: 'importEarved', status: 'STARTED', log_id: 107 },
+            }),
+          };
+        }
+
         // Запуск отправки отчета FinBit
         if (url.includes('/task/sendFinBitReport/')) {
           return {
@@ -194,17 +230,23 @@ describe('Главный Оркестратор', () => {
       );
 
       expect(result.overallSuccess).toBe(true);
-      expect(result.steps).toHaveLength(5);
+      expect(result.steps).toHaveLength(7);
       expect(result.steps[0].stepName).toBe(TASK_FLOW_SALDOANDMIK);
       expect(result.steps[0].status).toBe('SUCCESS');
       expect(result.steps[1].stepName).toBe(TASK_FLOW_CALC_ARV_JAAK);
       expect(result.steps[1].status).toBe('SUCCESS');
       expect(result.steps[2].stepName).toBe(TASK_FLOW_GET_EARVED);
       expect(result.steps[2].status).toBe('SUCCESS');
-      expect(result.steps[3].stepName).toBe(TASK_FLOW_SEND_FIN_BIT_REPORT);
+      expect(result.steps[3].stepName).toBe(TASK_FLOW_CHECK_ASUTUS);
       expect(result.steps[3].status).toBe('SUCCESS');
-      expect(result.steps[4].stepName).toBe(TASK_FLOW_LISA1_LISA5);
+      expect(result.steps[4].stepName).toBe(TASK_FLOW_IMPORT_EARVED);
       expect(result.steps[4].status).toBe('SUCCESS');
+      expect(result.steps[5].stepName).toBe(TASK_FLOW_SEND_FIN_BIT_REPORT);
+      expect(result.steps[5].status).toBe('SUCCESS');
+      // sendFinBitReport получает log_id именно лога импорта (docs.sp_loe_earved), а не выкачки getEarved
+      expect(mockFetch.mock.calls.some((c) => String(c[0]).includes('/task/sendFinBitReport/') && String(c[1]?.body).includes('"logId":107'))).toBe(true);
+      expect(result.steps[6].stepName).toBe(TASK_FLOW_LISA1_LISA5);
+      expect(result.steps[6].status).toBe('SUCCESS');
     });
 
     it('должен останавливать выполнение Шага контроля Lisa 1/5, если расчет сальдо упал с ошибкой', async () => {
@@ -220,7 +262,7 @@ describe('Главный Оркестратор', () => {
               }),
             };
           }
-          if (url.includes('docs.sp_loe_earved')) {
+          if (url.includes('/getEarved')) {
             return {
               ok: true,
               status: 200,
@@ -1296,7 +1338,7 @@ describe('Главный Оркестратор', () => {
       fs.writeFileSync(testStateFile, JSON.stringify(stateContent));
 
       const mockFetch = jest.fn().mockImplementation(async (url: string) => {
-        if (url.includes('/task/read_log/2477/docs.sp_loe_earved')) {
+        if (url.includes('/task/read_log/2477/getEarved')) {
           return {
             ok: true,
             status: 200,
@@ -1331,7 +1373,7 @@ describe('Главный Оркестратор', () => {
 
       expect(tick.activeTasks).not.toContain('getEarved');
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/task/read_log/2477/docs.sp_loe_earved'),
+        expect.stringContaining('/task/read_log/2477/getEarved'),
         expect.anything()
       );
 
@@ -1361,7 +1403,7 @@ describe('Главный Оркестратор', () => {
       fs.writeFileSync(testStateFile, JSON.stringify(stateContent));
 
       const mockFetch = jest.fn().mockImplementation(async (url: string) => {
-        if (url.includes('/task/read_log/2477/docs.sp_loe_earved')) {
+        if (url.includes('/task/read_log/2477/getEarved')) {
           return {
             ok: true,
             status: 200,
@@ -1422,14 +1464,14 @@ describe('Главный Оркестратор', () => {
 
       // Проверка структуры конкретных агентов
       expect(configs.getEarved.schedule).toEqual({ time: '07:00' });
-      expect(configs.getEarved.flow).toBe('docs.sp_loe_earved');
+      expect(configs.getEarved.flow).toBe('getEarved');
       expect(configs.getEarved.params).toMatchObject({ is_agent: true });
 
       expect(configs.calc_arv_jaak.flow).toBe('docs.check_arv_jaak');
       expect(configs.calc_arv_jaak.schedule).toEqual({ time: '07:30' });
 
       expect(configs.sendFinBitReport.flow).toBe('sendFinBitReport');
-      expect(configs.sendFinBitReport.depends_on).toEqual(['getEarved']);
+      expect(configs.sendFinBitReport.depends_on).toEqual(['import_earved']);
 
       expect(configs.lisa1_lisa5.depends_on).toEqual(['saldoandmik']);
       expect(configs.reporter.allow_parallel).toBe(false);
@@ -1442,7 +1484,7 @@ describe('Главный Оркестратор', () => {
       expect(graph.saldoandmik.status).toBe('PENDING');
       expect(graph.getEarved.schedule).toEqual({ time: '07:00' });
       expect(graph.sendFinBitReport.status).toBe('PENDING');
-      expect(graph.sendFinBitReport.depends_on).toEqual(['getEarved']);
+      expect(graph.sendFinBitReport.depends_on).toEqual(['import_earved']);
       expect(graph.reporter.depends_on.length).toBe(0);
       expect(graph.reporter.schedule).toEqual({ time: '08:00' });
     });
@@ -1450,7 +1492,7 @@ describe('Главный Оркестратор', () => {
     it('reconcileTasksWithConfigs должен обновлять декларативные поля, сохраняя runtime-состояние задачи', () => {
       const existingTasks = {
         getEarved: {
-          flow: 'docs.sp_loe_earved',
+          flow: 'getEarved',
           depends_on: [],
           allow_parallel: true,
           schedule: { time: '10:00' }, // Устаревшее расписание в файле состояния
@@ -1470,7 +1512,7 @@ describe('Главный Оркестратор', () => {
       const configs = {
         getEarved: {
           name: 'getEarved',
-          flow: 'docs.sp_loe_earved_updated',
+          flow: 'getEarved_updated',
           allow_parallel: true,
           depends_on: [],
           schedule: { time: '12:30' },
@@ -1483,7 +1525,7 @@ describe('Главный Оркестратор', () => {
       reconcileTasksWithConfigs(existingTasks, configs, true);
 
       // Декларативные поля обновлены из config.json
-      expect(existingTasks.getEarved.flow).toBe('docs.sp_loe_earved_updated');
+      expect(existingTasks.getEarved.flow).toBe('getEarved_updated');
       expect(existingTasks.getEarved.schedule).toEqual({ time: '12:30' });
       expect(existingTasks.getEarved.prompt).toBe('Execute after 12:30');
       expect(existingTasks.getEarved.max_attempts).toBe(5);
@@ -1501,7 +1543,7 @@ describe('Главный Оркестратор', () => {
 
     it('evaluateTaskLaunchDecision с prompt вызывает aiGenerateFn и возвращает structured output с dynamic_params', async () => {
       const taskState: TaskState = {
-        flow: 'docs.sp_loe_earved',
+        flow: 'getEarved',
         depends_on: [],
         allow_parallel: true,
         schedule: { time: '12:30' },
@@ -1557,7 +1599,7 @@ describe('Главный Оркестратор', () => {
 
     it('evaluateTaskLaunchDecision с prompt корректно делает fallback на FSM при сбое LLM', async () => {
       const taskState: TaskState = {
-        flow: 'docs.sp_loe_earved',
+        flow: 'getEarved',
         depends_on: [],
         allow_parallel: true,
         schedule: { time: '12:30' },
@@ -1784,7 +1826,7 @@ describe('Главный Оркестратор', () => {
         next_scheduled_run: null,
         params: { userId: 2477, rekvId: 63, kond: 1 },
         tasks: {
-          getEarved: {
+          import_earved: {
             flow: 'docs.sp_loe_earved',
             depends_on: [],
             allow_parallel: true,
@@ -1802,7 +1844,7 @@ describe('Главный Оркестратор', () => {
           },
           sendFinBitReport: {
             flow: 'sendFinBitReport',
-            depends_on: ['getEarved'],
+            depends_on: ['import_earved'],
             allow_parallel: true,
             schedule: null,
             prompt: null,
@@ -1873,7 +1915,7 @@ describe('Главный Оркестратор', () => {
         next_scheduled_run: null,
         params: { userId: 2477, rekvId: 63, kond: 1 },
         tasks: {
-          getEarved: {
+          import_earved: {
             flow: 'docs.sp_loe_earved',
             depends_on: [],
             allow_parallel: true,
@@ -1891,7 +1933,7 @@ describe('Главный Оркестратор', () => {
           },
           sendFinBitReport: {
             flow: 'sendFinBitReport',
-            depends_on: ['getEarved'],
+            depends_on: ['import_earved'],
             allow_parallel: true,
             schedule: null,
             prompt: null,
@@ -1930,7 +1972,7 @@ describe('Главный Оркестратор', () => {
     it('evaluateTaskLaunchDecision должен пропускать (SKIP) sendFinBitReport, если у getEarved отсутствует log_id', async () => {
       const taskState: TaskState = {
         flow: 'sendFinBitReport',
-        depends_on: ['getEarved'],
+        depends_on: ['import_earved'],
         allow_parallel: true,
         schedule: null,
         prompt: null,
@@ -1970,7 +2012,7 @@ describe('Главный Оркестратор', () => {
         next_scheduled_run: null,
         params: { userId: 2477, rekvId: 63, kond: 1 },
         tasks: {
-          getEarved: getEarvedTask,
+          import_earved: getEarvedTask,
           sendFinBitReport: taskState,
         },
         history: [],
@@ -2133,7 +2175,7 @@ describe('Главный Оркестратор', () => {
   describe('Контроль результатов выполнения задач (ou.logs) и семантическая оценка через LLM', () => {
     const mockTask: TaskState = {
       flow: 'sendFinBitReport',
-      depends_on: ['getEarved'],
+      depends_on: ['import_earved'],
       allow_parallel: true,
       schedule: null,
       prompt: 'Проверяй массив result на ошибки ETIMEDOUT',
@@ -2300,8 +2342,8 @@ describe('Главный Оркестратор', () => {
 
       // Создаем начальное состояние, где sendFinBitReport в статусе RUNNING с 1 попыткой
       const baseGraph = getDefaultTaskGraph();
-      baseGraph.getEarved.status = 'SUCCESS';
-      baseGraph.getEarved.log_id = 10429;
+      baseGraph.import_earved.status = 'SUCCESS';
+      baseGraph.import_earved.log_id = 10429;
       baseGraph.sendFinBitReport.status = 'RUNNING';
       baseGraph.sendFinBitReport.attempts = 1;
       baseGraph.sendFinBitReport.log_id = 10430;
@@ -2820,8 +2862,8 @@ describe('Главный Оркестратор', () => {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
 
-        state.tasks.getEarved.status = 'SUCCESS';
-        state.tasks.getEarved.log_id = 777;
+        state.tasks.import_earved.status = 'SUCCESS';
+        state.tasks.import_earved.log_id = 777;
 
         state.tasks.sendFinBitReport.status = 'PENDING';
         state.tasks.sendFinBitReport.params = { logId: 999 };
@@ -2835,7 +2877,7 @@ describe('Главный Оркестратор', () => {
               dispatchedParams = ctx.params;
               return 888111;
             }),
-            resolveParentParams: (s: any) => ({ logId: s.tasks.getEarved.log_id }),
+            resolveParentParams: (s: any) => ({ logId: s.tasks.import_earved.log_id }),
           },
         };
 
@@ -3158,7 +3200,7 @@ describe('Главный Оркестратор', () => {
         params: { userId: 2477, rekvId: 63, kond: 1 },
         tasks: {
           getEarved: {
-            flow: 'docs.sp_loe_earved',
+            flow: 'getEarved',
             depends_on: [],
             allow_parallel: true,
             schedule: { time: '07:00' },
@@ -3213,7 +3255,7 @@ describe('Главный Оркестратор', () => {
       const calledUrls: string[] = [];
       const mockFetch = jest.fn().mockImplementation(async (url: string) => {
         calledUrls.push(url);
-        if (url.includes('/task/read_log/11770/docs.sp_loe_earved')) {
+        if (url.includes('/task/read_log/11770/getEarved')) {
           return {
             ok: true,
             status: 200,
@@ -3223,7 +3265,7 @@ describe('Главный Оркестратор', () => {
               data: [
                 {
                   id: 8548120,
-                  flow: 'docs.sp_loe_earved',
+                  flow: 'getEarved',
                   status: 'success',
                   exec_start: '2026-10-18T04:00:00.000Z',
                   exec_end: '2026-10-18T04:00:15.000Z',
@@ -3285,7 +3327,7 @@ describe('Главный Оркестратор', () => {
       );
 
       const savedAfterEarly = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
-      expect(calledUrls.some((u) => u.includes('/task/read_log/11770/docs.sp_loe_earved'))).toBe(true);
+      expect(calledUrls.some((u) => u.includes('/task/read_log/11770/getEarved'))).toBe(true);
       expect(savedAfterEarly.tasks.getEarved.status).toBe('SUCCESS');
       expect(savedAfterEarly.tasks.reporter.status).toBe('PENDING');
 

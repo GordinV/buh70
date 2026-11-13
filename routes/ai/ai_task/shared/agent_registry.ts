@@ -52,6 +52,9 @@ export const KNOWN_SUBAGENTS = [
   'saldoandmik',
   'calc_arv_jaak',
   'getEarved',
+  'check_asutus',
+  'inforegister',
+  'import_earved',
   'sendFinBitReport',
   'lisa1_lisa5',
 ];

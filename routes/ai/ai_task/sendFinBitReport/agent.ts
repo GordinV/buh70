@@ -71,7 +71,7 @@ export const manifest = {
     const logId = (ctx.params?.logId as number) ?? (ctx.params?.paramLogId as number);
 
     if (!logId) {
-      throw new Error('sendFinBitReport viga: logId puudub (parent context getEarved log_id ei ole edastatud)');
+      throw new Error('sendFinBitReport viga: logId puudub (parent context import_earved log_id ei ole edastatud)');
     }
 
     const res = await startSendFinBitReport(
@@ -81,7 +81,7 @@ export const manifest = {
     return res.log_id;
   },
   resolveParentParams: (state: { tasks: Record<string, { log_id?: number | null }> }): Record<string, unknown> => {
-    const parentLogId = state.tasks?.['getEarved']?.log_id;
+    const parentLogId = state.tasks?.['import_earved']?.log_id;
     return parentLogId ? { logId: parentLogId } : {};
   },
 };

@@ -1,0 +1,17 @@
+{
+  "name": "check_asutus",
+  "flow": "checkAsutusAvailability",
+  "description": "Проверка наличия в libs.asutus контр-агентов (по рег.кодам) из счетов, полученных из FinBit. Запускается после getEarved; список отсутствующих рег.кодов возвращается в result лога (missing)",
+  "prompt": null,
+  "allow_parallel": true,
+  "depends_on": [
+    "getEarved"
+  ],
+  "schedule": null,
+  "max_attempts": 3,
+  "params": {
+    "userId": 11770,
+    "rekvId": 63,
+    "extraEmails": ["vladislav.gordin@bs2.ee"]
+  }
+}

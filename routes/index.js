@@ -41,10 +41,16 @@ module.exports = function (app) {
     app.post('/task/calcLisa1Lisa5/', require('./raama/calcLisa1Lisa5Kontrol').main); //checkAuth
     // запустит расчет сальдо счетов (отложенная оплата)
     app.post('/task/calcArvJaak/', require('./raama/calcArvJaak').main); //checkAuth
-    // запустит импорт из finbit
+    // запустит выкачку счетов из finbit (агентский режим: только сохранение в лог getEarved; разбор - /task/importEarved/)
     app.post('/task/getEarved/', require('./raama/getEarvedFromFinBit').main); //checkAuth
+    // запустит частичный разбор и сохранение счетов, выкачанных из finbit (пропускает счета без контр-агента в бд)
+    app.post('/task/importEarved/', require('./raama/importEarved').main); //checkAuth
     // запустит отправку отчета о загруженных счетах из finbit
     app.post('/task/sendFinBitReport/', require('./raama/sendFinBitReport').main); //checkAuth
+    // запустит проверку наличия контр-агентов из счетов finbit в libs.asutus (libs.check_asutus_availibility)
+    app.post('/task/checkAsutusAvailability/', require('./raama/checkAsutusAvailability').main); //checkAuth
+    // получит из Inforegister данные отсутствующих организаций (результат check_asutus) и сохранит их через libs.sp_salvesta_asutus
+    app.post('/task/getInforegister/', require('./raama/getInforegister').main); //checkAuth
     // запустит чтение почты и поиск ошибок доставки счетов (read_mail)
     app.post('/task/readMail/', require('./raama/readMail').main); //checkAuth
 

@@ -9,6 +9,7 @@ const { executeTask } = require('../task/executePostTask');
 
 const FLOW_NAME = 'docs.sp_loe_earved';
 const ROBOT_USER = 'Earved robot';
+const AGENT_LOG_NAME = 'getEarved'; // имя агента в ou.logs для записи с сырым массивом счетов
 
 //const config = require("../../config/default.json");
 const config = require("../../config/narvalv.json");
@@ -34,8 +35,9 @@ function checkIsAgent(params) {
  * Express handler для импорта счетов из FinBit
  * Поддерживает два режима работы:
  * 1. Обычный (по умолчанию): сохранение таски через ou.sp_salvesta_task и запуск executeTask
- * 2. Агентский (при передаче is_agent / isAgent / agent): логирование в ou.logs,
- *    прямой вызов docs.sp_loe_earved в фоне и немедленный возврат log_id (по аналогии с calcArvJaak.js)
+ * 2. Агентский (при передаче is_agent / isAgent / agent): только выкачка счетов из FinBit,
+ *    сохранение массива в ou.logs (flow = getEarved) и возврат log_id. Проверку контр-агентов выполняет агент
+ *    check_asutus (/task/checkAsutusAvailability/), разбор и сохранение счетов - агент import_earved (/task/importEarved/)
  */
 const post = async (req, res) => {
     try {
@@ -125,7 +127,8 @@ const post = async (req, res) => {
                 // Создаем и закрываем лог в ou.logs, чтобы оркестратор получил валидный log_id
                 let emptyLogId = null;
                 try {
-                    const logResult = await createLog(l_rekvId, l_userId, flowName);
+                    // агент getEarved только выкачивает счета, поэтому flow = getEarved
+                    const logResult = await createLog(l_rekvId, l_userId, AGENT_LOG_NAME);
                     if (logResult && logResult.data && logResult.data[0]) {
                         emptyLogId = logResult.data[0].id;
                     }
@@ -209,37 +212,34 @@ const post = async (req, res) => {
                 }
             });
         } else {
-            // === НОВАЯ АГЕНТСКАЯ ЛОГИКА (по аналогии с calcArvJaak.js) ===
+            // === АГЕНТСКАЯ ЛОГИКА: только выкачка счетов (flow = getEarved) ===
+            // Разбор и сохранение счетов выполняет отдельный агент import_earved (POST /task/importEarved/)
+            // после проверки контр-агентов агентом check_asutus.
             let logId = null;
 
             try {
-                // 1. Создаем запись в ou.logs о старте процесса
-                const logResult = await createLog(l_rekvId, l_userId, flowName);
-                if (logResult && logResult.data && logResult.data[0]) {
-                    logId = logResult.data[0].id;
-                }
+                // Сохраняем полученный из FinBit массив счетов в ou.logs (flow = getEarved) и получаем log_id,
+                // который передается дальше (check_asutus, import_earved)
+                logId = await saveFetchedArvedLog(l_rekvId, l_userId, batches);
 
                 if (!logId) {
                     throw new Error('Лог-запись не создана (не удалось получить log_id)');
                 }
 
-                // 2. Запускаем фоновый вызов docs.sp_loe_earved БЕЗ ожидания завершения
-                runCalculationInBackground(logId, l_userId, batches);
-
-                // 3. Сразу возвращаем успешный ответ клиенту с log_id для отслеживания
+                // Выкачка завершена синхронно - сразу возвращаем log_id
                 return res.status(200).send({
                     status: 200,
                     result: 1,
                     log_id: logId,
                     data: {
                         action: 'Import FinBit arved',
-                        status: 'STARTED',
+                        status: 'COMPLETED',
                         log_id: logId,
                         result: {
                             doc_id: logId,
                             error_code: 0,
                             error_message: null,
-                            tulemused: 'STARTED'
+                            tulemused: 'COMPLETED'
                         }
                     },
                     error_message: null
@@ -456,6 +456,56 @@ async function createLog(rekvId, userId, flowName = FLOW_NAME) {
 }
 
 /**
+ * Сохраняет в ou.logs (flow = getEarved) массив счетов, полученный из FinBit, и закрывает лог (status = success).
+ * Это результат работы агента getEarved (выкачка). Возвращаемый id (log_id) передается дальше:
+ * check_asutus (проверка контр-агентов) и import_earved (разбор и сохранение счетов).
+ * Формат propertis.arved: [{rekvId, userId, count, arved: [...]}]
+ * @returns {Promise<number|null>} id записи; при ошибке записи пробрасывает исключение
+ */
+async function saveFetchedArvedLog(rekvId, userId, batches) {
+    const payload = (batches || []).map(b => ({
+        rekvId: b.rekvId,
+        userId: b.userId,
+        count: Array.isArray(b.json) ? b.json.length : 0,
+        arved: b.json
+    }));
+    const total = payload.reduce((s, b) => s + b.count, 0);
+    const resultData = {
+        totalFetched: total,
+        invoiceNumbers: (batches || []).reduce((acc, b) => acc.concat(extractInvoiceNumbers(b.json)), []),
+        batches: (batches || []).map(b => ({
+            rekvId: b.rekvId,
+            userId: b.userId,
+            fetched: Array.isArray(b.json) ? b.json.length : 0
+        }))
+    };
+    const responseText = `Leitud ${total} arvet (FinBit)`;
+
+    const sql = `insert into ou.logs (rekvid, user_id, propertis)
+                 values ($1, $2, jsonb_build_object(
+                     'flow', $3::text,
+                     'exec_start', clock_timestamp(),
+                     'exec_end', clock_timestamp(),
+                     'status', 'success',
+                     'total', $5::int,
+                     'arved', $4::jsonb,
+                     'result', $6::jsonb,
+                     'response', $7::text))
+                 returning id;`;
+    try {
+        const r = await db.queryDb(
+            sql,
+            [rekvId, userId, AGENT_LOG_NAME, JSON.stringify(payload), total, JSON.stringify(resultData), responseText],
+            null, null, null, null, config);
+        const id = r && r.data && r.data[0] ? r.data[0].id : null;
+        console.log(`[getEarvedFromFinBit] fetched arved saved to log (flow=${AGENT_LOG_NAME}), id:`, id);
+        return id;
+    } catch (error) {
+        throw new Error(`DB Query failed: ${error.message}`);
+    }
+}
+
+/**
  * Логгирование окончания задачи в ou.logs (успех / ошибка) с сохранением result и response
  */
 async function endLog(logId, status = 'success', errorMessage = null, resultData = null) {
@@ -601,6 +651,9 @@ exports.executeCalculation = executeCalculation;
 exports.runCalculationInBackground = runCalculationInBackground;
 exports.loeEarved = loeEarved;
 exports.createLog = createLog;
+exports.saveFetchedArvedLog = saveFetchedArvedLog;
+exports.extractInvoiceNumbers = extractInvoiceNumbers;
+exports.AGENT_LOG_NAME = AGENT_LOG_NAME;
 exports.endLog = endLog;
 exports.FLOW_NAME = FLOW_NAME;
 exports.ROBOT_USER = ROBOT_USER;

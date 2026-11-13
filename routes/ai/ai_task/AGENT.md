@@ -21,7 +21,10 @@
 
 ```
 read_mail (06:00)
-getEarved (07:00) ──► sendFinBitReport
+getEarved (07:00) ──► check_asutus ──► inforegister ──► import_earved ──► sendFinBitReport
+   выкачка счетов      проверка          частичный разбор    рассылка
+   (flow getEarved)    контр-агентов     и сохранение        (по логу import_earved)
+                                         (flow docs.sp_loe_earved)
 calc_arv_jaak (07:30)
 reporter (08:00) [ежедневный сводный отчет за последние 24 часа]
 saldoandmik (20:00) ──► lisa1_lisa5
@@ -82,8 +85,11 @@ saldoandmik (20:00) ──► lisa1_lisa5
 | `calc_arv_jaak` | `/task/calcArvJaak/` | `docs.check_arv_jaak` | — | 07:30 | нет (`prompt_test` для теста) | Пересчёт сальдо и остатков счетов (вне регламентного цикла) |
 | `read_mail` | `/task/readMail/` | `mail.read_mail_errors` | — | 06:00 | нет (`prompt: null`) | Анализ входящей почты на ошибки недоставки счетов клиентам (Mail Delivery Failure). Снимает отметку отправки в БД (`docs.tuhista_arve_saatmise_staatus`), отправляет персональные отчеты ответственным бухгалтерам с перечнем возвращенных счетов и отправляет алерт при `Muud vead` |
 | `lisa1_lisa5` | `/task/calcLisa1Lisa5/` | `eelarve.salvesta_lisa_1_5_kontrol` | `saldoandmik` | — | нет | Контрольные формы Lisa 1 / Lisa 5 |
-| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `docs.sp_loe_earved` | — | 07:00 | нет | Импорт e-счетов из FinBit (`params.userId: 11770` — сервисный аккаунт FinBit в buh70). Пишет в `ou.logs` подробный `result` (`totalFetched`, `totalImported`, `invoiceNumbers`, `batches`) и `response`. Ответ `Arveid ei leitud` считается успехом с `log_id = 0` |
-| `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `getEarved` | — | **да** (оценка результата рассылки) | Дочерний агент `getEarved`: рассылает уведомления получателям импортированных счетов. Без `logId` родителя пропускается (`SKIP`) |
+| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `getEarved` | — | 07:00 | нет | **Только выкачка** e-счетов из FinBit (`params.userId: 11770` — сервисный аккаунт FinBit в buh70). Синхронно сохраняет массив счетов в `ou.logs` (`propertis.arved` = `[{rekvId, userId, count, arved: [...]}]`, `result.totalFetched`, `invoiceNumbers`) и возвращает `log_id` (`status: COMPLETED`). Разбор не выполняет. 0 счетов — штатный успех с пустым логом |
+| `check_asutus` | `/task/checkAsutusAvailability/` (`log_id` лога getEarved) | `checkAsutusAvailability` | `getEarved` | — | нет | Проверка через `libs.check_asutus_availibility` наличия контр-агентов (рег.код = `data.asutusid`) в `libs.asutus`. Список отсутствующих сохраняется в `ou.logs.changes` лога getEarved и в `result.missing`. Всегда завершается `success` (найденные отсутствующие — информация, а не ошибка) |
+| `inforegister` | `/task/getInforegister/` (`log_id` лога check_asutus) | `getInforegister` | `check_asutus` | — | нет | Получает из **платного** API Inforegister (`libs/inforegister.js`, каждый вызов тратит годовой лимит) данные организаций из `check_asutus.result.missing`; при `dryRun=false` сохраняет их через `libs.sp_salvesta_asutus`. Защита расходов: формат кода 8 цифр, кэш `libs.registry_cache` (в т.ч. «данных нет»), потолок `maxCalls` и резерв `INFOREGISTER_MIN_REMAINING`. Не сохраняются: закрытые организации, коды не из 8 цифр, не найденные в реестре (`result.items[].status`: `created`, `would_create`, `exists`, `needs_manual`, `not_found`, `closed`, `registry_unavailable`, `error`). Ключ хранится в `ou.config.properties.INFOREGISTER_API_KEY` (учреждение `rekvid = 3`, параметр `config_rekv_id`), читается через модель `config` (`inforegister_api_key`); переменная окружения не используется, устанавливается SQL-ом (`sql/ou/set_inforegister_api_key.sql`). По умолчанию `dryRun: true`. `insecureTls: true` (в config.json агента) отключает проверку TLS-сертификата api.ir.ee, т.к. сервер работает в сети с подменой сертификата: **ключ передается без проверки подлинности узла** |
+| `import_earved` | `/task/importEarved/` (`log_id` лога getEarved) | `docs.sp_loe_earved` | `getEarved`, `check_asutus` | — | нет | **Частичный импорт**: счета с отсутствующим контр-агентом пропускаются (`result.skipped`, `missing`, `totalSkipped`), остальные импортируются через `docs.sp_loe_earved`. Имя flow сохранено прежним: по нему `docs.get_arve_kinnitaja` находит лог импорта. Пропущенные счета подтянутся при следующей выкачке (окно `date_query_from`), когда контр-агент будет добавлен |
+| `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `import_earved` | — | **да** (оценка результата рассылки) | Дочерний агент `import_earved` (получает его `log_id`): рассылает уведомления получателям импортированных счетов. Без `logId` родителя пропускается (`SKIP`) |
 
 ### 3.1. `read_mail/` — монитор недоставки счетов по e-mail (расчётный субагент)
 

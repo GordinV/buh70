@@ -8,6 +8,8 @@ describe('Agent Registry (shared/agent_registry.ts)', () => {
     expect(registry).toHaveProperty('saldoandmik');
     expect(registry).toHaveProperty('calc_arv_jaak');
     expect(registry).toHaveProperty('getEarved');
+    expect(registry).toHaveProperty('check_asutus');
+    expect(registry).toHaveProperty('import_earved');
     expect(registry).toHaveProperty('sendFinBitReport');
     expect(registry).toHaveProperty('lisa1_lisa5');
     expect(registry).toHaveProperty('schedule_monitor');
@@ -22,7 +24,7 @@ describe('Agent Registry (shared/agent_registry.ts)', () => {
     expect(typeof registry['read_mail'].dispatch).toBe('function');
   });
 
-  it('sendFinBitReport manifest должен определять resolveParentParams и извлекать log_id родителя getEarved', () => {
+  it('sendFinBitReport manifest должен определять resolveParentParams и извлекать log_id родителя import_earved (лог импорта docs.sp_loe_earved)', () => {
     const registry = buildAgentRegistry();
     const manifest = registry['sendFinBitReport'];
 
@@ -30,7 +32,8 @@ describe('Agent Registry (shared/agent_registry.ts)', () => {
 
     const stateWithParent = {
       tasks: {
-        getEarved: { log_id: 998877 },
+        import_earved: { log_id: 998877 },
+        getEarved: { log_id: 111 },
       },
     };
     const params = manifest.resolveParentParams!(stateWithParent as any);

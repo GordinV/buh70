@@ -18,8 +18,8 @@ export interface GetEarvedOptions {
 
 /**
  * Субагент импорта счетов из FinBit:
- * 1. Инициирует неблокирующий расчет через POST /task/getEarved/ с is_agent: true
- * 2. Мониторит статус выполнения через logs_watcher (flow: docs.sp_loe_earved)
+ * 1. Выкачивает счета через POST /task/getEarved/ с is_agent: true (синхронно сохраняет массив в лог flow=getEarved)
+ * 2. При необходимости мониторит статус через logs_watcher (flow: getEarved). Разбор счетов - агент import_earved
  * 3. Возвращает агрегированный результат выполнения
  */
 export async function runGetEarvedSubagent(

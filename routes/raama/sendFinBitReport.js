@@ -208,6 +208,44 @@ async function sendNotificationEmail(toEmail, invoices, smtpConfig, customTransp
 }
 
 /**
+ * Универсальная отправка письма (html + text) одному или нескольким получателям
+ * @param {string|string[]} toEmails
+ * @param {string} subject
+ * @param {string} text
+ * @param {string} html
+ * @param {Object} smtpConfig результат getSmtpConfig
+ * @param {Object} [customTransporter]
+ */
+async function sendHtmlEmail(toEmails, subject, text, html, smtpConfig, customTransporter) {
+    if (customTransporter === undefined) customTransporter = null;
+    var recipients = Array.isArray(toEmails) ? toEmails.filter(Boolean) : (toEmails ? [toEmails] : []);
+
+    if (recipients.length === 0) {
+        throw new Error('E-posti aadress puudub (email is missing)');
+    }
+
+    var transporter = customTransporter || nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.secure,
+        auth: smtpConfig.auth,
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
+
+    var info = await transporter.sendMail({
+        from: '"' + (smtpConfig.userName || 'Buh70') + '" <' + (smtpConfig.from || 'noreply@narva.ee') + '>',
+        to: recipients.join(', '),
+        subject: subject,
+        text: text,
+        html: html
+    });
+    console.log('[sendFinBitReport] Email sent to ' + recipients.join(', ') + ', messageId: ' + (info && info.messageId));
+    return info;
+}
+
+/**
  * Обработка массива отчета и отправка писем получателям.
  * Параметры SMTP (smtp, smtp_port, smtp_pass, smtp_user) берутся непосредственно из строки отчета.
  */
@@ -627,6 +665,8 @@ exports.getReport = getReport;
 exports.getSmtpConfig = getSmtpConfig;
 exports.getSenderAddress = getSenderAddress;
 exports.sendNotificationEmail = sendNotificationEmail;
+exports.sendHtmlEmail = sendHtmlEmail;
+exports.escapeHtml = escapeHtml;
 exports.sendFinBitReportNotifications = sendFinBitReportNotifications;
 exports.formatInvoiceEmailText = formatInvoiceEmailText;
 exports.formatInvoiceEmailHtml = formatInvoiceEmailHtml;

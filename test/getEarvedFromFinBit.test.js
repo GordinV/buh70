@@ -81,7 +81,7 @@ describe('getEarvedFromFinBit unit tests', () => {
         );
     });
 
-    test('Новая агентская логика (с флагом is_agent=true): в WHERE подменяет на (u.id = $1::integer or u.kasutaja = \'Earved robot\') и запускает в фоне', async () => {
+    test('Агентская логика (is_agent=true): только выкачка - массив счетов сохраняется в лог flow=getEarved, sp_loe_earved не вызывается', async () => {
         const mockReq = {
             query: {},
             body: { is_agent: true },
@@ -93,23 +93,13 @@ describe('getEarvedFromFinBit unit tests', () => {
             status: jest.fn().mockReturnThis()
         };
 
-        // 1. Мокаем конфигурацию с условием WHERE
         db.queryDb
+            // 1. конфигурация
             .mockReturnValueOnce(Promise.resolve({
                 data: [{ hash: 'test-hash', earved_host: 'http://test-host', rekv_id: 63, user_id: 2477 }]
             }))
-            // 2. createLog (insert into ou.logs)
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ id: 8888 }]
-            }))
-            // 3. background docs.sp_loe_earved
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ error_code: 0, result: 1, error_message: 'Success' }]
-            }))
-            // 4. endLog (update ou.logs)
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ id: 8888 }]
-            }));
+            // 2. insert ou.logs (flow = getEarved) с массивом счетов, закрытый success
+            .mockReturnValueOnce(Promise.resolve({ data: [{ id: 8888 }] }));
 
         getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>test</xml>'));
         XMLtoJson.mockReturnValueOnce(Promise.resolve([{ number: 'INV-2', summa: 200 }]));
@@ -122,7 +112,7 @@ describe('getEarvedFromFinBit unit tests', () => {
         // Не должен вызывать ou.sp_salvesta_task и executeTask
         expect(executePostTask.executeTask).not.toHaveBeenCalled();
 
-        // Должен немедленно ответить со статусом 200 и log_id
+        // Выкачка завершена синхронно: статус COMPLETED и log_id лога getEarved
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.send).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -131,33 +121,28 @@ describe('getEarvedFromFinBit unit tests', () => {
                 log_id: 8888,
                 data: expect.objectContaining({
                     action: 'Import FinBit arved',
-                    status: 'STARTED',
+                    status: 'COMPLETED',
                     log_id: 8888
                 })
             })
         );
 
-        // Ждем асинхронный фоновый запуск
+        // Массив счетов сохранен в лог flow = getEarved
+        expect(db.queryDb.mock.calls[1][0]).toContain('insert into ou.logs');
+        expect(db.queryDb.mock.calls[1][1][0]).toBe(63);
+        expect(db.queryDb.mock.calls[1][1][1]).toBe(2477);
+        expect(db.queryDb.mock.calls[1][1][2]).toBe('getEarved');
+        expect(db.queryDb.mock.calls[1][1][3]).toContain('INV-2');
+        expect(db.queryDb.mock.calls[1][1][4]).toBe(1);
+        expect(JSON.parse(db.queryDb.mock.calls[1][1][5]).totalFetched).toBe(1);
+
         await new Promise((resolve) => setTimeout(resolve, 50));
 
-        // Проверяем, что createLog вызывался с FLOW_NAME
-        expect(db.queryDb.mock.calls[1][0]).toContain('insert into ou.logs');
-        expect(db.queryDb.mock.calls[1][1]).toEqual([63, 2477, 'docs.sp_loe_earved']);
-
-        // Проверяем фоновый вызов docs.sp_loe_earved
-        expect(db.queryDb.mock.calls[2][0]).toContain('docs.sp_loe_earved');
-        expect(db.queryDb.mock.calls[2][1][0]).toBe(2477);
-
-        // Проверяем фиксацию успешного завершения в ou.logs с сохранением result и response
-        expect(db.queryDb.mock.calls[3][0]).toContain('update ou.logs');
-        expect(db.queryDb.mock.calls[3][1][0]).toBe('success');
-        expect(db.queryDb.mock.calls[3][1][1]).toBeNull();
-        expect(db.queryDb.mock.calls[3][1][2]).toContain('"totalImported":1');
-        expect(db.queryDb.mock.calls[3][1][3]).toContain('Imporditud 1 arvet');
-        expect(db.queryDb.mock.calls[3][1][4]).toBe(8888);
+        // Больше обращений к БД нет: разбор (docs.sp_loe_earved) выполняет агент import_earved
+        expect(db.queryDb).toHaveBeenCalledTimes(2);
     });
 
-    test('Агентский режим без явного userId: находит пользователя robot и использует его user_id', async () => {
+    test('Агентский режим без явного userId: находит пользователя robot и использует его user_id в логе getEarved', async () => {
         const mockReq = {
             query: {},
             body: { is_agent: true },
@@ -169,23 +154,13 @@ describe('getEarvedFromFinBit unit tests', () => {
             status: jest.fn().mockReturnThis()
         };
 
-        // 1. Конфиг возвращает user_id робота
         db.queryDb
+            // 1. Конфиг возвращает user_id робота
             .mockReturnValueOnce(Promise.resolve({
                 data: [{ hash: 'test-hash', earved_host: 'http://test-host', rekv_id: 63, user_id: 777 }]
             }))
-            // 2. createLog (insert into ou.logs)
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ id: 9999 }]
-            }))
-            // 3. background docs.sp_loe_earved
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ error_code: 0, result: 1, error_message: 'Success' }]
-            }))
-            // 4. endLog (update ou.logs)
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ id: 9999 }]
-            }));
+            // 2. insert лога getEarved
+            .mockReturnValueOnce(Promise.resolve({ data: [{ id: 9999 }] }));
 
         getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>test</xml>'));
         XMLtoJson.mockReturnValueOnce(Promise.resolve([{ number: 'INV-3', summa: 300 }]));
@@ -195,7 +170,6 @@ describe('getEarvedFromFinBit unit tests', () => {
         // Параметр $1 передан как null в sql
         expect(db.queryDb.mock.calls[0][1]).toEqual([null]);
 
-        // Успешный старт с log_id: 9999
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.send).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -205,20 +179,13 @@ describe('getEarvedFromFinBit unit tests', () => {
             })
         );
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
-
-        // createLog использовал l_userId = 777 (робота)
-        expect(db.queryDb.mock.calls[1][1]).toEqual([63, 777, 'docs.sp_loe_earved']);
-        // docs.sp_loe_earved использовал l_userId = 777
-        expect(db.queryDb.mock.calls[2][1][0]).toBe(777);
-
-        // endLog зафиксировал успех в ou.logs
-        expect(db.queryDb.mock.calls[3][0]).toContain('update ou.logs');
-        expect(db.queryDb.mock.calls[3][1][0]).toBe('success');
-        expect(db.queryDb.mock.calls[3][1][4]).toBe(9999);
+        // лог getEarved создан под пользователем-роботом (l_userId = 777)
+        expect(db.queryDb.mock.calls[1][1][0]).toBe(63);
+        expect(db.queryDb.mock.calls[1][1][1]).toBe(777);
+        expect(db.queryDb.mock.calls[1][1][2]).toBe('getEarved');
     });
 
-    test('Множественные учреждения (агентский режим): опрашивает все учреждения и выполняет последовательный параметризованный вызов docs.sp_loe_earved для каждого пакета', async () => {
+    test('Множественные учреждения (агентский режим): опрашивает все учреждения и сохраняет ВСЕ батчи в одном логе getEarved', async () => {
         const mockReq = {
             query: {},
             body: { is_agent: true },
@@ -230,30 +197,16 @@ describe('getEarvedFromFinBit unit tests', () => {
             status: jest.fn().mockReturnThis()
         };
 
-        // 1. Конфигурация возвращает массив из двух учреждений
         db.queryDb
+            // 1. Конфигурация возвращает массив из двух учреждений
             .mockReturnValueOnce(Promise.resolve({
                 data: [
                     { hash: 'hash-rekv-63', earved_host: 'http://host-63', rekv_id: 63, user_id: 2477 },
                     { hash: 'hash-rekv-119', earved_host: 'http://host-119', rekv_id: 119, user_id: 777 }
                 ]
             }))
-            // 2. createLog
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ id: 5555 }]
-            }))
-            // 3. sp_loe_earved для первого учреждения (rekv 63)
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ error_code: 0, result: 1, error_message: 'Success 63' }]
-            }))
-            // 4. sp_loe_earved для второго учреждения (rekv 119)
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ error_code: 0, result: 1, error_message: 'Success 119' }]
-            }))
-            // 5. endLog
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ id: 5555 }]
-            }));
+            // 2. insert лога getEarved
+            .mockReturnValueOnce(Promise.resolve({ data: [{ id: 5555 }] }));
 
         // Мокаем получение XML и преобразование в JSON для обоих учреждений
         getXMLFile
@@ -280,23 +233,16 @@ describe('getEarvedFromFinBit unit tests', () => {
         expect(getXMLFile.mock.calls[0]).toEqual(['hash-rekv-63', 'http://host-63', '2026-09-15']);
         expect(getXMLFile.mock.calls[1]).toEqual(['hash-rekv-119', 'http://host-119', '2026-09-15']);
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
-
-        // Проверяем последовательные параметризованные вызовы docs.sp_loe_earved для каждого учреждения
-        expect(db.queryDb.mock.calls[2][0]).toContain('SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB)');
-        expect(db.queryDb.mock.calls[2][1][0]).toBe(2477);
-        expect(db.queryDb.mock.calls[2][1][1]).toContain('INV-63-1');
-
-        expect(db.queryDb.mock.calls[3][0]).toContain('SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB)');
-        expect(db.queryDb.mock.calls[3][1][0]).toBe(777);
-        expect(db.queryDb.mock.calls[3][1][1]).toContain('INV-119-1');
-
-        // Проверяем фиксацию в ou.logs: сохранено общее число счетов 2
-        expect(db.queryDb.mock.calls[4][0]).toContain('update ou.logs');
-        expect(db.queryDb.mock.calls[4][1][0]).toBe('success');
-        expect(db.queryDb.mock.calls[4][1][1]).toBeNull();
-        expect(db.queryDb.mock.calls[4][1][2]).toContain('"totalImported":2');
-        expect(db.queryDb.mock.calls[4][1][4]).toBe(5555);
+        // Один лог с двумя батчами, всего 2 счета
+        expect(db.queryDb).toHaveBeenCalledTimes(2);
+        const payload = JSON.parse(db.queryDb.mock.calls[1][1][3]);
+        expect(payload).toHaveLength(2);
+        expect(payload[0]).toEqual(expect.objectContaining({ rekvId: 63, userId: 2477, count: 1 }));
+        expect(payload[1]).toEqual(expect.objectContaining({ rekvId: 119, userId: 777, count: 1 }));
+        expect(db.queryDb.mock.calls[1][1][4]).toBe(2);
+        const resultJson = JSON.parse(db.queryDb.mock.calls[1][1][5]);
+        expect(resultJson.totalFetched).toBe(2);
+        expect(resultJson.invoiceNumbers).toEqual(['INV-63-1', 'INV-119-1']);
     });
 
     test('Множественные учреждения (не агентский режим): формирует последовательный SQL в ou.sp_salvesta_task', async () => {

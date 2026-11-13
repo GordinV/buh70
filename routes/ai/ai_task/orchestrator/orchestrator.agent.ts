@@ -8,6 +8,10 @@ import { TASK_FLOW_CALC_ARV_JAAK } from '../calc_arv_jaak/schemas';
 import { runGetEarvedSubagent } from '../getEarved/agent';
 import { startGetEarved } from '../getEarved/tools';
 import { TASK_FLOW_GET_EARVED } from '../getEarved/schemas';
+import { runCheckAsutusSubagent } from '../check_asutus/agent';
+import { TASK_FLOW_CHECK_ASUTUS } from '../check_asutus/schemas';
+import { runImportEarvedSubagent } from '../import_earved/agent';
+import { TASK_FLOW_IMPORT_EARVED } from '../import_earved/schemas';
 import { runSendFinBitReportSubagent } from '../sendFinBitReport/agent';
 import { startSendFinBitReport } from '../sendFinBitReport/tools';
 import { TASK_FLOW_SEND_FIN_BIT_REPORT } from '../sendFinBitReport/schemas';
@@ -483,14 +487,15 @@ export async function evaluateTaskLaunchDecision(
     };
   }
 
-  // Для sendFinBitReport проверяем наличие log_id родительского getEarved
+  // Для sendFinBitReport проверяем наличие log_id родительского import_earved
+  // (лог импорта flow = docs.sp_loe_earved, по которому docs.get_arve_kinnitaja находит импортированные счета)
   if (key === 'sendFinBitReport') {
-    const parentLogId = state.tasks['getEarved']?.log_id;
+    const parentLogId = state.tasks['import_earved']?.log_id;
     if (!parentLogId) {
       return {
         should_run: false,
         action: 'SKIP',
-        reason: 'Vahele jäetud: vanemülesande getEarved log_id puudub',
+        reason: 'Vahele jäetud: vanemülesande import_earved log_id puudub',
       };
     }
   }
@@ -1996,15 +2001,85 @@ export async function runOrchestrator(
     }
   }
 
-  // --- ШАГ 3.1: Отправка отчетов FinBit (sendFinBitReport, зависит от getEarved) ---
+  // --- ШАГ 3.0: Проверка контр-агентов (check_asutus) и частичный импорт счетов (import_earved) ---
+  // getEarved только выкачивает счета. Проверка и разбор выполняются отдельными агентами.
+  let importSuccess = false;
+  let lastImportLogId: number | undefined;
   if (getEarvedSuccess && lastEarvedLogId) {
-    console.log(`[orchestrator] Samm 3.1 käivitamine: ${TASK_FLOW_SEND_FIN_BIT_REPORT} (logId: ${lastEarvedLogId})`);
+    try {
+      console.log(`[orchestrator] Samm 3.0 käivitamine: ${TASK_FLOW_CHECK_ASUTUS} (logId: ${lastEarvedLogId})`);
+      const checkResult = await runCheckAsutusSubagent(
+        { userId: validated.userId, rekvId: validated.rekvId, logId: lastEarvedLogId },
+        {
+          apiClient,
+          sleepFn: options.sleepFn,
+          pollIntervalMs: validated.pollIntervalMs,
+          maxTimeoutMs: validated.maxTimeoutMs,
+        }
+      );
+      const checkOk = checkResult.status === 'success';
+      steps.push({
+        stepName: TASK_FLOW_CHECK_ASUTUS,
+        status: checkOk ? 'SUCCESS' : checkResult.status === 'timeout' ? 'TIMEOUT' : 'FAILED',
+        logId: checkResult.logId,
+        execStart: checkResult.execStart,
+        execEnd: checkResult.execEnd,
+        durationMs: checkResult.durationMs,
+        error: checkResult.error,
+        resultSummary: checkResult.resultSummary,
+      });
+
+      if (checkOk) {
+        console.log(`[orchestrator] Samm 3.0 käivitamine: ${TASK_FLOW_IMPORT_EARVED} (logId: ${lastEarvedLogId})`);
+        const importResult = await runImportEarvedSubagent(
+          { userId: validated.userId, rekvId: validated.rekvId, logId: lastEarvedLogId },
+          {
+            apiClient,
+            sleepFn: options.sleepFn,
+            pollIntervalMs: validated.pollIntervalMs,
+            maxTimeoutMs: validated.maxTimeoutMs,
+          }
+        );
+        importSuccess = importResult.status === 'success';
+        lastImportLogId = importResult.logId;
+        steps.push({
+          stepName: TASK_FLOW_IMPORT_EARVED,
+          status: importSuccess ? 'SUCCESS' : importResult.status === 'timeout' ? 'TIMEOUT' : 'FAILED',
+          logId: importResult.logId,
+          execStart: importResult.execStart,
+          execEnd: importResult.execEnd,
+          durationMs: importResult.durationMs,
+          error: importResult.error,
+          resultSummary: importResult.resultSummary,
+        });
+        if (!importSuccess) {
+          overallSuccess = false;
+        }
+      } else {
+        overallSuccess = false;
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error(`[orchestrator] Viga sammus 3.0 (${TASK_FLOW_CHECK_ASUTUS}/${TASK_FLOW_IMPORT_EARVED}): ${errorMsg}`);
+      steps.push({
+        stepName: TASK_FLOW_IMPORT_EARVED,
+        status: 'FAILED',
+        error: errorMsg,
+      });
+      importSuccess = false;
+      overallSuccess = false;
+    }
+  }
+
+  // --- ШАГ 3.1: Отправка отчетов FinBit (sendFinBitReport, зависит от import_earved) ---
+  if (importSuccess && lastImportLogId) {
+    console.log(`[orchestrator] Samm 3.1 käivitamine: ${TASK_FLOW_SEND_FIN_BIT_REPORT} (logId: ${lastImportLogId})`);
     try {
       const sendReportResult = await runSendFinBitReportSubagent(
         {
           userId: validated.userId,
           rekvId: validated.rekvId,
-          logId: lastEarvedLogId,
+          logId: lastImportLogId,
         },
         {
           apiClient,
@@ -2039,12 +2114,12 @@ export async function runOrchestrator(
       });
       overallSuccess = false;
     }
-  } else if (!getEarvedSuccess) {
-    console.warn(`[orchestrator] Samm 3.1 (${TASK_FLOW_SEND_FIN_BIT_REPORT}) vahelejätmine getEarved vea tõttu`);
+  } else if (!getEarvedSuccess || (lastEarvedLogId && !importSuccess)) {
+    console.warn(`[orchestrator] Samm 3.1 (${TASK_FLOW_SEND_FIN_BIT_REPORT}) vahelejätmine getEarved/import_earved vea tõttu`);
     steps.push({
       stepName: TASK_FLOW_SEND_FIN_BIT_REPORT,
       status: 'SKIPPED',
-      error: 'Vahele jäetud getEarved impordi vea tõttu',
+      error: 'Vahele jäetud getEarved/import_earved impordi vea tõttu',
     });
   }
 

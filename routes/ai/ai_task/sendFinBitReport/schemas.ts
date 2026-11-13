@@ -13,7 +13,7 @@ export const StartSendFinBitReportInputSchema = z.object({
     .number()
     .int()
     .positive()
-    .describe('Идентификатор лог-записи родительского импорта getEarved (обязателен для docs.get_arve_kinnitaja)'),
+    .describe('Идентификатор лог-записи родительского импорта import_earved (обязателен для docs.get_arve_kinnitaja)'),
 });
 
 /**
