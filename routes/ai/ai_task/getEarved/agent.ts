@@ -48,6 +48,7 @@ export async function runGetEarvedSubagent(
     {
       userId: validated.userId,
       taskName: TASK_FLOW_GET_EARVED,
+      logId: typeof logId === 'number' && logId > 0 ? logId : undefined,
       pollIntervalMs: options.pollIntervalMs,
       maxTimeoutMs: options.maxTimeoutMs,
     },

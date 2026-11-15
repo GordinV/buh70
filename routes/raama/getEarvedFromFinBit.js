@@ -309,6 +309,22 @@ function extractInvoiceNumbers(jsonArray) {
 }
 
 /**
+ * Приводит значение jsonb-колонки к массиву (драйвер может вернуть массив, JSON-строку или null)
+ */
+function toArray(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    }
+    return [];
+}
+
+/**
  * Выполняет SQL-запрос docs.sp_loe_earved к БД
  * Поддерживает:
  * 1. Одиночный батч или массив счетов: SELECT * FROM docs.sp_loe_earved($1::INTEGER, $2::JSONB);
@@ -324,6 +340,8 @@ async function loeEarved(userId, jsonOrBatches) {
             const batchResults = [];
             const rawRows = [];
             const allInvoiceNumbers = [];
+            const allImported = [];
+            const allErrors = [];
             const messages = [];
             let totalFetched = 0;
             let totalImported = 0;
@@ -352,12 +370,17 @@ async function loeEarved(userId, jsonOrBatches) {
                     throw new Error(errMsg || `docs.sp_loe_earved returned error code ${errCode}`);
                 }
 
-                const importedCount = (row.result !== undefined && row.result !== null)
-                    ? Number(row.result)
-                    : fetchedCount;
+                // структурированный результат процедуры: созданные документы и ошибки по отдельным счетам
+                const batchImported = toArray(row.imported);
+                const batchErrors = toArray(row.errors);
+                const importedCount = Array.isArray(row.imported)
+                    ? batchImported.length
+                    : ((row.result !== undefined && row.result !== null) ? Number(row.result) : fetchedCount);
 
                 totalFetched += fetchedCount;
                 totalImported += importedCount;
+                allImported.push(...batchImported);
+                allErrors.push(...batchErrors);
                 allInvoiceNumbers.push(...batchInvoiceNumbers);
                 if (errMsg) {
                     messages.push(errMsg.trim());
@@ -371,6 +394,7 @@ async function loeEarved(userId, jsonOrBatches) {
                     userId: bUserId,
                     fetched: fetchedCount,
                     imported: importedCount,
+                    failed: batchErrors.length,
                     invoiceNumbers: batchInvoiceNumbers,
                     message: errMsg
                 });
@@ -385,6 +409,9 @@ async function loeEarved(userId, jsonOrBatches) {
                 result: totalImported,
                 totalFetched,
                 totalImported,
+                totalFailed: allErrors.length,
+                imported: allImported,
+                errors: allErrors,
                 invoiceNumbers: allInvoiceNumbers,
                 error_message: summaryMessage,
                 batches: batchResults,
@@ -419,15 +446,20 @@ async function loeEarved(userId, jsonOrBatches) {
             throw new Error(errMsg || `docs.sp_loe_earved returned error code ${errCode}`);
         }
 
-        const importedCount = (row.result !== undefined && row.result !== null)
-            ? Number(row.result)
-            : fetchedCount;
+        const singleImported = toArray(row.imported);
+        const singleErrors = toArray(row.errors);
+        const importedCount = Array.isArray(row.imported)
+            ? singleImported.length
+            : ((row.result !== undefined && row.result !== null) ? Number(row.result) : fetchedCount);
 
         return {
             error_code: 0,
             result: importedCount,
             totalFetched: fetchedCount,
             totalImported: importedCount,
+            totalFailed: singleErrors.length,
+            imported: singleImported,
+            errors: singleErrors,
             invoiceNumbers,
             error_message: errMsg || `Imporditud ${importedCount} arvet (leitud: ${fetchedCount})`,
             data: l_result && l_result.data ? l_result.data : [row]
@@ -508,8 +540,14 @@ async function saveFetchedArvedLog(rekvId, userId, batches) {
 /**
  * Логгирование окончания задачи в ou.logs (успех / ошибка) с сохранением result и response
  */
-async function endLog(logId, status = 'success', errorMessage = null, resultData = null) {
+async function endLog(logId, status = 'success', errorMessage = null, resultData = null, extra = null) {
     if (!logId) return;
+
+    // extra - дополнительные ключи propertis (например, retryable: false - повтор задачи бессмыслен)
+    let extraJson = null;
+    if (extra && typeof extra === 'object' && Object.keys(extra).length > 0) {
+        extraJson = JSON.stringify(extra);
+    }
 
     let resultJson = null;
     let responseText = null;
@@ -542,11 +580,12 @@ async function endLog(logId, status = 'success', errorMessage = null, resultData
                  )
                  || case when $3::text is not null then jsonb_build_object('result', $3::jsonb) else '{}'::jsonb end
                  || case when $4::text is not null then jsonb_build_object('response', $4::text) else '{}'::jsonb end
+                 || case when $6::text is not null then ($6::text)::jsonb else '{}'::jsonb end
                  where id = $5;`;
 
     try {
         console.log('start endLog for id:', logId, 'status:', status, 'response:', responseText);
-        await db.queryDb(sql, [status, errorMessage, resultJson, responseText, logId], null, null, null, null, config);
+        await db.queryDb(sql, [status, errorMessage, resultJson, responseText, logId, extraJson], null, null, null, null, config);
         console.log('finish endLog');
     } catch (error) {
         throw new Error(`DB Query failed: ${error.message}`);
@@ -650,6 +689,7 @@ exports.main = post;
 exports.executeCalculation = executeCalculation;
 exports.runCalculationInBackground = runCalculationInBackground;
 exports.loeEarved = loeEarved;
+exports.toArray = toArray;
 exports.createLog = createLog;
 exports.saveFetchedArvedLog = saveFetchedArvedLog;
 exports.extractInvoiceNumbers = extractInvoiceNumbers;

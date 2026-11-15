@@ -1,5 +1,5 @@
 import { ApiClient } from '../shared/api_client';
-import { runSendFinBitReportSubagent } from './agent';
+import { runSendFinBitReportSubagent, buildSendSummary, manifest } from './agent';
 import { startSendFinBitReport } from './tools';
 import { TASK_FLOW_SEND_FIN_BIT_REPORT } from './schemas';
 
@@ -112,5 +112,42 @@ describe('Субагент sendFinBitReport', () => {
     expect(result.logId).toBe(9999);
     expect(result.execStart).toBe('2026-09-18T10:00:00.000Z');
     expect(result.execEnd).toBe('2026-09-18T10:00:05.000Z');
+  });
+
+  it('buildSendSummary: пустой result при success - "Uusi arveid ei olnud"; при failed - причина', () => {
+    expect(buildSendSummary({ status: 'success', result: [] })).toBe('Uusi arveid ei olnud, teavitusi ei saadetud');
+    expect(buildSendSummary({ status: 'failed', result: [], error: 'Impordi logi ei leitud' })).toBe(
+      'Teavitusi ei saadetud: Impordi logi ei leitud'
+    );
+    expect(buildSendSummary({ status: 'failed', result: [] })).toBeUndefined();
+  });
+
+  it('buildSendSummary: считает отправленные, ранее отправленные и неотправленные письма', () => {
+    const summary = buildSendSummary({
+      status: 'failed',
+      result: [
+        { email: 'a@narva.ee', success: true, invoicesCount: 2 },
+        { email: 'b@narva.ee', success: true, already_sent: true, invoicesCount: 1 },
+        { email: 'c@narva.ee', success: false, error: 'connect ETIMEDOUT', invoicesCount: 3 },
+      ],
+    });
+    expect(summary).toContain('Saadetud 1 teavitust (2 arvet)');
+    expect(summary).toContain('varem saadetud: 1');
+    expect(summary).toContain('Saatmata 1: c@narva.ee: connect ETIMEDOUT');
+  });
+
+  it('manifest.enrichReportStep формирует резюме только при наличии exec_start', () => {
+    expect(manifest.enrichReportStep(null)).toEqual({});
+    expect(manifest.enrichReportStep({ status: 'success', result: [] })).toEqual({});
+    expect(manifest.enrichReportStep({ exec_start: '2026-10-14T05:00:00.000Z', status: 'success', result: [] })).toEqual({
+      resultSummary: 'Uusi arveid ei olnud, teavitusi ei saadetud',
+    });
+  });
+
+  it('config.json sendFinBitReport: детерминированная оценка (prompt: null), зависит от import_earved', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cfg = require('./config.json');
+    expect(cfg.prompt).toBeNull();
+    expect(cfg.depends_on).toEqual(['import_earved']);
   });
 });

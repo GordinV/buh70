@@ -79,7 +79,9 @@ async function readLog(userId, taskName, options = {}) {
                      propertis ->> 'exec_end'   as exec_end,
                      propertis -> 'result'      as result,
                      propertis ->> 'response'   as response,
-                     propertis ->> 'error'      as error
+                     propertis ->> 'error'      as error,
+                     propertis ->> 'retryable'  as retryable,
+                     propertis ->> 'source_log_id' as source_log_id
                  from
                      ou.logs l
                  where

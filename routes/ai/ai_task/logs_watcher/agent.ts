@@ -4,6 +4,7 @@ import {
   WatchTaskInputSchema,
   WatchTaskOutput,
   WatchTaskOutputSchema,
+  parseRetryable,
 } from './schemas';
 import { readTaskLog } from './tools';
 
@@ -114,7 +115,7 @@ export async function watchTaskUntilDone(
   while (Date.now() - startTime < maxTimeout) {
     try {
       const logResult = await readTaskLog(
-        { userId: validated.userId, taskName: validated.taskName },
+        { userId: validated.userId, taskName: validated.taskName, logId: validated.logId },
         apiClient
       );
 
@@ -156,6 +157,7 @@ export async function watchTaskUntilDone(
             hasErrors: true,
             errorDetails: inspection.errorDetails,
             resultSummary: inspection.resultSummary,
+            retryable: parseRetryable(latestEntry.retryable),
           });
         }
       }
@@ -189,18 +191,25 @@ export interface TaskStatusCheckResult {
   hasErrors?: boolean;
   errorDetails?: string;
   resultSummary?: string;
+  /** false - бэкенд пометил сбой как неповторяемый (повтор запуска бессмыслен); undefined - не указано */
+  retryable?: boolean;
 }
 
 /**
- * Разовая неблокирующая проверка статуса задачи в ou.logs (для тиков оркестратора)
+ * Разовая неблокирующая проверка статуса задачи в ou.logs (для тиков оркестратора).
+ * Если передан logId - читается именно запись запущенной задачи, иначе последняя запись flow.
  */
 export async function checkTaskStatus(
   userId: number,
   taskName: string,
-  apiClient: ApiClient = defaultApiClient
+  apiClient: ApiClient = defaultApiClient,
+  logId?: number | null
 ): Promise<TaskStatusCheckResult> {
   try {
-    const logResult = await readTaskLog({ userId, taskName }, apiClient);
+    const logResult = await readTaskLog(
+      { userId, taskName, logId: typeof logId === 'number' && logId > 0 ? logId : undefined },
+      apiClient
+    );
     if (logResult.data && logResult.data.length > 0) {
       const latestEntry = logResult.data[logResult.data.length - 1];
 
@@ -245,6 +254,7 @@ export async function checkTaskStatus(
           hasErrors: true,
           errorDetails: inspection.errorDetails,
           resultSummary: inspection.resultSummary,
+          retryable: parseRetryable(latestEntry.retryable),
         };
       }
       return {

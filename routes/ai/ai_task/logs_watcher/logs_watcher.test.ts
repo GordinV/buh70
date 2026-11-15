@@ -1,6 +1,7 @@
 import { ApiClient } from '../shared/api_client';
 import { readTaskLog } from './tools';
-import { watchTaskUntilDone, inspectLogExecutionResult } from './agent';
+import { watchTaskUntilDone, inspectLogExecutionResult, checkTaskStatus } from './agent';
+import { parseRetryable } from './schemas';
 
 describe('Субагент logs_watcher', () => {
   it('readTaskLog должен успешно парсить ответ эндпоинта /task/read_log/:user_id/:task_name', async () => {
@@ -207,5 +208,93 @@ describe('Субагент logs_watcher', () => {
     expect(result.hasErrors).toBe(true);
     expect(result.errorDetails).toContain('connect ETIMEDOUT');
     expect(result.resultSummary).toContain('vigu: 1');
+  });
+
+  it('checkTaskStatus с logId запрашивает конкретную запись (log_id) и пробрасывает retryable=false', async () => {
+    let capturedUrl = '';
+    const mockFetch = jest.fn().mockImplementation(async (url: string) => {
+      capturedUrl = url;
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          result: 1,
+          error_code: 0,
+          error_message: null,
+          data: [
+            {
+              id: 20001,
+              flow: 'sendFinBitReport',
+              status: 'failed',
+              exec_start: '2026-10-14T05:00:00.000Z',
+              exec_end: '2026-10-14T05:00:10.000Z',
+              result: [],
+              response: null,
+              error: 'Imporditud 3 arvet, kuid saajaid ei leitud',
+              retryable: 'false',
+            },
+          ],
+        }),
+      };
+    });
+    const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, mockFetch as unknown as typeof fetch);
+
+    const res = await checkTaskStatus(11770, 'sendFinBitReport', client, 20001);
+
+    expect(capturedUrl).toContain('/task/read_log/11770/sendFinBitReport');
+    expect(capturedUrl).toContain('log_id=20001');
+    expect(res.status).toBe('failed');
+    expect(res.retryable).toBe(false);
+  });
+
+  it('checkTaskStatus без logId не добавляет log_id, а отсутствие retryable дает undefined (прежнее поведение повторов)', async () => {
+    let capturedUrl = '';
+    const mockFetch = jest.fn().mockImplementation(async (url: string) => {
+      capturedUrl = url;
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          result: 1,
+          error_code: 0,
+          error_message: null,
+          data: [
+            {
+              flow: 'sendFinBitReport',
+              status: 'failed',
+              exec_start: '2026-10-14T05:00:00.000Z',
+              exec_end: '2026-10-14T05:00:10.000Z',
+              result: [],
+              error: 'connect ETIMEDOUT',
+            },
+          ],
+        }),
+      };
+    });
+    const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, mockFetch as unknown as typeof fetch);
+
+    const res = await checkTaskStatus(11770, 'sendFinBitReport', client);
+
+    expect(capturedUrl).not.toContain('log_id=');
+    expect(res.retryable).toBeUndefined();
+    expect(parseRetryable('true')).toBe(true);
+    expect(parseRetryable(false)).toBe(false);
+    expect(parseRetryable(null)).toBeUndefined();
+  });
+
+  it('inspectLogExecutionResult не считает непустой result.errors (частичный импорт) скрытой ошибкой при status=success', () => {
+    const inspection = inspectLogExecutionResult({
+      status: 'success',
+      error: null,
+      result: {
+        totalImported: 2,
+        totalFailed: 1,
+        errors: [{ number: 'N2', error: 'Viga: asutus ei leidnud' }],
+      },
+      response: 'Imporditud 2 arvet',
+    });
+    expect(inspection.hasErrors).toBe(false);
   });
 });

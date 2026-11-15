@@ -149,6 +149,69 @@ describe('importEarved unit tests', () => {
         expect(db.queryDb.mock.calls[4][1][1]).toContain('Viga: test');
     });
 
+    const runWithProcedureRow = async (row, logId) => {
+        const req = {query: {}, body: {user_id: 11770, log_id: 400}, params: {}};
+        const res = makeRes();
+        db.queryDb
+            .mockReturnValueOnce(Promise.resolve({data: [{id: logId}]})) // createLog
+            .mockReturnValueOnce(Promise.resolve({data: [{id: 400, flow: 'getEarved', source_log_id: null}]}))
+            .mockReturnValueOnce(Promise.resolve({
+                data: [{
+                    arved: [{rekvId: 63, userId: 11770, count: 2, arved: [inv('N1', 111), inv('N2', 112)]}],
+                    changes: []
+                }]
+            }))
+            .mockReturnValueOnce(Promise.resolve({data: [row]}))
+            .mockReturnValueOnce(Promise.resolve({data: []})); // endLog
+        await importEarved.main(req, res);
+        await wait(50);
+        return db.queryDb.mock.calls[4][1];
+    };
+
+    test('Частичный успех: один счет с ошибкой, другой импортирован -> success, imported и errors в result', async () => {
+        const params = await runWithProcedureRow({
+            error_code: 0,
+            result: 1,
+            error_message: 'Arve nr.N1 importeeritud (id: 55); Arve nr.N2 viga: asutus ei leidnud; ',
+            imported: [{doc_id: 55, number: 'N1', rekv_id: 63}],
+            errors: [{number: 'N2', asutusid: '112', error: 'Viga: asutus ei leidnud'}]
+        }, 610);
+
+        expect(params[0]).toBe('success');
+        const resultJson = JSON.parse(params[2]);
+        expect(resultJson.totalImported).toBe(1);
+        expect(resultJson.totalFailed).toBe(1);
+        expect(resultJson.imported).toEqual([{doc_id: 55, number: 'N1', rekv_id: 63}]);
+        expect(resultJson.errors[0].number).toBe('N2');
+        expect(params[5]).toBeNull(); // retryable не пишется при success
+    });
+
+    test('Все счета с ошибкой (0 импортированных) -> failed, retryable=false', async () => {
+        const params = await runWithProcedureRow({
+            error_code: 0,
+            result: 0,
+            error_message: 'viga',
+            imported: [],
+            errors: [{number: 'N1', error: 'x'}, {number: 'N2', error: 'y'}]
+        }, 611);
+
+        expect(params[0]).toBe('failed');
+        expect(params[1]).toContain('vigu: 2');
+        expect(JSON.parse(params[2]).totalFailed).toBe(2);
+        expect(JSON.parse(params[5])).toEqual({retryable: false});
+    });
+
+    test('Исключение (БД недоступна) -> failed, retryable=true; Puudub õigused -> retryable=false', async () => {
+        const params = await runWithProcedureRow({error_code: 5, result: 0, error_message: 'connection reset'}, 612);
+        expect(params[0]).toBe('failed');
+        expect(JSON.parse(params[5])).toEqual({retryable: true});
+
+        db.queryDb.mockReset();
+        const params2 = await runWithProcedureRow({error_code: 4, result: 0, error_message: 'Puudub õigused'}, 613);
+        expect(params2[0]).toBe('failed');
+        expect(JSON.parse(params2[5])).toEqual({retryable: false});
+    });
+
     test('splitByMissingAsutus делит счета по всем батчам и обрабатывает пустой asutusid', () => {
         const split = importEarved.splitByMissingAsutus(
             [

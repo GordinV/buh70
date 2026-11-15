@@ -948,7 +948,8 @@ export async function runOrchestratorTick(
             state.status = 'IN_PROGRESS';
             pTask.status = 'PENDING';
             if (decision.dynamic_params) {
-              pTask.params = { ...(pTask.params || {}), ...decision.dynamic_params };
+              // параметры родителя (logId предшественника) приоритетнее решения модели
+              pTask.params = { ...(pTask.params || {}), ...decision.dynamic_params, ...parentParams };
             }
           }
         } catch {
@@ -1029,7 +1030,13 @@ export async function runOrchestratorTick(
     await Promise.all(
       runningKeys.map(async (key) => {
         const task = state.tasks[key];
-        const statusResult = await checkTaskStatus(resolveTaskUserId(task, state.params.userId), task.flow, apiClient);
+        // статус читается по log_id запуска этой задачи; без log_id - последняя запись flow
+        const statusResult = await checkTaskStatus(
+          resolveTaskUserId(task, state.params.userId),
+          task.flow,
+          apiClient,
+          task.log_id
+        );
 
         // 3.1. Если задача завершилась (в логах status === 'success' или status === 'failed')
         if (statusResult.status === 'success' || statusResult.status === 'failed') {
@@ -1061,7 +1068,40 @@ export async function runOrchestratorTick(
           const currentAttempts = task.attempts || 1;
           const maxAttempts = task.max_attempts || config.maxTaskAttempts || 3;
 
-          if (currentAttempts < maxAttempts) {
+          // Сверка перед повтором: если после нашего запуска сегодня появился более поздний успешный запуск этого flow
+          // (например, ручной перезапуск), принимаем его и не запускаем задачу повторно
+          if (task.log_id) {
+            const laterRun = await checkTaskAlreadyRunToday(
+              resolveTaskUserId(task, state.params.userId),
+              task.flow,
+              apiClient,
+              targetDateStr,
+              undefined,
+              timezone
+            );
+            if (laterRun.alreadyRun && laterRun.logId && laterRun.logId > task.log_id) {
+              console.log(
+                `[orchestrator-tick] Ülesanne ${key}: leitud hilisem edukas käivitus (log_id: ${laterRun.logId}), korduskäivitust ei tehta`
+              );
+              task.status = 'SUCCESS';
+              task.log_id = laterRun.logId;
+              task.finished_at = laterRun.lastExecEnd || nowIso;
+              task.duration_ms = laterRun.durationMs ?? null;
+              task.error = null;
+              state.history.push({
+                timestamp: nowIso,
+                event: 'TASK_RECONCILED_LOGS',
+                task: key,
+                details: `Later successful run accepted instead of retry (log_id: ${laterRun.logId})`,
+              });
+              return;
+            }
+          }
+
+          // Бэкенд пометил сбой как неповторяемый (нет данных/прав и т.п.): повтор с теми же входными данными бессмыслен
+          const nonRetryable = statusResult.retryable === false;
+
+          if (!nonRetryable && currentAttempts < maxAttempts) {
             const nextAttempt = currentAttempts + 1;
             const reason = evaluation.error || statusResult.error || 'Täitmisel ilmnesid vead';
 
@@ -1143,14 +1183,16 @@ export async function runOrchestratorTick(
               }
             }
           } else {
-            // Лимит попыток исчерпан
+            // Лимит попыток исчерпан либо сбой неповторяемый
             const finalError =
               evaluation.error ||
               statusResult.error ||
               `ou.logs status: failed pärast ${currentAttempts} katset`;
 
             console.error(
-              `[orchestrator-tick] Ülesanne ${key} ebaõnnestus lõplikult pärast ${currentAttempts} katset: ${finalError}`
+              nonRetryable
+                ? `[orchestrator-tick] Ülesanne ${key} ebaõnnestus (korduskäivitus ei ole mõttekas, retryable=false): ${finalError}`
+                : `[orchestrator-tick] Ülesanne ${key} ebaõnnestus lõplikult pärast ${currentAttempts} katset: ${finalError}`
             );
             task.status = 'FAILED';
             task.finished_at = statusResult.execEnd || nowIso;
@@ -1159,7 +1201,7 @@ export async function runOrchestratorTick(
             task.result_summary = evaluation.summary;
             state.history.push({
               timestamp: nowIso,
-              event: 'TASK_FAILED',
+              event: nonRetryable ? 'TASK_FAILED_NON_RETRYABLE' : 'TASK_FAILED',
               task: key,
               details: task.error,
             });
@@ -1462,7 +1504,8 @@ export async function runOrchestratorTick(
 
     if (decision.action === 'RUN' || decision.should_run) {
       if (decision.dynamic_params) {
-        task.params = { ...(task.params || {}), ...decision.dynamic_params };
+        // параметры родителя (logId предшественника) приоритетнее решения модели: LLM не может подменить logId
+        task.params = { ...(task.params || {}), ...decision.dynamic_params, ...parentParams };
       }
 
       readyToStartKeys.push(key);
@@ -1570,9 +1613,14 @@ export async function runOrchestratorTick(
 
   const reporterTask = state.tasks.reporter;
   const reporterDeps = reporterTask?.depends_on || [];
+  // max_wait_time (HH:mm): предельное время ожидания зависимостей - после него отчет уходит с тем, что есть
+  const reporterWaitExpired = reporterTask?.max_wait_time
+    ? isDailyExecutionWindowOpen(currentDate, reporterTask.max_wait_time, timezone)
+    : false;
   const reporterDepsFinished =
     reporterDeps.length > 0
-      ? reporterDeps.every((depKey) => {
+      ? reporterWaitExpired ||
+        reporterDeps.every((depKey) => {
           const s = state.tasks[depKey]?.status;
           return s === 'SUCCESS' || s === 'FAILED' || s === 'SKIPPED';
         })
@@ -1605,20 +1653,34 @@ export async function runOrchestratorTick(
         const t = state.tasks[k];
         let stepLog: any = null;
 
-        if (apiClient && t?.flow) {
+        // Задача, которая сегодня еще не стартовала (PENDING без запуска), не должна подхватывать вчерашний лог
+        const notStartedYet = t?.status === 'PENDING' && !t.log_id;
+        if (apiClient && t?.flow && !notStartedYet) {
           try {
             const taskUserId = resolveTaskUserId(t, Number(state.params.userId) || 2477);
-            const logRes = await readTaskLog(
-              {
-                userId: taskUserId,
-                taskName: t.flow,
-                hours: 24,
-                limit: 1,
-              },
-              apiClient
-            );
-            if (logRes?.data && logRes.data.length > 0) {
-              stepLog = logRes.data[0];
+            // Приоритет - запись запуска текущего цикла (по log_id); иначе последняя запись flow за 24 часа
+            if (t.log_id) {
+              const byId = await readTaskLog(
+                { userId: taskUserId, taskName: t.flow, logId: t.log_id },
+                apiClient
+              );
+              if (byId?.data && byId.data.length > 0) {
+                stepLog = byId.data[0];
+              }
+            }
+            if (!stepLog) {
+              const logRes = await readTaskLog(
+                {
+                  userId: taskUserId,
+                  taskName: t.flow,
+                  hours: 24,
+                  limit: 1,
+                },
+                apiClient
+              );
+              if (logRes?.data && logRes.data.length > 0) {
+                stepLog = logRes.data[0];
+              }
             }
           } catch {
             // fallback to state.tasks
@@ -1663,8 +1725,17 @@ export async function runOrchestratorTick(
           };
         }
 
+        // Шаги, не завершившиеся к моменту отчета, показываем как RUNNING / PENDING ("pooleli"), а не как пропущенные
         const stepStatus: ReportStepDetail['status'] =
-          t.status === 'SUCCESS' ? 'SUCCESS' : t.status === 'FAILED' ? 'FAILED' : 'SKIPPED';
+          t.status === 'SUCCESS'
+            ? 'SUCCESS'
+            : t.status === 'FAILED'
+            ? 'FAILED'
+            : t.status === 'RUNNING'
+            ? 'RUNNING'
+            : t.status === 'PENDING'
+            ? 'PENDING'
+            : 'SKIPPED';
 
         const enrichedFallback = registry[k]?.enrichReportStep?.(null, t) ?? {};
 
@@ -1680,7 +1751,11 @@ export async function runOrchestratorTick(
           resultSummary:
             enrichedFallback.resultSummary ??
             t.result_summary ??
-            (t.status === 'SKIPPED' ? 'Vahele jäetud' : undefined),
+            (t.status === 'SKIPPED'
+              ? 'Vahele jäetud'
+              : t.status === 'RUNNING' || t.status === 'PENDING'
+              ? 'Pooleli (ootab lõpetamist)'
+              : undefined),
         };
       })
     );

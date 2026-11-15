@@ -200,8 +200,8 @@ describe('sendFinBitReport unit tests', () => {
             db.queryDb
                 // createLog
                 .mockReturnValueOnce(Promise.resolve({ data: [{ id: 9901 }] }))
-                // getReport in background
-                .mockReturnValueOnce(Promise.resolve({ data: [] }))
+                // getImportInfo in background (импорт создал 0 документов -> рассылки нет)
+                .mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: [], total_imported: '0' }] }))
                 // endLog in background
                 .mockReturnValueOnce(Promise.resolve({ data: [] }));
 
@@ -234,6 +234,8 @@ describe('sendFinBitReport unit tests', () => {
             db.queryDb
                 // 1. createLog
                 .mockReturnValueOnce(Promise.resolve({ data: [{ id: 501 }] }))
+                // 1.1 getImportInfo: импорт создал 1 документ
+                .mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: [{ doc_id: 1 }] }] }))
                 // 2. getReport
                 .mockReturnValueOnce(Promise.resolve({
                     data: [
@@ -245,6 +247,8 @@ describe('sendFinBitReport unit tests', () => {
                         }
                     ]
                 }))
+                // 2.1 getAlreadySentEmails: ранее никому не отправлено
+                .mockReturnValueOnce(Promise.resolve({ data: [] }))
                 // 3. endLog
                 .mockReturnValueOnce(Promise.resolve({ data: [] }));
 
@@ -267,7 +271,8 @@ describe('sendFinBitReport unit tests', () => {
                     null,
                     expect.stringContaining('250 2.0.0 Ok'),
                     expect.stringContaining('target@narva.ee: 250 2.0.0 Ok: queued as test-id'),
-                    501
+                    501,
+                    null
                 ],
                 null, null, null, null,
                 expect.any(Object)
@@ -278,6 +283,8 @@ describe('sendFinBitReport unit tests', () => {
             db.queryDb
                 // 1. createLog
                 .mockReturnValueOnce(Promise.resolve({ data: [{ id: 502 }] }))
+                // 1.1 getImportInfo
+                .mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: [{ doc_id: 1 }] }] }))
                 // 2. getReport fails
                 .mockReturnValueOnce(Promise.reject(new Error('DB Connection lost')))
                 // 3. endLog (failed)
@@ -294,10 +301,115 @@ describe('sendFinBitReport unit tests', () => {
 
             expect(db.queryDb).toHaveBeenLastCalledWith(
                 expect.stringContaining('update ou.logs'),
-                ['failed', expect.stringContaining('DB Connection lost'), null, null, 502],
+                ['failed', expect.stringContaining('DB Connection lost'), null, null, 502, JSON.stringify({ retryable: true })],
                 null, null, null, null,
                 expect.any(Object)
             );
+        });
+    });
+
+    describe('processReport: нет новых счетов / получатели / идемпотентность', () => {
+        const smtpOptions = () => ({
+            transporter: mockTransporter,
+            smtpConfig: { host: 'smtp.zone.eu', port: 465, secure: true, from: 'noreply@narva.ee' }
+        });
+
+        test('импорт создал 0 документов -> success (no_op), get_arve_kinnitaja не вызывается, письма не уходят', async () => {
+            db.queryDb.mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: [], total_imported: '0' }] }));
+
+            const outcome = await sendFinBitReport.processReport(8563304, 2477, 9001, smtpOptions());
+
+            expect(outcome.status).toBe('success');
+            expect(outcome.noOp).toBe(true);
+            expect(outcome.sendResults).toEqual([]);
+            expect(outcome.response).toContain('Uusi arveid ei imporditud');
+            expect(db.queryDb).toHaveBeenCalledTimes(1);
+            expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+        });
+
+        test('лог импорта не найден или другой flow -> failed, retryable=false', async () => {
+            db.queryDb.mockReturnValueOnce(Promise.resolve({ data: [] }));
+            const notFound = await sendFinBitReport.processReport(1, 2477, 9001, smtpOptions());
+            expect(notFound.status).toBe('failed');
+            expect(notFound.retryable).toBe(false);
+            expect(notFound.errorMessage).toContain('Impordi logi ei leitud');
+
+            db.queryDb.mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'getEarved', imported: null }] }));
+            const wrongFlow = await sendFinBitReport.processReport(2, 2477, 9001, smtpOptions());
+            expect(wrongFlow.status).toBe('failed');
+            expect(wrongFlow.retryable).toBe(false);
+        });
+
+        test('документы импортированы, но получателей нет -> failed, retryable=false', async () => {
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: [{ doc_id: 5 }] }] }))
+                .mockReturnValueOnce(Promise.resolve({ data: [] }));
+
+            const outcome = await sendFinBitReport.processReport(8563304, 2477, 9001, smtpOptions());
+
+            expect(outcome.status).toBe('failed');
+            expect(outcome.retryable).toBe(false);
+            expect(outcome.errorMessage).toContain('saajaid ei leitud');
+        });
+
+        test('лог импорта старого формата (без result.imported): используется totalImported', async () => {
+            db.queryDb.mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: null, total_imported: '3' }] }));
+            const info = await sendFinBitReport.getImportInfo(10);
+            expect(info.importedCount).toBe(3);
+        });
+
+        test('повтор после частичного сбоя: получившим письмо повторно не отправляем', async () => {
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: [{ doc_id: 1 }, { doc_id: 2 }] }] }))
+                .mockReturnValueOnce(Promise.resolve({
+                    data: [
+                        { email: 'Done@narva.ee', arved: [{ number: '1' }] },
+                        { email: 'todo@narva.ee', arved: [{ number: '2' }] }
+                    ]
+                }))
+                // предыдущий запуск: Done@narva.ee получил письмо, todo@narva.ee - нет
+                .mockReturnValueOnce(Promise.resolve({
+                    data: [{ result: [
+                        { email: 'done@narva.ee', success: true },
+                        { email: 'todo@narva.ee', success: false, error: 'connect ETIMEDOUT' }
+                    ] }]
+                }));
+
+            const outcome = await sendFinBitReport.processReport(8563304, 2477, 9002, smtpOptions());
+
+            expect(mockTransporter.sendMail).toHaveBeenCalledTimes(1);
+            expect(mockTransporter.sendMail.mock.calls[0][0].to).toBe('todo@narva.ee');
+            expect(outcome.status).toBe('success');
+            expect(outcome.sendResults[0].already_sent).toBe(true);
+            expect(outcome.sendResults[1].success).toBe(true);
+        });
+
+        test('SMTP-сбой части получателей -> failed, retryable=true', async () => {
+            mockTransporter.sendMail
+                .mockReturnValueOnce(Promise.resolve({ messageId: 'm1', response: '250 OK' }))
+                .mockReturnValueOnce(Promise.reject(new Error('connect ETIMEDOUT')));
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({ data: [{ flow: 'docs.sp_loe_earved', imported: [{ doc_id: 1 }] }] }))
+                .mockReturnValueOnce(Promise.resolve({
+                    data: [
+                        { email: 'a@narva.ee', arved: [{ number: '1' }] },
+                        { email: 'b@narva.ee', arved: [{ number: '2' }] }
+                    ]
+                }))
+                .mockReturnValueOnce(Promise.resolve({ data: [] }));
+
+            const outcome = await sendFinBitReport.processReport(8563304, 2477, 9003, smtpOptions());
+
+            expect(outcome.status).toBe('failed');
+            expect(outcome.retryable).toBe(true);
+            expect(outcome.errorMessage).toContain('1 / 2');
+        });
+
+        test('evaluateSendResults: только отсутствие адреса -> retryable=false; все успешно -> success', () => {
+            expect(sendFinBitReport.evaluateSendResults([{ success: true }, { success: true, already_sent: true }]).status).toBe('success');
+            const missing = sendFinBitReport.evaluateSendResults([{ success: false, error: 'Recipient email is missing' }]);
+            expect(missing.status).toBe('failed');
+            expect(missing.retryable).toBe(false);
         });
     });
 
@@ -331,7 +443,8 @@ describe('sendFinBitReport unit tests', () => {
                     null,
                     expect.stringContaining('user1@narva.ee'),
                     'user1@narva.ee: 250 2.0.0 Ok: queued as abc; user2@narva.ee: 552 5.2.2 Mailbox full',
-                    1001
+                    1001,
+                    null
                 ],
                 null, null, null, null,
                 expect.any(Object)

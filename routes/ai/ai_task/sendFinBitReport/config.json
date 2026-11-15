@@ -1,13 +1,13 @@
 {
   "name": "sendFinBitReport",
   "flow": "sendFinBitReport",
-  "description": "Формирование и отправка email-уведомлений получателям импортированных счетов FinBit с передачей logId",
+  "description": "Формирование и отправка email-уведомлений получателям импортированных счетов FinBit (по result.imported лога import_earved). Нет новых счетов — штатный success без рассылки. Результат оценивается детерминированно (prompt: null)",
   "allow_parallel": true,
   "depends_on": [
     "import_earved"
   ],
   "schedule": null,
-  "prompt": "Ты — AI-контролер регламентного процесса отправки отчетов по счетам sendFinBitReport системы buh70. При оценке запуска задачи (DecisionContext): если предшествующая задача import_earved находится в статусе SUCCESS и передан logId, прими решение RUN (should_run: true, action: 'RUN'). При оценке результатов выполнения из логов (TaskResultContext): если массив result пуст (0 писем отправлено) или содержит ошибки (success: false, connect ETIMEDOUT, SMTP ошибки, Recipient email is missing) или поле error не пустое, зафиксируй статус выполнения как FAILED, извлеки конкретные адреса получателей и текст ошибок, и сформируй информативное резюме на эстонском языке для итогового отчета reporter. Если все письма успешно отправлены (success: true), подтверди статус SUCCESS.",
+  "prompt": null,
   "max_attempts": 3,
   "params": {
     "userId": 11770,

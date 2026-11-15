@@ -4,9 +4,9 @@
   "description": "Выкачка электронных счетов из FinBit в агентском режиме (сохраняет массив в ou.logs, flow=getEarved; проверку выполняет check_asutus, разбор и сохранение - import_earved) (userId 11770 — сервисный аккаунт FinBit в buh70)",
   "prompt": null,
   "allow_parallel": true,
-  "depends_on": [],  
+  "depends_on": [],
   "schedule": {
-    "time": "07:00"
+    "time": "05:00"
   },
   "max_attempts": 3,
   "params": {

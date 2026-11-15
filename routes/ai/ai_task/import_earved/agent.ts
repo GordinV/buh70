@@ -23,11 +23,24 @@ export function extractImportTotals(result: unknown): {
   totalFetched: number;
   totalImported: number;
   totalSkipped: number;
+  totalFailed: number;
+  imported: Array<{ doc_id: number; number: string; rekv_id?: number | null }>;
+  errors: Array<{ number: string; asutusid: string; error: string }>;
   skipped: Array<{ number: string; asutusid: string; rekvId?: number | null }>;
   missing: string[];
   sourceLogId: number | null;
 } {
-  const empty = { totalFetched: 0, totalImported: 0, totalSkipped: 0, skipped: [], missing: [], sourceLogId: null };
+  const empty = {
+    totalFetched: 0,
+    totalImported: 0,
+    totalSkipped: 0,
+    totalFailed: 0,
+    imported: [],
+    errors: [],
+    skipped: [],
+    missing: [],
+    sourceLogId: null,
+  };
   if (!result || typeof result !== 'object' || Array.isArray(result)) {
     return empty;
   }
@@ -41,6 +54,22 @@ export function extractImportTotals(result: unknown): {
         rekvId: typeof s?.rekvId === 'number' ? (s.rekvId as number) : null,
       }))
     : [];
+  const imported = Array.isArray(obj.imported)
+    ? (obj.imported as Array<Record<string, unknown>>)
+        .filter((i) => i && typeof i.doc_id === 'number')
+        .map((i) => ({
+          doc_id: i.doc_id as number,
+          number: i.number !== undefined && i.number !== null ? String(i.number) : '',
+          rekv_id: typeof i.rekv_id === 'number' ? (i.rekv_id as number) : null,
+        }))
+    : [];
+  const errors = Array.isArray(obj.errors)
+    ? (obj.errors as Array<Record<string, unknown>>).map((e) => ({
+        number: e && e.number !== undefined && e.number !== null ? String(e.number) : '',
+        asutusid: e && e.asutusid !== undefined && e.asutusid !== null ? String(e.asutusid) : '',
+        error: e && e.error !== undefined && e.error !== null ? String(e.error) : '',
+      }))
+    : [];
   const missing = Array.isArray(obj.missing)
     ? (obj.missing as unknown[]).map((v) => String(v).trim()).filter((v) => v !== '')
     : [];
@@ -49,6 +78,9 @@ export function extractImportTotals(result: unknown): {
     totalFetched: toNum(obj.totalFetched),
     totalImported: toNum(obj.totalImported),
     totalSkipped: toNum(obj.totalSkipped) || skipped.length,
+    totalFailed: toNum(obj.totalFailed) || errors.length,
+    imported,
+    errors,
     skipped,
     missing,
     sourceLogId: typeof obj.source_log_id === 'number' ? obj.source_log_id : null,
@@ -59,11 +91,18 @@ export function extractImportTotals(result: unknown): {
  * Формирует эстонское резюме импорта для отчета
  */
 export function buildImportSummary(totals: ReturnType<typeof extractImportTotals>): string {
-  const base = `Imporditud ${totals.totalImported} arvet (leitud: ${totals.totalFetched})`;
+  let summary = `Imporditud ${totals.totalImported} arvet (leitud: ${totals.totalFetched})`;
   if (totals.totalSkipped > 0) {
-    return `${base}. Vahele jäetud ${totals.totalSkipped} arvet (puuduvad asutused: ${totals.missing.join(', ')})`;
+    summary += `. Vahele jäetud ${totals.totalSkipped} arvet (puuduvad asutused: ${totals.missing.join(', ')})`;
   }
-  return base;
+  if (totals.totalFailed > 0) {
+    const examples = totals.errors
+      .slice(0, 3)
+      .map((e) => `${e.number || '?'}: ${e.error}`)
+      .join('; ');
+    summary += `. Vigu: ${totals.totalFailed}${examples ? ` (${examples})` : ''}`;
+  }
+  return summary;
 }
 
 /**
@@ -88,6 +127,7 @@ export async function runImportEarvedSubagent(
     {
       userId: validated.userId,
       taskName: TASK_FLOW_IMPORT_EARVED,
+      logId: typeof logId === 'number' && logId > 0 ? logId : undefined,
       pollIntervalMs: options.pollIntervalMs,
       maxTimeoutMs: options.maxTimeoutMs,
     },

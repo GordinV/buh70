@@ -1,13 +1,18 @@
 {
   "name": "reporter",
   "flow": "email_report",
-  "description": "Формирование и отправка сводного email-отчета о работе агентов за последние сутки",
+  "description": "Формирование и отправка сводного email-отчета о работе агентов за последние сутки. Запускается в 08:00 после завершения sendFinBitReport, calc_arv_jaak и read_mail; если они не завершились до max_wait_time, отчет уходит с тем, что есть",
   "allow_parallel": false,
-  "depends_on": [],
+  "depends_on": [
+    "sendFinBitReport",
+    "calc_arv_jaak",
+    "read_mail"
+  ],
   "schedule": {
     "time": "08:00"
   },
   "prompt": null,
   "max_attempts": 3,
-  "params": {}
+  "params": {},
+  "max_wait_time": "09:00"
 }

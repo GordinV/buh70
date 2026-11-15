@@ -77,6 +77,7 @@ export async function runReadMailSubagent(
     {
       userId: validated.userId,
       taskName: TASK_FLOW_READ_MAIL,
+      logId: typeof logId === 'number' && logId > 0 ? logId : undefined,
       pollIntervalMs: options.pollIntervalMs,
       maxTimeoutMs: options.maxTimeoutMs,
     },

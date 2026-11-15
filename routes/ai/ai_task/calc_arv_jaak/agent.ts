@@ -38,6 +38,7 @@ export async function runCalcArvJaakSubagent(
     {
       userId: validated.userId,
       taskName: TASK_FLOW_CALC_ARV_JAAK,
+      logId: typeof logId === 'number' && logId > 0 ? logId : undefined,
       pollIntervalMs: options.pollIntervalMs,
       maxTimeoutMs: options.maxTimeoutMs,
     },

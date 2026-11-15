@@ -39,6 +39,24 @@ export const SkippedInvoiceSchema = z.object({
 });
 
 /**
+ * Счет, успешно импортированный в docs.arv (result.imported лога импорта)
+ */
+export const ImportedInvoiceSchema = z.object({
+  doc_id: z.number(),
+  number: z.string().default(''),
+  rekv_id: z.number().nullable().optional(),
+});
+
+/**
+ * Счет, который не удалось импортировать (result.errors): ошибка одного счета не откатывает остальные
+ */
+export const ImportErrorSchema = z.object({
+  number: z.string().default(''),
+  asutusid: z.string().default(''),
+  error: z.string().default(''),
+});
+
+/**
  * Агрегированный результат работы субагента разбора и сохранения счетов
  */
 export const ImportEarvedResultSchema = z.object({
@@ -55,6 +73,12 @@ export const ImportEarvedResultSchema = z.object({
   totalFetched: z.number().default(0),
   totalImported: z.number().default(0),
   totalSkipped: z.number().default(0),
+  /** Число счетов, импорт которых завершился ошибкой (см. errors) */
+  totalFailed: z.number().default(0),
+  /** Реально созданные документы (по ним работает рассылка sendFinBitReport) */
+  imported: z.array(ImportedInvoiceSchema).default([]),
+  /** Счета с ошибкой импорта */
+  errors: z.array(ImportErrorSchema).default([]),
   /** Счета, пропущенные из-за отсутствия контр-агента в базе */
   skipped: z.array(SkippedInvoiceSchema).default([]),
   /** Рег.коды организаций, которых нет в libs.asutus */

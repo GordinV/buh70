@@ -1,9 +1,14 @@
 DROP FUNCTION IF EXISTS docs.sp_loe_earved(INTEGER, JSONB);
 
+-- Новые выходные параметры (добавлены к существующим, старые вызовы SELECT * продолжают работать):
+--   imported - [{doc_id, number, rekv_id}] только реально созданные документы (по нему работает docs.get_arve_kinnitaja)
+--   errors   - [{number, asutusid, error}] счета, которые не удалось импортировать (ошибка одного счета не откатывает остальные)
 CREATE OR REPLACE FUNCTION docs.sp_loe_earved(IN l_user_id INTEGER, l_arved jsonb,
                                               OUT error_code INTEGER,
                                               OUT result INTEGER,
-                                              OUT error_message TEXT)
+                                              OUT error_message TEXT,
+                                              OUT imported jsonb,
+                                              OUT errors jsonb)
     RETURNS RECORD AS
 $BODY$
 
@@ -30,6 +35,8 @@ DECLARE
 BEGIN
     error_code = 0;
     result = 0;
+    imported = '[]'::jsonb;
+    errors = '[]'::jsonb;
 
     -- проверка размерности массива
     IF l_arved is null or jsonb_array_length(l_arved) = 0
@@ -92,6 +99,8 @@ BEGIN
     -- проходим по массиву счетов
     FOR v_arv IN SELECT doc FROM jsonb_array_elements(l_arved) AS doc
         LOOP
+          -- Подтранзакция на каждый счет: ошибка одного счета не откатывает импорт остальных
+          BEGIN
             -- Извлекаем поля шапки документа
             l_doc = v_arv.doc -> 'data';
 
@@ -357,24 +366,46 @@ BEGIN
                     docs.sp_salvesta_arv(jsonb_build_object('id', 0, 'data', l_json_doc::JSON)::json, l_virtual_user_id,
                                          l_rekv_id);
 
-            if coalesce(l_doc_id, 0) > 0 then
-                result = coalesce(result, 0) + 1;
-                PERFORM docs.gen_lausend_arv(l_doc_id, l_virtual_user_id);
-
-                -- сохраним bpm omniva
-                l_bpm_json = l_doc -> 'bpm';
-                IF l_bpm_json IS NOT NULL AND jsonb_typeof(l_bpm_json) = 'array' AND
-                   jsonb_array_length(l_bpm_json) > 0 THEN
-                    PERFORM docs.sp_update_doc_bpm_data(l_doc_id::INTEGER, l_virtual_user_id::INTEGER,
-                                                        jsonb_build_object('omniva', l_bpm_json));
-                END IF;
+            if coalesce(l_doc_id, 0) <= 0 then
+                -- счет не сохранен: считаем ошибкой (документ не создан), а не "importeeritud (id: 0)"
+                raise exception 'Viga: arve ei salvestatud (docs.sp_salvesta_arv tagastas %)', coalesce(l_doc_id, 0);
             end if;
+
+            PERFORM docs.gen_lausend_arv(l_doc_id, l_virtual_user_id);
+
+            -- сохраним bpm omniva
+            l_bpm_json = l_doc -> 'bpm';
+            IF l_bpm_json IS NOT NULL AND jsonb_typeof(l_bpm_json) = 'array' AND
+               jsonb_array_length(l_bpm_json) > 0 THEN
+                PERFORM docs.sp_update_doc_bpm_data(l_doc_id::INTEGER, l_virtual_user_id::INTEGER,
+                                                    jsonb_build_object('omniva', l_bpm_json));
+            END IF;
+
+            -- счет полностью импортирован (документ, проводка, bpm): фиксируем в результате
+            imported = imported || jsonb_build_array(
+                    jsonb_build_object('doc_id', l_doc_id, 'number', l_doc ->> 'number', 'rekv_id', l_rekv_id));
             l_log_changes = l_log_changes::jsonb || jsonb_build_object('doc_id', l_doc_id, 'doc', l_json_doc);
             error_message =
-                    coalesce(error_message, '') || 'Arve nr.' || coalesce((l_doc ->> 'number')::text, '') || ' importeeritud (id: ' || coalesce(l_doc_id, 0)::text || '); ';
+                    coalesce(error_message, '') || 'Arve nr.' || coalesce((l_doc ->> 'number')::text, '') || ' importeeritud (id: ' || l_doc_id::text || '); ';
             l_doc_details = '[]'::jsonb;
             l_json_doc = null;
+          EXCEPTION
+              WHEN OTHERS THEN
+                  -- изменения этого счета откатываются, переменные цикла сбрасываем вручную
+                  l_doc_details = '[]'::jsonb;
+                  l_json_doc = null;
+                  errors = errors || jsonb_build_array(
+                          jsonb_build_object('number', v_arv.doc -> 'data' ->> 'number',
+                                             'asutusid', v_arv.doc -> 'data' ->> 'asutusid',
+                                             'error', SQLERRM));
+                  error_message = coalesce(error_message, '') || 'Arve nr.' ||
+                                  coalesce(v_arv.doc -> 'data' ->> 'number', '') || ' viga: ' || SQLERRM || '; ';
+          END;
         END LOOP;
+
+    -- result = число реально созданных документов (инкремент внутри подтранзакции не годится: при откате переменная не откатывается)
+    result = jsonb_array_length(imported);
+
     update ou.logs set changes = l_log_changes where id = l_log_id;
 
 END;

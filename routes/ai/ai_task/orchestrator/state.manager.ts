@@ -157,6 +157,7 @@ export function buildTaskGraphFromConfigs(configs: Record<string, AgentConfig>):
       attempts: 0,
       max_attempts: cfg.max_attempts ?? 3,
       timeout_hours: cfg.timeout_hours,
+      max_wait_time: cfg.max_wait_time,
       log_id: null,
       started_at: null,
       finished_at: null,
@@ -195,6 +196,7 @@ export function reconcileTasksWithConfigs(
       if (cfg.timeout_hours !== undefined) {
         existing.timeout_hours = cfg.timeout_hours;
       }
+      existing.max_wait_time = cfg.max_wait_time;
       existing.params = { ...(cfg.params || {}), ...(existing.params || {}) };
     } else if (addNewTasks) {
       existingTasks[name] = {
@@ -208,6 +210,7 @@ export function reconcileTasksWithConfigs(
         attempts: 0,
         max_attempts: cfg.max_attempts ?? 3,
         timeout_hours: cfg.timeout_hours,
+        max_wait_time: cfg.max_wait_time,
         log_id: null,
         started_at: null,
         finished_at: null,

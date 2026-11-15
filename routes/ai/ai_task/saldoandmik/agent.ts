@@ -38,6 +38,7 @@ export async function runSaldoandmikSubagent(
     {
       userId: validated.userId,
       taskName: TASK_FLOW_SALDOANDMIK,
+      logId: typeof logId === 'number' && logId > 0 ? logId : undefined,
       pollIntervalMs: options.pollIntervalMs,
       maxTimeoutMs: options.maxTimeoutMs,
     },

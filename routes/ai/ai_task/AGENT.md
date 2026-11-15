@@ -2,6 +2,7 @@
 
 Автономный микросервис (Genkit + TypeScript), который планирует, запускает и контролирует регламентные расчётные процессы `buh70`.
 Полная спецификация — `ai_task.md`, история реализации — `walkthrough.md`. Этот файл — краткая карта агентов и правила работы с ними.
+Доработки надёжности цепочки FinBit (2026-11-15) — `implementation_plan.md`; правила и ограничения — раздел «Надёжность цепочки FinBit» ниже.
 
 ## Базовые принципы
 
@@ -20,18 +21,20 @@
 ## Граф задач (DAG)
 
 ```
-read_mail (06:00)
-getEarved (07:00) ──► check_asutus ──► inforegister ──► import_earved ──► sendFinBitReport
+getEarved (05:00) ──► check_asutus ──► inforegister ──► import_earved ──► sendFinBitReport
    выкачка счетов      проверка          частичный разбор    рассылка
-   (flow getEarved)    контр-агентов     и сохранение        (по логу import_earved)
+   (flow getEarved)    контр-агентов     и сохранение        (по result.imported лога import_earved)
                                          (flow docs.sp_loe_earved)
+read_mail (06:00)
 calc_arv_jaak (07:30)
-reporter (08:00) [ежедневный сводный отчет за последние 24 часа]
+reporter (08:00) ждёт sendFinBitReport, calc_arv_jaak, read_mail (не дольше max_wait_time 09:00)
 saldoandmik (20:00) ──► lisa1_lisa5
 ```
 
+Cron запускает тик каждые 30 минут, поэтому каждый шаг цепочки стартует на следующем тике после завершения предыдущего: цепочка FinBit, начатая в 05:00, доходит до `sendFinBitReport` к 07:00 и завершается к ~07:30, до отчёта в 08:00. Шаг тика не уменьшается: в графе есть длинные задачи.
+
 Статусы задач: `PENDING → RUNNING → SUCCESS | FAILED | SKIPPED`. Статусы цикла: `IDLE | IN_PROGRESS | COMPLETED | FAILED`.
-Если предшественник в `FAILED`/`SKIPPED`, зависимые задачи каскадно переводятся в `SKIPPED`. Повторы: до `max_attempts` (по умолчанию 3), когда в логе нет `exec_start`, при ошибках или по watchdog таймаута (`timeout_hours` в `config.json`, по умолчанию 12 часов — `TASK_TIMEOUT`).
+Если предшественник в `FAILED`/`SKIPPED`, зависимые задачи каскадно переводятся в `SKIPPED`. Повторы: до `max_attempts` (по умолчанию 3), когда в логе нет `exec_start`, при ошибках или по watchdog таймаута (`timeout_hours` в `config.json`, по умолчанию 12 часов — `TASK_TIMEOUT`). Исключение: если бэкенд пометил сбой в `ou.logs` как `retryable: false` (нет данных, нет прав), задача сразу получает `FAILED` (событие `TASK_FAILED_NON_RETRYABLE`) без повторов. Перед повтором оркестратор проверяет, нет ли сегодня более позднего успешного запуска этого flow (например, ручного перезапуска): если есть, он принимается (`TASK_RECONCILED_LOGS`).
 
 **Защита целостности зависимостей (Downstream Lock):** Запрещено запускать, перезапускать или перевооружать (re-arm в `PENDING`) родительскую задачу $A$, если любая зависимая от неё дочерняя задача $B$ (`B.depends_on.includes(A)`) в данный момент находится в статусе `RUNNING`. Например, `saldoandmik` не может перезапуститься, пока выполняется зависящий от него `lisa1_lisa5`.
 
@@ -53,16 +56,17 @@ saldoandmik (20:00) ──► lisa1_lisa5
 2. Проверить смену календарного дня и при необходимости начать новый цикл со сброшенными `attempts`. Посуточное перевооружение задач (`TASK_REARMED`) блокируется, если зависимые от них задачи находятся в `RUNNING`.
 3. **Cycle decision** (`evaluateCycleDecision`): LLM по `prompt` возвращает `RUN_CYCLE | WAIT_SCHEDULE | SKIP_CYCLE | PAUSE_CYCLE` и `force_run`. На `localhost`/`127.0.0.1` цикл открывается сразу.
 4. Сверка с `ou.logs` (`orchestrator.tools.ts → checkTaskAlreadyRunToday`): задача, уже выполненная сегодня (для задач с расписанием — с `exec_start >= schedule.time`), помечается `SUCCESS`. При всех обращениях к `ou.logs` (`checkTaskAlreadyRunToday`, `checkTaskStatus`, `guardAgainstDuplicate`, `reporter`) используется индивидуальный `task.params?.userId ?? state.params.userId` (`resolveTaskUserId`).
-5. Инспекция `RUNNING`-задач и **result decision** (`evaluateTaskResultDecision`): глубокий разбор `result`. Если у агента есть `prompt`, вердикт о `SUCCESS`/`FAILED` выносит LLM. Затем повтор или `FAILED`.
+5. Инспекция `RUNNING`-задач и **result decision** (`evaluateTaskResultDecision`): глубокий разбор `result`. Если у агента есть `prompt`, вердикт о `SUCCESS`/`FAILED` выносит LLM. Затем повтор или `FAILED`. Статус читается по `log_id` запуска этой задачи (`checkTaskStatus(..., task.log_id)`), без `log_id` — по последней записи flow.
 6. **Launch decision** для `PENDING` (`evaluateTaskLaunchDecision`): LLM (`RUN | WAIT | SKIP` + `dynamic_params`) либо FSM (`depends_on`, `schedule.time/day/month`, суточное окно, **Downstream Lock**: блокировка запуска в `WAIT`, если любая зависимая задача находится в статусе `RUNNING`).
-7. Параллельный запуск готовых задач через `dispatchTaskByKey` (с предварительной защитой от параллельного дубля `guardAgainstDuplicate`). Для зависимых задач пробрасываются параметры родителя через `manifest.resolveParentParams(state)` (например, `state.tasks.getEarved.log_id → params.logId` для `sendFinBitReport`).
-8. По расписанию в 08:00 запускается `reporter`, который опрашивает `ou.logs` за последние 24 часа по всем расчётным агентам (`exec_start`, `exec_end`, `durationMs`, `status`, ошибки/итоги), вызывает `manifest.enrichReportStep(stepLog, task)` для агент-специфичного обогащения отчёта и отправляет email-отчет. После завершения всех задач суточный цикл переходит в `COMPLETED` с выставлением актуального `next_scheduled_run`.
+7. Параллельный запуск готовых задач через `dispatchTaskByKey` (с предварительной защитой от параллельного дубля `guardAgainstDuplicate`). Для зависимых задач пробрасываются параметры родителя через `manifest.resolveParentParams(state)` (`state.tasks.getEarved.log_id → params.logId` для `import_earved`, `state.tasks.import_earved.log_id → params.logId` для `sendFinBitReport`). Параметры родителя всегда приоритетнее `dynamic_params` решения LLM: модель не может подменить `logId`.
+8. По расписанию в 08:00 и после завершения зависимостей (`sendFinBitReport`, `calc_arv_jaak`, `read_mail`) запускается `reporter`; если зависимости не завершились к `max_wait_time` (09:00), отчёт уходит с тем, что есть, а незавершённые шаги показываются как `RUNNING`/`PENDING` («Pooleli»). Он читает `ou.logs` по всем расчётным агентам (запись текущего цикла по `log_id`; без неё — последняя запись flow за 24 часа; задача, ещё не стартовавшая сегодня, вчерашний лог не подхватывает) (`exec_start`, `exec_end`, `durationMs`, `status`, ошибки/итоги), вызывает `manifest.enrichReportStep(stepLog, task)` для агент-специфичного обогащения отчёта и отправляет email-отчет. После завершения всех задач суточный цикл переходит в `COMPLETED` с выставлением актуального `next_scheduled_run`.
 
 ### 2. `logs_watcher/` — наблюдатель логов (служебный субагент)
 
-- `tools.ts → readTaskLog`: `POST /task/read_log/:user_id/:task_name`.
+- `tools.ts → readTaskLog`: `POST /task/read_log/:user_id/:task_name` (опционально `log_id`, `limit`, `hours`). Бэкенд возвращает также `retryable` и `source_log_id`.
 - `agent.ts → inspectLogExecutionResult`: глубокая инспекция `error`/`result`/`response`. Ищет скрытые ошибки при формальном `status: success` (например, `success: false` или `connect ETIMEDOUT` в элементах массива). Возвращает `hasErrors`, `errorDetails`, `resultSummary`.
-- `agent.ts → watchTaskUntilDone`: блокирующий цикл опроса (`TASK_POLL_INTERVAL_MS`, `TASK_TIMEOUT_MS`). Используется только в `--full`-режиме и в `run*Subagent`.
+- `agent.ts → checkTaskStatus(userId, taskName, apiClient, logId?)`: разовая проверка статуса; с `logId` читает запись запуска, возвращает `retryable` (`false` — повтор бессмыслен, `undefined` — не указано).
+- `agent.ts → watchTaskUntilDone`: блокирующий цикл опроса (`TASK_POLL_INTERVAL_MS`, `TASK_TIMEOUT_MS`). Используется только в `--full`-режиме и в `run*Subagent` (они передают `logId` запущенной задачи).
 - Не имеет `config.json` и не входит в DAG (`EXCLUDED_NON_DAG_DIRS`).
 
 ### 2.1. `schedule_monitor/` — монитор расписания и статусов (служебный субагент)
@@ -85,11 +89,11 @@ saldoandmik (20:00) ──► lisa1_lisa5
 | `calc_arv_jaak` | `/task/calcArvJaak/` | `docs.check_arv_jaak` | — | 07:30 | нет (`prompt_test` для теста) | Пересчёт сальдо и остатков счетов (вне регламентного цикла) |
 | `read_mail` | `/task/readMail/` | `mail.read_mail_errors` | — | 06:00 | нет (`prompt: null`) | Анализ входящей почты на ошибки недоставки счетов клиентам (Mail Delivery Failure). Снимает отметку отправки в БД (`docs.tuhista_arve_saatmise_staatus`), отправляет персональные отчеты ответственным бухгалтерам с перечнем возвращенных счетов и отправляет алерт при `Muud vead` |
 | `lisa1_lisa5` | `/task/calcLisa1Lisa5/` | `eelarve.salvesta_lisa_1_5_kontrol` | `saldoandmik` | — | нет | Контрольные формы Lisa 1 / Lisa 5 |
-| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`) | `getEarved` | — | 07:00 | нет | **Только выкачка** e-счетов из FinBit (`params.userId: 11770` — сервисный аккаунт FinBit в buh70). Синхронно сохраняет массив счетов в `ou.logs` (`propertis.arved` = `[{rekvId, userId, count, arved: [...]}]`, `result.totalFetched`, `invoiceNumbers`) и возвращает `log_id` (`status: COMPLETED`). Разбор не выполняет. 0 счетов — штатный успех с пустым логом |
+| `getEarved` | `/task/getEarved/` (`is_agent: true`, опц. `date_query_from`, по умолчанию сегодня минус 5 дней) | `getEarved` | — | 05:00 | нет | **Только выкачка** e-счетов из FinBit (`params.userId: 11770` — сервисный аккаунт FinBit в buh70). Синхронно сохраняет массив счетов в `ou.logs` (`propertis.arved` = `[{rekvId, userId, count, arved: [...]}]`, `result.totalFetched`, `invoiceNumbers`) и возвращает `log_id` (`status: COMPLETED`). Разбор не выполняет. 0 счетов — штатный успех с пустым логом |
 | `check_asutus` | `/task/checkAsutusAvailability/` (`log_id` лога getEarved) | `checkAsutusAvailability` | `getEarved` | — | нет | Проверка через `libs.check_asutus_availibility` наличия контр-агентов (рег.код = `data.asutusid`) в `libs.asutus`. Список отсутствующих сохраняется в `ou.logs.changes` лога getEarved и в `result.missing`. Всегда завершается `success` (найденные отсутствующие — информация, а не ошибка) |
 | `inforegister` | `/task/getInforegister/` (`log_id` лога check_asutus) | `getInforegister` | `check_asutus` | — | нет | Получает из **платного** API Inforegister (`libs/inforegister.js`, каждый вызов тратит годовой лимит) данные организаций из `check_asutus.result.missing`; при `dryRun=false` сохраняет их через `libs.sp_salvesta_asutus`. Защита расходов: формат кода 8 цифр, кэш `libs.registry_cache` (в т.ч. «данных нет»), потолок `maxCalls` и резерв `INFOREGISTER_MIN_REMAINING`. Не сохраняются: закрытые организации, коды не из 8 цифр, не найденные в реестре (`result.items[].status`: `created`, `would_create`, `exists`, `needs_manual`, `not_found`, `closed`, `registry_unavailable`, `error`). Ключ хранится в `ou.config.properties.INFOREGISTER_API_KEY` (учреждение `rekvid = 3`, параметр `config_rekv_id`), читается через модель `config` (`inforegister_api_key`); переменная окружения не используется, устанавливается SQL-ом (`sql/ou/set_inforegister_api_key.sql`). В `config.json` агента `dryRun: false` (организации сохраняются в `libs.asutus`); значение по умолчанию в коде и бэкенде остается `true` (безопасно при ручном вызове без параметра). `insecureTls: true` (в config.json агента) отключает проверку TLS-сертификата api.ir.ee, т.к. сервер работает в сети с подменой сертификата: **ключ передается без проверки подлинности узла** |
-| `import_earved` | `/task/importEarved/` (`log_id` лога getEarved) | `docs.sp_loe_earved` | `getEarved`, `check_asutus` | — | нет | **Частичный импорт**: счета с отсутствующим контр-агентом пропускаются (`result.skipped`, `missing`, `totalSkipped`), остальные импортируются через `docs.sp_loe_earved`. Имя flow сохранено прежним: по нему `docs.get_arve_kinnitaja` находит лог импорта. Пропущенные счета подтянутся при следующей выкачке (окно `date_query_from`), когда контр-агент будет добавлен |
-| `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `import_earved` | — | **да** (оценка результата рассылки) | Дочерний агент `import_earved` (получает его `log_id`): рассылает уведомления получателям импортированных счетов. Без `logId` родителя пропускается (`SKIP`) |
+| `import_earved` | `/task/importEarved/` (`log_id` лога getEarved) | `docs.sp_loe_earved` | `getEarved`, `check_asutus`, `inforegister` | — | нет | **Частичный импорт**: счета с отсутствующим контр-агентом пропускаются (`result.skipped`, `missing`, `totalSkipped`), остальные импортируются через `docs.sp_loe_earved`. Имя flow сохранено прежним: по нему `docs.get_arve_kinnitaja` находит лог импорта. Пропущенные счета подтянутся при следующей выкачке (окно `date_query_from`), когда контр-агент будет добавлен. **Результат в `result`:** `imported` — `[{doc_id, number, rekv_id}]` реально созданные документы (единственный источник для рассылки), `errors` — `[{number, asutusid, error}]`, `totalImported`, `totalFailed`. Ошибка одного счёта не откатывает остальные (подтранзакция на счёт в `docs.sp_loe_earved`). Статус лога: частичный успех → `success`; ни одного импортированного при ошибках → `failed` + `retryable: false`; исключение (БД) → `failed` + `retryable: true` (`Puudub õigused` — `false`). 0 импортированных без ошибок (выходной, все счета уже есть) — штатный `success`. Уже существующие счета процедура пропускает молча |
+| `sendFinBitReport` | `/task/sendFinBitReport/` (`logId`) | `sendFinBitReport` | `import_earved` | — | нет (детерминированная оценка, резюме формирует `enrichReportStep`) | Дочерний агент `import_earved` (получает его `log_id`): рассылает уведомления получателям счетов из `result.imported` лога импорта. Без `logId` родителя пропускается (`SKIP`). Исходы: импорт создал 0 документов → `success` без рассылки («Uusi arveid ei imporditud», `no_op`); документы есть, получателей нет → `failed`, `retryable: false`; часть писем не ушла → `failed`, `retryable: true`; все письма ушли → `success`. Лог рассылки хранит `source_log_id` (лог импорта): при повторе адресам, уже получившим письмо, оно не отправляется (`already_sent`) |
 
 ### 3.1. `read_mail/` — монитор недоставки счетов по e-mail (расчётный субагент)
 
@@ -117,10 +121,26 @@ saldoandmik (20:00) ──► lisa1_lisa5
 - `agent.ts → generateAndSendReportSubagent`, `tools.ts`: `formatReportMarkdown`, `formatReportHtml`, `sanitizeReportText`, `sendReportEmail` (nodemailer, `SMTP_*`, `REPORT_EMAIL_FROM/TO`).
 - **Строгий запуск 1 раз в сутки в 08:00:** Запускается оркестратором строго по расписанию в 08:00 (даже если цикл запущен с `forceRun`, расписание `08:00` у `reporter` соблюдается, если не передан явно `taskKey: 'reporter'`).
 - **Защита от повторного запуска в 17:00 / во второй половине дня:** После успешной отправки отчёта (`status: 'SUCCESS'` и `finished_at` за сегодняшний день) повторный запуск в текущих сутках блокируется (`!isReporterAlreadyRunToday`). Агент `reporter` исключён из сверки `ou.logs` (Step 1.4), так как является нотификатором и не пишет в `ou.logs` (что ранее приводило к сбросу в `PENDING` и ложному запуску в 17:00). Кроме того, `resetCycleForNewDay` сохраняет статус выполненных за сегодняшний день задач.
-- Опрашивает `ou.logs` за последние 24 часа по всем расчётным агентам (`saldoandmik`, `calc_arv_jaak`, `getEarved`, `sendFinBitReport`, `read_mail`, `lisa1_lisa5`) с учётом их индивидуального `params.userId`.
+- Опрашивает `ou.logs` за последние 24 часа по всем расчётным агентам из `state.tasks` (`saldoandmik`, `calc_arv_jaak`, `getEarved`, `check_asutus`, `inforegister`, `import_earved`, `sendFinBitReport`, `read_mail`, `lisa1_lisa5`) с учётом их индивидуального `params.userId`. Берётся последняя запись flow, а не запись текущего цикла: для шагов, не завершившихся к 08:00, в отчёт попадает предыдущий запуск.
 - **Интеграция с агентами через `enrichReportStep`:** Оркестратор вызывает `registry[key]?.enrichReportStep?.(stepLog, task)`. Для `read_mail` этот хук извлекает ошибки недоставки счетов из `mail.read_mail_errors` (`mailErrors`) и формирует эстонский `resultSummary`, а `reporter` включает в ежедневный отчет отдельную таблицу **«📧 Tuvastatud vigased e-posti aadressid»** (`Arve nr`, `Saaja e-post`, `Staatus`, `Põhjus`).
 - Получает по каждому шагу статус, `logId`, длительность, `error`, `resultSummary` и `overallSuccess`.
 - Вызывается не через `dispatchTaskByKey`, а в отдельном блоке тика. `allow_parallel: false`.
+
+---
+
+## Надёжность цепочки FinBit (реализовано 2026-11-15)
+
+Разбор сбоя 2026-11-15: `sendFinBitReport` падал после 3 попыток, когда импорт не создал ни одного счёта. Что изменено (детали — `implementation_plan.md`):
+
+- **Отсутствие данных — не ошибка.** «Нет счетов», «нет писем», «нечего пересчитывать» — штатный `success` с пояснением в `response`. `failed` означает, что работа была, но не выполнена.
+- **Данные между шагами передаются структурой в `result`** (`result.imported` лога импорта), а не текстом в `response` / `error_message`. `docs.get_arve_kinnitaja` работает только по `result.imported`; разбор текста `id: N` и выборки по окну времени удалены. Логи импорта старого формата (без `imported`) рассылку не запускают.
+- **`retryable`.** Бэкенд пишет в лог `retryable: false` для сбоев, которые повтор не лечит; оркестратор тогда не повторяет задачу. Нет поля — прежнее поведение (повторы до `max_attempts`).
+- **Идемпотентность внешних эффектов.** Письма не отправляются повторно адресам, уже получившим их по тому же логу импорта; платные API и письма должны быть идемпотентны к повтору.
+- **Статус по `log_id`.** Эндпоинт возвращает `log_id` той записи, в которую пишет `status` и `exec_end`, под тем же `user_id` и `flow`, по которым её читает оркестратор. Служебные записи процедур (например, запись без `flow`, которую создаёт `docs.sp_loe_earved`) в качестве `log_id` не использовать. Поиск по flow остаётся запасным путём и для сверки с запусками вне оркестратора (`checkTaskAlreadyRunToday`, `guardAgainstDuplicate`).
+- **Параметры родителя приоритетнее решения LLM** (`dynamic_params` не перезаписывают `logId`).
+- **Порядок выкладки.** `docs.sp_loe_earved` и `docs.get_arve_kinnitaja` (SQL) выкладываются вместе с бэкендом: новая `get_arve_kinnitaja` читает только новый формат лога импорта.
+
+Принудительный запуск: `--task <ключ>` сбрасывает указанную задачу и её потомков в `PENDING`, расписание для неё не проверяется, зависимости проверяются, предшественники не перезапускаются; для закрытого цикла нужен ещё `--force`. Для свежей выкачки: `--task getEarved`.
 
 ---
 

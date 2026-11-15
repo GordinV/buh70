@@ -84,6 +84,14 @@ exports.main = async (req, res) => {
 };
 
 /**
+ * Ошибки, которые не лечатся повторным запуском (нет прав, неверные входные данные)
+ */
+function isNonRetryableError(error) {
+    const msg = error && error.message ? String(error.message) : '';
+    return msg.indexOf('Puudub õigused') !== -1;
+}
+
+/**
  * Фоновая функция: выполняет импорт и фиксирует результат в ou.logs
  */
 async function runImportInBackground(logId, userId, sourceLogParam) {
@@ -92,12 +100,24 @@ async function runImportInBackground(logId, userId, sourceLogParam) {
         const importResult = await importEarved(userId, sourceLogParam);
         console.log(`[importEarved] Background import finished. log_id: ${logId}`, importResult);
 
-        await earved.endLog(logId, 'success', null, importResult);
+        const totalImported = Number(importResult.totalImported) || 0;
+        const totalFailed = Number(importResult.totalFailed) || 0;
+
+        if (totalImported === 0 && totalFailed > 0) {
+            // ни один счет не импортирован, все с ошибкой: повтор с теми же данными ничего не изменит
+            const failedMsg = `Ühtegi arvet ei imporditud, vigu: ${totalFailed}`;
+            await earved.endLog(logId, 'failed', failedMsg, importResult, {retryable: false});
+        } else {
+            // частичный успех (часть счетов с ошибкой) - success, ошибки перечислены в result.errors
+            await earved.endLog(logId, 'success', null, importResult);
+        }
     } catch (error) {
         console.error(`[importEarved] Background import failed. log_id: ${logId}`, error);
 
         try {
-            await earved.endLog(logId, 'failed', error.message);
+            // права и ошибки справочников повтором не лечатся; недоступность БД и т.п. - временная ошибка
+            const retryable = !isNonRetryableError(error);
+            await earved.endLog(logId, 'failed', error.message, null, {retryable: retryable});
         } catch (logErr) {
             console.error(`[importEarved] Failed to update error log for log_id: ${logId}`, logErr);
         }
@@ -169,7 +189,10 @@ async function importEarved(userId, sourceLogParam) {
             result: 0,
             totalFetched: 0,
             totalImported: 0,
+            totalFailed: 0,
             totalSkipped: 0,
+            imported: [],
+            errors: [],
             skipped: [],
             missing: [],
             invoiceNumbers: [],
@@ -203,6 +226,9 @@ async function importEarved(userId, sourceLogParam) {
             result: 0,
             totalFetched: split.totalFetched,
             totalImported: 0,
+            totalFailed: 0,
+            imported: [],
+            errors: [],
             invoiceNumbers: [],
             error_message: `Imporditud 0 arvet (leitud: ${split.totalFetched})`,
             batches: [],
@@ -229,4 +255,5 @@ exports.importEarved = importEarved;
 exports.splitByMissingAsutus = splitByMissingAsutus;
 exports.readSourceLog = readSourceLog;
 exports.runImportInBackground = runImportInBackground;
+exports.isNonRetryableError = isNonRetryableError;
 exports.FLOW_NAME = FLOW_NAME;

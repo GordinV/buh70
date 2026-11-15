@@ -7,6 +7,8 @@ const config = require('./../../config/narvalv.json');
 const DEFAULT_USER_ID = 2477;
 const DEFAULT_REKV_ID = 63;
 const FLOW_NAME = 'sendFinBitReport';
+// flow лога импорта (agent import_earved): по нему и по result.imported работает docs.get_arve_kinnitaja
+const IMPORT_FLOW_NAME = 'docs.sp_loe_earved';
 
 /**
  * Экранирование спецсимволов для HTML
@@ -262,6 +264,8 @@ async function sendFinBitReportNotifications(reportResult, userId, options) {
 
     var defaultSmtpConfig = options.smtpConfig || null;
     var customTransporter = options.transporter || null;
+    // адреса, которым письмо по этому же импорту уже отправлено ранее (идемпотентность повтора)
+    var alreadySent = options.alreadySent || {};
     var sendResults = [];
 
     for (var i = 0; i < rows.length; i++) {
@@ -289,6 +293,18 @@ async function sendFinBitReportNotifications(reportResult, userId, options) {
                 invoicesCount: invoices.length,
                 success: false,
                 error: 'Recipient email is missing'
+            });
+            continue;
+        }
+
+        if (alreadySent[String(recipientEmail).trim().toLowerCase()]) {
+            // повтор после частичного сбоя: этому получателю письмо уже ушло, второй раз не шлем
+            sendResults.push({
+                email: recipientEmail,
+                invoicesCount: invoices.length,
+                success: true,
+                already_sent: true,
+                response: 'Juba saadetud (eelmine katse)'
             });
             continue;
         }
@@ -372,7 +388,7 @@ exports.main = async function(req, res) {
 
     try {
         // 1. Создаем запись в ou.logs о старте процесса
-        var logResult = await createLog(rekvId, userId);
+        var logResult = await createLog(rekvId, userId, paramLogId);
         if (logResult && logResult.data && logResult.data[0]) {
             logId = logResult.data[0].id;
         }
@@ -402,7 +418,7 @@ exports.main = async function(req, res) {
 
         if (logId) {
             try {
-                await endLog(logId, 'failed', error.message);
+                await endLog(logId, 'failed', error.message, undefined, {retryable: true});
             } catch (logErr) {
                 console.error('Failed to update log on startup error:', logErr);
             }
@@ -419,6 +435,175 @@ exports.main = async function(req, res) {
 };
 
 /**
+ * Чтение сведений о логе импорта (flow docs.sp_loe_earved): сколько документов реально создано.
+ * Источник - структурированный result.imported; для логов старого формата - result.totalImported.
+ * @returns {Promise<{found: boolean, flow: (string|null), importedCount: number}>}
+ */
+async function getImportInfo(importLogId) {
+    var sql = 'select l.propertis ->> \'flow\' as flow, ' +
+        'l.propertis -> \'result\' -> \'imported\' as imported, ' +
+        'l.propertis -> \'result\' ->> \'totalImported\' as total_imported ' +
+        'from ou.logs l where l.id = $1';
+
+    try {
+        var r = await db.queryDb(sql, [importLogId], null, null, null, null, config);
+        var row = r && Array.isArray(r.data) && r.data[0] ? r.data[0] : null;
+        if (!row) {
+            return {found: false, flow: null, importedCount: 0};
+        }
+        var importedCount = 0;
+        if (Array.isArray(row.imported)) {
+            importedCount = row.imported.length;
+        } else if (row.total_imported !== undefined && row.total_imported !== null) {
+            importedCount = Number(row.total_imported) || 0;
+        }
+        return {found: true, flow: row.flow || null, importedCount: importedCount};
+    } catch (error) {
+        throw new Error('DB Query failed: ' + error.message);
+    }
+}
+
+/**
+ * Адреса, которым письмо по этому же импорту (source_log_id) уже успешно отправлено предыдущими запусками.
+ * Ошибка чтения не критична: в худшем случае письмо уйдет повторно, поэтому возвращаем пустой набор.
+ * @returns {Promise<Object>} {email_lowercase: true}
+ */
+async function getAlreadySentEmails(sourceLogId, currentLogId) {
+    var sent = {};
+    var sql = 'select l.propertis -> \'result\' as result ' +
+        'from ou.logs l ' +
+        'where l.propertis ->> \'flow\' = $1 ' +
+        'and l.propertis ->> \'source_log_id\' = $2::text ' +
+        'and l.id <> $3';
+
+    try {
+        var r = await db.queryDb(sql, [FLOW_NAME, sourceLogId, currentLogId || 0], null, null, null, null, config);
+        var rows = r && Array.isArray(r.data) ? r.data : [];
+        rows.forEach(function(row) {
+            var results = row && Array.isArray(row.result) ? row.result : [];
+            results.forEach(function(item) {
+                if (item && item.success === true && item.email) {
+                    sent[String(item.email).trim().toLowerCase()] = true;
+                }
+            });
+        });
+    } catch (error) {
+        console.warn('[sendFinBitReport] Could not read previous send results:', error.message);
+    }
+    return sent;
+}
+
+/**
+ * Итоговый статус рассылки по результатам отправки писем.
+ * Все письма ушли (в т.ч. в прошлых попытках) -> success.
+ * Есть неотправленные -> failed; retryable=false, если ни одну ошибку повтором не вылечить (нет адреса получателя).
+ */
+function evaluateSendResults(sendResults) {
+    var failures = [];
+    for (var i = 0; i < sendResults.length; i++) {
+        if (!sendResults[i] || !sendResults[i].success) {
+            failures.push(sendResults[i] || {});
+        }
+    }
+
+    if (failures.length === 0) {
+        return {status: 'success', errorMessage: null, retryable: null};
+    }
+
+    var retryable = failures.some(function(f) {
+        return f.error !== 'Recipient email is missing';
+    });
+    var errorMessage = failures.length === sendResults.length
+        ? 'Kõik teavituste saatmised ebaõnnestusid (vigu: ' + failures.length + ')'
+        : 'Mõnede teavituste saatmisel ilmnesid vead (vigu: ' + failures.length + ' / ' + sendResults.length + ')';
+    return {status: 'failed', errorMessage: errorMessage, retryable: retryable};
+}
+
+/**
+ * Полный цикл рассылки по логу импорта paramLogId.
+ * Возвращает итог для записи в ou.logs; исключения (БД и т.п.) пробрасываются вызывающему.
+ *
+ * Правила:
+ *  - лог импорта не найден / не того flow            -> failed, retryable=false
+ *  - импорт не создал ни одного документа            -> success (no_op), рассылки нет: "нет новых счетов" - штатная ситуация
+ *  - документы есть, а получателей нет               -> failed, retryable=false
+ *  - письма отправлены                               -> см. evaluateSendResults
+ */
+async function processReport(paramLogId, userId, currentLogId, options) {
+    var importInfo = await getImportInfo(paramLogId);
+
+    if (!importInfo.found || importInfo.flow !== IMPORT_FLOW_NAME) {
+        return {
+            status: 'failed',
+            errorMessage: 'Impordi logi ei leitud (logId: ' + paramLogId + ', oodatud flow: ' + IMPORT_FLOW_NAME + ')',
+            retryable: false,
+            sendResults: [],
+            reportResult: null,
+            noOp: false
+        };
+    }
+
+    if (importInfo.importedCount === 0) {
+        console.log('[sendFinBitReport] Import log ' + paramLogId + ' created no documents, nothing to send');
+        return {
+            status: 'success',
+            errorMessage: null,
+            retryable: null,
+            sendResults: [],
+            reportResult: null,
+            noOp: true,
+            response: 'Uusi arveid ei imporditud, teavitusi ei saadetud'
+        };
+    }
+
+    var reportResult = await getReport(paramLogId);
+    var rows = (reportResult && reportResult.data) ? reportResult.data : (Array.isArray(reportResult) ? reportResult : []);
+
+    if (!rows || rows.length === 0) {
+        console.warn('[sendFinBitReport] Warning: imported ' + importInfo.importedCount + ' invoices, but no recipients for logId ' + paramLogId);
+        return {
+            status: 'failed',
+            errorMessage: 'Imporditud ' + importInfo.importedCount + ' arvet, kuid saajaid ei leitud (docs.get_arve_kinnitaja tagastas 0 kirjet)',
+            retryable: false,
+            sendResults: [],
+            reportResult: reportResult,
+            noOp: false
+        };
+    }
+
+    var alreadySent = await getAlreadySentEmails(paramLogId, currentLogId);
+    var sendOptions = Object.assign({}, options, {alreadySent: alreadySent});
+    var sendResults = await sendFinBitReportNotifications(reportResult, userId, sendOptions);
+    var verdict = evaluateSendResults(sendResults);
+
+    return {
+        status: verdict.status,
+        errorMessage: verdict.errorMessage,
+        retryable: verdict.retryable,
+        sendResults: sendResults,
+        reportResult: reportResult,
+        noOp: false
+    };
+}
+
+/**
+ * Дополнительные ключи propertis для лога рассылки по итогу processReport
+ */
+function buildLogExtra(outcome) {
+    var extra = {};
+    if (outcome.status === 'failed' && outcome.retryable !== null && outcome.retryable !== undefined) {
+        extra.retryable = outcome.retryable;
+    }
+    if (outcome.noOp) {
+        extra.no_op = true;
+    }
+    if (outcome.response) {
+        extra.response = outcome.response;
+    }
+    return extra;
+}
+
+/**
  * Фоновая асинхронная функция выполнения расчета и обновления статуса в ou.logs
  */
 async function runCalculationInBackground(logId, paramLogId, userId, rekvId, options) {
@@ -428,44 +613,17 @@ async function runCalculationInBackground(logId, paramLogId, userId, rekvId, opt
 
     try {
         console.log('[sendFinBitReport] Background calculation started. log_id: ' + logId + ', paramLogId: ' + paramLogId + ', userId: ' + userId);
-        var reportResult = await getReport(paramLogId);
-        var sendResults = await sendFinBitReportNotifications(reportResult, userId, options);
-        console.log('[sendFinBitReport] Background calculation finished. log_id: ' + logId, sendResults);
-
-        var status = 'success';
-        var errorMessage = null;
-
-        if (!sendResults || sendResults.length === 0) {
-            status = 'failed';
-            errorMessage = 'Arveid või e-posti saajaid ei leitud aruande saatmiseks (docs.get_arve_kinnitaja tagastas 0 kirjet)';
-            console.warn('[sendFinBitReport] Warning: no recipients or invoices processed for logId ' + paramLogId);
-        } else {
-            var hasSuccess = false;
-            var hasFailure = false;
-            for (var i = 0; i < sendResults.length; i++) {
-                if (sendResults[i] && sendResults[i].success) {
-                    hasSuccess = true;
-                } else {
-                    hasFailure = true;
-                }
-            }
-
-            if (!hasSuccess) {
-                status = 'failed';
-                errorMessage = 'Kõik teavituste saatmised ebaõnnestusid (vigu: ' + sendResults.length + ')';
-            } else if (hasFailure) {
-                errorMessage = 'Mõnede teavituste saatmisel ilmnesid vead';
-            }
-        }
+        var outcome = await processReport(paramLogId, userId, logId, options);
+        console.log('[sendFinBitReport] Background calculation finished. log_id: ' + logId, outcome.sendResults);
 
         // Фиксируем завершение с сохранением результатов отправки и статуса
-        await endLog(logId, status, sendResults, errorMessage);
+        await endLog(logId, outcome.status, outcome.sendResults, outcome.errorMessage, buildLogExtra(outcome));
     } catch (error) {
         console.error('[sendFinBitReport] Background calculation failed. log_id: ' + logId, error);
 
-        // Фиксируем ошибку в ou.logs
+        // Фиксируем ошибку в ou.logs (БД, сеть - временные ошибки, повтор имеет смысл)
         try {
-            await endLog(logId, 'failed', error.message);
+            await endLog(logId, 'failed', error.message, undefined, {retryable: true});
         } catch (logErr) {
             console.error('[sendFinBitReport] Failed to update error log for log_id: ' + logId, logErr);
         }
@@ -498,48 +656,26 @@ async function executeReport(userId, rekvId, paramLogId, options) {
 
     var logId = null;
     try {
-        var logData = await createLog(rekvId, userId);
+        var logData = await createLog(rekvId, userId, paramLogId);
         logId = logData && logData.data && logData.data[0] ? logData.data[0].id : null;
         console.log('Created log id:', logId);
 
-        var reportResult = await getReport(paramLogId);
-        console.log('report result:', reportResult);
+        var outcome = await processReport(paramLogId, userId, logId, options);
+        console.log('Send results:', outcome.sendResults);
 
-        // Отправка отчета по адресам получателей
-        var sendResults = await sendFinBitReportNotifications(reportResult, userId, options);
-        console.log('Send results:', sendResults);
-
-        var status = 'success';
-        var errorMessage = null;
-
-        if (!sendResults || sendResults.length === 0) {
-            status = 'failed';
-            errorMessage = 'Arveid või e-posti saajaid ei leitud aruande saatmiseks (docs.get_arve_kinnitaja tagastas 0 kirjet)';
-        } else {
-            var hasSuccess = false;
-            for (var j = 0; j < sendResults.length; j++) {
-                if (sendResults[j] && sendResults[j].success) {
-                    hasSuccess = true;
-                    break;
-                }
-            }
-            if (!hasSuccess) {
-                status = 'failed';
-                errorMessage = 'Kõik teavituste saatmised ebaõnnestusid (vigu: ' + sendResults.length + ')';
-            }
-        }
-
-        await endLog(logId, status, sendResults, errorMessage);
+        await endLog(logId, outcome.status, outcome.sendResults, outcome.errorMessage, buildLogExtra(outcome));
         console.log('Finished log id:', logId);
         return {
             logId: logId,
-            reportResult: reportResult,
-            sendResults: sendResults
+            status: outcome.status,
+            noOp: outcome.noOp,
+            reportResult: outcome.reportResult,
+            sendResults: outcome.sendResults
         };
     } catch (error) {
         if (logId) {
             try {
-                await endLog(logId, 'failed', error.message);
+                await endLog(logId, 'failed', error.message, undefined, {retryable: true});
             } catch (logErr) {
                 console.error('Failed to update error log for log_id:', logId, logErr);
             }
@@ -567,17 +703,20 @@ async function getReport(logId) {
 /**
  * Логгирование старта задачи
  */
-async function createLog(rekvId, userId) {
+async function createLog(rekvId, userId, sourceLogId) {
     if (rekvId === undefined || rekvId === null) rekvId = DEFAULT_REKV_ID;
     if (userId === undefined || userId === null) userId = DEFAULT_USER_ID;
+    var sourceId = Number(sourceLogId) > 0 ? Number(sourceLogId) : null;
 
+    // source_log_id - id лога импорта, по которому идет рассылка (нужен для идемпотентности повторов)
     var sql = 'insert into ou.logs (rekvid, user_id, propertis) ' +
-        'values ($1, $2, jsonb_build_object(\'flow\', $3::text, \'exec_start\', (clock_timestamp()))) ' +
+        'values ($1, $2, jsonb_build_object(\'flow\', $3::text, \'exec_start\', (clock_timestamp())) ' +
+        '|| case when $4::integer is not null then jsonb_build_object(\'source_log_id\', $4::integer) else \'{}\'::jsonb end) ' +
         'returning id;';
 
     try {
         console.log('start create log for flow:', FLOW_NAME);
-        var l_result = await db.queryDb(sql, [rekvId, userId, FLOW_NAME], null, null, null, null, config);
+        var l_result = await db.queryDb(sql, [rekvId, userId, FLOW_NAME, sourceId], null, null, null, null, config);
         console.log('finish create log', FLOW_NAME, l_result);
         return l_result;
     } catch (error) {
@@ -589,7 +728,7 @@ async function createLog(rekvId, userId) {
  * Логгирование окончания задачи (успех / ошибка)
  * Сохраняет статус, ошибку, результат отправки и ответ почтового сервера в ou.logs (поле propertis)
  */
-async function endLog(logId, status, resultOrError, errorMessage) {
+async function endLog(logId, status, resultOrError, errorMessage, extra) {
     if (!logId) return;
     if (!status) status = 'success';
     if (resultOrError === undefined) resultOrError = null;
@@ -626,6 +765,19 @@ async function endLog(logId, status, resultOrError, errorMessage) {
         response = result;
     }
 
+    // extra: retryable, no_op и явный response (например, "нет новых счетов")
+    var extraJson = null;
+    if (extra && typeof extra === 'object') {
+        var extraProps = Object.assign({}, extra);
+        if (extraProps.response) {
+            response = extraProps.response;
+        }
+        delete extraProps.response;
+        if (Object.keys(extraProps).length > 0) {
+            extraJson = JSON.stringify(extraProps);
+        }
+    }
+
     var resultJson = null;
     if (result) {
         try {
@@ -643,11 +795,12 @@ async function endLog(logId, status, resultOrError, errorMessage) {
         ') ' +
         '|| case when $3::text is not null then jsonb_build_object(\'result\', $3::jsonb) else \'{}\'::jsonb end ' +
         '|| case when $4::text is not null then jsonb_build_object(\'response\', $4::text) else \'{}\'::jsonb end ' +
+        '|| case when $6::text is not null then ($6::text)::jsonb else \'{}\'::jsonb end ' +
         'where id = $5;';
 
     try {
         console.log('start endLog for id:', logId, 'status:', status, 'response:', response);
-        await db.queryDb(sql, [status, error, resultJson, response, logId], null, null, null, null, config);
+        await db.queryDb(sql, [status, error, resultJson, response, logId, extraJson], null, null, null, null, config);
         console.log('finish endLog');
     } catch (error) {
         throw new Error('DB Query failed: ' + error.message);
@@ -674,6 +827,11 @@ exports.createLog = createLog;
 exports.endLog = endLog;
 exports.endReport = endReport;
 exports.runCalculationInBackground = runCalculationInBackground;
+exports.processReport = processReport;
+exports.getImportInfo = getImportInfo;
+exports.getAlreadySentEmails = getAlreadySentEmails;
+exports.evaluateSendResults = evaluateSendResults;
+exports.IMPORT_FLOW_NAME = IMPORT_FLOW_NAME;
 
 // Запуск при прямом вызове из командной строки (CLI)
 if (require.main === module) {

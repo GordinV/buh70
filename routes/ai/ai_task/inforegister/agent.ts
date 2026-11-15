@@ -89,6 +89,7 @@ export async function runInforegisterSubagent(
     {
       userId: validated.userId,
       taskName: TASK_FLOW_INFOREGISTER,
+      logId: typeof logId === 'number' && logId > 0 ? logId : undefined,
       pollIntervalMs: options.pollIntervalMs,
       maxTimeoutMs: options.maxTimeoutMs,
     },

@@ -66,6 +66,9 @@ describe('Субагент import_earved', () => {
       totalFetched: 3,
       totalImported: 2,
       totalSkipped: 1,
+      totalFailed: 0,
+      imported: [],
+      errors: [],
       skipped: [{ number: 'N2', asutusid: '222', rekvId: 63 }],
       missing: ['222'],
       sourceLogId: 400,
@@ -80,6 +83,9 @@ describe('Субагент import_earved', () => {
         totalFetched: 3,
         totalImported: 2,
         totalSkipped: 1,
+        totalFailed: 0,
+        imported: [],
+        errors: [],
         skipped: [],
         missing: ['222'],
         sourceLogId: 400,
@@ -90,11 +96,38 @@ describe('Субагент import_earved', () => {
         totalFetched: 2,
         totalImported: 2,
         totalSkipped: 0,
+        totalFailed: 0,
+        imported: [],
+        errors: [],
         skipped: [],
         missing: [],
         sourceLogId: 400,
       })
     ).toBe('Imporditud 2 arvet (leitud: 2)');
+  });
+
+  it('extractImportTotals и buildImportSummary учитывают imported и errors (частичный успех)', () => {
+    const totals = extractImportTotals({
+      totalFetched: 3,
+      totalImported: 2,
+      totalFailed: 1,
+      imported: [
+        { doc_id: 55, number: 'N1', rekv_id: 63 },
+        { doc_id: 56, number: 'N3', rekv_id: 63 },
+        { number: 'без doc_id' },
+      ],
+      errors: [{ number: 'N2', asutusid: '112', error: 'Viga: asutus ei leidnud' }],
+      source_log_id: 400,
+    });
+
+    expect(totals.imported).toEqual([
+      { doc_id: 55, number: 'N1', rekv_id: 63 },
+      { doc_id: 56, number: 'N3', rekv_id: 63 },
+    ]);
+    expect(totals.totalFailed).toBe(1);
+    expect(buildImportSummary(totals)).toBe(
+      'Imporditud 2 arvet (leitud: 3). Vigu: 1 (N2: Viga: asutus ei leidnud)'
+    );
   });
 
   it('runImportEarvedSubagent возвращает счетчики и пропущенные счета из result лога', async () => {

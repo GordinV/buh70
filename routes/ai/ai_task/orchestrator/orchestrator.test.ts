@@ -1168,7 +1168,7 @@ describe('Главный Оркестратор', () => {
 
     it('runOrchestratorTick: по расписанию запускается getEarved, а задачи без расписания ждут 20:00', async () => {
       const defaultGraph = getDefaultTaskGraph();
-      expect(defaultGraph.getEarved.schedule).toEqual({ time: '07:00' });
+      expect(defaultGraph.getEarved.schedule).toEqual({ time: '05:00' });
 
       // Запуск в 12:30 из статуса IDLE
       const mockFetch = jest.fn().mockImplementation(async (url: string) => {
@@ -1463,7 +1463,7 @@ describe('Главный Оркестратор', () => {
       );
 
       // Проверка структуры конкретных агентов
-      expect(configs.getEarved.schedule).toEqual({ time: '07:00' });
+      expect(configs.getEarved.schedule).toEqual({ time: '05:00' });
       expect(configs.getEarved.flow).toBe('getEarved');
       expect(configs.getEarved.params).toMatchObject({ is_agent: true });
 
@@ -1475,17 +1475,19 @@ describe('Главный Оркестратор', () => {
 
       expect(configs.lisa1_lisa5.depends_on).toEqual(['saldoandmik']);
       expect(configs.reporter.allow_parallel).toBe(false);
-      expect(configs.reporter.depends_on).toEqual([]);
+      expect(configs.reporter.depends_on).toEqual(['sendFinBitReport', 'calc_arv_jaak', 'read_mail']);
+      expect(configs.reporter.max_wait_time).toBe('09:00');
       expect(configs.reporter.schedule).toEqual({ time: '08:00' });
     });
 
     it('getDefaultTaskGraph должен формировать валидный граф задач на базе config.json', () => {
       const graph = getDefaultTaskGraph();
       expect(graph.saldoandmik.status).toBe('PENDING');
-      expect(graph.getEarved.schedule).toEqual({ time: '07:00' });
+      expect(graph.getEarved.schedule).toEqual({ time: '05:00' });
       expect(graph.sendFinBitReport.status).toBe('PENDING');
       expect(graph.sendFinBitReport.depends_on).toEqual(['import_earved']);
-      expect(graph.reporter.depends_on.length).toBe(0);
+      expect(graph.reporter.depends_on).toEqual(['sendFinBitReport', 'calc_arv_jaak', 'read_mail']);
+      expect(graph.reporter.max_wait_time).toBe('09:00');
       expect(graph.reporter.schedule).toEqual({ time: '08:00' });
     });
 
@@ -2559,7 +2561,7 @@ describe('Главный Оркестратор', () => {
         state.cycle_date = '2026-10-08';
         state.tasks.getEarved.status = 'SUCCESS';
         state.tasks.getEarved.finished_at = '2026-10-08T08:00:00.000Z';
-        state.tasks.getEarved.schedule = { time: '07:00' };
+        state.tasks.getEarved.schedule = { time: '05:00' };
 
         fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
 
@@ -2567,8 +2569,8 @@ describe('Главный Оркестратор', () => {
           return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
         }) as unknown as typeof fetch);
 
-        // Наступает следующий день: 2026-10-09 в 06:00 (до наступления 07:00)
-        const nextDayEarly = new Date('2026-10-09T03:00:00.000Z');
+        // Наступает следующий день: 2026-10-09 в 04:00 по Таллину (до наступления 05:00)
+        const nextDayEarly = new Date('2026-10-09T01:00:00.000Z');
         await runOrchestratorTick(
           { stateFilePath: testStateFile },
           {
@@ -2856,7 +2858,7 @@ describe('Главный Оркестратор', () => {
       }
     });
 
-    it('runOrchestratorTick: сохраняет приоритет явно заданного task.params.logId при слиянии с parentParams', async () => {
+    it('runOrchestratorTick: parentParams (logId родителя) приоритетнее закешированного task.params.logId', async () => {
       const testStateFile = path.join(__dirname, 'test_param_priority.json');
       try {
         const stateManager = new StateManager(testStateFile);
@@ -2899,7 +2901,8 @@ describe('Главный Оркестратор', () => {
         );
 
         expect(dispatchedParams).toBeDefined();
-        expect((dispatchedParams as Record<string, unknown> | null)?.logId).toBe(999);
+        // logId родительского import_earved (777) приоритетнее закешированного значения (999)
+        expect((dispatchedParams as Record<string, unknown> | null)?.logId).toBe(777);
       } finally {
         if (fs.existsSync(testStateFile)) {
           try {
@@ -3344,6 +3347,277 @@ describe('Главный Оркестратор', () => {
 
       const savedAfter8Am = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
       expect(savedAfter8Am.tasks.reporter.status).toBe('SUCCESS');
+    });
+  });
+
+  describe('Надежность цепочки FinBit: retryable, статус по log_id, ожидание reporter', () => {
+    const TEST_DATE = '2026-10-14';
+
+    /** Записывает состояние, где все задачи уже завершены (SKIPPED), кроме тех, что настраивает mutate */
+    function writeState(file: string, mutate: (tasks: Record<string, any>) => void): void {
+      const tasks: Record<string, any> = getDefaultTaskGraph();
+      for (const t of Object.values(tasks)) {
+        t.status = 'SKIPPED';
+        t.finished_at = `${TEST_DATE}T01:00:00.000Z`;
+      }
+      mutate(tasks);
+      const initState: OrchestratorState = {
+        version: 1,
+        cycle_date: TEST_DATE,
+        status: 'IN_PROGRESS',
+        last_tick_at: null,
+        next_scheduled_run: null,
+        params: { userId: 2477, rekvId: 63, kond: 1 },
+        tasks,
+        history: [],
+      };
+      fs.writeFileSync(file, JSON.stringify(initState, null, 2), 'utf-8');
+    }
+
+    function makeEntry(overrides: Record<string, unknown>) {
+      return {
+        id: 20001,
+        flow: 'sendFinBitReport',
+        status: null,
+        exec_start: `${TEST_DATE}T05:00:00.000Z`,
+        exec_end: null,
+        result: null,
+        response: null,
+        error: null,
+        ...overrides,
+      };
+    }
+
+    function makeClient(
+      byIdEntry: Record<string, unknown> | null,
+      byFlowEntry: Record<string, unknown> | null,
+      calls: string[]
+    ) {
+      const mockFetch = jest.fn().mockImplementation(async (url: string) => {
+        calls.push(url);
+        if (url.includes('/task/read_log/')) {
+          const entry = url.includes('log_id=') ? byIdEntry : byFlowEntry;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ result: 1, error_code: 0, error_message: null, data: entry ? [entry] : [] }),
+          };
+        }
+        if (url.includes('/task/sendFinBitReport/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: 1,
+              log_id: 29999,
+              data: { action: 'sendFinBitReport', status: 'STARTED', log_id: 29999 },
+            }),
+          };
+        }
+        return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+      });
+      return new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, mockFetch as unknown as typeof fetch);
+    }
+
+    function cleanup(file: string) {
+      if (fs.existsSync(file)) {
+        try {
+          fs.unlinkSync(file);
+        } catch {}
+      }
+    }
+
+    it('retryable=false в логе: задача сразу FAILED, повторный запуск не выполняется', async () => {
+      const file = path.resolve(__dirname, 'state_non_retryable_test.json');
+      writeState(file, (tasks) => {
+        tasks.import_earved.status = 'SUCCESS';
+        tasks.import_earved.log_id = 20000;
+        tasks.sendFinBitReport.status = 'RUNNING';
+        tasks.sendFinBitReport.attempts = 1;
+        tasks.sendFinBitReport.log_id = 20001;
+        tasks.sendFinBitReport.started_at = `${TEST_DATE}T05:00:00.000Z`;
+        tasks.sendFinBitReport.finished_at = null;
+        tasks.reporter.status = 'SUCCESS';
+        tasks.reporter.finished_at = `${TEST_DATE}T05:00:00.000Z`;
+      });
+      const calls: string[] = [];
+      const failedEntry = makeEntry({
+        status: 'failed',
+        exec_end: `${TEST_DATE}T05:00:10.000Z`,
+        result: [],
+        error: 'Imporditud 3 arvet, kuid saajaid ei leitud',
+        retryable: 'false',
+      });
+      const client = makeClient(failedEntry, failedEntry, calls);
+
+      try {
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date(`${TEST_DATE}T06:00:00.000Z`), targetDateStr: TEST_DATE }
+        );
+
+        const saved: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(saved.tasks.sendFinBitReport.status).toBe('FAILED');
+        expect(saved.tasks.sendFinBitReport.attempts).toBe(1);
+        expect(saved.history.some((h) => h.event === 'TASK_FAILED_NON_RETRYABLE')).toBe(true);
+        expect(saved.history.some((h) => h.event === 'TASK_RETRY')).toBe(false);
+        expect(calls.some((u) => u.includes('/task/sendFinBitReport/'))).toBe(false);
+        // статус читался по log_id запуска
+        expect(calls.some((u) => u.includes('/task/read_log/11770/sendFinBitReport') && u.includes('log_id=20001'))).toBe(true);
+      } finally {
+        cleanup(file);
+      }
+    });
+
+    it('статус задачи берется по log_id: более поздний чужой успешный запуск flow не закрывает задачу', async () => {
+      const file = path.resolve(__dirname, 'state_by_log_id_test.json');
+      writeState(file, (tasks) => {
+        tasks.import_earved.status = 'SUCCESS';
+        tasks.import_earved.log_id = 20000;
+        tasks.sendFinBitReport.status = 'RUNNING';
+        tasks.sendFinBitReport.attempts = 1;
+        tasks.sendFinBitReport.log_id = 20001;
+        tasks.sendFinBitReport.started_at = `${TEST_DATE}T05:00:00.000Z`;
+        tasks.sendFinBitReport.finished_at = null;
+        tasks.reporter.status = 'SUCCESS';
+        tasks.reporter.finished_at = `${TEST_DATE}T05:00:00.000Z`;
+      });
+      const calls: string[] = [];
+      // наша запись еще выполняется, а последняя запись flow - чужой (ручной) успешный запуск
+      const ownRunning = makeEntry({ id: 20001, status: null });
+      const foreignSuccess = makeEntry({
+        id: 20050,
+        status: 'success',
+        exec_start: `${TEST_DATE}T05:20:00.000Z`,
+        exec_end: `${TEST_DATE}T05:20:05.000Z`,
+        result: [{ email: 'a@narva.ee', success: true }],
+      });
+      const client = makeClient(ownRunning, foreignSuccess, calls);
+
+      try {
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date(`${TEST_DATE}T06:00:00.000Z`), targetDateStr: TEST_DATE }
+        );
+
+        const saved: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(saved.tasks.sendFinBitReport.status).toBe('RUNNING');
+        expect(saved.tasks.sendFinBitReport.log_id).toBe(20001);
+      } finally {
+        cleanup(file);
+      }
+    });
+
+    it('перед повтором принимается более поздний успешный запуск flow за сегодня (ручной перезапуск)', async () => {
+      const file = path.resolve(__dirname, 'state_reconcile_later_run_test.json');
+      writeState(file, (tasks) => {
+        tasks.import_earved.status = 'SUCCESS';
+        tasks.import_earved.log_id = 20000;
+        tasks.sendFinBitReport.status = 'RUNNING';
+        tasks.sendFinBitReport.attempts = 1;
+        tasks.sendFinBitReport.log_id = 20001;
+        tasks.sendFinBitReport.started_at = `${TEST_DATE}T05:00:00.000Z`;
+        tasks.sendFinBitReport.finished_at = null;
+        tasks.reporter.status = 'SUCCESS';
+        tasks.reporter.finished_at = `${TEST_DATE}T05:00:00.000Z`;
+      });
+      const calls: string[] = [];
+      const ownFailed = makeEntry({
+        id: 20001,
+        status: 'failed',
+        exec_end: `${TEST_DATE}T05:00:10.000Z`,
+        result: [{ email: 'a@narva.ee', success: false, error: 'connect ETIMEDOUT' }],
+        error: 'Kõik teavituste saatmised ebaõnnestusid (vigu: 1)',
+        retryable: 'true',
+      });
+      const laterSuccess = makeEntry({
+        id: 20050,
+        status: 'success',
+        exec_start: `${TEST_DATE}T05:30:00.000Z`,
+        exec_end: `${TEST_DATE}T05:30:05.000Z`,
+        result: [{ email: 'a@narva.ee', success: true }],
+      });
+      const client = makeClient(ownFailed, laterSuccess, calls);
+
+      try {
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date(`${TEST_DATE}T06:00:00.000Z`), targetDateStr: TEST_DATE }
+        );
+
+        const saved: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(saved.tasks.sendFinBitReport.status).toBe('SUCCESS');
+        expect(saved.tasks.sendFinBitReport.log_id).toBe(20050);
+        expect(saved.history.some((h) => h.event === 'TASK_RECONCILED_LOGS')).toBe(true);
+        expect(calls.some((u) => u.includes('/task/sendFinBitReport/'))).toBe(false);
+      } finally {
+        cleanup(file);
+      }
+    });
+
+    it('reporter ждет зависимости до max_wait_time (09:00) и после него отправляет отчет без них', async () => {
+      const file = path.resolve(__dirname, 'state_reporter_wait_test.json');
+      writeState(file, (tasks) => {
+        tasks.import_earved.status = 'SUCCESS';
+        tasks.import_earved.log_id = 20000;
+        tasks.sendFinBitReport.status = 'RUNNING';
+        tasks.sendFinBitReport.attempts = 1;
+        tasks.sendFinBitReport.log_id = 20001;
+        tasks.sendFinBitReport.started_at = `${TEST_DATE}T04:50:00.000Z`;
+        tasks.sendFinBitReport.finished_at = null;
+        tasks.reporter.status = 'PENDING';
+        tasks.reporter.finished_at = null;
+      });
+      const calls: string[] = [];
+      const running = makeEntry({ id: 20001, status: null, exec_start: `${TEST_DATE}T04:50:00.000Z` });
+      const client = makeClient(running, running, calls);
+
+      try {
+        // 08:30 по Таллину (05:30Z): зависимость еще выполняется, max_wait_time (09:00) не наступило
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date(`${TEST_DATE}T05:30:00.000Z`), targetDateStr: TEST_DATE }
+        );
+        let saved: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(saved.tasks.reporter.status).toBe('PENDING');
+
+        // 09:30 по Таллину (06:30Z): предельное время ожидания истекло - отчет уходит с тем, что есть
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date(`${TEST_DATE}T06:30:00.000Z`), targetDateStr: TEST_DATE }
+        );
+        saved = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(saved.tasks.reporter.status).toBe('SUCCESS');
+        expect(saved.tasks.sendFinBitReport.status).toBe('RUNNING');
+      } finally {
+        cleanup(file);
+      }
+    });
+
+    it('reporter не ждет max_wait_time, если все зависимости уже завершены', async () => {
+      const file = path.resolve(__dirname, 'state_reporter_deps_done_test.json');
+      writeState(file, (tasks) => {
+        tasks.sendFinBitReport.status = 'SUCCESS';
+        tasks.calc_arv_jaak.status = 'SUCCESS';
+        tasks.read_mail.status = 'SUCCESS';
+        tasks.reporter.status = 'PENDING';
+        tasks.reporter.finished_at = null;
+      });
+      const calls: string[] = [];
+      const client = makeClient(null, null, calls);
+
+      try {
+        // 08:30 по Таллину: все зависимости завершены, ждать 09:00 не нужно
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date(`${TEST_DATE}T05:30:00.000Z`), targetDateStr: TEST_DATE }
+        );
+        const saved: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(saved.tasks.reporter.status).toBe('SUCCESS');
+      } finally {
+        cleanup(file);
+      }
     });
   });
 });
