@@ -358,8 +358,8 @@ export const manifest: AgentManifest = {
 
 ### Шаг 4. Создайте `<agent>/config.json` (динамическое автообнаружение)
 
-1. Создайте `<agent>/config.json` (валидный JSON без комментариев и висячих запятых).
-2. Реестр [`shared/agent_registry.ts`](file:///c:/development/buh70/routes/ai/ai_task/shared/agent_registry.ts) и менеджер состояния [`orchestrator/state.manager.ts`](file:///c:/development/buh70/routes/ai/ai_task/orchestrator/state.manager.ts) автоматически обнаружат новый каталог через `fs.readdirSync` — править `orchestrator.agent.ts`, `KNOWN_SUBAGENTS` или `KNOWN_AGENT_DIRS` **не требуется**.
+1. Создайте `<agent>/config.json` (валидный JSON без комментариев и висячих запятых). Для жёстких зависимостей используйте `depends_on` (при `FAILED`/`SKIPPED` родителя задача тоже получает `SKIP`), для мягких — `soft_depends_on` (оркестратор ждёт завершения, но запускает задачу при любом исходе; один и тот же агент не может быть в обоих массивах).
+2. Реестр [`shared/agent_registry.ts`](file:///c:/development/buh70/routes/ai/ai_task/shared/agent_registry.ts) и менеджер состояния [`orchestrator/state.manager.ts`](file:///c:/development/buh70/routes/ai/ai_task/orchestrator/state.manager.ts) автоматически обнаружат новый каталог через `fs.readdirSync` — править `orchestrator.agent.ts` или другие общие файлы **не требуется**.
 3. При необходимости зарегистрируйте Genkit flow в [`index.ts`](file:///c:/development/buh70/routes/ai/ai_task/index.ts).
 
 ### Шаг 5. Требования к эндпоинту на стороне бэкенда `buh70`
@@ -490,7 +490,7 @@ npm run build
 - [ ] Создана папка `<agent_name>/` с файлами `config.json`, `schemas.ts`, `tools.ts`, `agent.ts`, `<agent_name>.test.ts`.
 - [ ] В `<agent_name>/agent.ts` экспортирован `manifest: AgentManifest` с методом `dispatch` (и `resolveParentParams`, если нужен контекст родителя).
 - [ ] В `<agent_name>/config.json` указаны валидные `name`, `flow`, `schedule`, `depends_on`, `max_attempts`, `timeout_hours` и `params`.
-- [ ] Имя агента добавлено в `KNOWN_SUBAGENTS` ([`shared/agent_registry.ts`](file:///c:/development/buh70/routes/ai/ai_task/shared/agent_registry.ts)) и в `depends_on` у [`reporter/config.json`](file:///c:/development/buh70/routes/ai/ai_task/reporter/config.json).
+- [ ] При необходимости имя агента добавлено в `depends_on` у [`reporter/config.json`](file:///c:/development/buh70/routes/ai/ai_task/reporter/config.json) (реестр и граф подхватят каталог автоматически через `fs.readdirSync`).
 - [ ] На бэкенде `buh70` реализован неблокирующий эндпоинт `POST /task/<endpoint>/`, создающий запись в `ou.logs` с указанным `flow`.
 - [ ] Успешно проходят `npm run typecheck`, `npm test` и `npm run build`.
 

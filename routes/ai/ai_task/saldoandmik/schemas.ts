@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 export const TASK_FLOW_SALDOANDMIK = 'eelarve.sp_koosta_saldoandmik';
 
 export const StartSaldoandmikInputSchema = z.object({
-  userId: z.number().optional().default(2477).describe('ID пользователя'),
+  userId: z.number().optional().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().optional().default(63).describe('ID учреждения'),
   kond: z.number().optional().default(1).describe('Признак сводного расчета (1 - да)'),
 });

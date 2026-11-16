@@ -1,12 +1,14 @@
 {
   "name": "import_earved",
   "flow": "docs.sp_loe_earved",
-  "description": "Разбор и сохранение счетов, выкачанных агентом getEarved (частичный импорт: счета с контр-агентом, которого нет в libs.asutus, пропускаются и попадают в result.skipped). Запускается после getEarved, check_asutus и inforegister",
+  "description": "Разбор и сохранение счетов, выкачанных агентом getEarved (частичный импорт: счета с контр-агентом, которого нет в libs.asutus, пропускаются и попадают в result.skipped). Запускается после getEarved и check_asutus; мягко ждёт завершения inforegister (стартует даже при его FAILED/SKIPPED)",
   "prompt": null,
   "allow_parallel": true,
   "depends_on": [
     "getEarved",
-    "check_asutus",
+    "check_asutus"
+  ],
+  "soft_depends_on": [
     "inforegister"
   ],
   "schedule": null,

@@ -1,22 +1,17 @@
 import { ApiClient, defaultApiClient } from '../shared/api_client';
 import { runSaldoandmikSubagent } from '../saldoandmik/agent';
-import { startSaldoandmik } from '../saldoandmik/tools';
 import { TASK_FLOW_SALDOANDMIK } from '../saldoandmik/schemas';
 import { runCalcArvJaakSubagent } from '../calc_arv_jaak/agent';
-import { startCalcArvJaak } from '../calc_arv_jaak/tools';
 import { TASK_FLOW_CALC_ARV_JAAK } from '../calc_arv_jaak/schemas';
 import { runGetEarvedSubagent } from '../getEarved/agent';
-import { startGetEarved } from '../getEarved/tools';
 import { TASK_FLOW_GET_EARVED } from '../getEarved/schemas';
 import { runCheckAsutusSubagent } from '../check_asutus/agent';
 import { TASK_FLOW_CHECK_ASUTUS } from '../check_asutus/schemas';
 import { runImportEarvedSubagent } from '../import_earved/agent';
 import { TASK_FLOW_IMPORT_EARVED } from '../import_earved/schemas';
 import { runSendFinBitReportSubagent } from '../sendFinBitReport/agent';
-import { startSendFinBitReport } from '../sendFinBitReport/tools';
 import { TASK_FLOW_SEND_FIN_BIT_REPORT } from '../sendFinBitReport/schemas';
 import { runLisa1Lisa5Subagent } from '../lisa1_lisa5/agent';
-import { startLisa1Lisa5 } from '../lisa1_lisa5/tools';
 import { TASK_FLOW_LISA1_LISA5 } from '../lisa1_lisa5/schemas';
 import { AgentManifest, buildAgentRegistry } from '../shared/agent_registry';
 import { TaskStatusCheckResult, checkTaskStatus, inspectLogExecutionResult } from '../logs_watcher/agent';
@@ -42,15 +37,18 @@ import {
   OrchestratorTickInputSchema,
   OrchestratorTickOutput,
   OrchestratorTickOutputSchema,
+  ResetReason,
   TaskResultContext,
   TaskResultEvaluation,
   TaskResultEvaluationSchema,
   TaskSchedule,
   TaskState,
   TaskStatus,
+  getAllDeps,
 } from './orchestrator.schemas';
 import { checkTaskAlreadyRunToday, findActiveRun, toLocalDateStr, ActiveRunResult } from './orchestrator.tools';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 /** Grace-период после отправки запуска, в течение которого отсутствие записи в ou.logs не считается провалом */
 const NO_START_GRACE_MS = 10 * 60 * 1000;
 
@@ -71,7 +69,14 @@ async function guardAgainstDuplicate(
   });
 }
 
-function resolveTaskUserId(task: TaskState, defaultUserId: number): number {
+function resolveTaskUserId(
+  task: TaskState,
+  defaultUserId: number,
+  explicitUserId?: number
+): number {
+  if (typeof explicitUserId === 'number') {
+    return explicitUserId;
+  }
   return typeof task.params?.userId === 'number' ? task.params.userId : defaultUserId;
 }
 import {
@@ -79,6 +84,7 @@ import {
   calculateNextScheduledRun,
   loadOrchestratorConfig,
   resetCycleForNewDay,
+  snapshotLastRun,
 } from './state.manager';
 
 export interface OrchestratorTickOptions {
@@ -105,6 +111,8 @@ export interface OrchestratorOptions {
   sleepFn?: (ms: number) => Promise<void>;
   targetDateStr?: string;
   recipientEmail?: string;
+  currentDate?: Date;
+  timezone?: string;
 }
 
 /**
@@ -345,6 +353,88 @@ export async function evaluateCycleDecision(
   };
 }
 
+function appendSoftDepsWarning(
+  baseSummary: string | undefined,
+  task: TaskState | undefined
+): string | undefined {
+  if (!task?.soft_deps_failed || task.soft_deps_failed.length === 0) {
+    return baseSummary;
+  }
+  const warning = `${task.soft_deps_failed.join(', ')} ebaõnnestus/vahele jäetud — uued asutused lisamata, nende arved jäävad järgmisele allalaadimisele`;
+  return baseSummary ? `${baseSummary} (${warning})` : warning;
+}
+
+/**
+ * Находит все транзитивно зависимые от rootKey задачи, находящиеся в статусе RUNNING.
+ */
+export function findRunningDownstreamDependents(
+  tasks: Record<string, TaskState>,
+  rootKey: string
+): string[] {
+  const visited = new Set<string>([rootKey]);
+  const queue: string[] = [rootKey];
+  const runningDependents: string[] = [];
+
+  while (queue.length > 0) {
+    const currentKey = queue.shift()!;
+    for (const [depKey, depTask] of Object.entries(tasks)) {
+      if (visited.has(depKey)) continue;
+      if (getAllDeps(depTask).includes(currentKey)) {
+        visited.add(depKey);
+        queue.push(depKey);
+        if (depTask.status === 'RUNNING') {
+          runningDependents.push(depKey);
+        }
+      }
+    }
+  }
+
+  return runningDependents;
+}
+
+/**
+ * Сбрасывает состояние задачи в PENDING, сохраняя снимок последнего запуска в last_run,
+ * и очищает закешированный params.logId.
+ */
+function resetTaskToPending(
+  task: TaskState,
+  reason: ResetReason,
+  cycleDate: string,
+  nowIso: string
+): void {
+  const nextLastRun = snapshotLastRun(task, reason, cycleDate, nowIso);
+  task.status = 'PENDING';
+  task.attempts = 0;
+  task.log_id = null;
+  task.started_at = null;
+  task.finished_at = null;
+  task.duration_ms = null;
+  task.error = null;
+  task.soft_deps_failed = undefined;
+  if (task.params && 'logId' in task.params) {
+    delete (task.params as Record<string, unknown>).logId;
+  }
+  if (nextLastRun !== undefined) {
+    task.last_run = nextLastRun;
+  }
+}
+
+/**
+ * Возвращает время последнего сброса/перевооружения (TASK_REARMED / TASK_RESET_MANUAL) для каждой задачи.
+ */
+function getLatestResetTimestampByTask(history: OrchestratorState['history']): Map<string, string> {
+  const latestResetAt = new Map<string, string>();
+  for (const item of history) {
+    if ((item.event === 'TASK_REARMED' || item.event === 'TASK_RESET_MANUAL') && item.task) {
+      const prev = latestResetAt.get(item.task);
+      if (!prev || item.timestamp > prev) {
+        latestResetAt.set(item.task, item.timestamp);
+      }
+    }
+  }
+  return latestResetAt;
+}
+
 /**
  * Оценивает решение о запуске задачи на текущем тике FSM.
  * Если в конфигурации задачи задан prompt, оркестратор руководствуется им в первую очередь,
@@ -362,11 +452,12 @@ export async function evaluateTaskLaunchDecision(
   apiClient?: ApiClient,
   dailyStartTime?: string,
   timezone?: string,
-  bypassScheduleTime: boolean = false
+  bypassScheduleTime: boolean = false,
+  manifest?: AgentManifest
 ): Promise<AgentLaunchDecision> {
-  // Собираем статусы предшественников
+  // Собираем статусы предшественников (жёстких и мягких)
   const depsState: Record<string, TaskStatus> = {};
-  for (const dep of task.depends_on) {
+  for (const dep of getAllDeps(task)) {
     depsState[dep] = state.tasks[dep]?.status || 'PENDING';
   }
 
@@ -396,7 +487,7 @@ export async function evaluateTaskLaunchDecision(
     localDateFormatted = currentDate.toISOString().slice(0, 10);
   }
 
-  const schedCheckForContext = isTaskScheduleReady(task.schedule, currentDate);
+  const schedCheckForContext = isTaskScheduleReady(task.schedule, currentDate, effectiveTimezone);
 
   // Обеспечиваем наличие родительских параметров (например, logId от getEarved):
   const effectiveParams: Record<string, unknown> = {
@@ -429,10 +520,8 @@ export async function evaluateTaskLaunchDecision(
   };
 
   // 0. Защита целостности зависимостей (Downstream Lock):
-  // Запрещено запускать родительскую задачу, если любая зависимая от нее дочерняя задача (downstream) прямо сейчас исполняется (RUNNING).
-  const runningDependents = Object.entries(state.tasks)
-    .filter(([_, depTask]) => depTask.depends_on && depTask.depends_on.includes(key) && depTask.status === 'RUNNING')
-    .map(([depKey]) => depKey);
+  // Запрещено запускать родительскую задачу, если любая транзитивно зависимая от нее дочерняя задача (downstream) прямо сейчас исполняется (RUNNING).
+  const runningDependents = findRunningDownstreamDependents(state.tasks, key);
 
   if (runningDependents.length > 0) {
     return {
@@ -477,7 +566,7 @@ export async function evaluateTaskLaunchDecision(
     };
   }
 
-  // 2.2. Проверка готовности предшественников
+  // 2.2. Проверка готовности жёстких предшественников
   const allDepsSuccess = task.depends_on.every((d) => state.tasks[d]?.status === 'SUCCESS');
   if (!allDepsSuccess) {
     return {
@@ -487,23 +576,37 @@ export async function evaluateTaskLaunchDecision(
     };
   }
 
-  // Для sendFinBitReport проверяем наличие log_id родительского import_earved
-  // (лог импорта flow = docs.sp_loe_earved, по которому docs.get_arve_kinnitaja находит импортированные счета)
-  if (key === 'sendFinBitReport') {
-    const parentLogId = state.tasks['import_earved']?.log_id;
-    if (!parentLogId) {
+  // 2.2.1. Проверка мягких предшественников (soft_depends_on): ждём финального статуса, стартуем при любом исходе
+  for (const sd of task.soft_depends_on || []) {
+    const softTask = state.tasks[sd];
+    if (!softTask) {
+      console.warn(`[orchestrator-decision] Pehme sõltuvus "${sd}" puudub olekus ülesandel ${key}, ignoreeritakse`);
+      continue;
+    }
+    if (softTask.status === 'PENDING' || softTask.status === 'RUNNING') {
       return {
         should_run: false,
-        action: 'SKIP',
-        reason: 'Vahele jäetud: vanemülesande import_earved log_id puudub',
+        action: 'WAIT',
+        reason: `Ootel pehme sõltuvuse lõpetamiseni (${sd})`,
       };
     }
+  }
+
+  // Проверка специфических предусловий из манифеста агента (например, наличие log_id родителя)
+  const effectiveManifest = manifest ?? buildAgentRegistry()[key];
+  const prereqError = effectiveManifest?.validatePrerequisites?.(state) ?? null;
+  if (prereqError) {
+    return {
+      should_run: false,
+      action: 'SKIP',
+      reason: prereqError,
+    };
   }
 
   // 2.3. Корневые задачи без явного расписания ожидают наступления базового суточного окна (dailyStartTime / dailyStartHour)
   // Если у задачи есть зависимости (например, sendFinBitReport -> getEarved), и они уже успешно завершены,
   // задача готова к старту сразу после завершения предшественников.
-  if (!task.schedule && (!task.depends_on || task.depends_on.length === 0) && !forceRun) {
+  if (!task.schedule && getAllDeps(task).length === 0 && !forceRun) {
     const windowStart = dailyStartTime || `${dailyStartHour}:00`;
     const tz = timezone || 'Europe/Tallinn';
     const isOpen = isDailyExecutionWindowOpen(currentDate, windowStart, tz);
@@ -626,7 +729,8 @@ async function invokeScheduleMonitorSafe(
   state: OrchestratorState,
   orchestratorConfig: OrchestratorConfig,
   apiClient: ApiClient,
-  currentDate: Date
+  currentDate: Date,
+  overrideParams?: { userId?: number; rekvId?: number }
 ): Promise<void> {
   if (orchestratorConfig.schedule_monitor?.enabled === false) {
     return;
@@ -635,8 +739,16 @@ async function invokeScheduleMonitorSafe(
     await runScheduleMonitor(
       state,
       {
-        userId: state.params?.userId ?? orchestratorConfig.params?.userId ?? 2477,
-        rekvId: state.params?.rekvId ?? orchestratorConfig.params?.rekvId ?? 63,
+        userId:
+          overrideParams?.userId ??
+          orchestratorConfig.params?.userId ??
+          state.params?.userId ??
+          AI_TASK_SERVICE_USER_ID,
+        rekvId:
+          overrideParams?.rekvId ??
+          orchestratorConfig.params?.rekvId ??
+          state.params?.rekvId ??
+          63,
       },
       apiClient,
       currentDate,
@@ -682,10 +794,31 @@ export async function runOrchestratorTick(
 
   const registry = options.registry || buildAgentRegistry(undefined, undefined);
 
-  // 1.1. Загрузка состояния
+  // Источник истины для userId/rekvId — конфиг (orchestrator/config.json), если не передан явный CLI-флаг (--user/--rekv).
+  // Явный CLI-флаг действует только на этот запуск и не сохраняется в orchestrator_state.json.
+  const explicitUserId = typeof validated.userId === 'number' ? validated.userId : undefined;
+  const explicitRekvId = typeof validated.rekvId === 'number' ? validated.rekvId : undefined;
+  const configUserId =
+    typeof orchestratorConfig.params?.userId === 'number'
+      ? orchestratorConfig.params.userId
+      : AI_TASK_SERVICE_USER_ID;
+  const configRekvId =
+    typeof orchestratorConfig.params?.rekvId === 'number'
+      ? orchestratorConfig.params.rekvId
+      : 63;
+  const effectiveCycleUserId = explicitUserId ?? configUserId;
+  const effectiveCycleRekvId = explicitRekvId ?? configRekvId;
+  const overrideMonitorParams =
+    explicitUserId !== undefined || explicitRekvId !== undefined
+      ? { userId: explicitUserId, rekvId: explicitRekvId }
+      : undefined;
+
+  // 1.1. Загрузка состояния (без передачи разового CLI --user/--rekv в сохраняемый state)
   let state = await stateManager.loadState(
-    { userId: validated.userId, rekvId: validated.rekvId, kond: validated.kond },
-    targetDateStr
+    { userId: configUserId, rekvId: configRekvId, kond: validated.kond },
+    targetDateStr,
+    undefined,
+    timezone
   );
 
   const nowIso = currentDate.toISOString();
@@ -698,16 +831,7 @@ export async function runOrchestratorTick(
   if (selectedTaskKey && state.tasks[selectedTaskKey]) {
     console.log(`[orchestrator-tick] Käsitsi lähtestamine ülesandele ${selectedTaskKey}`);
     const targetTask = state.tasks[selectedTaskKey];
-    targetTask.status = 'PENDING';
-    targetTask.attempts = 0;
-    targetTask.log_id = null;
-    targetTask.started_at = null;
-    targetTask.finished_at = null;
-    targetTask.duration_ms = null;
-    targetTask.error = null;
-    if (targetTask.params && 'logId' in targetTask.params) {
-      delete (targetTask.params as Record<string, unknown>).logId;
-    }
+    resetTaskToPending(targetTask, 'TASK_RESET_MANUAL', state.cycle_date, nowIso);
     state.history.push({
       timestamp: nowIso,
       event: 'TASK_RESET_MANUAL',
@@ -715,15 +839,30 @@ export async function runOrchestratorTick(
       details: `Task manually reset via taskKey option`,
     });
     rearmedKeys.add(selectedTaskKey);
+  } else if (selectedTaskKey) {
+    // Неизвестный ключ задачи: не прерываем тик, но явно сообщаем об этом и фиксируем событие в истории.
+    // Поведение намеренно консервативное: фильтр PENDING-задач ниже (k === selectedTaskKey) при неизвестном ключе
+    // не пропускает ни одной задачи, поэтому при опечатке ручной тик ничего не запускает
+    // (инспекция RUNNING, reporter и сохранение состояния работают как обычно).
+    const knownTaskKeys = Object.keys(state.tasks).join(', ');
+    console.warn(
+      `[orchestrator-tick] Hoiatus: tundmatu ülesande võti "${selectedTaskKey}", lähtestamist ei tehtud ja selles tikis ühtegi ülesannet ei käivitata. Lubatud võtmed: ${knownTaskKeys}`
+    );
+    state.history.push({
+      timestamp: nowIso,
+      event: 'TASK_RESET_UNKNOWN',
+      task: selectedTaskKey,
+      details: `Unknown taskKey: manual reset skipped, no tasks are launched in this tick. Known task keys: ${knownTaskKeys}`,
+    });
   }
   for (const [sKey, sTask] of Object.entries(state.tasks)) {
     if (sTask.schedule && sTask.status !== 'RUNNING') {
-      // Защита Downstream Lock: не перевооружаем задачу, если зависимая от нее задача прямо сейчас исполняется (RUNNING)
-      const hasRunningDependents = Object.values(state.tasks).some(
-        (depTask) => depTask.depends_on && depTask.depends_on.includes(sKey) && depTask.status === 'RUNNING'
-      );
-      if (hasRunningDependents) {
-        console.log(`[orchestrator-tick] Skipped re-arming scheduled task ${sKey}: dependent task is still RUNNING`);
+      // Защита Downstream Lock: не перевооружаем задачу, если любая транзитивно зависимая от нее задача прямо сейчас исполняется (RUNNING)
+      const runningDependents = findRunningDownstreamDependents(state.tasks, sKey);
+      if (runningDependents.length > 0) {
+        console.log(
+          `[orchestrator-tick] Skipped re-arming scheduled task ${sKey}: dependent task(s) still RUNNING (${runningDependents.join(', ')})`
+        );
         continue;
       }
 
@@ -741,13 +880,7 @@ export async function runOrchestratorTick(
 
       if (wasRunOnPreviousDay) {
         console.log(`[orchestrator-tick] Re-arming scheduled task ${sKey} for new day: ${targetDateStr}`);
-        sTask.status = 'PENDING';
-        sTask.attempts = 0;
-        sTask.log_id = null;
-        sTask.started_at = null;
-        sTask.finished_at = null;
-        sTask.duration_ms = null;
-        sTask.error = null;
+        resetTaskToPending(sTask, 'TASK_REARMED', state.cycle_date, nowIso);
         state.history.push({
           timestamp: nowIso,
           event: 'TASK_REARMED',
@@ -760,23 +893,31 @@ export async function runOrchestratorTick(
   }
 
   // Каскадное перевооружение зависимых задач (depends_on):
-  // Если родительская задача была перевооружена, все зависимые от нее задачи также сбрасываем в PENDING
+  // Если родительская задача была перевооружена (в этом тике или в предыдущем, когда потомок был RUNNING и позже завершился),
+  // все зависимые от нее задачи также сбрасываем в PENDING.
+  const latestResetAt = getLatestResetTimestampByTask(state.history);
   let cascadeAdded = true;
   while (cascadeAdded) {
     cascadeAdded = false;
     for (const [depKey, depTask] of Object.entries(state.tasks)) {
       if (depKey === 'reporter' || depKey === 'schedule_monitor') continue;
       if (rearmedKeys.has(depKey) || depTask.status === 'RUNNING') continue;
-      const hasRearmedParent = depTask.depends_on && depTask.depends_on.some((parent) => rearmedKeys.has(parent));
+
+      const depRunAt = depTask.started_at || depTask.finished_at;
+      const allDepParents = getAllDeps(depTask);
+      const hasRearmedParent = allDepParents.some((parentKey) => {
+        if (rearmedKeys.has(parentKey)) return true;
+        if (depTask.status === 'PENDING' || !depRunAt) return false;
+        const parentResetAt = latestResetAt.get(parentKey);
+        if (parentResetAt && parentResetAt > depRunAt) return true;
+        const parentTask = state.tasks[parentKey];
+        const parentRunAt = parentTask?.started_at || parentTask?.finished_at;
+        return Boolean(parentRunAt && parentRunAt > depRunAt);
+      });
+
       if (hasRearmedParent) {
         console.log(`[orchestrator-tick] Cascade re-arming dependent task ${depKey} for new day: ${targetDateStr}`);
-        depTask.status = 'PENDING';
-        depTask.attempts = 0;
-        depTask.log_id = null;
-        depTask.started_at = null;
-        depTask.finished_at = null;
-        depTask.duration_ms = null;
-        depTask.error = null;
+        resetTaskToPending(depTask, 'TASK_REARMED', state.cycle_date, nowIso);
         state.history.push({
           timestamp: nowIso,
           event: 'TASK_REARMED',
@@ -784,6 +925,7 @@ export async function runOrchestratorTick(
           details: `Cascade rearmed following parent dependency for ${targetDateStr}`,
         });
         rearmedKeys.add(depKey);
+        latestResetAt.set(depKey, nowIso);
         cascadeAdded = true;
       }
     }
@@ -805,7 +947,7 @@ export async function runOrchestratorTick(
     state.status = 'COMPLETED';
     state.last_tick_at = nowIso;
     await stateManager.saveState(state);
-    await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate);
+    await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate, overrideMonitorParams);
     return OrchestratorTickOutputSchema.parse({
       cycleDate: state.cycle_date,
       cycleStatus: state.status,
@@ -824,7 +966,7 @@ export async function runOrchestratorTick(
     console.log(`[orchestrator-tick] Meta-AI otsus: tsükkel peatatud. Põhjus: ${cycleDecision.reason}`);
     state.last_tick_at = nowIso;
     await stateManager.saveState(state);
-    await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate);
+    await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate, overrideMonitorParams);
     return OrchestratorTickOutputSchema.parse({
       cycleDate: state.cycle_date,
       cycleStatus: state.status,
@@ -870,7 +1012,7 @@ export async function runOrchestratorTick(
       if (!isAlreadySuccessToday) {
         const minStartTime = task.schedule?.time || undefined;
         const logCheck = await checkTaskAlreadyRunToday(
-          resolveTaskUserId(task, state.params.userId),
+          resolveTaskUserId(task, effectiveCycleUserId, explicitUserId),
           task.flow,
           apiClient,
           targetDateStr,
@@ -883,7 +1025,7 @@ export async function runOrchestratorTick(
             `[orchestrator-tick] Ülesanne ${key} on logide järgi juba edukalt sooritatud (ou.logs)`
           );
           if (targetDateStr > state.cycle_date) {
-            state = resetCycleForNewDay(state, targetDateStr);
+            state = resetCycleForNewDay(state, targetDateStr, undefined, timezone, currentDate);
           }
           if (state.tasks[key]) {
             state.tasks[key].status = 'SUCCESS';
@@ -904,7 +1046,7 @@ export async function runOrchestratorTick(
             `[orchestrator-tick] Taaskäivitamine: graafikuga ülesanne ${key} ei ole täna pärast ${minStartTime} sooritatud`
           );
           if (targetDateStr > state.cycle_date) {
-            state = resetCycleForNewDay(state, targetDateStr);
+            state = resetCycleForNewDay(state, targetDateStr, undefined, timezone, currentDate);
           } else {
             state.status = 'IN_PROGRESS';
             if (state.tasks[key]) {
@@ -941,7 +1083,9 @@ export async function runOrchestratorTick(
             options.aiGenerateFn,
             apiClient,
             dailyStartTime,
-            timezone
+            timezone,
+            false,
+            registry[pKey]
           );
           if (decision.should_run || decision.action === 'RUN') {
             console.log(`[orchestrator-tick] Prompt-otsus käivitamiseks (${pKey}): ${decision.reason}`);
@@ -971,7 +1115,7 @@ export async function runOrchestratorTick(
         );
         state.last_tick_at = nowIso;
         await stateManager.saveState(state);
-        await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate);
+        await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate, overrideMonitorParams);
         return OrchestratorTickOutputSchema.parse({
           cycleDate: state.cycle_date,
           cycleStatus: state.status,
@@ -987,7 +1131,7 @@ export async function runOrchestratorTick(
       } else {
         // Наступило время следующего запуска или передан forceRun
         console.log(`[orchestrator-tick] Uue ööpäevase tsükli lähtestamine: ${targetDateStr}`);
-        state = resetCycleForNewDay(state, targetDateStr);
+        state = resetCycleForNewDay(state, targetDateStr, undefined, timezone, currentDate);
       }
     }
   }
@@ -1005,7 +1149,7 @@ export async function runOrchestratorTick(
       console.log(`[orchestrator-tick] ${cycleDecision.reason}`);
       state.last_tick_at = nowIso;
       await stateManager.saveState(state);
-      await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate);
+      await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate, overrideMonitorParams);
       return OrchestratorTickOutputSchema.parse({
         cycleDate: state.cycle_date,
         cycleStatus: state.status,
@@ -1032,7 +1176,7 @@ export async function runOrchestratorTick(
         const task = state.tasks[key];
         // статус читается по log_id запуска этой задачи; без log_id - последняя запись flow
         const statusResult = await checkTaskStatus(
-          resolveTaskUserId(task, state.params.userId),
+          resolveTaskUserId(task, effectiveCycleUserId, explicitUserId),
           task.flow,
           apiClient,
           task.log_id
@@ -1072,7 +1216,7 @@ export async function runOrchestratorTick(
           // (например, ручной перезапуск), принимаем его и не запускаем задачу повторно
           if (task.log_id) {
             const laterRun = await checkTaskAlreadyRunToday(
-              resolveTaskUserId(task, state.params.userId),
+              resolveTaskUserId(task, effectiveCycleUserId, explicitUserId),
               task.flow,
               apiClient,
               targetDateStr,
@@ -1126,7 +1270,7 @@ export async function runOrchestratorTick(
                 ...parentParams,
               };
 
-              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
+              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId, explicitUserId), apiClient, currentDate);
               if (dupGuard.state !== 'none') {
                 console.warn(
                   `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
@@ -1142,8 +1286,8 @@ export async function runOrchestratorTick(
 
               const logId = await dispatchTaskByKey(
                 key,
-                state.params.userId,
-                state.params.rekvId,
+                effectiveCycleUserId,
+                effectiveCycleRekvId,
                 state.params.kond,
                 apiClient,
                 task.params as Record<string, unknown>,
@@ -1251,7 +1395,7 @@ export async function runOrchestratorTick(
                 ...parentParams,
               };
 
-              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
+              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId, explicitUserId), apiClient, currentDate);
               if (dupGuard.state !== 'none') {
                 console.warn(
                   `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
@@ -1267,8 +1411,8 @@ export async function runOrchestratorTick(
 
               const logId = await dispatchTaskByKey(
                 key,
-                state.params.userId,
-                state.params.rekvId,
+                effectiveCycleUserId,
+                effectiveCycleRekvId,
                 state.params.kond,
                 apiClient,
                 task.params as Record<string, unknown>,
@@ -1367,8 +1511,8 @@ export async function runOrchestratorTick(
 
                 const logId = await dispatchTaskByKey(
                   key,
-                  state.params.userId,
-                  state.params.rekvId,
+                  effectiveCycleUserId,
+                  effectiveCycleRekvId,
                   state.params.kond,
                   apiClient,
                   task.params as Record<string, unknown>,
@@ -1485,7 +1629,8 @@ export async function runOrchestratorTick(
       apiClient,
       dailyStartTime,
       timezone,
-      isTargetTaskKey
+      isTargetTaskKey,
+      registry[key]
     );
 
     if (decision.action === 'SKIP' || (!decision.should_run && decision.action !== 'WAIT')) {
@@ -1521,7 +1666,7 @@ export async function runOrchestratorTick(
       readyToStartKeys.map(async (key) => {
         const task = state.tasks[key];
         try {
-          const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, state.params.userId), apiClient, currentDate);
+          const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId, explicitUserId), apiClient, currentDate);
           if (dupGuard.state !== 'none') {
             if (dupGuard.state === 'running') {
               // Запуск уже идёт (например, state был потерян): берём его под наблюдение вместо дубля
@@ -1546,13 +1691,19 @@ export async function runOrchestratorTick(
 
           const logId = await dispatchTaskByKey(
             key,
-            state.params.userId,
-            state.params.rekvId,
+            effectiveCycleUserId,
+            effectiveCycleRekvId,
             state.params.kond,
             apiClient,
             task.params as Record<string, unknown>,
             registry
           );
+
+          const failedSoftDeps = (task.soft_depends_on || []).filter((sd) => {
+            const st = state.tasks[sd]?.status;
+            return st === 'FAILED' || st === 'SKIPPED';
+          });
+          task.soft_deps_failed = failedSoftDeps.length > 0 ? failedSoftDeps : undefined;
 
           task.status = 'RUNNING';
           task.attempts = (task.attempts || 0) + 1;
@@ -1571,11 +1722,14 @@ export async function runOrchestratorTick(
 
           const nextAttempt = (task.attempts || 0) + 1;
           const maxAttempts = task.max_attempts || config.maxTaskAttempts || 3;
+          const nonRetryable = Boolean(
+            err && typeof err === 'object' && (err as { retryable?: boolean }).retryable === false
+          );
           task.attempts = nextAttempt;
           task.max_attempts = maxAttempts;
           task.error = message;
 
-          if (nextAttempt < maxAttempts) {
+          if (!nonRetryable && nextAttempt < maxAttempts) {
             task.status = 'PENDING';
             console.warn(
               `[orchestrator-tick] Ülesanne ${key} ebaõnnestus käivitamisel (${nextAttempt}/${maxAttempts}). Jääb olekusse PENDING järgmise tiku korduskäivituseks.`
@@ -1612,7 +1766,7 @@ export async function runOrchestratorTick(
   const overallSuccess = !anyFailed;
 
   const reporterTask = state.tasks.reporter;
-  const reporterDeps = reporterTask?.depends_on || [];
+  const reporterDeps = reporterTask ? getAllDeps(reporterTask) : [];
   // max_wait_time (HH:mm): предельное время ожидания зависимостей - после него отчет уходит с тем, что есть
   const reporterWaitExpired = reporterTask?.max_wait_time
     ? isDailyExecutionWindowOpen(currentDate, reporterTask.max_wait_time, timezone)
@@ -1653,22 +1807,33 @@ export async function runOrchestratorTick(
         const t = state.tasks[k];
         let stepLog: any = null;
 
-        // Задача, которая сегодня еще не стартовала (PENDING без запуска), не должна подхватывать вчерашний лог
+        // Задача, которая сегодня еще не стартовала (PENDING без запуска), не должна подхватывать вчерашний лог,
+        // за исключением случая, когда у неё есть свежий (<= 24ч) снимок last_run
         const notStartedYet = t?.status === 'PENDING' && !t.log_id;
-        if (apiClient && t?.flow && !notStartedYet) {
+        const lastRunRefIso = t?.last_run ? t.last_run.finished_at || t.last_run.started_at : null;
+        const lastRunMs = lastRunRefIso ? new Date(lastRunRefIso).getTime() : NaN;
+        const recentLastRun =
+          notStartedYet &&
+          t?.last_run &&
+          !isNaN(lastRunMs) &&
+          lastRunMs >= currentDate.getTime() - 24 * 60 * 60 * 1000
+            ? t.last_run
+            : null;
+        const effectiveLogId = t?.log_id || recentLastRun?.log_id;
+        if (apiClient && t?.flow && (!notStartedYet || recentLastRun?.log_id)) {
           try {
-            const taskUserId = resolveTaskUserId(t, Number(state.params.userId) || 2477);
-            // Приоритет - запись запуска текущего цикла (по log_id); иначе последняя запись flow за 24 часа
-            if (t.log_id) {
+            const taskUserId = resolveTaskUserId(t, effectiveCycleUserId, explicitUserId);
+            // Приоритет - запись запуска (по log_id текущего цикла или last_run.log_id)
+            if (effectiveLogId) {
               const byId = await readTaskLog(
-                { userId: taskUserId, taskName: t.flow, logId: t.log_id },
+                { userId: taskUserId, taskName: t.flow, logId: effectiveLogId },
                 apiClient
               );
               if (byId?.data && byId.data.length > 0) {
                 stepLog = byId.data[0];
               }
             }
-            if (!stepLog) {
+            if (!stepLog && !recentLastRun) {
               const logRes = await readTaskLog(
                 {
                   userId: taskUserId,
@@ -1683,7 +1848,7 @@ export async function runOrchestratorTick(
               }
             }
           } catch {
-            // fallback to state.tasks
+            // fallback to state.tasks / recentLastRun
           }
         }
 
@@ -1709,8 +1874,10 @@ export async function runOrchestratorTick(
           const logId = typeof stepLog.id === 'number' ? stepLog.id : undefined;
 
           const enriched = registry[k]?.enrichReportStep?.(stepLog as Record<string, unknown>, t) ?? {};
-          const summaryText =
-            enriched.resultSummary || inspectResult.resultSummary || t.result_summary || undefined;
+          const summaryText = appendSoftDepsWarning(
+            enriched.resultSummary || inspectResult.resultSummary || t.result_summary || undefined,
+            t
+          );
 
           return {
             stepName: t.flow,
@@ -1722,6 +1889,21 @@ export async function runOrchestratorTick(
             error: inspectResult.errorDetails || stepLog.error || t.error || undefined,
             ...enriched,
             resultSummary: summaryText,
+          };
+        }
+
+        if (recentLastRun) {
+          const enrichedLastRun = registry[k]?.enrichReportStep?.(null, t) ?? {};
+          return {
+            stepName: t.flow,
+            status: recentLastRun.status as ReportStepDetail['status'],
+            logId: recentLastRun.log_id ?? undefined,
+            execStart: recentLastRun.started_at ?? undefined,
+            execEnd: recentLastRun.finished_at ?? undefined,
+            durationMs: recentLastRun.duration_ms ?? undefined,
+            error: recentLastRun.error ?? undefined,
+            ...enrichedLastRun,
+            resultSummary: enrichedLastRun.resultSummary ?? recentLastRun.result_summary ?? undefined,
           };
         }
 
@@ -1748,14 +1930,16 @@ export async function runOrchestratorTick(
           durationMs: t.duration_ms ?? undefined,
           error: t.error ?? undefined,
           ...enrichedFallback,
-          resultSummary:
+          resultSummary: appendSoftDepsWarning(
             enrichedFallback.resultSummary ??
-            t.result_summary ??
-            (t.status === 'SKIPPED'
-              ? 'Vahele jäetud'
-              : t.status === 'RUNNING' || t.status === 'PENDING'
-              ? 'Pooleli (ootab lõpetamist)'
-              : undefined),
+              t.result_summary ??
+              (t.status === 'SKIPPED'
+                ? 'Vahele jäetud'
+                : t.status === 'RUNNING' || t.status === 'PENDING'
+                ? 'Pooleli (ootab lõpetamist)'
+                : undefined),
+            t
+          ),
         };
       })
     );
@@ -1764,8 +1948,8 @@ export async function runOrchestratorTick(
 
     try {
       await generateAndSendReportSubagent({
-        userId: state.params.userId,
-        rekvId: state.params.rekvId,
+        userId: effectiveCycleUserId,
+        rekvId: effectiveCycleRekvId,
         executionDate: targetDateStr,
         steps,
         overallSuccess: reportOverallSuccess,
@@ -1801,7 +1985,7 @@ export async function runOrchestratorTick(
       }
       const nextHour = Math.floor(earliestMinutes / 60);
       const nextMinute = earliestMinutes % 60;
-      state.next_scheduled_run = calculateNextScheduledRun(targetDateStr, nextHour, nextMinute);
+      state.next_scheduled_run = calculateNextScheduledRun(targetDateStr, nextHour, nextMinute, timezone);
 
       state.history.push({
         timestamp: nowIso,
@@ -1825,7 +2009,7 @@ export async function runOrchestratorTick(
       }
       const nextHour = Math.floor(earliestMinutes / 60);
       const nextMinute = earliestMinutes % 60;
-      state.next_scheduled_run = calculateNextScheduledRun(targetDateStr, nextHour, nextMinute);
+      state.next_scheduled_run = calculateNextScheduledRun(targetDateStr, nextHour, nextMinute, timezone);
     }
     state.history.push({
       timestamp: nowIso,
@@ -1837,7 +2021,7 @@ export async function runOrchestratorTick(
   // 7. Сохранение состояния и формирование вывода
   state.last_tick_at = nowIso;
   await stateManager.saveState(state);
-  await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate);
+  await invokeScheduleMonitorSafe(state, orchestratorConfig, apiClient, currentDate, overrideMonitorParams);
 
   const active = Object.keys(state.tasks).filter((k) => state.tasks[k].status === 'RUNNING');
   const completed = Object.keys(state.tasks).filter((k) => state.tasks[k].status === 'SUCCESS');
@@ -1875,7 +2059,10 @@ export async function runOrchestrator(
 ): Promise<OrchestratorOutput> {
   const validated = OrchestratorInputSchema.parse(input);
   const apiClient = options.apiClient || defaultApiClient;
-  const executionDate = options.targetDateStr || new Date().toISOString().slice(0, 10);
+  const orchestratorConfig = loadOrchestratorConfig();
+  const timezone = options.timezone || orchestratorConfig.timezone || 'Europe/Tallinn';
+  const refDate = options.currentDate || new Date();
+  const executionDate = options.targetDateStr || toLocalDateStr(refDate.toISOString(), timezone);
   const steps: ReportStepDetail[] = [];
   let overallSuccess = true;
 

@@ -13,6 +13,7 @@
     "genkit:dev": "genkit start -- tsx --watch index.ts",
     "genkit:ui": "genkit start -o -- tsx --watch index.ts",
     "read-mail": "node dist/read_mail/run_agent.js",
+    "inforegister-lookup": "node dist/inforegister/run_lookup.js",
     "test": "jest --runInBand"
   },
   "dependencies": {

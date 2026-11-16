@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 /**
  * Flow в ou.logs для разбора и сохранения счетов FinBit.
  * Имя потока сохранено прежним: docs.get_arve_kinnitaja (отчет sendFinBitReport) ищет лог импорта именно по нему
@@ -11,7 +12,7 @@ export const TASK_FLOW_IMPORT_EARVED = 'docs.sp_loe_earved';
  * Входные параметры для запуска разбора и сохранения счетов FinBit
  */
 export const StartImportEarvedInputSchema = z.object({
-  userId: z.number().optional().default(2477).describe('ID пользователя'),
+  userId: z.number().optional().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().optional().default(63).describe('ID учреждения'),
   logId: z
     .number()

@@ -201,11 +201,15 @@ describe('getInforegister backend', () => {
     });
 
     test('main: создает лог и сразу возвращает log_id (фон не блокирует ответ)', async () => {
+        const crypto = require('crypto');
+        const token = 'valid-batch-token';
+        const sha256 = crypto.createHash('sha256').update(token, 'utf8').digest('hex');
         const res = {send: jest.fn().mockReturnThis(), status: jest.fn().mockReturnThis()};
         db.queryDb
+            .mockReturnValueOnce(Promise.resolve({data: [{tokens: [{token_sha256: sha256, user_id: 11770, rekv_id: 63, label: 'ai_task', scopes: ['batch'], active: true}]}]})) // resolveInforegisterToken
             .mockReturnValueOnce(Promise.resolve({data: [{id: 800}]})) // createLog
             .mockReturnValue(Promise.resolve({data: []})); // остальное (поиск лога, endLog)
-        await info.main({query: {}, body: {user_id: 11770, rekv_id: 63, log_id: 702}, params: {}}, res);
+        await info.main({query: {}, body: {hash: token, user_id: 11770, rekv_id: 63, log_id: 702}, params: {}}, res);
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.send).toHaveBeenCalledWith(expect.objectContaining({log_id: 800, status: 200}));
         await wait(50);
@@ -248,6 +252,92 @@ describe('getInforegister backend', () => {
                 .mockReturnValueOnce(Promise.resolve({data: []}));
             const r = await info.processMissingAsutused(11770, 63, 711, {dryRun: true});
             expect(JSON.stringify(r)).not.toContain('TOPSECRET');
+        });
+    });
+
+    describe('hash auth на /task/getInforegister/ (spec_update_v3)', () => {
+        const crypto = require('crypto');
+        const makeRes = () => ({send: jest.fn().mockReturnThis(), status: jest.fn().mockReturnThis()});
+
+        afterEach(() => {
+            delete process.env.INFOREGISTER_REQUIRE_HASH_BATCH;
+        });
+
+        test('(т) без hash -> 401, createLog и БД не вызываются', async () => {
+            const res = makeRes();
+            await info.main({query: {}, body: {user_id: 11770, rekv_id: 63}, params: {}}, res);
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
+                status: 401,
+                result: 0,
+                log_id: null,
+                data: {reason: 'unauthorized_hash'}
+            }));
+            expect(db.queryDb).not.toHaveBeenCalled();
+        });
+
+        test('(у) неверный или active=false hash -> 401 без создания лога', async () => {
+            const sha = crypto.createHash('sha256').update('real-token', 'utf8').digest('hex');
+            db.queryDb.mockReturnValueOnce(Promise.resolve({data: [{tokens: [{token_sha256: sha, user_id: 11770, rekv_id: 63, scopes: ['batch'], active: false}]}]}));
+            const res = makeRes();
+            await info.main({query: {}, body: {hash: 'real-token'}, params: {}}, res);
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({data: {reason: 'unauthorized_hash'}, log_id: null}));
+            expect(db.queryDb).toHaveBeenCalledTimes(1);
+        });
+
+        test('(ф) токен только со scope lookup -> 403 forbidden_scope', async () => {
+            const sha = crypto.createHash('sha256').update('lookup-only', 'utf8').digest('hex');
+            db.queryDb.mockReturnValueOnce(Promise.resolve({data: [{tokens: [{token_sha256: sha, user_id: 11770, rekv_id: 63, scopes: ['lookup'], active: true}]}]}));
+            const res = makeRes();
+            await info.main({query: {}, body: {hash: 'lookup-only'}, params: {}}, res);
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({data: {reason: 'forbidden_scope'}, log_id: null}));
+        });
+
+        test('(х) верный hash -> log создаётся от user_id токена, а не из тела, hash не попадает в ответ/console', async () => {
+            const secret = 'secret-batch-token-xyz';
+            const sha = crypto.createHash('sha256').update(secret, 'utf8').digest('hex');
+            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+            try {
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({data: [{tokens: [{token_sha256: sha, user_id: 11770, rekv_id: 63, label: 'ai_task', scopes: ['batch'], active: true}]}]}))
+                    .mockReturnValueOnce(Promise.resolve({data: [{id: 801}]}))
+                    .mockReturnValue(Promise.resolve({data: []}));
+                const res = makeRes();
+                await info.main({query: {}, body: {hash: secret, user_id: 9999, rekv_id: 1}, params: {}}, res);
+                expect(res.status).toHaveBeenCalledWith(200);
+                // createLog вызван с userId и rekvId токена (11770, 63)
+                expect(db.queryDb.mock.calls[1][1]).toEqual([63, 11770, 'getInforegister']);
+                expect(JSON.stringify(res.send.mock.calls)).not.toContain(secret);
+                expect(warnSpy).toHaveBeenCalled();
+                expect(JSON.stringify(warnSpy.mock.calls)).not.toContain(secret);
+                await wait(30);
+            } finally {
+                warnSpy.mockRestore();
+            }
+        });
+
+        test('(ц) INFOREGISTER_REQUIRE_HASH_BATCH=false: без hash работает с warning, с неверным -> 401', async () => {
+            process.env.INFOREGISTER_REQUIRE_HASH_BATCH = 'false';
+            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+            try {
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({data: [{id: 802}]}))
+                    .mockReturnValue(Promise.resolve({data: []}));
+                const resOk = makeRes();
+                await info.main({query: {}, body: {user_id: 2477, rekv_id: 63}, params: {}}, resOk);
+                expect(resOk.status).toHaveBeenCalledWith(200);
+                expect(warnSpy).toHaveBeenCalledWith('getInforegister called without hash');
+
+                db.queryDb.mockReturnValueOnce(Promise.resolve({data: [{tokens: []}]}));
+                const resBad = makeRes();
+                await info.main({query: {}, body: {hash: 'bad-token'}, params: {}}, resBad);
+                expect(resBad.status).toHaveBeenCalledWith(401);
+                await wait(30);
+            } finally {
+                warnSpy.mockRestore();
+            }
         });
     });
 });

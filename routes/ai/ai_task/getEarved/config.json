@@ -1,7 +1,7 @@
 {
   "name": "getEarved",
   "flow": "getEarved",
-  "description": "Выкачка электронных счетов из FinBit в агентском режиме (сохраняет массив в ou.logs, flow=getEarved; проверку выполняет check_asutus, разбор и сохранение - import_earved) (userId 11770 — сервисный аккаунт FinBit в buh70)",
+  "description": "Выкачка электронных счетов из FinBit в агентском режиме (сохраняет массив в ou.logs, flow=getEarved; проверку выполняет check_asutus, разбор и сохранение - import_earved)",
   "prompt": null,
   "allow_parallel": true,
   "depends_on": [],

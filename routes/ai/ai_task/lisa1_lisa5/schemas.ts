@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 export const TASK_FLOW_LISA1_LISA5 = 'eelarve.salvesta_lisa_1_5_kontrol';
 
 export const StartLisa1Lisa5InputSchema = z.object({
-  userId: z.number().optional().default(2477).describe('ID пользователя'),
+  userId: z.number().optional().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().optional().default(63).describe('ID головного учреждения'),
 });
 

@@ -6,6 +6,8 @@
 
 ## 1. Архитектура и структура проекта
 
+> Исторический срез структуры и числа тестов по файлам на момент первой версии (часть агентов — `getEarved`, `sendFinBitReport`, `import_earved`, `check_asutus`, `inforegister`, `read_mail`, `schedule_monitor` — в дереве не показана). Актуальное общее число тестов — в разделе 3.
+
 ```
 ai_task/
 ├── ai_task.md                  # Полная спецификация микросервиса
@@ -92,6 +94,8 @@ ai_task/
 
 ## 3. Результаты тестирования
 
+> Исторический срез на момент первой версии. Актуально на 2026-11-16 (`npx jest`): **15 сьютов, 190 тестов, все PASS**.
+
 Все 6 наборов тестов успешно проходят (21 тест):
 
 ```
@@ -125,8 +129,8 @@ Tests:       21 passed, 21 total
 - Выполняется попытка повторного запуска (до `max_attempts`), либо задача переводится в `FAILED`.
 - Зависшая задача больше не блокирует завершение цикла и наступление следующего календарного дня.
 
-### 4.3. Выборка e-счетов `getEarved` (текущая дата - 2 дня)
-- Функция `getDefaultDateQueryFrom()` в `getEarved/schemas.ts` обновлена для вычитания 2 дней (`d.setDate(d.getDate() - 2)`).
+### 4.3. Выборка e-счетов `getEarved` (текущая дата - 5 дней)
+- Функция `getDefaultDateQueryFrom()` в `getEarved/schemas.ts` вычитает 5 дней (`d.setDate(d.getDate() - 5)`; в первой версии было 2 дня).
 - Схемы и unit-тесты приведены в соответствие.
 
 ### 4.4. Перевооружение задач по расписанию и таймзоны
@@ -135,19 +139,21 @@ Tests:       21 passed, 21 total
 - Проверка `allow_parallel: false` предотвращает запуск финализатора (`reporter`) при активных параллельных вычислениях.
 
 ### 4.5. Служебный субагент `schedule_monitor`
-- Создан изолированный модуль `schedule_monitor/` (`config.json`, `schemas.ts`, `tools.ts`, `agent.ts`, `schedule_monitor.test.ts`).
-- Добавлен `config.json` субагента, агент включен в `KNOWN_AGENT_DIRS` (`state.manager.ts`) и `KNOWN_SUBAGENTS` (`shared/agent_registry.ts`), экспортирует `manifest` для реестра.
+- Создан изолированный модуль `schedule_monitor/` (`schemas.ts`, `tools.ts`, `agent.ts`, `schedule_monitor.test.ts`) — **без `config.json`**.
+- Агент исключён из графа задач через `EXCLUDED_NON_DAG_DIRS` (`shared/excluded_dirs.ts`); экспортирует `manifest`, но оркестратор вызывает его напрямую (`invokeScheduleMonitorSafe`), а не через `dispatchTaskByKey`.
 - Функция `buildScheduleSnapshot` формирует детальный срез графа: статусы, причины планирования (`SCHEDULE_TODAY`, `SCHEDULE_TOMORROW`, `AFTER_DEPENDENCIES`, `RETRY`, `RUNNING_NOW`), дедлайны таймаутов `timeout_deadline`, усеченные ошибки и счетчики `summary`.
 - Функция `logAgentSchedule` вызывает `POST /task/logAgentSchedule/` для синхронной записи среза в `ou.logs` под flow `ai_task.agent_schedule`.
 - Зарегистрированы Genkit flows: `scheduleMonitorFlow` и `agentScheduleFlow` в `index.ts` с поддержкой автономного вызова и чтения состояния.
 - В `orchestrator.agent.ts` внедрен безопасный вызов `invokeScheduleMonitorSafe` на каждом выходе тика (включая ранние выходы `IDLE_WAIT_NEXT_SCHEDULE`).
 - Конфигурация в `orchestrator/config.json` (`schedule_monitor.enabled`, по умолчанию `true`).
 
-### 4.6. Результаты тестирования (10 тест-сьютов, 90 тестов)
-```
-Test Suites: 10 passed, 10 total
-Tests:       90 passed, 90 total
-Snapshots:   0 total
-Time:        ~19 s
-```
-Все проверки типов (`npm run typecheck`) и сборка (`npm run build`) выполняются без ошибок.
+### 4.6. Синхронный поиск `inforegisterLookup` и авторизация по `hash`
+- На бэкенде `buh70` логика вынесена в общий сервис `libs/inforegisterService.js`; `routes/raama/getInforegister.js` и новый маршрут `POST /task/inforegisterLookup/` (`routes/raama/inforegisterLookup.js`) работают как тонкие обёртки.
+- В `libs/inforegister.js` добавлена опция `skipCacheRead` (для `force_refresh: true`) и возврат `fetchedAt` из кэша/API; повторные запросы в течение 30 дней обслуживаются из `libs.registry_cache`.
+- Оба маршрута защищены hash-токенами из `ou.config.properties.INFOREGISTER_TOKENS` (`rekvid = 3`, хранится только SHA-256, проверка через `crypto.timingSafeEqual` и `scopes: ['batch'|'lookup']`, SQL `sql/ou/add_inforegister_token.sql`).
+- В `ai_task` добавлена переменная `INFOREGISTER_HASH` (`.env` / `getConfig().inforegisterHash`), `manifest.validatePrerequisites` (SKIP при отсутствии `INFOREGISTER_HASH`), `lookupInforegister` (`inforegister/tools.ts`), Genkit flow `inforegisterLookupFlow` (`index.ts`, схема без `hash`) и CLI `npm run inforegister-lookup`.
+
+### 4.7. Результаты тестирования (актуально на 2026-11-16)
+- `routes/ai/ai_task` (`npx jest`): **15 сьютов, 209 тестов, все PASS** (`npx tsc --noEmit` и `npm run build` — 0 ошибок).
+- В `orchestrator` внедрён снимок `task.last_run` (`LastRunSchema`, `snapshotLastRun`) при сбросах `TASK_REARMED` / `TASK_RESET_MANUAL` / `CYCLE_RESET_NEW_DAY` (включая миграцию устаревшего `previous_cycle_failures`), чтобы утренний `reporter` (08:00) корректно отображал вечерние задачи цикла 20:00 (`saldoandmik`, `lisa1_lisa5`) и вчерашние `FAILED` в окне 24 ч.
+- Бэкенд `buh70` (`npx jest getInforegister.test.js inforegisterService.test.js inforegisterLookup.test.js`): **3 сьюта, 32 теста, все PASS**.

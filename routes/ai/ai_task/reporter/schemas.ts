@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 export const ReportStepDetailSchema = z.object({
   stepName: z.string(),
   status: z.enum(['SKIPPED', 'SUCCESS', 'FAILED', 'TIMEOUT', 'RUNNING', 'PENDING']),
@@ -25,7 +26,7 @@ export const ReportStepDetailSchema = z.object({
 });
 
 export const GenerateReportInputSchema = z.object({
-  userId: z.number().default(2477),
+  userId: z.number().default(AI_TASK_SERVICE_USER_ID),
   rekvId: z.number().default(63),
   executionDate: z.string(),
   steps: z.array(ReportStepDetailSchema),

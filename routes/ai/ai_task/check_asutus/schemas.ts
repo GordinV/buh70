@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 /**
  * Flow в ou.logs для проверки наличия контр-агентов из счетов FinBit (libs.check_asutus_availibility)
  */
@@ -10,7 +11,7 @@ export const TASK_FLOW_CHECK_ASUTUS = 'checkAsutusAvailability';
  * Входные параметры для запуска проверки наличия контр-агентов
  */
 export const StartCheckAsutusInputSchema = z.object({
-  userId: z.number().optional().default(2477).describe('ID пользователя'),
+  userId: z.number().optional().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().optional().default(63).describe('ID учреждения'),
   extraEmails: z
     .array(z.string())

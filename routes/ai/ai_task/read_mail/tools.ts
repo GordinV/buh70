@@ -21,6 +21,7 @@ ensureEnvLoaded();
 export const ALERT_EMAILS = ['vladislav.gordin@gmail.com', 'andrei.vargunin@narva.ee'];
 
 import { ApiClient, defaultApiClient } from '../shared/api_client';
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 import {
   DEFAULT_INITIAL_SINCE_DATE,
   MailAccessConfig,
@@ -1093,7 +1094,7 @@ export function hasValidDocNumber(docNumber?: string | null): boolean {
  */
 export async function createLog(
   rekvId: number = 63,
-  userId: number = 2477,
+  userId: number = AI_TASK_SERVICE_USER_ID,
   flowName: string = TASK_FLOW_READ_MAIL
 ): Promise<DbQueryResult<{ id: number }> | null> {
   return null;

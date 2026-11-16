@@ -1,6 +1,6 @@
 # ТЗ: Реестр агентов (Agent Registry) для оркестратора `ai_task`
 
-Статус: **Реализовано (этапы 1 и 2)** — 86 тестов пройдены (10 сьютов), код собран, документация обновлена.
+Статус: **Реализовано (этапы 1 и 2)** — по прогону `npx jest` на 2026-11-15: 15 сьютов, 179 тестов пройдены; `npm run typecheck` (запуск ревьюера) — без ошибок; `npm run build` на 2026-11-15 не запускался; документация обновлена.
 
 ## 1. Цель
 
@@ -80,14 +80,14 @@ export const manifest: AgentManifest = {
 };
 ```
 
-Пример для `sendFinBitReport/agent.ts` (с проброшенным `logId`, сохраняет текущую валидацию «logId обязателен»):
+Пример для `sendFinBitReport/agent.ts` (с проброшенным `logId`, сохраняет текущую валидацию «logId обязателен»). Родитель — `import_earved` (по `depends_on` в `sendFinBitReport/config.json`; на момент написания ТЗ им был `getEarved`):
 
 ```typescript
 export const manifest: AgentManifest = {
   dispatch: async (ctx) => {
     const logId = ctx.params.logId as number | undefined;
     if (!logId) {
-      throw new Error('sendFinBitReport viga: logId puudub (parent context getEarved log_id ei ole edastatud)');
+      throw new Error('sendFinBitReport viga: logId puudub (parent context import_earved log_id ei ole edastatud)');
     }
     const res = await startSendFinBitReport(
       { userId: ctx.params.userId as number ?? ctx.userId, rekvId: ctx.params.rekvId as number ?? ctx.rekvId, logId },
@@ -96,7 +96,7 @@ export const manifest: AgentManifest = {
     return res.log_id;
   },
   resolveParentParams: (state) => {
-    const parentLogId = state.tasks['getEarved']?.log_id;
+    const parentLogId = state.tasks['import_earved']?.log_id;
     return parentLogId ? { logId: parentLogId } : {};
   },
 };
@@ -104,7 +104,7 @@ export const manifest: AgentManifest = {
 
 `getEarved/agent.ts` сохраняет существующую особую логику (синтетический успех при «Arveid ei leitud») внутри `dispatch` без изменений — просто оборачивает уже существующий `runGetEarvedSubagent`/`startGetEarved`.
 
-Пример для `getEarved/agent.ts` (с расчетом даты выборки: текущая дата минус 2 дня):
+Пример для `getEarved/agent.ts` (исторический вариант с расчетом даты в манифесте). **Фактически** манифест передаёт `dateQueryFrom` только из `params`, а значение по умолчанию вычисляет `getDefaultDateQueryFrom()` в `getEarved/schemas.ts` — **текущая дата минус 5 дней** (см. 3.2.1):
 
 ```typescript
 export const manifest: AgentManifest = {
@@ -133,7 +133,7 @@ export const manifest: AgentManifest = {
 };
 ```
 
-### 3.2.1. Изменение параметров выборки `getEarved` (текущая дата минус 2 дня)
+### 3.2.1. Изменение параметров выборки `getEarved` (было: минус 2 дня, фактически: минус 5 дней)
 
 Поток `getEarved` запрашивает счета из FinBit за определенную дату.
 - **Текущее поведение:** по умолчанию использовалось `getDefaultDateQueryFrom()` = текущая дата минус 1 день (`d.setDate(d.getDate() - 1)`).
@@ -143,29 +143,22 @@ export const manifest: AgentManifest = {
   2. Обновить описание в схеме `StartGetEarvedInputSchema` (`dateQueryFrom`: по умолчанию текущая дата минус 2 дня).
   3. В манифесте `getEarved/agent.ts` передавать вычисленный `dateQueryFrom` (или полагаться на обновленный `getDefaultDateQueryFrom()`).
   4. Обновить соответствующие unit-тесты (`getEarved.test.ts`, `orchestrator.test.ts`).
+- **Актуальное состояние (сверено с кодом 2026-11-15):** `getDefaultDateQueryFrom` в `getEarved/schemas.ts` вычитает **5 дней** (`d.setDate(d.getDate() - 5)`); манифест `getEarved/agent.ts` дату не вычисляет и передаёт `params.dateQueryFrom` как есть (при отсутствии срабатывает значение схемы по умолчанию).
 
 ### 3.3. Построение реестра
 
-Функция `buildAgentRegistry(rootDir?: string): Record<string, AgentManifest>` в `shared/agent_registry.ts`:
+Функция `buildAgentRegistry(rootDir?: string, overrides?: Record<string, AgentManifest>): Record<string, AgentManifest>` в `shared/agent_registry.ts`:
 
-1. Использует тот же список каталогов, что и `loadAllAgentConfigs` (переиспользовать `resolveAiTaskRootDir` + перечень подкаталогов из `state.manager.ts`, либо явно передавать список ключей из уже загруженных `AgentConfig`, чтобы не дублировать логику сканирования директорий).
-2. Для каждого ключа агента пытается импортировать `<root>/<agentDir>/agent` (при работе из `dist/` — `<root>/dist/<agentDir>/agent.js`; при разработке через `tsx` — `.ts` напрямую).
-3. Если модуль экспортирует `manifest`, кладёт в реестр под именем `cfg.name` (совпадает с ключом в `state.tasks`).
-4. Если у агента нет экспорта `manifest` — не ошибка, просто агент не будет доступен для диспетчеризации (логируется предупреждение). Это осознанный fallback: конфиг может существовать раньше кода агента (например, при подготовке к раскатке).
+1. Собирает список подкаталогов динамическим сканированием (`collectAgentDirs`) первого уровня `root` (и `root/dist` для Docker-сборки, где каталоги без `config.json` лежат только в `dist/`), исключая скрытые каталоги (`.`) и служебные каталоги `EXCLUDED_SERVICE_DIRS` (`shared/excluded_dirs.ts`). Ручные списки `KNOWN_SUBAGENTS` и `KNOWN_AGENT_DIRS` удалены.
+2. Для каждого найденного каталога ищет модуль агента (`agent.ts`, `agent.js`, `dist/<agent>/agent.js` или резервный `require.resolve('../<agent>/agent')`).
+3. Если модуль экспортирует `manifest`, кладёт его в реестр под именем каталога (совпадает с ключом в `state.tasks`).
+4. Если файл агента существует, но его загрузка упала — в лог пишется предупреждение `[agent-registry] Hoiatus: ... laadimine ebaõnnestus`. Если модуль загрузился, но не экспортирует `manifest`, агент молча не попадает в реестр (осознанный fallback для служебных/неготовых модулей).
 5. Реестр строится один раз за тик (в начале `runOrchestratorTick`), не на каждый вызов `dispatchTaskByKey`.
 
-**Решено:** динамический импорт по имени папки (вариант 1).
+**Решено:** динамическое сканирование каталогов и `require` по имени папки (вариант 1).
 
-```typescript
-const modulePath = path.join(distDir, agentDir, 'agent.js'); // при разработке через tsx — agentDir/agent.ts
-if (fs.existsSync(modulePath)) {
-  const mod = require(modulePath);
-  if (mod.manifest) registry[cfg.name] = mod.manifest;
-}
-```
-
-Следствия этого решения (учесть при реализации):
-- Ошибка в отсутствующем/битом `manifest` у одного агента не должна ронять сборку `tsc` целиком — она обнаружится только в рантайме (лог предупреждения при построении реестра, п. 3.3.4). Компенсируется т��стом `shared/agent_registry.test.ts`, который явно проверяет, что у каждого продового агента из `KNOWN_AGENT_DIRS`/каталога `manifest` присутствует и имеет ожидаемую форму (`typeof manifest.dispatch === 'function'`) — это единственная защита от «забыли добавить manifest» до деплоя.
+Следствия этого решения:
+- Ошибка в отсутствующем/битом `manifest` у одного агента не должна ронять сборку `tsc` целиком — она обнаружится в рантайме (лог предупреждения при ошибке загрузки, п. 3.3.4). Компенсируется тестом `shared/agent_registry.test.ts`, который явно проверяет, что у каждого продового агента (включая `read_mail` и `reporter`) присутствует `manifest` (`typeof manifest.dispatch === 'function'`), а фиктивный агент во временном каталоге автоматически попадает в `getDefaultTaskGraph` и `buildAgentRegistry`.
 - Путь `dist/<agentDir>/agent.js` должен физически существовать после `npm run build` — обычный `tsc` это обеспечивает автоматически, отдельного шага генерации не требуется.
 - При запуске тестов через `ts-jest`/`tsx` (без `dist/`) `buildAgentRegistry` должна уметь резолвить `.ts` напрямую — предусмотреть отдельную ветку (`require.extensions` уже настроены `ts-node`/`tsx`, но нужно явно проверить в тесте на CI).
 
@@ -198,9 +191,9 @@ if (fs.existsSync(modulePath)) {
      logger.warn(`resolveParentParams failed for ${key}, falling back to {}`, err);
      parentParams = {};
    }
-   task.params = { ...(task.params || {}), ...parentParams, ...(task.params?.logId ? { logId: task.params.logId } : {}) };
+   task.params = { ...(task.params || {}), ...parentParams };
    ```
-   Точное место вставки — все 3 точки, где сейчас находится хардкод (перед retry по ошибке результата, перед retry по отсутствию `exec_start`, перед первым запуском из `PENDING`). Приоритет параметров (Вопрос 2, решено — Вариант А): если `params.logId` уже явно задан конфигом агента, он не перезаписывается родительским значением (сейчас проверка `!task.params?.logId` — сохранить эквивалентную семантику). Обработка ошибок (Вопрос 3, решено — Вариант Б): исключение в `resolveParentParams` не должно прерывать тик — перехватывается, логируется как warning, значение деградирует к `{}`.
+   Точное место вставки — все 3 точки, где сейчас находится хардкод (перед retry по ошибке результата, перед retry по отсутствию `exec_start`, перед первым запуском из `PENDING`). Приоритет параметров (Вопрос 2): **приоритет у `parentParams`** — значение из `resolveParentParams` перезаписывает одноимённый ключ в `task.params` (в т.ч. закешированный с прошлого цикла `logId`), чтобы дочерняя задача в новом цикле всегда получала `log_id` текущего родителя. Если у задачи есть `dynamic_params` от LLM-решения, порядок слияния `{ ...task.params, ...dynamic_params, ...parentParams }` — LLM также не может перезаписать родительский `logId`. *Изменено коммитом `ea5a7ff8`; ранее было принято «Вариант А» — приоритет явно заданного `task.params.logId`.* Это верно для агентов с `resolveParentParams`; в `evaluateTaskLaunchDecision` остался запасной путь с обратным приоритетом: если `task.params.logId` не задан, туда подставляется `log_id` первого родителя из `depends_on` с непустым `log_id` (`if (!effectiveParams.logId ...)`), а уже заданный `logId` не перезаписывается. Обработка ошибок (Вопрос 3, решено — Вариант Б): исключение в `resolveParentParams` не должно прерывать тик — перехватывается, логируется как warning, значение деградирует к `{}`.
 4. `runOrchestratorTick` в начале строит `const registry = buildAgentRegistry(rootDir)` один раз и передаёт его во все места, где сейчас вызывается `dispatchTaskByKey`.
 5. Блок вызова `reporter` (`generateAndSendReportSubagent`) **не трогать** — он не идёт через `dispatchTaskByKey`, это отдельный специальный шаг цикла (см. п.6 «Вне рамок»).
 
@@ -249,6 +242,8 @@ COPY --from=builder /configs ./
 
 ### 3.9. Исправление: задачи с `schedule` не стартуют в назначенное время (`getEarved` 07:00, `calc_arv_jaak` 07:30)
 
+> Время `getEarved` 07:00 в этом разделе — расписание на момент инцидента 2026-10-08/09. **Фактически** сейчас в `getEarved/config.json` `schedule.time = "05:00"`; `calc_arv_jaak` — 07:30 (без изменений).
+
 **Симптом (лог тиков 2026-10-08/09):** `getEarved` (07:00) и `calc_arv_jaak` (07:30) стартовали в 07:44 (цикл `INITIALIZED` в 04:40Z), а 2026-10-09 не стартовали вовсе — тик показывал `cycleDate: 2026-10-08`, `activeTasks: [lisa1_lisa5]`.
 
 **Корневые причины (по коду `orchestrator.agent.ts` / `state.manager.ts`):**
@@ -265,15 +260,15 @@ COPY --from=builder /configs ./
 | № | Изменение | Файл |
 |---|---|---|
 | 1 | **Watchdog `RUNNING` (`TASK_TIMEOUT`):** если `now - started_at` > таймаута задачи и в `ou.logs` нет `exec_end` → считать попытку неуспешной (`TASK_TIMEOUT` в `history`), выполнить retry по `max_attempts`, иначе `FAILED`. Порог берётся из параметра `timeout_hours` в `<agent>/config.json`; **если параметр не задан — по умолчанию 12 часов** (константа `DEFAULT_TASK_TIMEOUT_HOURS = 12`). Подробности — п. 3.9.1. | `orchestrator.agent.ts` (блок 3), `orchestrator.schemas.ts`, `state.manager.ts` |
-| 2 | **Посуточное «перевооружение» задач с `schedule`:** в начале тика для каждой задачи с `schedule`, не `RUNNING`, у которой дата `finished_at`/`started_at` (в TZ оркестратора) < сегодняшней — перевести в `PENDING` (`attempts=0`, `error=null`, `log_id=null`, `TASK_REARMED` в `history`), **независимо от статуса общего цикла**. Задачи с `depends_on` перевооружаются каскадно вместе с родителями. | `orchestrator.agent.ts` |
+| 2 | **Посуточное «перевооружение» задач с `schedule`:** в начале тика для каждой задачи с `schedule`, не `RUNNING`, у которой дата `finished_at`/`started_at` (в TZ оркестратора) < сегодняшней — перевести в `PENDING` (`resetTaskToPending` сохраняет снимок в `task.last_run` через `snapshotLastRun`, очищает статус, `attempts=0`, `error=null`, `log_id=null` и `params.logId`, пишет `TASK_REARMED` в `history`), **независимо от статуса общего цикла**. Задачи с `depends_on` и `soft_depends_on` (`getAllDeps`) перевооружаются каскадно вместе с родителями; если зависимая задача в момент сброса родителя была `RUNNING`, она догоняюще перевооружится в следующем тике после завершения (`getLatestResetTimestampByTask`); Downstream Lock проверяет транзитивно всех потомков (`findRunningDownstreamDependents`). Семантика зависимостей: `depends_on` — жёсткая (при `FAILED`/`SKIPPED` задача получает `SKIP`), `soft_depends_on` — мягкая (оркестратор ждёт завершения `PENDING`/`RUNNING`, но запускает задачу и при `FAILED`/`SKIPPED` с пометкой `soft_deps_failed` в отчёте). Покрыто тестами (А), (Б), (В), `last_run` и `soft_depends_on` в `orchestrator.test.ts`. | `orchestrator.agent.ts`, `state.manager.ts` |
 | 3 | **Применить `allow_parallel`:** задачи с `allow_parallel: true` не блокируются состоянием других задач/цикла; `allow_parallel: false` (`reporter`) стартует строго после остальных. Покрыть тестом. | `orchestrator.agent.ts` |
-| 4 | **Закрытие цикла по сменившимся суткам:** если `targetDateStr > state.cycle_date` и все задачи, кроме `RUNNING`, завершены — сначала принудительно завершить старый цикл (`reporter` со статусом по факту, зависшая → `FAILED` по п.1), затем `resetCycleForNewDay`. Цикл не должен переживать полночь бесконечно. | `orchestrator.agent.ts` |
-| 5 | **Единая таймзона:** `isTaskScheduleReady(schedule, currentDate, timezone)` считает часы/минуты/день/месяц через `Intl.DateTimeFormat({ timeZone })`, а не `getHours()`. Тот же `timezone` использовать в сравнении «дата < сегодня». | `orchestrator.agent.ts` |
+| 4 | **Закрытие цикла по сменившимся суткам:** если `targetDateStr > state.cycle_date`, нет `RUNNING` задач и `state.status === 'IN_PROGRESS'` — принудительно закрыть старый цикл (`COMPLETED` или `FAILED` по наличию упавших задач, событие `CYCLE_CLOSED_DAY_CHANGE`), затем `resetCycleForNewDay`. Отдельный ночной вызов `reporter` не выполняется; вместо этого `snapshotLastRun` (при `TASK_REARMED` / `TASK_RESET_MANUAL` / `CYCLE_RESET_NEW_DAY`) сохраняет снимок последнего запуска в `task.last_run` (`LastRunSchema`), а утренний `reporter` в `08:00` для `PENDING`-задач без `log_id` читает лог по `last_run.log_id` (или строит шаг из `last_run`), если запуск укладывается в 24-часовое окно (таким образом в отчёт попадают и задачи цикла 20:00 вроде `saldoandmik` / `lisa1_lisa5`, и вчерашние `FAILED`). Покрыто тестами в `orchestrator.test.ts`. | `orchestrator.agent.ts`, `state.manager.ts`, `orchestrator.schemas.ts` |
+| 5 | **Единая таймзона:** `isTaskScheduleReady(schedule, currentDate, timezone)` считает часы/минуты/день/месяц через `Intl.DateTimeFormat({ timeZone })`, а не `getHours()`. Тот же `timezone` используется в сравнении «дата < сегодня», `calculateNextScheduledRun`, `createInitialState`, `resetCycleForNewDay` и `runOrchestrator` (`--full`). | `orchestrator.agent.ts`, `state.manager.ts` |
 | 6 | **Частота тика:** cron `*/5 * * * *` (как в `ai_task.md`), допустимая задержка старта ≤ 5 мин; зафиксировать в документации. Проверить фактическую настройку cron на сервере (в логах интервал 15 мин). | `ai_task.md`, crontab |
 | 7 | **`forceRun` для расписаний:** `--force` игнорирует `schedule.time` (но не `day`/`month`) и позволяет перезапуск `FAILED` задачи (`attempts=0`). Добавить явный CLI-флаг `--task <key>` для точечного сброса и запуска (например, `buh70-tick --task getEarved`) вместо ручной правки `orchestrator_state.json`. | `orchestrator.agent.ts`, `index.ts` |
-| 8 | **Конфиг:** `getEarved/config.json` содержит `userId: 11770`, остальные агенты — `2477`; привести к единому значению или явно задокументировать причину (иначе `reconcileTasksWithConfigs` перепишет `params` в боевом `orchestrator_state.json`). | `getEarved/config.json` |
+| 8 | **Конфиг (`userId`):** `AI_TASK_SERVICE_USER_ID = 11770` (`shared/constants.ts`; алиас `FINBIT_SERVICE_USER_ID` сохранён для совместимости) используется как единый сервисный пользователь для всех субагентов `ai_task` (`saldoandmik`, `lisa1_lisa5`, `calc_arv_jaak`, `read_mail`, `getEarved`, `check_asutus`, `inforegister`, `import_earved`, `sendFinBitReport`), в `orchestrator/config.json`, `shared/api_client.ts`, `.env.example`, а также в дефолтах схем и `state.manager.ts` вместо прежнего `2477`. **Приоритет конфига:** `userId` и `rekvId` всегда берутся из конфига (`<agent>/config.json` → `orchestrator/config.json` → дефолт `11770` / `63`) и **не наследуются** из сохранённого `orchestrator_state.json` (`CONFIG_OWNED_PARAM_KEYS` в `reconcileTasksWithConfigs` + обновление `state.params` при загрузке рабочего состояния) и не перекрываются env `DEFAULT_USER_ID`/`DEFAULT_REKV_ID` без явного CLI-флага `--user`/`--rekv` (который действует только на один запуск). Задокументировано в `shared/constants.ts` и `AGENT.md`, защищено тестами в `shared/agent_registry.test.ts` и `orchestrator/orchestrator.test.ts`. | `shared/constants.ts`, `shared/api_client.ts`, `.env.example`, `*/config.json`, `*/schemas.ts`, `orchestrator/*`, `index.ts`, `AGENT.md` |
 
-**Критерий приёмки:** при зависшей `lisa1_lisa5` (без `exec_end`) на следующих сутках `getEarved` и `calc_arv_jaak` стартуют на первом тике после 07:00 / 07:30 (по TZ `Europe/Tallinn`); зависшая задача автоматически помечается `TASK_TIMEOUT` через `maxTimeoutMs`, цикл закрывается, `reporter` отправляет отчёт со статусом FAILED по `lisa1_lisa5`.
+**Критерий приёмки:** при зависшей `lisa1_lisa5` (без `exec_end`) на следующих сутках `getEarved` и `calc_arv_jaak` стартуют на первом тике после 07:00 / 07:30 (по TZ `Europe/Tallinn`); зависшая задача автоматически помечается `TASK_TIMEOUT` через `maxTimeoutMs`, цикл закрывается, `reporter` отправляет отчёт со статусом FAILED по `lisa1_lisa5` (в том числе после `CYCLE_CLOSED_DAY_CHANGE` и `resetCycleForNewDay` через `task.last_run`).
 
 **Тесты (Jest, `orchestrator.test.ts`):**
 - `RUNNING` дольше `maxTimeoutMs` → `TASK_TIMEOUT` → retry/`FAILED`;
@@ -309,7 +304,7 @@ COPY --from=builder /configs ./
 - Вызывается **на каждом тике** отдельным блоком `runOrchestratorTick` после всех решений тика (после инспекции, перевооружения, запуска готовых задач и до атомарной записи state), чтобы в срез попали актуальные статусы.
 - Вызывается и при раннем выходе тика (суточный барьер `COMPLETED`, окно ещё не открыто) — срез нужен именно тогда, чтобы видеть «живость» оркестратора.
 - Сбой агента **не прерывает тик**: `try/catch`, предупреждение в лог (`[schedule-monitor] ...`), состояние оркестратора не меняется (по принципу Вопроса 3, Вариант Б).
-- **Каталог без `config.json`** (`schedule_monitor/{schemas.ts,tools.ts,agent.ts,schedule_monitor.test.ts}`): `loadAllAgentConfigs` сканирует именно `config.json`, поэтому каталог не превратится в задачу DAG. Настройки — в `orchestrator/config.json` (п. 3.10.4). `manifest` не нужен (не диспетчеризуется через реестр).
+- **Каталог без `config.json`** (`schedule_monitor/{schemas.ts,tools.ts,agent.ts,schedule_monitor.test.ts}`): каталог дополнительно исключён из графа задач через `EXCLUDED_NON_DAG_DIRS` (`shared/excluded_dirs.ts`, набор `EXCLUDED_DAG_ONLY_DIRS`), поэтому не попадает в `state.tasks`. Настройки — в `orchestrator/config.json` (п. 3.10.4). Для работы `manifest` не нужен (оркестратор вызывает агент напрямую через `invokeScheduleMonitorSafe`, а не через `dispatchTaskByKey`), но `schedule_monitor/agent.ts` его экспортирует — в реестр манифестов каталог попадать может, в DAG — нет.
 
 #### 3.10.2. Формирование среза (чистая функция, без обращения к API)
 
@@ -391,6 +386,8 @@ interface ScheduleSnapshot {
 
 После очередного тика `POST /task/read_log/:user_id/ai_task.agent_schedule` возвращает свежую запись, в которой для каждого агента (`getEarved` 07:00, `calc_arv_jaak` 07:30, `saldoandmik` 20:00, …) видны текущий статус, ближайший плановый запуск и его причина; при зависшей задаче видны `RUNNING_NOW` и `timeout_deadline`.
 
+> Время `getEarved` 07:00 — расписание на момент написания ТЗ. Фактически сейчас в `getEarved/config.json` `schedule.time = "05:00"`.
+
 **Принятые решения (согласовано):**
 1. Срез пишется **на каждом тике**, без фильтров и троттлинга. Формат state не меняется.
 2. Имя flow в `ou.logs` — `ai_task.agent_schedule`, эндпоинт — `/task/logAgentSchedule/`.
@@ -424,28 +421,28 @@ interface ScheduleSnapshot {
 
 - [x] `shared/agent_registry.ts` создан, содержит `AgentManifest`, `AgentDispatchContext`, `buildAgentRegistry`.
 - [x] Все 5 расчётных агентов (`saldoandmik`, `calc_arv_jaak`, `getEarved`, `sendFinBitReport`, `lisa1_lisa5`) экспортируют `manifest` с эквивалентным текущему поведением.
-- [x] Параметры выборки счетов `getEarved` обновлены: дата по умолчанию вычисляется как **текущая дата минус 2 дня** (`getDefaultDateQueryFrom`).
-- [x] Реализованы изменения п. 3.9: watchdog `RUNNING` (`TASK_TIMEOUT` с дефолтом 12 ч), посуточное перевооружение задач с `schedule`, применение `allow_parallel`, единая таймзона, флаг `--task <key>`; `getEarved` (07:00) и `calc_arv_jaak` (07:30) стартуют вовремя даже при зависшей задаче предыдущего цикла.
+- [x] Параметры выборки счетов `getEarved` обновлены: дата по умолчанию вычисляется в `getDefaultDateQueryFrom` (изначально — минус 2 дня; **фактически сейчас — текущая дата минус 5 дней**, см. 3.2.1).
+- [x] Реализованы изменения п. 3.9: watchdog `RUNNING` (`TASK_TIMEOUT` с дефолтом 12 ч), посуточное перевооружение задач с `schedule`, применение `allow_parallel`, единая таймзона, флаг `--task <key>`; `getEarved` (07:00; фактически сейчас 05:00 по `getEarved/config.json`) и `calc_arv_jaak` (07:30) стартуют вовремя даже при зависшей задаче предыдущего цикла.
 - [x] `dispatchTaskByKey` не содержит `if (key === '...')` по конкретным именам агентов.
-- [x] Логика проброса `logId` от `getEarved` к `sendFinBitReport` вынесена в `resolveParentParams` и вызывается generic-кодом (0 упоминаний строки `'sendFinBitReport'` в основном цикле `runOrchestratorTick`, кроме самого `resolveParentParams` внутри `sendFinBitReport/agent.ts`).
-- [x] `npm run typecheck`, `npm run build`, `npm test` проходят без ошибок и без уменьшения числа тестов (все 9 сьютов, 72 теста).
+- [x] Логика проброса `logId` к `sendFinBitReport` (на момент этапа 1 — от `getEarved`, сейчас — от `import_earved`) вынесена в `resolveParentParams` и вызывается generic-кодом (0 упоминаний строки `'sendFinBitReport'` в основном цикле `runOrchestratorTick`, кроме самого `resolveParentParams` внутри `sendFinBitReport/agent.ts`).
+- [x] `npm run typecheck`, `npm run build`, `npm test` проходят без ошибок и без уменьшения числа тестов (на момент этапа 1 — 9 сьютов, 72 теста; актуально на 2026-11-15 — 15 сьютов, 179 тестов, `typecheck` без ошибок, `build` не перепроверялся).
 - [x] Демо-агент (см. п. 3.7) добавляется без единой правки `orchestrator.agent.ts` и `Dockerfile` — покрыто тестом `agent_registry.test.ts`.
 - [x] Обновлённый `Dockerfile` (п. 3.8) собирает конфиги автоматически через слой `/configs`.
 - [x] `AGENT.md` (раздел «Как добавить нового агента») обновлён под новую процедуру.
 - [x] `walkthrough.md` дополнен описанием реестра (по текущей практике проекта — фиксировать реализованную архитектуру).
 
 **Этап 2 — `schedule_monitor` (п. 3.10) — реализовано:**
-- [x] Создан каталог `schedule_monitor/` (`config.json`, `schemas.ts`, `tools.ts`, `agent.ts`, тест, экспорт `manifest`); агент зарегистрирован в `KNOWN_AGENT_DIRS`, `KNOWN_SUBAGENTS` и как Genkit Flow (`scheduleMonitorFlow` / `agentScheduleFlow`).
+- [x] Создан каталог `schedule_monitor/` (`schemas.ts`, `tools.ts`, `agent.ts`, `schedule_monitor.test.ts`, экспорт `manifest`; **без `config.json`**); агент исключён из DAG через `EXCLUDED_NON_DAG_DIRS` (`shared/excluded_dirs.ts`) и зарегистрирован как Genkit Flow (`scheduleMonitorFlow` / `agentScheduleFlow`).
 - [x] `buildScheduleSnapshot` — чистая функция, TZ-aware, покрыта тестами (п. 3.10.5).
 - [x] Оркестратор вызывает `logAgentSchedule` на каждом тике (включая ранний выход); сбой не прерывает тик и не меняет state.
 - [x] Контракт вызова `POST /task/logAgentSchedule/` и обработка ответа реализованы (`flow = 'ai_task.agent_schedule'`); срез читается через `/task/read_log/`.
 - [x] Блок `schedule_monitor` в `orchestrator/config.json` (`enabled`) валидируется Zod; по умолчанию включён.
-- [x] `AGENT.md` и `walkthrough.md` описывают субагент мониторинга; `typecheck`, `build`, `test` зелёные (90 тестов, 10 сьютов).
+- [x] `AGENT.md` и `walkthrough.md` описывают субагент мониторинга; `typecheck`, `build`, `test` зелёные (на момент этапа 2 — 10 сьютов, 90 тестов; актуально на 2026-11-16 — 15 сьютов, 209 тестов, `npx tsc --noEmit` и `npm run build` без ошибок).
 
 ## 5. Риски и открытые вопросы (на обсуждение до реализации)
 
 1. ~~Способ импорта манифеста в `dist/`~~ — **решено**: динамический `require()` по имени папки (вариант 1). См. 3.3.
-2. ~~Порядок слияния `parentParams` и явно заданных `task.params`~~ — **решено**: Вариант А. Явно заданное в `task.params` всегда имеет приоритет над значением из `resolveParentParams` (сохраняется текущее правило, эквивалент проверки `!task.params?.logId`). См. код в 3.4.
+2. ~~Порядок слияния `parentParams` и явно заданных `task.params`~~ — **решено**: приоритет у `parentParams` (`{ ...(task.params || {}), ...parentParams }`), значение из `resolveParentParams` перезаписывает `task.params`. *Решение изменено коммитом `ea5a7ff8`: изначально был принят Вариант А (приоритет явно заданного `task.params.logId`), из-за которого `logId` родителя залипал между циклами.* См. код в 3.4.
 3. ~~Ошибка в `resolveParentParams`~~ — **решено**: Вариант Б (defensive). Вызов оборачивается в `try/catch` на уровне оркестратора; при исключении — предупреждение в лог и деградация к `{}`, тик не прерывается. См. обновлённый код в 3.4.
 4. ~~Docker/деплой~~ — **решено**: Вариант 2 (generic COPY). `Dockerfile` меняется в рамках этого ТЗ: builder-стадия собирает все `config.json` в стейджинг-каталог `/configs` с сохранением структуры подкаталогов, runner-стадия копирует его одной строкой вместо шести ручных `COPY .../<agent>/config.json`. Новый агент подхватывается автоматически. См. 3.8.
 5. ~~Genkit `defineFlow` в `index.ts`~~ — **решено**: Вариант A (принятый техдолг). Регистрация flow остаётся ручной и опциональной — используется только Dev UI/трассировкой, не влияет на работу тика, поэтому не блокирует добавление агента через реестр. Явно зафиксировано в чек-листе «как добавить агента» (3.7) и в DoD.
@@ -473,7 +470,7 @@ interface ScheduleSnapshot {
 | `lisa1_lisa5/agent.ts` | Добавить `export const manifest` |
 | `orchestrator/orchestrator.agent.ts` | Убрать хардкод в `dispatchTaskByKey` и 3 блоках проброса `logId`; построение и передача `registry`; **п. 3.9:** watchdog таймаута `RUNNING`, посуточное перевооружение задач с `schedule`, `allow_parallel`, TZ-aware `isTaskScheduleReady`, закрытие цикла при смене суток, флаг `--task` |
 | `orchestrator/orchestrator.test.ts` | Обновить моки под новую точку внедрения (`registry` вместо прямых импортов); тесты п. 3.9 |
-| `getEarved/config.json` | Согласовать `userId` (11770 vs 2477) |
+| `shared/constants.ts`, `*/config.json`, `*/schemas.ts` | Константа `AI_TASK_SERVICE_USER_ID = 11770` (алиас `FINBIT_SERVICE_USER_ID`) с JSDoc как единый сервисный пользователь для всех агентов `ai_task` и оркестратора (замена `2477`) и тест в `shared/agent_registry.test.ts` |
 | `ai_task.md` | Cron `*/5`, описание `--task`, таймаута и перевооружения |
 | `AGENT.md` | Обновить раздел «Как добавить нового агента» |
 | `walkthrough.md` | Дополнить описанием реестра |

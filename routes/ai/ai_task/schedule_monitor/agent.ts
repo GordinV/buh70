@@ -1,5 +1,5 @@
 import { defaultApiClient, ApiClient } from '../shared/api_client';
-import { OrchestratorState, TaskState } from '../orchestrator/orchestrator.schemas';
+import { OrchestratorState, TaskState, getAllDeps } from '../orchestrator/orchestrator.schemas';
 import { StateManager, loadOrchestratorConfig } from '../orchestrator/state.manager';
 import { AgentManifest, AgentDispatchContext } from '../shared/agent_registry';
 import {
@@ -153,7 +153,7 @@ export function computeNextPlannedRun(
       };
     }
 
-    if (task.depends_on && task.depends_on.length > 0) {
+    if (getAllDeps(task).length > 0) {
       return {
         next_planned_run: null,
         next_run_reason: 'AFTER_DEPENDENCIES',
@@ -232,7 +232,7 @@ export function buildScheduleSnapshot(
             month: task.schedule.month ?? null,
           }
         : null,
-      depends_on: task.depends_on || [],
+      depends_on: getAllDeps(task),
       next_planned_run,
       next_run_reason,
       last_started_at: task.started_at,

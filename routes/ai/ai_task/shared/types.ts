@@ -83,12 +83,16 @@ export interface AppConfig {
   geminiModel: string;
   buh70ApiBaseUrl: string;
   buh70ApiToken: string;
+  /** Секретный hash-токен авторизации для платных маршрутов Inforegister (не логировать) */
+  inforegisterHash?: string;
   defaultUserId: number;
   defaultRekvId: number;
   defaultKond: number;
   taskPollIntervalMs: number;
   taskTimeoutMs: number;
   maxTaskAttempts: number;
+  /** Базовая пауза между повторами HTTP-запроса, мс (пауза = 2^attempt * база). По умолчанию 250; 0 — без пауз (тесты) */
+  apiRetryBaseDelayMs?: number;
 
   // Память состояния и расписание тиков
   stateFilePath?: string;

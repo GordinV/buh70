@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import {
   cleanEmailText,
@@ -137,7 +138,13 @@ I am deeply sorry, but I was not able to deliver your mail to the following addr
 This is a permanent delivery failure. The delivery has been tried 0 times and will not be rescheduled again.`;
 
 describe('Субагент read_mail (Анализ входящей почты и ошибок счетов)', () => {
-  const testStateFile = path.resolve(__dirname, 'test_read_mail_state.json');
+  // Файл состояния создаётся в уникальном временном каталоге, а не рядом с тестом
+  const testStateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai_task_read_mail_test_'));
+  const testStateFile = path.join(testStateDir, 'test_read_mail_state.json');
+
+  afterAll(() => {
+    fs.rmSync(testStateDir, { recursive: true, force: true });
+  });
 
   afterEach(() => {
     if (fs.existsSync(testStateFile)) {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 import { TaskStatusEnum, OrchestratorStateSchema } from '../orchestrator/orchestrator.schemas';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 export const TASK_FLOW_AGENT_SCHEDULE = 'ai_task.agent_schedule';
 
 /**
@@ -69,7 +70,7 @@ export type ScheduleSnapshot = z.infer<typeof ScheduleSnapshotSchema>;
  * Входные параметры для записи среза в логи
  */
 export const LogAgentScheduleInputSchema = z.object({
-  userId: z.number().default(2477).describe('ID пользователя'),
+  userId: z.number().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().default(63).describe('ID учреждения'),
   snapshot: ScheduleSnapshotSchema.describe('Снимок расписания и статусов субагентов'),
 });
@@ -85,7 +86,7 @@ export type LogAgentScheduleResponse = z.infer<typeof LogAgentScheduleResponseSc
  * Входные параметры вызова субагента schedule_monitor через Genkit / CLI
  */
 export const ScheduleMonitorInputSchema = z.object({
-  userId: z.number().optional().default(2477).describe('ID пользователя'),
+  userId: z.number().optional().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().optional().default(63).describe('ID учреждения'),
   stateFilePath: z.string().optional().describe('Путь к файлу orchestrator_state.json'),
   state: OrchestratorStateSchema.optional().describe('Готовое состояние оркестратора (если вызывается из тика)'),

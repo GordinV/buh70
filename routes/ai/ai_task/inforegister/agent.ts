@@ -1,4 +1,4 @@
-import { ApiClient, defaultApiClient } from '../shared/api_client';
+import { ApiClient, defaultApiClient, getConfig } from '../shared/api_client';
 import { watchTaskUntilDone } from '../logs_watcher/agent';
 import {
   StartInforegisterInput,
@@ -139,6 +139,10 @@ export const manifest = {
   resolveParentParams: (state: { tasks: Record<string, { log_id?: number | null }> }): Record<string, unknown> => {
     const parentLogId = state.tasks?.['check_asutus']?.log_id;
     return parentLogId ? { logId: parentLogId } : {};
+  },
+  validatePrerequisites: (): string | null => {
+    const hash = getConfig().inforegisterHash;
+    return hash ? null : 'INFOREGISTER_HASH puudub';
   },
   enrichReportStep: (stepLog: Record<string, unknown> | null): { resultSummary?: string } => {
     if (!stepLog || !stepLog.exec_start || !stepLog.result) {

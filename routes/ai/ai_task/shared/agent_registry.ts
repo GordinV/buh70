@@ -4,6 +4,7 @@ import { ApiClient } from './api_client';
 import { OrchestratorState, TaskState } from '../orchestrator/orchestrator.schemas';
 import { resolveAiTaskRootDir } from '../orchestrator/state.manager';
 import { ReportStepDetail } from '../reporter/schemas';
+import { EXCLUDED_SERVICE_DIRS } from './excluded_dirs';
 
 /**
  * Контекст, передаваемый в manifest.dispatch() при запуске или повторе задачи
@@ -35,6 +36,13 @@ export interface AgentManifest {
   resolveParentParams?: (state: OrchestratorState) => Record<string, unknown>;
 
   /**
+   * Опционально: проверка специфических предусловий агента перед запуском
+   * (например, наличие log_id родительской задачи).
+   * Возвращает строку причины пропуска (SKIP), если предусловие не выполнено, иначе null.
+   */
+  validatePrerequisites?: (state: OrchestratorState) => string | null;
+
+  /**
    * Опционально: обогащение данных шага для итогового отчета reporter
    * на основе записи из ou.logs и состояния задачи (без модификации ядра оркестратора).
    */
@@ -45,24 +53,29 @@ export interface AgentManifest {
 }
 
 /**
- * Известные статические поддиректории агентов (базовый набор).
- * Новые агенты обнаруживаются автоматически через сканирование подкаталогов ai_task.
+ * Собирает имена подкаталогов агентов из указанной директории, исключая служебные и скрытые.
  */
-export const KNOWN_SUBAGENTS = [
-  'saldoandmik',
-  'calc_arv_jaak',
-  'getEarved',
-  'check_asutus',
-  'inforegister',
-  'import_earved',
-  'sendFinBitReport',
-  'lisa1_lisa5',
-];
+function collectAgentDirs(dirPath: string, target: Set<string>): void {
+  if (!fs.existsSync(dirPath)) return;
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (
+        entry.isDirectory() &&
+        !entry.name.startsWith('.') &&
+        !EXCLUDED_SERVICE_DIRS.includes(entry.name)
+      ) {
+        target.add(entry.name);
+      }
+    }
+  } catch {
+    // Игнорируем ошибки доступа к файловой системе
+  }
+}
 
 /**
- * Строит реестр манифестов агентов.
- * Поддерживает как прямую передачу словаря манифестов (для тестов),
- * так и динамическое сканирование каталогов модулей агентов.
+ * Строит реестр манифестов агентов динамическим сканированием каталогов модулей агентов.
+ * Поддерживает overrides словаря манифестов для тестов.
  */
 export function buildAgentRegistry(
   rootDir?: string,
@@ -71,56 +84,39 @@ export function buildAgentRegistry(
   const registry: Record<string, AgentManifest> = {};
   const root = resolveAiTaskRootDir(rootDir);
 
-  // Собираем список каталогов для поиска агентов:
-  const candidateDirs = new Set<string>(KNOWN_SUBAGENTS);
-  if (fs.existsSync(root)) {
-    try {
-      const entries = fs.readdirSync(root, { withFileTypes: true });
-      for (const entry of entries) {
-        if (
-          entry.isDirectory() &&
-          !entry.name.startsWith('.') &&
-          entry.name !== 'node_modules' &&
-          entry.name !== 'dist' &&
-          entry.name !== 'state' &&
-          entry.name !== 'shared' &&
-          entry.name !== 'logs_watcher'
-        ) {
-          candidateDirs.add(entry.name);
-        }
-      }
-    } catch {
-      // Игнорируем ошибки доступа к файловой системе
-    }
-  }
+  // Динамически сканируем root (и root/dist для Docker-сборки, где каталоги без config.json лежат только в dist/)
+  const candidateDirs = new Set<string>();
+  collectAgentDirs(root, candidateDirs);
+  collectAgentDirs(path.join(root, 'dist'), candidateDirs);
 
   for (const agentName of candidateDirs) {
-    try {
-      const absTs = path.join(root, agentName, 'agent.ts');
-      const absJs = path.join(root, agentName, 'agent.js');
-      const distJs = path.join(root, 'dist', agentName, 'agent.js');
+    const absTs = path.join(root, agentName, 'agent.ts');
+    const absJs = path.join(root, agentName, 'agent.js');
+    const distJs = path.join(root, 'dist', agentName, 'agent.js');
 
-      let agentMod: any = null;
-      if (fs.existsSync(absTs)) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        agentMod = require(absTs);
-      } else if (fs.existsSync(absJs)) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        agentMod = require(absJs);
-      } else if (fs.existsSync(distJs)) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        agentMod = require(distJs);
-      } else {
+    // Определяем путь к модулю агента отдельно от его загрузки, чтобы различать
+    // «файла нет» (молча пропускаем) и «файл есть, но не загрузился» (предупреждение)
+    let modulePath: string | null = [absTs, absJs, distJs].find((p) => fs.existsSync(p)) ?? null;
+    if (!modulePath) {
+      try {
         // Резервный относительный require
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        agentMod = require(`../${agentName}/agent`);
+        modulePath = require.resolve(`../${agentName}/agent`);
+      } catch {
+        // Игнорируем отсутствие файла (например, в изолированном тестовом окружении)
+        continue;
       }
+    }
 
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const agentMod: any = require(modulePath);
       if (agentMod && agentMod.manifest) {
         registry[agentName] = agentMod.manifest;
       }
-    } catch {
-      // Игнорируем отсутствие файла (например, в изолированном тестовом окружении)
+    } catch (err) {
+      // Файл агента существует, но его загрузка упала — не глотаем ошибку молча
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`[agent-registry] Hoiatus: agendi "${agentName}" laadimine ebaõnnestus (${modulePath}): ${errMsg}`);
     }
   }
 

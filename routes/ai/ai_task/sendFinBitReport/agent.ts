@@ -120,6 +120,10 @@ export const manifest = {
     const parentLogId = state.tasks?.['import_earved']?.log_id;
     return parentLogId ? { logId: parentLogId } : {};
   },
+  validatePrerequisites: (state: { tasks: Record<string, { log_id?: number | null }> }): string | null => {
+    const parentLogId = state.tasks?.['import_earved']?.log_id;
+    return parentLogId ? null : 'Vahele jäetud: vanemülesande import_earved log_id puudub';
+  },
   enrichReportStep: (stepLog: Record<string, unknown> | null): { resultSummary?: string } => {
     if (!stepLog || !stepLog.exec_start) {
       return {};

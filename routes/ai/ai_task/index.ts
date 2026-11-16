@@ -39,6 +39,11 @@ import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
 // Субагенты и инструменты
 import { getConfig } from './shared/api_client';
 import {
+  InforegisterLookupFlowInputSchema,
+  InforegisterLookupResultSchema,
+} from './inforegister/schemas';
+import { lookupInforegister } from './inforegister/tools';
+import {
   WatchTaskInputSchema,
   WatchTaskOutputSchema,
 } from './logs_watcher/schemas';
@@ -105,6 +110,8 @@ import {
   runOrchestrator,
   runOrchestratorTick,
 } from './orchestrator/orchestrator.agent';
+import { loadOrchestratorConfig } from './orchestrator/state.manager';
+import { AI_TASK_SERVICE_USER_ID } from './shared/constants';
 
 const config = getConfig();
 
@@ -242,6 +249,18 @@ export const readMailFlow = ai.defineFlow(
     runReadMailSubagent(input, {
       aiGenerateFn: getAiReadMailGenerateFn(),
     })
+);
+
+/**
+ * Genkit Flow: Синхронный поиск организации по рег.коду в Inforegister (inforegisterLookupFlow)
+ */
+export const inforegisterLookupFlow = ai.defineFlow(
+  {
+    name: 'inforegisterLookupFlow',
+    inputSchema: InforegisterLookupFlowInputSchema,
+    outputSchema: InforegisterLookupResultSchema,
+  },
+  async (input) => lookupInforegister(input)
 );
 
 /**
@@ -478,6 +497,27 @@ export const orchestratorFlow = ai.defineFlow(
 );
 
 /**
+ * Разбор CLI-флага --task (точечный сброс и запуск одной задачи в режиме тика).
+ * Значение обязательно: отсутствующее значение или следующий флаг вместо него (--task --force)
+ * считаются ошибкой использования, чтобы тик не запускался с неопределённым или ложным ключом.
+ */
+export function parseTaskFlag(args: string[]): { taskKey?: string; error?: string } {
+  const taskIdx = args.indexOf('--task');
+  if (taskIdx === -1) {
+    return {};
+  }
+  const value = args[taskIdx + 1];
+  if (value === undefined || value.trim() === '' || value.startsWith('--')) {
+    return {
+      error: `Kasutusviga: lipp --task nõuab ülesande võtit (nt --task getEarved)${
+        value ? `, kuid selle järel on "${value}"` : ''
+      }. Tikki ei käivitata.`,
+    };
+  }
+  return { taskKey: value };
+}
+
+/**
  * CLI запуск при вызове напрямую (node dist/index.js или npx tsx index.ts)
  */
 async function main() {
@@ -487,11 +527,15 @@ async function main() {
   const forceRun = args.includes('--force');
   const isFullRun = args.includes('--full');
 
+  const orchestratorConfig = loadOrchestratorConfig();
+
   const userIdx = args.indexOf('--user');
-  const userId = userIdx !== -1 ? parseInt(args[userIdx + 1], 10) : config.defaultUserId;
+  const cliUserId = userIdx !== -1 ? parseInt(args[userIdx + 1], 10) : undefined;
+  const userId = cliUserId ?? orchestratorConfig.params?.userId ?? AI_TASK_SERVICE_USER_ID;
 
   const rekvIdx = args.indexOf('--rekv');
-  const rekvId = rekvIdx !== -1 ? parseInt(args[rekvIdx + 1], 10) : config.defaultRekvId;
+  const cliRekvId = rekvIdx !== -1 ? parseInt(args[rekvIdx + 1], 10) : undefined;
+  const rekvId = cliRekvId ?? orchestratorConfig.params?.rekvId ?? 63;
 
   const dateIdx = args.indexOf('--date');
   const targetDateStr = dateIdx !== -1 ? args[dateIdx + 1] : undefined;
@@ -499,10 +543,20 @@ async function main() {
   const statePathIdx = args.indexOf('--state');
   const stateFilePath = statePathIdx !== -1 ? args[statePathIdx + 1] : undefined;
 
-  const taskIdx = args.indexOf('--task');
-  const taskKey = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
+  const taskFlag = parseTaskFlag(args);
+  if (taskFlag.error) {
+    // Ошибка использования: ничего не запускаем и завершаемся с ненулевым кодом
+    console.error(taskFlag.error);
+    process.exitCode = 1;
+    return;
+  }
+  const taskKey = taskFlag.taskKey;
 
   if (isFullRun) {
+    // Точечный сброс задачи (--task) поддерживается только в режиме тика, в --full он не применяется
+    if (taskKey) {
+      console.warn(`Hoiatus: lippu --task (${taskKey}) ignoreeritakse täistsükli režiimis (--full)`);
+    }
     console.log(`=== buh70 AI-Orkestraatori täistsükli käivitamine (--full) ===`);
     console.log(`Parameetrid: userId=${userId}, rekvId=${rekvId}, forceRun=${forceRun}`);
 
@@ -523,7 +577,7 @@ async function main() {
     );
 
     const result = await runOrchestratorTick(
-      { userId, rekvId, forceRun, stateFilePath, taskKey },
+      { userId: cliUserId, rekvId: cliRekvId, forceRun, stateFilePath, taskKey },
       {
         targetDateStr,
         aiGenerateFn: getAiGenerateFn(),

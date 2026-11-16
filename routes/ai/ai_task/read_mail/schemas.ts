@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 export const TASK_FLOW_READ_MAIL = 'mail.read_mail_errors';
 export const DEFAULT_INITIAL_SINCE_DATE = '2026-10-01T00:00:00.000Z';
 
@@ -90,7 +91,7 @@ export const ReadMailInputSchema = z.object({
   emailContent: z.string().optional().describe('Текст одного письма для ручного вызова'),
   emails: z.array(z.string()).optional().describe('Массив текстов писем'),
   rawEmails: z.array(RawIncomingEmailSchema).optional().describe('Структурированные письма для тестирования'),
-  userId: z.number().default(2477).describe('ID пользователя buh70'),
+  userId: z.number().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя buh70'),
   rekvId: z.number().default(63).describe('ID учреждения buh70'),
   useAi: z.boolean().default(true).describe('Флаг использования LLM для анализа сложных писем'),
   forceSinceDate: z.boolean().default(false).describe('Принудительно начать с sinceDate, игнорируя сохраненный state'),

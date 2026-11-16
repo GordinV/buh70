@@ -131,7 +131,7 @@ function createClient(opts) {
         const cacheKey = 'bundle:' + regCode + ':' + y;
         const now = nowFn();
 
-        if (store) {
+        if (store && !opts.skipCacheRead) {
             let cached = null;
             try {
                 cached = await store.get(cacheKey);
@@ -140,7 +140,14 @@ function createClient(opts) {
             }
             if (cached) {
                 if (cached.negative) return fail(regCode, 'not_found', 'Inforegister: andmeid ei ole (cache)');
-                return {ok: true, regCode: regCode, data: cached.payload, source: 'cache', remainingYear: state.remainingYear};
+                return {
+                    ok: true,
+                    regCode: regCode,
+                    data: cached.payload,
+                    source: 'cache',
+                    fetchedAt: cached.fetchedAt || null,
+                    remainingYear: state.remainingYear
+                };
             }
         }
 
@@ -217,6 +224,7 @@ function createClient(opts) {
             }
 
             const data = summarizeBundle(JSON.parse(resp.body), y);
+            const fetchedAt = new Date(now).toISOString();
             if (store) {
                 try {
                     await store.set(cacheKey, data, false, BUNDLE_TTL_MS);
@@ -224,7 +232,7 @@ function createClient(opts) {
                     // не критично
                 }
             }
-            return {ok: true, regCode: regCode, data: data, source: 'api', remainingYear: state.remainingYear};
+            return {ok: true, regCode: regCode, data: data, source: 'api', fetchedAt: fetchedAt, remainingYear: state.remainingYear};
         } catch (err) {
             return fail(regCode, err && err.message === 'timeout' ? 'timeout' : 'http_error',
                 'Inforegister: ' + (err && err.message ? err.message : 'võrgu viga'));

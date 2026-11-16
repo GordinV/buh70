@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { ApiClient } from '../shared/api_client';
 import {
@@ -20,11 +21,13 @@ import { TASK_FLOW_LISA1_LISA5 } from '../lisa1_lisa5/schemas';
 import {
   StateManager,
   calculateNextScheduledRun,
+  createInitialState,
   getDefaultTaskGraph,
   loadAgentConfig,
   loadAllAgentConfigs,
   loadOrchestratorConfig,
   reconcileTasksWithConfigs,
+  resetCycleForNewDay,
 } from './state.manager';
 import {
   AgentConfig,
@@ -39,7 +42,8 @@ import {
   TaskState,
 } from './orchestrator.schemas';
 import { getConfig } from '../shared/api_client';
-import { resolveModelName } from '../index';
+import { resolveModelName, parseTaskFlag } from '../index';
+import { generateAndSendReportSubagent } from '../reporter/agent';
 
 // Мокируем отправку отчета, чтобы исключить внешние сетевые SMTP-запросы во время тестов
 jest.mock('../reporter/agent', () => ({
@@ -61,8 +65,32 @@ jest.mock('../schedule_monitor/agent', () => {
 });
 import { runScheduleMonitor } from '../schedule_monitor/agent';
 
+// Файлы состояния тестов создаются в уникальном временном каталоге (а не рядом с тестом),
+// чтобы параллельные воркеры Jest и повторные прогоны не пересекались по одним и тем же путям
+const TEST_STATE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'ai_task_orchestrator_test_'));
+const testStatePath = (fileName: string): string => path.join(TEST_STATE_DIR, fileName);
+
+// Реальные паузы повторов ApiClient в тестах отключены (jest.setup.js, API_RETRY_BASE_DELAY_MS=0), и на прогретой
+// машине каждый тест занимает десятки миллисекунд. Но при полном параллельном прогоне под нагрузкой
+// (в т.ч. при холодном кэше трансформации ts-jest) отдельные тесты этого файла всё равно выходили за стандартные
+// 5 секунд (наблюдалось до 16 с), поэтому увеличенный лимит оставлен как страховка только для этого файла.
+jest.setTimeout(30000);
+
+afterAll(() => {
+  // Очистка временного каталога вместе со всеми оставшимися файлами состояния
+  fs.rmSync(TEST_STATE_DIR, { recursive: true, force: true });
+});
+
 describe('Главный Оркестратор', () => {
-  const testStateFile = path.resolve(__dirname, 'test_orchestrator_state.json');
+  // Уникальный файл состояния на каждый тест: тест, прерванный по таймауту и продолжающий
+  // работать в фоне, не сможет перезаписать состояние следующего теста
+  let testStateFile = testStatePath('test_orchestrator_state.json');
+  let testStateSeq = 0;
+
+  beforeEach(() => {
+    testStateSeq += 1;
+    testStateFile = testStatePath(`test_orchestrator_state_${testStateSeq}.json`);
+  });
 
   afterEach(() => {
     if (fs.existsSync(testStateFile)) {
@@ -1338,7 +1366,7 @@ describe('Главный Оркестратор', () => {
       fs.writeFileSync(testStateFile, JSON.stringify(stateContent));
 
       const mockFetch = jest.fn().mockImplementation(async (url: string) => {
-        if (url.includes('/task/read_log/2477/getEarved')) {
+        if (url.includes('/task/read_log/11770/getEarved')) {
           return {
             ok: true,
             status: 200,
@@ -1373,7 +1401,7 @@ describe('Главный Оркестратор', () => {
 
       expect(tick.activeTasks).not.toContain('getEarved');
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/task/read_log/2477/getEarved'),
+        expect.stringContaining('/task/read_log/11770/getEarved'),
         expect.anything()
       );
 
@@ -1403,7 +1431,7 @@ describe('Главный Оркестратор', () => {
       fs.writeFileSync(testStateFile, JSON.stringify(stateContent));
 
       const mockFetch = jest.fn().mockImplementation(async (url: string) => {
-        if (url.includes('/task/read_log/2477/getEarved')) {
+        if (url.includes('/task/read_log/11770/getEarved')) {
           return {
             ok: true,
             status: 200,
@@ -1534,6 +1562,8 @@ describe('Главный Оркестратор', () => {
       expect(existingTasks.getEarved.params).toEqual({
         defaultParam: 123,
         customRuntimeFlag: true,
+        userId: 11770,
+        rekvId: 63,
       });
 
       // Рантайм-поля сохранены
@@ -1899,7 +1929,7 @@ describe('Главный Оркестратор', () => {
 
       expect(tick.activeTasks).toContain('sendFinBitReport');
       expect(capturedPayload.logId).toBe(7777);
-      expect(capturedPayload.user_id).toBe(2477);
+      expect(capturedPayload.user_id).toBe(11770);
       expect(capturedPayload.rekv_id).toBe(63);
 
       const saved = JSON.parse(fs.readFileSync(testStateFile, 'utf8'));
@@ -2053,7 +2083,7 @@ describe('Главный Оркестратор', () => {
       expect(config.daily_start_time).toBe('20:00');
       expect(config.timezone).toBe('Europe/Tallinn');
       expect(config.max_task_attempts).toBe(3);
-      expect(config.params).toEqual(expect.objectContaining({ userId: 2477, rekvId: 63, kond: 1 }));
+      expect(config.params).toEqual(expect.objectContaining({ userId: 11770, rekvId: 63, kond: 1 }));
       expect(typeof config.prompt).toBe('string');
     });
 
@@ -2149,6 +2179,23 @@ describe('Главный Оркестратор', () => {
 
       expect(decision.action).toBe('WAIT_SCHEDULE');
       expect(decision.force_run).toBe(false);
+    });
+
+    it('parseTaskFlag: --task без значения или со следующим флагом вместо значения — ошибка использования', () => {
+      // Флаг не задан — ни ключа, ни ошибки
+      expect(parseTaskFlag(['--force'])).toEqual({});
+      // Корректное значение
+      expect(parseTaskFlag(['--task', 'getEarved', '--force'])).toEqual({ taskKey: 'getEarved' });
+
+      // Значение отсутствует
+      const missing = parseTaskFlag(['--force', '--task']);
+      expect(missing.taskKey).toBeUndefined();
+      expect(missing.error).toContain('--task');
+
+      // Вместо значения идёт следующий флаг — он не должен приниматься за ключ задачи
+      const nextFlag = parseTaskFlag(['--task', '--force']);
+      expect(nextFlag.taskKey).toBeUndefined();
+      expect(nextFlag.error).toContain('--force');
     });
 
     it('resolveModelName нормализует имя модели для Genkit', () => {
@@ -2294,7 +2341,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: если в ou.logs задача имеет скрытую ошибку ETIMEDOUT при status: success, она отправляется на retry', async () => {
-      const testStateFile = path.resolve(__dirname, 'state_retry_test.json');
+      const testStateFile = testStatePath('state_retry_test.json');
       const initialDate = '2026-09-18';
       const afternoonTime = new Date(`${initialDate}T12:35:00.000Z`);
 
@@ -2391,7 +2438,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: при исключении в dispatchTaskByKey задача отправляется на retry (PENDING) до исчерпания max_attempts', async () => {
-      const testStateFile = path.resolve(__dirname, 'state_dispatch_retry_test.json');
+      const testStateFile = testStatePath('state_dispatch_retry_test.json');
       const initialDate = '2026-09-18';
       const eveningTime = new Date(`${initialDate}T20:05:00.000Z`);
 
@@ -2483,7 +2530,7 @@ describe('Главный Оркестратор', () => {
     }, 15000);
 
     it('runOrchestratorTick: Watchdog TASK_TIMEOUT срабатывает при превышении timeout_hours', async () => {
-      const testStateFile = path.join(__dirname, 'test_timeout_state.json');
+      const testStateFile = testStatePath('test_timeout_state.json');
       try {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
@@ -2552,7 +2599,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: задачи со schedule посуточно перевооружаются в PENDING при смене даты', async () => {
-      const testStateFile = path.join(__dirname, 'test_rearm_state.json');
+      const testStateFile = testStatePath('test_rearm_state.json');
       try {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
@@ -2595,7 +2642,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: вызывает /task/logAgentSchedule/ на каждом тике', async () => {
-      const testStateFile = path.join(__dirname, 'test_schedule_monitor_state.json');
+      const testStateFile = testStatePath('test_schedule_monitor_state.json');
       try {
         const { runScheduleMonitor: actualRunScheduleMonitor } = jest.requireActual('../schedule_monitor/agent');
         (runScheduleMonitor as jest.Mock).mockImplementation(actualRunScheduleMonitor);
@@ -2647,7 +2694,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: вызывает /task/logAgentSchedule/ даже при раннем выходе IDLE_WAIT_NEXT_SCHEDULE', async () => {
-      const testStateFile = path.join(__dirname, 'test_schedule_monitor_early_exit.json');
+      const testStateFile = testStatePath('test_schedule_monitor_early_exit.json');
       try {
         const { runScheduleMonitor: actualRunScheduleMonitor } = jest.requireActual('../schedule_monitor/agent');
         (runScheduleMonitor as jest.Mock).mockImplementation(actualRunScheduleMonitor);
@@ -2701,7 +2748,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: не вызывает schedule_monitor, если в конфиге enabled = false', async () => {
-      const testStateFile = path.join(__dirname, 'test_schedule_monitor_disabled.json');
+      const testStateFile = testStatePath('test_schedule_monitor_disabled.json');
       try {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
@@ -2749,7 +2796,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: флаг taskKey точечно сбрасывает статус задачи в PENDING и запускает ее', async () => {
-      const testStateFile = path.join(__dirname, 'test_task_key_reset.json');
+      const testStateFile = testStatePath('test_task_key_reset.json');
       try {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
@@ -2807,8 +2854,149 @@ describe('Главный Оркестратор', () => {
       }
     });
 
+    it('runOrchestratorTick: неизвестный taskKey даёт предупреждение и событие TASK_RESET_UNKNOWN, тик не прерывается', async () => {
+      const testStateFile = testStatePath('test_task_key_unknown.json');
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const stateManager = new StateManager(testStateFile);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        for (const task of Object.values(state.tasks)) {
+          task.status = 'SUCCESS';
+        }
+        state.tasks.getEarved.status = 'FAILED';
+        state.tasks.getEarved.attempts = 3;
+        state.tasks.getEarved.error = 'Previous run failed';
+        fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+
+        const testRegistry = {
+          getEarved: {
+            dispatch: jest.fn().mockResolvedValue(999222),
+          },
+        };
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => {
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+          }) as unknown as typeof fetch
+        );
+
+        // Тик не должен падать на неизвестном ключе
+        await expect(
+          runOrchestratorTick(
+            { stateFilePath: testStateFile, taskKey: 'noSuchTask' },
+            {
+              apiClient: client,
+              currentDate: new Date('2026-10-09T08:00:00.000Z'),
+              targetDateStr: '2026-10-09',
+              registry: testRegistry,
+            }
+          )
+        ).resolves.toBeDefined();
+
+        // Предупреждение содержит неизвестный ключ и список допустимых ключей
+        const warnMessages = warnSpy.mock.calls.map((c) => String(c[0]));
+        const unknownWarn = warnMessages.find((m) => m.includes('noSuchTask'));
+        expect(unknownWarn).toBeDefined();
+        expect(unknownWarn).toContain('getEarved');
+
+        const reloaded = await stateManager.loadState({}, '2026-10-09');
+        const unknownEvent = reloaded.history.find((h) => h.event === 'TASK_RESET_UNKNOWN');
+        expect(unknownEvent).toBeDefined();
+        expect(unknownEvent?.task).toBe('noSuchTask');
+        expect(reloaded.history.find((h) => h.event === 'TASK_RESET_MANUAL')).toBeUndefined();
+
+        // Ни одна задача не была сброшена вручную: упавшая задача остаётся FAILED с прежними попытками
+        expect(testRegistry.getEarved.dispatch).not.toHaveBeenCalled();
+        expect(reloaded.tasks.getEarved.status).toBe('FAILED');
+        expect(reloaded.tasks.getEarved.attempts).toBe(3);
+        expect(reloaded.tasks.noSuchTask).toBeUndefined();
+      } finally {
+        warnSpy.mockRestore();
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
+    it('runOrchestratorTick: при неизвестном taskKey готовая PENDING-задача не запускается, без taskKey то же состояние её запускает', async () => {
+      const testStateFile = testStatePath('test_task_key_unknown_pending.json');
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const stateManager = new StateManager(testStateFile);
+
+        // Одинаковое исходное состояние для обоих тиков: getEarved в PENDING и готова к запуску
+        const writeInitialState = async () => {
+          if (fs.existsSync(testStateFile)) {
+            fs.unlinkSync(testStateFile);
+          }
+          const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+          for (const task of Object.values(state.tasks)) {
+            task.status = 'SUCCESS';
+          }
+          state.tasks.getEarved.status = 'PENDING';
+          state.tasks.getEarved.attempts = 0;
+          fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
+        };
+
+        const makeClient = () =>
+          new ApiClient(
+            { buh70ApiBaseUrl: 'http://test-server' },
+            jest.fn().mockImplementation(async () => {
+              return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+            }) as unknown as typeof fetch
+          );
+
+        const tickOptions = () => ({
+          apiClient: makeClient(),
+          currentDate: new Date('2026-10-09T08:00:00.000Z'),
+          targetDateStr: '2026-10-09',
+        });
+
+        // Тик 1: неизвестный ключ — запуски задач пропускаются
+        await writeInitialState();
+        const dispatchUnknown = jest.fn().mockResolvedValue(999333);
+        const resUnknown = await runOrchestratorTick(
+          { stateFilePath: testStateFile, taskKey: 'noSuchTask' },
+          { ...tickOptions(), registry: { getEarved: { dispatch: dispatchUnknown } } }
+        );
+
+        expect(dispatchUnknown).not.toHaveBeenCalled();
+        expect(resUnknown.activeTasks).not.toContain('getEarved');
+        const afterUnknown = await stateManager.loadState({}, '2026-10-09');
+        expect(afterUnknown.tasks.getEarved.status).toBe('PENDING');
+        const unknownEvent = afterUnknown.history.find((h) => h.event === 'TASK_RESET_UNKNOWN');
+        expect(unknownEvent?.details).toContain('no tasks are launched in this tick');
+        const unknownWarn = warnSpy.mock.calls.map((c) => String(c[0])).find((m) => m.includes('noSuchTask'));
+        expect(unknownWarn).toContain('ühtegi ülesannet ei käivitata');
+
+        // Тик 2: то же состояние без taskKey — задача запускается (тест не проходит вхолостую)
+        await writeInitialState();
+        const dispatchNormal = jest.fn().mockResolvedValue(999444);
+        const resNormal = await runOrchestratorTick(
+          { stateFilePath: testStateFile },
+          { ...tickOptions(), registry: { getEarved: { dispatch: dispatchNormal } } }
+        );
+
+        expect(dispatchNormal).toHaveBeenCalledTimes(1);
+        expect(resNormal.activeTasks).toContain('getEarved');
+        const afterNormal = await stateManager.loadState({}, '2026-10-09');
+        expect(afterNormal.tasks.getEarved.status).toBe('RUNNING');
+        expect(afterNormal.tasks.getEarved.log_id).toBe(999444);
+      } finally {
+        warnSpy.mockRestore();
+        if (fs.existsSync(testStateFile)) {
+          try {
+            fs.unlinkSync(testStateFile);
+          } catch {}
+        }
+      }
+    });
+
     it('runOrchestratorTick: каскадно перевооружает зависимые задачи (depends_on) при смене календарных суток', async () => {
-      const testStateFile = path.join(__dirname, 'test_cascade_rearm.json');
+      const testStateFile = testStatePath('test_cascade_rearm.json');
       try {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
@@ -2859,7 +3047,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: parentParams (logId родителя) приоритетнее закешированного task.params.logId', async () => {
-      const testStateFile = path.join(__dirname, 'test_param_priority.json');
+      const testStateFile = testStatePath('test_param_priority.json');
       try {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
@@ -2913,7 +3101,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('evaluateTaskLaunchDecision: возвращает WAIT (Downstream Lock), если зависимая задача в RUNNING', async () => {
-      const stateManager = new StateManager();
+      const stateManager = new StateManager(testStatePath('test_downstream_lock_decision.json'));
       const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-12');
       state.tasks.saldoandmik.status = 'PENDING';
       state.tasks.lisa1_lisa5.status = 'RUNNING';
@@ -2933,7 +3121,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: Downstream Lock защищает родительскую задачу от перевооружения и перезапуска, пока потомок в RUNNING', async () => {
-      const testStateFile = path.join(__dirname, 'test_downstream_lock.json');
+      const testStateFile = testStatePath('test_downstream_lock.json');
       try {
         const stateManager = new StateManager(testStateFile);
         const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
@@ -3009,7 +3197,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('runOrchestratorTick: reporter запускается по расписанию 08:00 и собирает данные из ou.logs за последние 24 часа', async () => {
-      const testStateFile = path.join(__dirname, 'test_state_reporter_8am.json');
+      const testStateFile = testStatePath('test_state_reporter_8am.json');
       const testState: OrchestratorState = {
         version: 1,
         cycle_date: '2026-10-14',
@@ -3429,7 +3617,7 @@ describe('Главный Оркестратор', () => {
     }
 
     it('retryable=false в логе: задача сразу FAILED, повторный запуск не выполняется', async () => {
-      const file = path.resolve(__dirname, 'state_non_retryable_test.json');
+      const file = testStatePath('state_non_retryable_test.json');
       writeState(file, (tasks) => {
         tasks.import_earved.status = 'SUCCESS';
         tasks.import_earved.log_id = 20000;
@@ -3471,7 +3659,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('статус задачи берется по log_id: более поздний чужой успешный запуск flow не закрывает задачу', async () => {
-      const file = path.resolve(__dirname, 'state_by_log_id_test.json');
+      const file = testStatePath('state_by_log_id_test.json');
       writeState(file, (tasks) => {
         tasks.import_earved.status = 'SUCCESS';
         tasks.import_earved.log_id = 20000;
@@ -3510,7 +3698,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('перед повтором принимается более поздний успешный запуск flow за сегодня (ручной перезапуск)', async () => {
-      const file = path.resolve(__dirname, 'state_reconcile_later_run_test.json');
+      const file = testStatePath('state_reconcile_later_run_test.json');
       writeState(file, (tasks) => {
         tasks.import_earved.status = 'SUCCESS';
         tasks.import_earved.log_id = 20000;
@@ -3557,7 +3745,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('reporter ждет зависимости до max_wait_time (09:00) и после него отправляет отчет без них', async () => {
-      const file = path.resolve(__dirname, 'state_reporter_wait_test.json');
+      const file = testStatePath('state_reporter_wait_test.json');
       writeState(file, (tasks) => {
         tasks.import_earved.status = 'SUCCESS';
         tasks.import_earved.log_id = 20000;
@@ -3596,7 +3784,7 @@ describe('Главный Оркестратор', () => {
     });
 
     it('reporter не ждет max_wait_time, если все зависимости уже завершены', async () => {
-      const file = path.resolve(__dirname, 'state_reporter_deps_done_test.json');
+      const file = testStatePath('state_reporter_deps_done_test.json');
       writeState(file, (tasks) => {
         tasks.sendFinBitReport.status = 'SUCCESS';
         tasks.calc_arv_jaak.status = 'SUCCESS';
@@ -3617,6 +3805,1525 @@ describe('Главный Оркестратор', () => {
         expect(saved.tasks.reporter.status).toBe('SUCCESS');
       } finally {
         cleanup(file);
+      }
+    });
+  });
+
+  describe('Регрессионные тесты: TZ полночь и закрытие цикла при смене суток', () => {
+    it('вычисляет targetDateStr как 00:30 Europe/Tallinn при UTC-предыдущем дне и перевооружает задачи', async () => {
+      const file = testStatePath('state_tz_midnight_test.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        state.status = 'COMPLETED';
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.started_at = '2026-10-09T02:00:00.000Z';
+        state.tasks.getEarved.finished_at = '2026-10-09T02:05:00.000Z';
+        state.tasks.sendFinBitReport.status = 'SUCCESS';
+        state.tasks.sendFinBitReport.finished_at = '2026-10-09T02:10:00.000Z';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({ status: 200, result: 1, data: [] }),
+          })) as unknown as typeof fetch
+        );
+
+        // 21:30 UTC 2026-10-09 = 00:30 2026-10-10 в Europe/Tallinn (UTC+3)
+        // targetDateStr намеренно НЕ передаётся
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T21:30:00.000Z'),
+            timezone: 'Europe/Tallinn',
+            forceRun: false,
+          }
+        );
+
+        const reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.getEarved.status).toBe('PENDING');
+        expect(reloaded.tasks.sendFinBitReport.status).toBe('PENDING');
+        const rearmEvent = reloaded.history.find(
+          (h) => h.event === 'TASK_REARMED' && h.task === 'getEarved'
+        );
+        expect(rearmEvent?.details).toContain('2026-10-10');
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+
+    it('закрывает зависший вчерашний цикл IN_PROGRESS при смене суток (CYCLE_CLOSED_DAY_CHANGE)', async () => {
+      const file = testStatePath('state_cycle_close_day_change_test.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
+        state.cycle_date = '2026-10-08';
+        state.status = 'IN_PROGRESS';
+        state.next_scheduled_run = '2026-10-09T02:00:00.000Z';
+        state.tasks.lisa1_lisa5.status = 'FAILED';
+        state.tasks.lisa1_lisa5.error = 'TASK_TIMEOUT';
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.finished_at = '2026-10-08T04:05:00.000Z';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({ status: 200, result: 1, data: [] }),
+          })) as unknown as typeof fetch
+        );
+
+        // 00:10 по Таллину 2026-10-09 (21:10 UTC 2026-10-08)
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-08T21:10:00.000Z'),
+            timezone: 'Europe/Tallinn',
+            forceRun: false,
+          }
+        );
+
+        const reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.status).toBe('FAILED');
+        const closeEvent = reloaded.history.find((h) => h.event === 'CYCLE_CLOSED_DAY_CHANGE');
+        expect(closeEvent).toBeDefined();
+        expect(closeEvent?.details).toContain('2026-10-08');
+        expect(closeEvent?.details).toContain('2026-10-09');
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+  });
+
+  describe('Каскадное перевооружение и транзитивный Downstream Lock (task_cascade_rearm_gaps)', () => {
+    it('(А) зависимая задача, бывшая RUNNING в момент перевооружения родителя, перевооружается в следующем тике после завершения', async () => {
+      const file = testStatePath('test_cascade_rearm_after_running.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        state.cycle_date = '2026-10-09';
+        state.status = 'IN_PROGRESS';
+
+        // Родитель getEarved уже был выполнен вчера, а зависимая import_earved ещё RUNNING со вчерашнего запуска
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.started_at = '2026-10-08T23:50:00.000Z';
+        state.tasks.getEarved.finished_at = '2026-10-08T23:52:00.000Z';
+        state.tasks.getEarved.log_id = 5001;
+
+        state.tasks.check_asutus.status = 'SUCCESS';
+        state.tasks.check_asutus.started_at = '2026-10-08T23:52:30.000Z';
+        state.tasks.check_asutus.finished_at = '2026-10-08T23:53:00.000Z';
+        state.tasks.check_asutus.log_id = 5002;
+
+        state.tasks.import_earved.status = 'RUNNING';
+        state.tasks.import_earved.started_at = '2026-10-08T23:55:00.000Z';
+        state.tasks.import_earved.log_id = 5003;
+
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        let importRunning = true;
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                result: 1,
+                data: [
+                  importRunning
+                    ? {
+                        id: 5003,
+                        flow: 'docs.sp_loe_earved',
+                        status: null,
+                        exec_start: '2026-10-08T23:55:00.000Z',
+                        exec_end: null,
+                      }
+                    : {
+                        id: 5003,
+                        flow: 'docs.sp_loe_earved',
+                        status: 'success',
+                        exec_start: '2026-10-08T23:55:00.000Z',
+                        exec_end: '2026-10-09T03:01:00.000Z',
+                      },
+                ],
+              }),
+            };
+          }) as unknown as typeof fetch
+        );
+
+        const emptyRegistry = {
+          getEarved: { flow: 'getEarved', dispatch: jest.fn().mockResolvedValue(6001) },
+          check_asutus: { flow: 'checkAsutusAvailability', dispatch: jest.fn().mockResolvedValue(6002) },
+          import_earved: { flow: 'docs.sp_loe_earved', dispatch: jest.fn().mockResolvedValue(6003) },
+        };
+
+        // Тик 1: ручной сброс getEarved, пока import_earved в RUNNING (должна пропуститься в тике 1)
+        await runOrchestratorTick(
+          { stateFilePath: file, taskKey: 'getEarved' },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T03:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            registry: emptyRegistry,
+          }
+        );
+
+        const afterTick1: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(afterTick1.tasks.import_earved.status).toBe('RUNNING');
+
+        // Тик 2: import_earved завершается (становится SUCCESS от вчерашнего запуска)
+        importRunning = false;
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T03:02:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            registry: emptyRegistry,
+          }
+        );
+
+        // Тик 3: следующий тик — rearmedKeys из тика 1 уже нет, но import_earved должен перевооружиться каскадом
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T03:05:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            registry: emptyRegistry,
+          }
+        );
+
+        const afterTick3: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(afterTick3.tasks.import_earved.status).toBe('PENDING');
+        expect(afterTick3.tasks.import_earved.log_id).toBeNull();
+        expect(
+          afterTick3.history.some((h) => h.event === 'TASK_REARMED' && h.task === 'import_earved')
+        ).toBe(true);
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+
+    it('(Б) транзитивный Downstream Lock: родитель getEarved не запускается и не перевооружается, пока внук sendFinBitReport в RUNNING', async () => {
+      const file = testStatePath('test_transitive_downstream_lock.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
+        state.cycle_date = '2026-10-08';
+        state.status = 'IN_PROGRESS';
+
+        state.tasks.getEarved.status = 'PENDING';
+        state.tasks.check_asutus.status = 'SUCCESS';
+        state.tasks.import_earved.status = 'SUCCESS';
+        state.tasks.sendFinBitReport.status = 'RUNNING';
+        state.tasks.sendFinBitReport.started_at = '2026-10-08T23:55:00.000Z';
+        state.tasks.sendFinBitReport.log_id = 7001;
+
+        // 1) evaluateTaskLaunchDecision для getEarved должен вернуть WAIT из-за внука sendFinBitReport
+        const decision = await evaluateTaskLaunchDecision(
+          'getEarved',
+          state.tasks.getEarved,
+          state,
+          new Date('2026-10-09T06:00:00.000Z'),
+          5,
+          false,
+          undefined,
+          undefined,
+          '05:00',
+          'Europe/Tallinn'
+        );
+        expect(decision.action).toBe('WAIT');
+        expect(decision.should_run).toBe(false);
+        expect(decision.reason).toContain('sendFinBitReport');
+
+        // 2) runOrchestratorTick: если getEarved был SUCCESS вчера, он НЕ должен перевооружаться при смене суток, пока внук RUNNING
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.started_at = '2026-10-08T05:00:00.000Z';
+        state.tasks.getEarved.finished_at = '2026-10-08T05:05:00.000Z';
+        state.tasks.getEarved.schedule = { time: '05:00' };
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 200,
+              result: [{ id: 7001, status: 'running', exec_start: '2026-10-08T23:55:00.000Z' }],
+            }),
+          })) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T03:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        const reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.getEarved.status).toBe('SUCCESS');
+        expect(reloaded.history.some((h) => h.event === 'TASK_REARMED' && h.task === 'getEarved')).toBe(false);
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+
+    it('(В) TASK_REARMED (по расписанию и каскадный) очищает закешированный params.logId', async () => {
+      const file = testStatePath('test_rearm_clears_params_logid.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-08');
+        state.cycle_date = '2026-10-08';
+        state.status = 'IN_PROGRESS';
+        // Независимая задача RUNNING не даёт сработать resetCycleForNewDay, поэтому работает только TASK_REARMED
+        state.tasks.saldoandmik.status = 'RUNNING';
+        state.tasks.saldoandmik.started_at = '2026-10-09T01:00:00.000Z';
+
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.finished_at = '2026-10-08T07:15:00.000Z';
+        state.tasks.getEarved.log_id = 10101;
+        state.tasks.getEarved.params = { ...state.tasks.getEarved.params, logId: 88888 };
+
+        state.tasks.sendFinBitReport.status = 'SUCCESS';
+        state.tasks.sendFinBitReport.finished_at = '2026-10-08T07:20:00.000Z';
+        state.tasks.sendFinBitReport.log_id = 10102;
+        state.tasks.sendFinBitReport.params = { ...state.tasks.sendFinBitReport.params, logId: 99999 };
+
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({ status: 200, result: 1 }),
+          })) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            // 04:30 по Таллину (до 05:00): срабатывает TASK_REARMED без resetCycleForNewDay
+            currentDate: new Date('2026-10-09T01:30:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            forceRun: false,
+          }
+        );
+
+        const reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.getEarved.status).toBe('PENDING');
+        expect(reloaded.tasks.getEarved.params?.logId).toBeUndefined();
+        expect('logId' in (reloaded.tasks.getEarved.params || {})).toBe(false);
+
+        expect(reloaded.tasks.sendFinBitReport.status).toBe('PENDING');
+        expect(reloaded.tasks.sendFinBitReport.params?.logId).toBeUndefined();
+        expect('logId' in (reloaded.tasks.sendFinBitReport.params || {})).toBe(false);
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+  });
+
+  describe('Локальная таймзона вне тика (task_full_mode_utc_dates)', () => {
+    it('calculateNextScheduledRun вычисляет следующий запуск по Europe/Tallinn (лето UTC+3 и зима UTC+2)', () => {
+      // Лето (EEST, UTC+3): 2026-10-09 05:00 Tallinn -> 02:00Z
+      expect(calculateNextScheduledRun('2026-10-08', 5, 0, 'Europe/Tallinn')).toBe('2026-10-09T02:00:00.000Z');
+      // Зима (EET, UTC+2): 2026-01-16 05:00 Tallinn -> 03:00Z
+      expect(calculateNextScheduledRun('2026-01-15', 5, 0, 'Europe/Tallinn')).toBe('2026-01-16T03:00:00.000Z');
+    });
+
+    it('resetCycleForNewDay учитывает переданную timezone при проверке finished_at', () => {
+      const state = createInitialState('2026-10-08');
+      state.tasks.getEarved.status = 'SUCCESS';
+      // 2026-10-08T21:30:00.000Z = 2026-10-09 00:30 Europe/Tallinn, но 2026-10-08 в UTC
+      state.tasks.getEarved.finished_at = '2026-10-08T21:30:00.000Z';
+
+      const resetTallinn = resetCycleForNewDay(state, '2026-10-09', undefined, 'Europe/Tallinn');
+      expect(resetTallinn.tasks.getEarved.status).toBe('SUCCESS');
+
+      const resetUtc = resetCycleForNewDay(state, '2026-10-09', undefined, 'UTC');
+      expect(resetUtc.tasks.getEarved.status).toBe('PENDING');
+    });
+
+    it('runOrchestrator (--full) вычисляет дату запуска по Europe/Tallinn, а не по UTC-срезу', async () => {
+      const seenUrls: string[] = [];
+      const mockFetch = jest.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        seenUrls.push(`${url} ${String(init?.body || '')}`);
+        if (url.includes('/task/read_log/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              result: 1,
+              data: [
+                {
+                  id: 1,
+                  flow: 'any',
+                  status: 'success',
+                  exec_start: '2026-10-09T00:05:00.000Z',
+                  exec_end: '2026-10-09T00:10:00.000Z',
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+      });
+      const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, mockFetch as unknown as typeof fetch);
+
+      // 2026-10-08T21:30:00.000Z = 2026-10-09 00:30 по Таллину (в UTC это ещё 2026-10-08)
+      const result = await runOrchestrator(
+        { userId: 2477, rekvId: 63, kond: 1, forceRun: false },
+        {
+          apiClient: client,
+          currentDate: new Date('2026-10-08T21:30:00.000Z'),
+          timezone: 'Europe/Tallinn',
+        }
+      );
+
+      expect(result.executionDate).toBe('2026-10-09');
+    });
+  });
+
+  describe('Отчётность по закрытому вчерашнему циклу (task_reporter_closed_cycle_gap)', () => {
+    it('после resetCycleForNewDay утренний reporter в 08:00 показывает упавшую вчера задачу как FAILED, а не PENDING', async () => {
+      const file = testStatePath('test_reporter_closed_cycle_failed.json');
+      const reportMock = generateAndSendReportSubagent as jest.Mock;
+      reportMock.mockClear();
+
+      try {
+        const state = createInitialState('2026-10-08');
+        state.status = 'FAILED';
+        state.tasks.lisa1_lisa5.status = 'FAILED';
+        state.tasks.lisa1_lisa5.log_id = 9001;
+        state.tasks.lisa1_lisa5.started_at = '2026-10-08T17:10:00.000Z';
+        state.tasks.lisa1_lisa5.finished_at = '2026-10-08T21:05:00.000Z';
+        state.tasks.lisa1_lisa5.error = 'TASK_TIMEOUT';
+
+        // Переход на новый день сбрасывает задачи в PENDING, но сохраняет снимок в last_run
+        const resetState = resetCycleForNewDay(
+          state,
+          '2026-10-09',
+          undefined,
+          'Europe/Tallinn',
+          new Date('2026-10-09T03:00:00.000Z')
+        );
+        expect(resetState.tasks.lisa1_lisa5.status).toBe('PENDING');
+        expect(resetState.tasks.lisa1_lisa5.last_run?.status).toBe('FAILED');
+        expect(resetState.tasks.lisa1_lisa5.last_run?.error).toBe('TASK_TIMEOUT');
+
+        // Чтобы в 08:00 не запускались другие задачи, оставим только reporter в PENDING,
+        // а lisa1_lisa5 оставим PENDING (будто её время запуска ещё не наступило)
+        for (const [k, t] of Object.entries(resetState.tasks)) {
+          if (k !== 'reporter' && k !== 'lisa1_lisa5') {
+            t.status = 'SUCCESS';
+            t.finished_at = '2026-10-09T04:00:00.000Z';
+          }
+        }
+        fs.writeFileSync(file, JSON.stringify(resetState, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({ result: 1, data: [] }),
+          })) as unknown as typeof fetch
+        );
+
+        // 08:00 Europe/Tallinn (05:00 UTC)
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T05:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            forceRun: false,
+          }
+        );
+
+        expect(reportMock).toHaveBeenCalledTimes(1);
+        const reportArg = reportMock.mock.calls[0][0];
+        const lisaStep = reportArg.steps.find(
+          (s: { stepName: string }) => s.stepName === 'eelarve.salvesta_lisa_1_5_kontrol'
+        );
+        expect(lisaStep).toBeDefined();
+        expect(lisaStep.status).toBe('FAILED');
+        expect(lisaStep.error).toBe('TASK_TIMEOUT');
+        expect(lisaStep.logId).toBe(9001);
+        expect(reportArg.overallSuccess).toBe(false);
+
+        const reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.lisa1_lisa5.last_run?.status).toBe('FAILED');
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+  });
+
+  describe('Inforegister batch hash и validatePrerequisites (task_inforegister_batch_agent_hash)', () => {
+    it('без INFOREGISTER_HASH задача inforegister получает SKIP до HTTP-вызова, а с hash он не попадает в state/history', async () => {
+      const file = testStatePath('test_inforegister_hash_skip.json');
+      const prevHash = process.env.INFOREGISTER_HASH;
+      try {
+        delete process.env.INFOREGISTER_HASH;
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        state.cycle_date = '2026-10-09';
+        state.status = 'IN_PROGRESS';
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.finished_at = '2026-10-09T02:05:00.000Z';
+        state.tasks.check_asutus.status = 'SUCCESS';
+        state.tasks.check_asutus.finished_at = '2026-10-09T02:06:00.000Z';
+        state.tasks.check_asutus.log_id = 555;
+        state.tasks.inforegister.status = 'PENDING';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const mockFetch = jest.fn();
+        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, mockFetch as unknown as typeof fetch);
+
+        await runOrchestratorTick(
+          { stateFilePath: file, taskKey: 'inforegister' },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T02:10:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        const afterSkip: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(afterSkip.tasks.inforegister.status).toBe('SKIPPED');
+        expect(afterSkip.tasks.inforegister.error).toBe('INFOREGISTER_HASH puudub');
+        expect(afterSkip.tasks.inforegister.attempts).toBe(0);
+        expect(mockFetch).not.toHaveBeenCalled();
+
+        // С валидным INFOREGISTER_HASH: запуск проходит, но сам секрет не попадает в state/params/history
+        const secretHash = 'super-secret-inforegister-hash-123';
+        process.env.INFOREGISTER_HASH = secretHash;
+        const authClient = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (u: string) => {
+            if (u.includes('/task/getInforegister/')) {
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 200, result: 1, log_id: 7777 }),
+              };
+            }
+            return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file, taskKey: 'inforegister' },
+          {
+            apiClient: authClient,
+            currentDate: new Date('2026-10-09T02:15:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        const rawSaved = fs.readFileSync(file, 'utf-8');
+        expect(rawSaved).not.toContain(secretHash);
+        const afterRun: OrchestratorState = JSON.parse(rawSaved);
+        expect(afterRun.tasks.inforegister.status).toBe('RUNNING');
+        expect(afterRun.tasks.inforegister.log_id).toBe(7777);
+      } finally {
+        if (prevHash === undefined) {
+          delete process.env.INFOREGISTER_HASH;
+        } else {
+          process.env.INFOREGISTER_HASH = prevHash;
+        }
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+  });
+
+  describe('last_run: отчёт после перевооружения (task_report_last_run_snapshot)', () => {
+    it('(а) saldoandmik и lisa1_lisa5 SUCCESS вечером D -> TASK_REARMED в 00:05 D+1 -> reporter в 08:00 D+1 показывает оба шага SUCCESS с log_id', async () => {
+      const file = testStatePath('test_last_run_rearm_report.json');
+      const reportMock = generateAndSendReportSubagent as jest.Mock;
+      reportMock.mockClear();
+
+      try {
+        const state = createInitialState('2026-10-08');
+        state.status = 'COMPLETED';
+        state.next_scheduled_run = '2026-10-09T02:00:00.000Z';
+
+        // 20:10 и 20:40 Europe/Tallinn (17:10 и 17:40 UTC)
+        state.tasks.saldoandmik.status = 'SUCCESS';
+        state.tasks.saldoandmik.schedule = { time: '20:00' };
+        state.tasks.saldoandmik.log_id = 1001;
+        state.tasks.saldoandmik.started_at = '2026-10-08T17:00:00.000Z';
+        state.tasks.saldoandmik.finished_at = '2026-10-08T17:10:00.000Z';
+        state.tasks.saldoandmik.duration_ms = 600000;
+
+        state.tasks.lisa1_lisa5.status = 'SUCCESS';
+        state.tasks.lisa1_lisa5.log_id = 1002;
+        state.tasks.lisa1_lisa5.started_at = '2026-10-08T17:30:00.000Z';
+        state.tasks.lisa1_lisa5.finished_at = '2026-10-08T17:40:00.000Z';
+        state.tasks.lisa1_lisa5.duration_ms = 600000;
+
+        // Остальные задачи уже SUCCESS, reporter PENDING до 08:00
+        for (const [k, t] of Object.entries(state.tasks)) {
+          if (k !== 'saldoandmik' && k !== 'lisa1_lisa5' && k !== 'reporter') {
+            t.status = 'SUCCESS';
+            t.finished_at = '2026-10-08T18:00:00.000Z';
+          }
+        }
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+            const body = init?.body ? JSON.parse(String(init.body)) : {};
+            if (url.includes('/task/read_log/')) {
+              if (body.log_id === 1001) {
+                return {
+                  ok: true,
+                  status: 200,
+                  json: async () => ({
+                    result: 1,
+                    data: [
+                      {
+                        id: 1001,
+                        flow: 'eelarve.sp_koosta_saldoandmik',
+                        status: 'success',
+                        exec_start: '2026-10-08T17:00:00.000Z',
+                        exec_end: '2026-10-08T17:10:00.000Z',
+                      },
+                    ],
+                  }),
+                };
+              }
+              if (body.log_id === 1002) {
+                return {
+                  ok: true,
+                  status: 200,
+                  json: async () => ({
+                    result: 1,
+                    data: [
+                      {
+                        id: 1002,
+                        flow: 'eelarve.salvesta_lisa_1_5_kontrol',
+                        status: 'success',
+                        exec_start: '2026-10-08T17:30:00.000Z',
+                        exec_end: '2026-10-08T17:40:00.000Z',
+                      },
+                    ],
+                  }),
+                };
+              }
+            }
+            return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        // Тик 1: 00:05 Europe/Tallinn 2026-10-09 (21:05 UTC 2026-10-08) -> TASK_REARMED
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-08T21:05:00.000Z'),
+            timezone: 'Europe/Tallinn',
+            forceRun: false,
+          }
+        );
+
+        const afterMidnight: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(afterMidnight.tasks.saldoandmik.status).toBe('PENDING');
+        expect(afterMidnight.tasks.lisa1_lisa5.status).toBe('PENDING');
+
+        // Тик 2: 08:00 Europe/Tallinn 2026-10-09 (05:00 UTC) -> reporter
+        // Остальные задачи пометим SUCCESS сегодня, чтобы в 08:00 не запускались
+        for (const [k, t] of Object.entries(afterMidnight.tasks)) {
+          if (k !== 'saldoandmik' && k !== 'lisa1_lisa5' && k !== 'reporter') {
+            t.status = 'SUCCESS';
+            t.finished_at = '2026-10-09T04:00:00.000Z';
+          }
+        }
+        afterMidnight.cycle_date = '2026-10-09';
+        afterMidnight.status = 'IN_PROGRESS';
+        fs.writeFileSync(file, JSON.stringify(afterMidnight, null, 2), 'utf-8');
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T05:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            forceRun: false,
+          }
+        );
+
+        expect(reportMock).toHaveBeenCalledTimes(1);
+        const reportArg = reportMock.mock.calls[0][0];
+        const saldoStep = reportArg.steps.find(
+          (s: { stepName: string }) => s.stepName === 'eelarve.sp_koosta_saldoandmik'
+        );
+        const lisaStep = reportArg.steps.find(
+          (s: { stepName: string }) => s.stepName === 'eelarve.salvesta_lisa_1_5_kontrol'
+        );
+
+        expect(saldoStep?.status).toBe('SUCCESS');
+        expect(saldoStep?.logId).toBe(1001);
+        expect(saldoStep?.execStart).toBe('2026-10-08T17:00:00.000Z');
+        expect(lisaStep?.status).toBe('SUCCESS');
+        expect(lisaStep?.logId).toBe(1002);
+        expect(lisaStep?.execStart).toBe('2026-10-08T17:30:00.000Z');
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+
+    it('(б, в) CYCLE_CLOSED_DAY_CHANGE + resetCycleForNewDay сохраняет last_run для SUCCESS и FAILED', () => {
+      const state = createInitialState('2026-10-08');
+      state.status = 'FAILED';
+      state.tasks.saldoandmik.status = 'SUCCESS';
+      state.tasks.saldoandmik.log_id = 2001;
+      state.tasks.saldoandmik.started_at = '2026-10-08T17:00:00.000Z';
+      state.tasks.saldoandmik.finished_at = '2026-10-08T17:10:00.000Z';
+
+      state.tasks.lisa1_lisa5.status = 'FAILED';
+      state.tasks.lisa1_lisa5.log_id = 2002;
+      state.tasks.lisa1_lisa5.started_at = '2026-10-08T17:20:00.000Z';
+      state.tasks.lisa1_lisa5.finished_at = '2026-10-08T17:30:00.000Z';
+      state.tasks.lisa1_lisa5.error = 'SQL_FAIL';
+
+      const resetState = resetCycleForNewDay(
+        state,
+        '2026-10-09',
+        undefined,
+        'Europe/Tallinn',
+        new Date('2026-10-09T00:10:00.000Z')
+      );
+
+      expect(resetState.tasks.saldoandmik.status).toBe('PENDING');
+      expect(resetState.tasks.saldoandmik.last_run).toMatchObject({
+        log_id: 2001,
+        status: 'SUCCESS',
+        cycle_date: '2026-10-08',
+        reset_reason: 'CYCLE_RESET_NEW_DAY',
+      });
+      expect(resetState.tasks.lisa1_lisa5.status).toBe('PENDING');
+      expect(resetState.tasks.lisa1_lisa5.last_run).toMatchObject({
+        log_id: 2002,
+        status: 'FAILED',
+        error: 'SQL_FAIL',
+        reset_reason: 'CYCLE_RESET_NEW_DAY',
+      });
+    });
+
+    it('(г, д, ж) окно 24ч, приоритет текущего запуска с log_id и fallback на поля last_run при ошибке API', async () => {
+      const file = testStatePath('test_last_run_window_fallback.json');
+      const reportMock = generateAndSendReportSubagent as jest.Mock;
+      reportMock.mockClear();
+
+      try {
+        const state = createInitialState('2026-10-09');
+        state.status = 'IN_PROGRESS';
+
+        // 1) saldoandmik: last_run старше 24ч -> в отчёте должен быть PENDING ('Pooleli')
+        state.tasks.saldoandmik.status = 'PENDING';
+        state.tasks.saldoandmik.last_run = {
+          log_id: 3001,
+          status: 'SUCCESS',
+          started_at: '2026-10-07T17:00:00.000Z',
+          finished_at: '2026-10-07T17:10:00.000Z',
+          duration_ms: 600000,
+          error: null,
+          cycle_date: '2026-10-07',
+          reset_at: '2026-10-08T00:00:00.000Z',
+          reset_reason: 'TASK_REARMED',
+        };
+
+        // 2) lisa1_lisa5: свежий last_run, но API readTaskLog падает -> шаг строится из полей last_run
+        state.tasks.lisa1_lisa5.status = 'PENDING';
+        state.tasks.lisa1_lisa5.last_run = {
+          log_id: 3002,
+          status: 'SUCCESS',
+          started_at: '2026-10-08T17:30:00.000Z',
+          finished_at: '2026-10-08T17:40:00.000Z',
+          duration_ms: 600000,
+          error: null,
+          result_summary: 'Valmis (last_run)',
+          cycle_date: '2026-10-08',
+          reset_at: '2026-10-09T00:00:00.000Z',
+          reset_reason: 'TASK_REARMED',
+        };
+
+        // 3) calc_arv_jaak: запущена заново сегодня (есть текущий log_id 4001) -> текущий запуск важнее last_run
+        state.tasks.calc_arv_jaak.status = 'SUCCESS';
+        state.tasks.calc_arv_jaak.log_id = 4001;
+        state.tasks.calc_arv_jaak.started_at = '2026-10-09T04:30:00.000Z';
+        state.tasks.calc_arv_jaak.finished_at = '2026-10-09T04:31:00.000Z';
+        state.tasks.calc_arv_jaak.last_run = {
+          log_id: 3003,
+          status: 'FAILED',
+          started_at: '2026-10-08T17:00:00.000Z',
+          finished_at: '2026-10-08T17:05:00.000Z',
+          duration_ms: 300000,
+          error: 'OLD_ERROR',
+          cycle_date: '2026-10-08',
+          reset_at: '2026-10-09T00:00:00.000Z',
+          reset_reason: 'TASK_REARMED',
+        };
+
+        for (const [k, t] of Object.entries(state.tasks)) {
+          if (k !== 'saldoandmik' && k !== 'lisa1_lisa5' && k !== 'calc_arv_jaak' && k !== 'reporter') {
+            t.status = 'SUCCESS';
+            t.finished_at = '2026-10-09T04:00:00.000Z';
+          }
+        }
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+            const body = init?.body ? JSON.parse(String(init.body)) : {};
+            if (body.log_id === 3002) {
+              return { ok: false, status: 500, statusText: 'Err', text: async () => 'db down' };
+            }
+            if (body.log_id === 4001) {
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                  result: 1,
+                  data: [
+                    {
+                      id: 4001,
+                      flow: 'docs.check_arv_jaak',
+                      status: 'success',
+                      exec_start: '2026-10-09T04:30:00.000Z',
+                      exec_end: '2026-10-09T04:31:00.000Z',
+                    },
+                  ],
+                }),
+              };
+            }
+            return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T05:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            forceRun: false,
+          }
+        );
+
+        expect(reportMock).toHaveBeenCalledTimes(1);
+        const steps = reportMock.mock.calls[0][0].steps;
+        const saldoStep = steps.find((s: { stepName: string }) => s.stepName === 'eelarve.sp_koosta_saldoandmik');
+        const lisaStep = steps.find((s: { stepName: string }) => s.stepName === 'eelarve.salvesta_lisa_1_5_kontrol');
+        const calcStep = steps.find((s: { stepName: string }) => s.stepName === 'docs.check_arv_jaak');
+
+        expect(saldoStep.status).toBe('PENDING');
+        expect(lisaStep).toMatchObject({
+          status: 'SUCCESS',
+          logId: 3002,
+          resultSummary: 'Valmis (last_run)',
+        });
+        expect(calcStep).toMatchObject({
+          status: 'SUCCESS',
+          logId: 4001,
+        });
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+
+    it('(е, з, и) повторный сброс PENDING не стирает last_run, старый state с previous_cycle_failures мигрирует, last_run не блокирует запуск в 20:00', async () => {
+      const file = testStatePath('test_last_run_migration_and_launch.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = createInitialState('2026-10-09');
+        // Симулируем старый формат state с previous_cycle_failures
+        const legacyRaw: any = {
+          ...state,
+          previous_cycle_failures: {
+            lisa1_lisa5: {
+              cycle_date: '2026-10-08',
+              log_id: 5001,
+              started_at: '2026-10-08T17:30:00.000Z',
+              finished_at: '2026-10-08T17:40:00.000Z',
+              duration_ms: 600000,
+              error: 'LEGACY_ERR',
+            },
+          },
+        };
+        fs.writeFileSync(file, JSON.stringify(legacyRaw, null, 2), 'utf-8');
+
+        const loaded = await stateManager.loadState();
+        expect((loaded as any).previous_cycle_failures).toBeUndefined();
+        expect(loaded.tasks.lisa1_lisa5.last_run).toMatchObject({
+          status: 'FAILED',
+          log_id: 5001,
+          error: 'LEGACY_ERR',
+          reset_reason: 'CYCLE_RESET_NEW_DAY',
+        });
+
+        // Повторный сброс PENDING-задачи без log_id/started_at не стирает last_run
+        const resetAgain = resetCycleForNewDay(loaded, '2026-10-10', undefined, 'Europe/Tallinn');
+        expect(resetAgain.tasks.lisa1_lisa5.last_run?.log_id).toBe(5001);
+
+        // last_run со статусом SUCCESS не мешает evaluateTaskLaunchDecision запустить saldoandmik в 20:00
+        loaded.tasks.saldoandmik.status = 'PENDING';
+        loaded.tasks.saldoandmik.schedule = { time: '20:00' };
+        loaded.tasks.saldoandmik.last_run = {
+          log_id: 5002,
+          status: 'SUCCESS',
+          started_at: '2026-10-08T17:00:00.000Z',
+          finished_at: '2026-10-08T17:10:00.000Z',
+          duration_ms: 600000,
+          error: null,
+          cycle_date: '2026-10-08',
+          reset_at: '2026-10-09T00:00:00.000Z',
+          reset_reason: 'TASK_REARMED',
+        };
+        const decision = await evaluateTaskLaunchDecision(
+          'saldoandmik',
+          loaded.tasks.saldoandmik,
+          loaded,
+          new Date('2026-10-09T17:05:00.000Z'), // 20:05 Tallinn
+          20,
+          false,
+          undefined,
+          undefined,
+          '20:00',
+          'Europe/Tallinn'
+        );
+        expect(decision.should_run).toBe(true);
+        expect(decision.action).toBe('RUN');
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+  });
+
+  describe('Мягкие зависимости soft_depends_on (task_soft_dependency_inforegister)', () => {
+    it('(а) inforegister SKIPPED -> import_earved стартует -> sendFinBitReport стартует после него', async () => {
+      const file = testStatePath('test_soft_dep_inforegister_skip.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-10-09');
+        state.cycle_date = '2026-10-09';
+        state.status = 'IN_PROGRESS';
+
+        state.tasks.getEarved.status = 'SUCCESS';
+        state.tasks.getEarved.log_id = 101;
+        state.tasks.getEarved.finished_at = '2026-10-09T02:05:00.000Z';
+
+        state.tasks.check_asutus.status = 'SUCCESS';
+        state.tasks.check_asutus.log_id = 102;
+        state.tasks.check_asutus.finished_at = '2026-10-09T02:06:00.000Z';
+
+        state.tasks.inforegister.status = 'SKIPPED';
+        state.tasks.inforegister.error = 'INFOREGISTER_HASH puudub';
+        state.tasks.inforegister.finished_at = '2026-10-09T02:07:00.000Z';
+
+        state.tasks.import_earved.status = 'PENDING';
+        state.tasks.sendFinBitReport.status = 'PENDING';
+        for (const [k, t] of Object.entries(state.tasks)) {
+          if (!['getEarved', 'check_asutus', 'inforegister', 'import_earved', 'sendFinBitReport'].includes(k)) {
+            t.status = 'SUCCESS';
+            t.finished_at = '2026-10-09T02:00:00.000Z';
+          }
+        }
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const dispatched: string[] = [];
+        const testRegistry = {
+          import_earved: {
+            dispatch: jest.fn().mockImplementation(async () => {
+              dispatched.push('import_earved');
+              return 103;
+            }),
+            resolveParentParams: (s: OrchestratorState) => ({ logId: s.tasks.getEarved.log_id }),
+          },
+          sendFinBitReport: {
+            dispatch: jest.fn().mockImplementation(async () => {
+              dispatched.push('sendFinBitReport');
+              return 104;
+            }),
+            resolveParentParams: (s: OrchestratorState) => ({ logId: s.tasks.import_earved.log_id }),
+          },
+        };
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              result: 1,
+              data: [
+                {
+                  id: 103,
+                  flow: 'docs.sp_loe_earved',
+                  status: 'success',
+                  exec_start: '2026-10-09T02:08:00.000Z',
+                  exec_end: '2026-10-09T02:08:30.000Z',
+                  result: { imported: [{ doc_id: 1, number: 'A-1', rekv_id: 63 }], totalImported: 1 },
+                },
+              ],
+            }),
+          })) as unknown as typeof fetch
+        );
+
+        // Тик 1: import_earved стартует несмотря на SKIPPED у inforegister
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T02:08:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            registry: testRegistry,
+          }
+        );
+
+        const afterTick1: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(dispatched).toContain('import_earved');
+        expect(afterTick1.tasks.import_earved.status).toBe('RUNNING');
+
+        // Тик 2: import_earved завершается SUCCESS -> sendFinBitReport стартует
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T02:09:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+            registry: testRegistry,
+          }
+        );
+
+        expect(dispatched).toContain('sendFinBitReport');
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+
+    it('(б, в, г, д) soft_depends_on: ждёт PENDING/RUNNING, стартует при FAILED, но SKIPPED при FAILED жёсткой зависимости', async () => {
+      const state = createInitialState('2026-10-09');
+      state.tasks.getEarved.status = 'SUCCESS';
+      state.tasks.check_asutus.status = 'SUCCESS';
+
+      // (г) inforegister PENDING -> WAIT
+      state.tasks.inforegister.status = 'PENDING';
+      const dPending = await evaluateTaskLaunchDecision(
+        'import_earved',
+        state.tasks.import_earved,
+        state,
+        new Date('2026-10-09T05:00:00.000Z'),
+        20,
+        false
+      );
+      expect(dPending.action).toBe('WAIT');
+      expect(dPending.reason).toContain('inforegister');
+
+      // (в) inforegister RUNNING -> WAIT
+      state.tasks.inforegister.status = 'RUNNING';
+      const dRunning = await evaluateTaskLaunchDecision(
+        'import_earved',
+        state.tasks.import_earved,
+        state,
+        new Date('2026-10-09T05:00:00.000Z'),
+        20,
+        false
+      );
+      expect(dRunning.action).toBe('WAIT');
+
+      // (б) inforegister FAILED -> import_earved стартует
+      state.tasks.inforegister.status = 'FAILED';
+      const dSoftFailed = await evaluateTaskLaunchDecision(
+        'import_earved',
+        state.tasks.import_earved,
+        state,
+        new Date('2026-10-09T05:00:00.000Z'),
+        20,
+        false
+      );
+      expect(dSoftFailed.should_run).toBe(true);
+      expect(dSoftFailed.action).toBe('RUN');
+
+      // (д) жёсткая зависимость check_asutus FAILED -> SKIP
+      state.tasks.check_asutus.status = 'FAILED';
+      const dHardFailed = await evaluateTaskLaunchDecision(
+        'import_earved',
+        state.tasks.import_earved,
+        state,
+        new Date('2026-10-09T05:00:00.000Z'),
+        20,
+        false
+      );
+      expect(dHardFailed.action).toBe('SKIP');
+      expect(dHardFailed.should_run).toBe(false);
+    });
+
+    it('(е, ж, з, и, к) Downstream Lock, каскад getEarved->import_earved->sendFinBitReport, пометка в отчёте и валидация схемы', async () => {
+      // (и) дублирование в depends_on и soft_depends_on -> ошибка валидации
+      const { AgentConfigSchema, OrchestratorStateSchema } = require('./orchestrator.schemas');
+      expect(() =>
+        AgentConfigSchema.parse({
+          name: 'bad_agent',
+          flow: 'x',
+          depends_on: ['a'],
+          soft_depends_on: ['a'],
+        })
+      ).toThrow();
+
+      // (к) state без soft_depends_on загружается совместимо
+      const compat = OrchestratorStateSchema.parse({
+        cycle_date: '2026-10-09',
+        params: { userId: 2477, rekvId: 63, kond: 1 },
+        tasks: {
+          t1: { flow: 'f1', depends_on: [] },
+        },
+      });
+      expect(compat.tasks.t1.soft_depends_on ?? []).toEqual([]);
+
+      // (е) Downstream Lock: пока import_earved RUNNING, inforegister не запускается (WAIT)
+      const state = createInitialState('2026-10-09');
+      state.tasks.getEarved.status = 'SUCCESS';
+      state.tasks.check_asutus.status = 'SUCCESS';
+      state.tasks.inforegister.status = 'PENDING';
+      state.tasks.import_earved.status = 'RUNNING';
+      const dLock = await evaluateTaskLaunchDecision(
+        'inforegister',
+        state.tasks.inforegister,
+        state,
+        new Date('2026-10-09T05:00:00.000Z'),
+        20,
+        false
+      );
+      expect(dLock.action).toBe('WAIT');
+      expect(dLock.reason).toContain('import_earved');
+
+      // (ж, з) каскадное перевооружение и пометка в отчёте при неуспешной мягкой зависимости
+      const file = testStatePath('test_soft_dep_report_note.json');
+      const reportMock = generateAndSendReportSubagent as jest.Mock;
+      reportMock.mockClear();
+      try {
+        const s2 = createInitialState('2026-10-08');
+        s2.status = 'IN_PROGRESS';
+        s2.tasks.getEarved.status = 'SUCCESS';
+        s2.tasks.getEarved.finished_at = '2026-10-08T05:05:00.000Z';
+        s2.tasks.import_earved.status = 'SUCCESS';
+        s2.tasks.import_earved.soft_deps_failed = ['inforegister'];
+        s2.tasks.sendFinBitReport.status = 'SUCCESS';
+        s2.tasks.saldoandmik.status = 'RUNNING'; // удерживаем цикл от resetCycleForNewDay
+        s2.tasks.saldoandmik.started_at = '2026-10-09T01:00:00.000Z';
+        fs.writeFileSync(file, JSON.stringify(s2, null, 2), 'utf-8');
+
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ result: 1, data: [] }),
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-10-09T01:30:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        const afterRearm: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(afterRearm.tasks.import_earved.status).toBe('PENDING');
+        expect(afterRearm.tasks.import_earved.soft_deps_failed).toBeUndefined();
+        expect(afterRearm.tasks.sendFinBitReport.status).toBe('PENDING');
+
+        // (з) отчёт reporter содержит пометку у import_earved при soft_deps_failed: ['inforegister']
+        for (const [k, t] of Object.entries(afterRearm.tasks)) {
+          if (k !== 'reporter') {
+            t.status = 'SUCCESS';
+            t.finished_at = '2026-10-09T04:00:00.000Z';
+          }
+        }
+        afterRearm.tasks.inforegister.status = 'FAILED';
+        afterRearm.tasks.inforegister.error = 'INFOREGISTER_HASH puudub';
+        afterRearm.tasks.import_earved.status = 'SUCCESS';
+        afterRearm.tasks.import_earved.log_id = 707;
+        afterRearm.tasks.import_earved.soft_deps_failed = ['inforegister'];
+        fs.writeFileSync(file, JSON.stringify(afterRearm, null, 2), 'utf-8');
+
+        const repClient = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (_u: string, init?: RequestInit) => {
+            const b = init?.body ? JSON.parse(String(init.body)) : {};
+            if (b.log_id === 707) {
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                  result: 1,
+                  data: [
+                    {
+                      id: 707,
+                      flow: 'docs.sp_loe_earved',
+                      status: 'success',
+                      exec_start: '2026-10-09T03:00:00.000Z',
+                      exec_end: '2026-10-09T03:01:00.000Z',
+                      result: { imported: [], skipped: [], errors: [] },
+                    },
+                  ],
+                }),
+              };
+            }
+            return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: repClient,
+            currentDate: new Date('2026-10-09T05:00:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        expect(reportMock).toHaveBeenCalledTimes(1);
+        const steps = reportMock.mock.calls[0][0].steps;
+        const impStep = steps.find((s: { stepName: string }) => s.stepName === 'docs.sp_loe_earved');
+        const infoStep = steps.find((s: { stepName: string }) => s.stepName === 'getInforegister');
+        expect(impStep.resultSummary).toContain('inforegister ebaõnnestus/vahele jäetud');
+        expect(['FAILED', 'SKIPPED']).toContain(infoStep.status);
+      } finally {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+          } catch {}
+        }
+      }
+    });
+  });
+
+  describe('Приоритет config.json над state для userId/rekvId (task_finbit_service_user_id)', () => {
+    it('(а, б, в, г) боевой orchestrator_state.json обновляет userId/rekvId из config.json, сохраняет logId и подставляет userId оркестратора при отсутствии у агента', async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-task-config-owned-'));
+      try {
+        fs.mkdirSync(path.join(tmpDir, 'orchestrator'), { recursive: true });
+        fs.mkdirSync(path.join(tmpDir, 'saldoandmik'), { recursive: true });
+        fs.mkdirSync(path.join(tmpDir, 'agent_no_uid'), { recursive: true });
+
+        fs.writeFileSync(
+          path.join(tmpDir, 'orchestrator', 'config.json'),
+          JSON.stringify({
+            name: 'orchestrator',
+            params: { userId: 11770, rekvId: 63, kond: 1 },
+          }),
+          'utf8'
+        );
+        fs.writeFileSync(
+          path.join(tmpDir, 'saldoandmik', 'config.json'),
+          JSON.stringify({
+            name: 'saldoandmik',
+            flow: 'eelarve.sp_koosta_saldoandmik',
+            params: { userId: 11770, rekvId: 63, kond: 1 },
+          }),
+          'utf8'
+        );
+        fs.writeFileSync(
+          path.join(tmpDir, 'agent_no_uid', 'config.json'),
+          JSON.stringify({
+            name: 'agent_no_uid',
+            flow: 'test.agent_no_uid',
+            params: {},
+          }),
+          'utf8'
+        );
+
+        const prodStatePath = path.join(tmpDir, 'orchestrator_state.json');
+        const oldState = {
+          version: 1,
+          cycle_date: '2026-10-09',
+          status: 'IDLE',
+          last_tick_at: null,
+          next_scheduled_run: null,
+          params: { userId: 2477, rekvId: 99, kond: 1 },
+          tasks: {
+            saldoandmik: {
+              flow: 'eelarve.sp_koosta_saldoandmik',
+              depends_on: [],
+              allow_parallel: true,
+              schedule: null,
+              prompt: null,
+              params: { userId: 2477, rekvId: 99, kond: 1, logId: 555123 },
+              status: 'PENDING',
+              attempts: 0,
+              max_attempts: 3,
+              log_id: null,
+              started_at: null,
+              finished_at: null,
+              duration_ms: null,
+              error: null,
+            },
+            agent_no_uid: {
+              flow: 'test.agent_no_uid',
+              depends_on: [],
+              allow_parallel: true,
+              schedule: null,
+              prompt: null,
+              params: { userId: 2477, rekvId: 99 },
+              status: 'PENDING',
+              attempts: 0,
+              max_attempts: 3,
+              log_id: null,
+              started_at: null,
+              finished_at: null,
+              duration_ms: null,
+              error: null,
+            },
+          },
+          history: [],
+        };
+        fs.writeFileSync(prodStatePath, JSON.stringify(oldState, null, 2), 'utf8');
+
+        const manager = new StateManager(prodStatePath);
+        const loaded = await manager.loadState({}, '2026-10-09', tmpDir, 'Europe/Tallinn');
+
+        // (а) userId обновлён на 11770 и в задачах, и на уровне цикла
+        expect(loaded.params.userId).toBe(11770);
+        expect(loaded.tasks.saldoandmik.params?.userId).toBe(11770);
+        // (б) динамический logId сохранён
+        expect(loaded.tasks.saldoandmik.params?.logId).toBe(555123);
+        // (в) rekvId взят из конфига (63), а не из старого state (99)
+        expect(loaded.params.rekvId).toBe(63);
+        expect(loaded.tasks.saldoandmik.params?.rekvId).toBe(63);
+        // (г) агент без userId в своём config.json получает userId из orchestrator/config.json
+        expect(loaded.tasks.agent_no_uid.params?.userId).toBe(11770);
+        expect(loaded.tasks.agent_no_uid.params?.rekvId).toBe(63);
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('(д) диспетчеризация задачи и чтение её лога (read_log) используют один и тот же userId, а явный --user не сохраняется в state', async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-task-same-uid-'));
+      const stateFile = path.join(tmpDir, 'test_same_uid_state.json');
+      try {
+        const state: OrchestratorState = {
+          version: 1,
+          cycle_date: '2026-10-09',
+          status: 'IN_PROGRESS',
+          last_tick_at: null,
+          next_scheduled_run: null,
+          params: { userId: 11770, rekvId: 63, kond: 1 },
+          tasks: {
+            saldoandmik: {
+              flow: 'eelarve.sp_koosta_saldoandmik',
+              depends_on: [],
+              allow_parallel: true,
+              schedule: { time: '20:00' },
+              prompt: null,
+              params: { userId: 11770, rekvId: 63, kond: 1 },
+              status: 'PENDING',
+              attempts: 0,
+              max_attempts: 3,
+              log_id: null,
+              started_at: null,
+              finished_at: null,
+              duration_ms: null,
+              error: null,
+            },
+          },
+          history: [],
+        };
+        fs.writeFileSync(stateFile, JSON.stringify(state, null, 2), 'utf8');
+
+        const seenUrls: string[] = [];
+        let dispatchedUserId: number | undefined;
+        const mockClient = new ApiClient(
+          { buh70ApiBaseUrl: 'http://localhost:3000', buh70ApiToken: 't', apiRetryBaseDelayMs: 0 },
+          (async (url: string) => {
+            seenUrls.push(String(url));
+            return { ok: true, status: 200, json: async () => ({ result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        const registry = {
+          saldoandmik: {
+            name: 'saldoandmik',
+            dispatch: async (ctx: { userId: number; params: Record<string, unknown> }) => {
+              dispatchedUserId = typeof ctx.params.userId === 'number' ? ctx.params.userId : ctx.userId;
+              return 77701;
+            },
+          },
+        };
+
+        await runOrchestratorTick(
+          { stateFilePath: stateFile },
+          {
+            apiClient: mockClient,
+            registry: registry as any,
+            currentDate: new Date('2026-10-09T17:05:00.000Z'), // 20:05 Tallinn
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        expect(dispatchedUserId).toBe(11770);
+        const dupGuardUrl = seenUrls.find((u) => u.includes('/task/read_log/') && u.includes('eelarve.sp_koosta_saldoandmik'));
+        expect(dupGuardUrl).toContain('/task/read_log/11770/');
+
+        // Следующий тик проверяет RUNNING задачу тем же userId (11770), даже если передать разовый userId=9999 в другой тик — state.params.userId не меняется
+        await runOrchestratorTick(
+          { stateFilePath: stateFile, userId: 9999 },
+          {
+            apiClient: mockClient,
+            registry: registry as any,
+            currentDate: new Date('2026-10-09T17:10:00.000Z'),
+            targetDateStr: '2026-10-09',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+        const savedAfter = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+        expect(savedAfter.params.userId).toBe(11770);
+        const explicitUrl = seenUrls.find((u) => u.includes('/task/read_log/9999/'));
+        expect(explicitUrl).toBeDefined();
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('(е) тестовый state-файл (не orchestrator_state.json) не реконсилируется при loadState', async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-task-test-state-'));
+      try {
+        fs.mkdirSync(path.join(tmpDir, 'orchestrator'), { recursive: true });
+        fs.mkdirSync(path.join(tmpDir, 'saldoandmik'), { recursive: true });
+        fs.writeFileSync(
+          path.join(tmpDir, 'orchestrator', 'config.json'),
+          JSON.stringify({ name: 'orchestrator', params: { userId: 11770, rekvId: 63, kond: 1 } }),
+          'utf8'
+        );
+        fs.writeFileSync(
+          path.join(tmpDir, 'saldoandmik', 'config.json'),
+          JSON.stringify({ name: 'saldoandmik', flow: 'eelarve.sp_koosta_saldoandmik', params: { userId: 11770, rekvId: 63 } }),
+          'utf8'
+        );
+
+        const nonProdPath = path.join(tmpDir, 'custom_test_state.json');
+        fs.writeFileSync(
+          nonProdPath,
+          JSON.stringify({
+            version: 1,
+            cycle_date: '2026-10-09',
+            status: 'IDLE',
+            last_tick_at: null,
+            next_scheduled_run: null,
+            params: { userId: 2477, rekvId: 99, kond: 1 },
+            tasks: {
+              saldoandmik: {
+                flow: 'eelarve.sp_koosta_saldoandmik',
+                depends_on: [],
+                allow_parallel: true,
+                schedule: null,
+                prompt: null,
+                params: { userId: 2477, rekvId: 99 },
+                status: 'PENDING',
+                attempts: 0,
+                max_attempts: 3,
+                log_id: null,
+                started_at: null,
+                finished_at: null,
+                duration_ms: null,
+                error: null,
+              },
+            },
+            history: [],
+          }),
+          'utf8'
+        );
+
+        const manager = new StateManager(nonProdPath);
+        const loaded = await manager.loadState({}, '2026-10-09', tmpDir, 'Europe/Tallinn');
+        expect(loaded.params.userId).toBe(2477);
+        expect(loaded.params.rekvId).toBe(99);
+        expect(loaded.tasks.saldoandmik.params?.userId).toBe(2477);
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
       }
     });
   });

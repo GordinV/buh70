@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ReportStepDetailSchema } from '../reporter/schemas';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 /**
  * Статусы индивидуальной задачи
  */
@@ -29,24 +30,47 @@ export type TaskSchedule = z.infer<typeof TaskScheduleSchema>;
 /**
  * Схема индивидуальной декларативной конфигурации субагента (<agent>/config.json)
  */
-export const AgentConfigSchema = z.object({
-  name: z.string().describe('Уникальный идентификатор субагента'),
-  flow: z.string().describe('Имя процедуры/потока в ou.logs'),
-  description: z.string().optional().describe('Описание назначения субагента'),
-  allow_parallel: z.boolean().default(true).describe('Признак параллельного запуска'),
-  depends_on: z.array(z.string()).default([]).describe('Зависимости (имена предшественников)'),
-  schedule: TaskScheduleSchema.default(null).describe('Индивидуальное расписание запуска'),
-  prompt: z.string().nullable().optional().default(null).describe('Инструкция для LLM при принятии решений'),
-  max_attempts: z.number().default(3).describe('Максимальное число попыток запуска при сбое'),
-  timeout_hours: z.number().positive().optional().describe('Порог таймаута выполнения задачи в часах (по умолчанию 12)'),
-  max_wait_time: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .optional()
-    .describe('Предельное время (HH:mm), до которого задача ждет завершения зависимостей; после него стартует без них (reporter)'),
-  params: z.record(z.unknown()).optional().default({}).describe('Параметры по умолчанию для вызова процедуры'),
-});
+export const AgentConfigSchema = z
+  .object({
+    name: z.string().describe('Уникальный идентификатор субагента'),
+    flow: z.string().describe('Имя процедуры/потока в ou.logs'),
+    description: z.string().optional().describe('Описание назначения субагента'),
+    allow_parallel: z.boolean().default(true).describe('Признак параллельного запуска'),
+    depends_on: z.array(z.string()).default([]).describe('Жёсткие зависимости (имена предшественников)'),
+    soft_depends_on: z.array(z.string()).optional().describe('Мягкие зависимости: ждём завершения, но стартуем и при FAILED/SKIPPED'),
+    schedule: TaskScheduleSchema.default(null).describe('Индивидуальное расписание запуска'),
+    prompt: z.string().nullable().optional().default(null).describe('Инструкция для LLM при принятии решений'),
+    max_attempts: z.number().default(3).describe('Максимальное число попыток запуска при сбое'),
+    timeout_hours: z.number().positive().optional().describe('Порог таймаута выполнения задачи в часах (по умолчанию 12)'),
+    max_wait_time: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .optional()
+      .describe('Предельное время (HH:mm), до которого задача ждет завершения зависимостей; после него стартует без них (reporter)'),
+    params: z.record(z.unknown()).optional().default({}).describe('Параметры по умолчанию для вызова процедуры'),
+  })
+  .superRefine((val, ctx) => {
+    const hard = new Set(val.depends_on || []);
+    const dup = (val.soft_depends_on || []).find((d) => hard.has(d));
+    if (dup) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['soft_depends_on'],
+        message: `Зависимость "${dup}" не может одновременно находиться в depends_on и soft_depends_on`,
+      });
+    }
+  });
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
+
+/**
+ * Возвращает объединённый список жёстких и мягких зависимостей задачи для обхода графа.
+ */
+export function getAllDeps(task: { depends_on?: string[]; soft_depends_on?: string[] }): string[] {
+  const hard = task.depends_on || [];
+  const soft = task.soft_depends_on || [];
+  if (soft.length === 0) return hard;
+  return Array.from(new Set([...hard, ...soft]));
+}
 
 /**
  * Схема декларативной конфигурации самого агента-оркестратора (orchestrator/config.json)
@@ -63,12 +87,12 @@ export const OrchestratorConfigSchema = z.object({
   max_task_attempts: z.number().default(3).describe('Максимальное допустимое число попыток запуска задач при сбое'),
   params: z
     .object({
-      userId: z.number().default(2477),
+      userId: z.number().default(AI_TASK_SERVICE_USER_ID),
       rekvId: z.number().default(63),
       kond: z.number().default(1),
     })
     .passthrough()
-    .default({ userId: 2477, rekvId: 63, kond: 1 }),
+    .default({ userId: AI_TASK_SERVICE_USER_ID, rekvId: 63, kond: 1 }),
   prompt: z
     .string()
     .nullable()
@@ -171,12 +195,34 @@ export interface TaskResultContext {
   attempts: number;
 }
 
+export const ResetReasonEnum = z.enum(['TASK_REARMED', 'TASK_RESET_MANUAL', 'CYCLE_RESET_NEW_DAY']);
+export type ResetReason = z.infer<typeof ResetReasonEnum>;
+
+/**
+ * Снимок последнего завершённого запуска задачи (переживает сброс в PENDING для утреннего отчёта reporter)
+ */
+export const LastRunSchema = z.object({
+  log_id: z.number().nullable().default(null),
+  status: TaskStatusEnum,
+  started_at: z.string().nullable().default(null),
+  finished_at: z.string().nullable().default(null),
+  duration_ms: z.number().nullable().default(null),
+  error: z.string().nullable().default(null),
+  result_summary: z.string().nullable().optional(),
+  cycle_date: z.string(),
+  reset_at: z.string(),
+  reset_reason: ResetReasonEnum,
+});
+export type LastRun = z.infer<typeof LastRunSchema>;
+
 /**
  * Схема состояния конкретной задачи в графе
  */
 export const TaskStateSchema = z.object({
   flow: z.string().describe('Имя процедуры/потока в ou.logs'),
-  depends_on: z.array(z.string()).default([]).describe('Список задач, от которых зависит данный поток'),
+  depends_on: z.array(z.string()).default([]).describe('Жёсткие зависимости потока'),
+  soft_depends_on: z.array(z.string()).optional().describe('Мягкие зависимости потока'),
+  soft_deps_failed: z.array(z.string()).optional().describe('Мягкие зависимости, завершившиеся неуспешно к моменту старта'),
   allow_parallel: z.boolean().default(true).describe('Признак допустимости параллельного выполнения'),
   schedule: TaskScheduleSchema.default(null).describe('Индивидуальное расписание запуска задачи'),
   prompt: z.string().nullable().optional().default(null).describe('Инструкция для LLM при принятии решений'),
@@ -192,6 +238,7 @@ export const TaskStateSchema = z.object({
   duration_ms: z.number().nullable().default(null).describe('Длительность в миллисекундах'),
   error: z.string().nullable().default(null).describe('Текст ошибки при сбое'),
   result_summary: z.string().nullable().optional().describe('Сводка результата выполнения'),
+  last_run: LastRunSchema.nullable().optional().describe('Снимок последнего запуска для отчёта reporter после сброса'),
 });
 export type TaskState = z.infer<typeof TaskStateSchema>;
 
@@ -222,7 +269,7 @@ export const OrchestratorStateSchema = z.object({
   last_tick_at: z.string().nullable().default(null),
   next_scheduled_run: z.string().nullable().default(null),
   params: z.object({
-    userId: z.number().default(2477),
+    userId: z.number().default(AI_TASK_SERVICE_USER_ID),
     rekvId: z.number().default(63),
     kond: z.number().default(1),
   }),
@@ -235,8 +282,8 @@ export type OrchestratorState = z.infer<typeof OrchestratorStateSchema>;
  * Входные параметры для тика оркестратора
  */
 export const OrchestratorTickInputSchema = z.object({
-  userId: z.number().optional().default(2477),
-  rekvId: z.number().optional().default(63),
+  userId: z.number().optional(),
+  rekvId: z.number().optional(),
   kond: z.number().optional().default(1),
   forceRun: z.boolean().optional().default(false),
   stateFilePath: z.string().optional(),
@@ -272,7 +319,7 @@ export type OrchestratorTickOutput = z.infer<typeof OrchestratorTickOutputSchema
  * Входные параметры для классического (полного) запуска оркестратора (backward compatibility)
  */
 export const OrchestratorInputSchema = z.object({
-  userId: z.number().optional().default(2477).describe('ID пользователя'),
+  userId: z.number().optional().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().optional().default(63).describe('ID учреждения'),
   kond: z.number().optional().default(1).describe('Признак сводного расчета'),
   forceRun: z

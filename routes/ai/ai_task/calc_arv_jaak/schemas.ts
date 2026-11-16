@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import { AsyncTaskStartResponseSchema } from '../shared/types';
 
+import { AI_TASK_SERVICE_USER_ID } from '../shared/constants';
 export const TASK_FLOW_CALC_ARV_JAAK = 'docs.check_arv_jaak';
 
 /**
  * Входные параметры для запуска пересчета остатков счетов
  */
 export const StartCalcArvJaakInputSchema = z.object({
-  userId: z.number().optional().default(2477).describe('ID пользователя'),
+  userId: z.number().optional().default(AI_TASK_SERVICE_USER_ID).describe('ID пользователя'),
   rekvId: z.number().optional().default(63).describe('ID учреждения'),
 });
 
