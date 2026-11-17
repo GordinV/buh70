@@ -9,16 +9,9 @@ const config = require('./../../config/narvalv.json');
  */
 exports.main = async (req, res) => {
     const params = Object.assign({}, req.query, req.body, req.params);
-    const userId = params.user_id || params.userid_id || params.userId;
+    // user_id остается в адресе маршрута для совместимости, но в выборке не используется:
+    // лог задачи ищется по flow (и log_id), независимо от того, от какого пользователя она запускалась
     const taskName = params.task_name || params.taskName;
-
-    if (!userId) {
-        return res.status(400).send({
-            error_message: 'Viga: puudub user_id',
-            result: 0,
-            data: null
-        });
-    }
 
     if (!taskName) {
         return res.status(400).send({
@@ -29,7 +22,7 @@ exports.main = async (req, res) => {
     }
 
     try {
-        const result = await readLog(userId, taskName, {
+        const result = await readLog(taskName, {
             logId: params.log_id || params.logId,
             limit: params.limit,
             hours: params.hours
@@ -50,7 +43,7 @@ exports.main = async (req, res) => {
  * чтение лог файла, на предмет наличия вызова пересчета на сегодняшний день
  * @returns {Promise<{error_code: number, result: null, error_message: null, data: []}>}
  */
-async function readLog(userId, taskName, options = {}) {
+async function readLog(taskName, options = {}) {
     // Необязательные параметры (по умолчанию поведение прежнее: одна последняя запись)
     const logId = Number.isInteger(Number(options.logId)) && Number(options.logId) > 0 ? Number(options.logId) : null;
     const limit = Math.min(Math.max(parseInt(options.limit, 10) || 1, 1), 50);
@@ -60,14 +53,14 @@ async function readLog(userId, taskName, options = {}) {
     // выпадал из выборки и оркестратор считал задачу не стартовавшей (NO_START_DATE).
     // Используем скользящее окно по exec_start (timestamptz учитывает смещение +03:00 в строке).
     // Если задан log_id — ищем конкретную запись независимо от окна.
-    const params = [userId, taskName];
+    const params = [taskName];
     let extraFilter;
     if (logId) {
         params.push(logId);
-        extraFilter = `and l.id = $3`;
+        extraFilter = `and l.id = $2`;
     } else {
         params.push(hours);
-        extraFilter = `and (propertis ->> 'exec_start')::timestamptz >= now() - ($3::integer * interval '1 hour')`;
+        extraFilter = `and (propertis ->> 'exec_start')::timestamptz >= now() - ($2::integer * interval '1 hour')`;
     }
     params.push(limit);
 
@@ -85,13 +78,12 @@ async function readLog(userId, taskName, options = {}) {
                  from
                      ou.logs l
                  where
-                       l.user_id = $1
-                   and propertis ->> 'flow' is not null
-                   and propertis ->> 'flow' = $2
+                       propertis ->> 'flow' is not null
+                   and propertis ->> 'flow' = $1
                    ${extraFilter}
                  order by
                      l.id desc
-                 limit $4`;
+                 limit $3`;
 
     try {
         console.log('start readLog');

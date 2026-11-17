@@ -37,17 +37,29 @@ describe('readLog route tests', () => {
         }
     });
 
-    it('should return status 400 when user_id is missing', async () => {
+    it('should not filter by user_id (log is found by flow regardless of who started the task)', async () => {
+        queryDbSpy.mockReturnValue(Promise.resolve({error_code: 0, result: 0, error_message: null, data: []}));
         mockReq.params = { task_name: 'testTask' };
 
         await readLogModule.main(mockReq, mockRes);
 
-        expect(mockRes.statusCode).toBe(400);
-        expect(mockRes.sentData).toEqual({
-            error_message: 'Viga: puudub user_id',
-            result: 0,
-            data: null
-        });
+        expect(mockRes.statusCode).toBe(200);
+        const [sql, params] = queryDbSpy.mock.calls[0];
+        expect(sql).not.toContain('user_id');
+        expect(params).toEqual(['testTask', 48, 1]);
+    });
+
+    it('should search by log_id without time window', async () => {
+        queryDbSpy.mockReturnValue(Promise.resolve({error_code: 0, result: 1, error_message: null, data: []}));
+        mockReq.params = { user_id: 11770, task_name: 'eelarve.sp_koosta_saldoandmik' };
+        mockReq.body = { log_id: 8563603 };
+
+        await readLogModule.main(mockReq, mockRes);
+
+        const [sql, params] = queryDbSpy.mock.calls[0];
+        expect(sql).toContain('l.id = $2');
+        expect(sql).not.toContain('user_id');
+        expect(params).toEqual(['eelarve.sp_koosta_saldoandmik', 8563603, 1]);
     });
 
     it('should return status 400 when task_name is missing', async () => {
@@ -85,7 +97,7 @@ describe('readLog route tests', () => {
         expect(mockRes.statusCode).toBe(200);
         expect(mockRes.sentData).toEqual(mockDbResult);
         expect(queryDbSpy).toHaveBeenCalledTimes(1);
-        expect(queryDbSpy.mock.calls[0][1]).toEqual([456, 'calcSaldo']);
+        expect(queryDbSpy.mock.calls[0][1]).toEqual(['calcSaldo', 48, 1]);
     });
 
     it('should return status 200 and query result when valid user_id and task_name are provided', async () => {
@@ -116,8 +128,8 @@ describe('readLog route tests', () => {
 
         const [sql, params] = queryDbSpy.mock.calls[0];
         expect(sql).toContain('ou.logs');
-        expect(sql).toContain('user_id = $1');
-        expect(params).toEqual([1, 'arvestaTaabel']);
+        expect(sql).not.toContain('user_id');
+        expect(params).toEqual(['arvestaTaabel', 48, 1]);
     });
 
     it('should return status 500 when database query throws an error', async () => {
