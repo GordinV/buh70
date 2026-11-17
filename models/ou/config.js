@@ -18,10 +18,15 @@ module.exports = {
                   c.tahtpaev,
                   coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf,
                   coalesce((c.properties ->> 'round_arve')::integer, 0)::integer    as round_arve,
-                  coalesce((c.properties ->> 'web_server')::VARCHAR(254))           AS web_server
+                  coalesce((c.properties ->> 'web_server')::VARCHAR(254))           AS web_server,
+                  coalesce(u_palk.parool, '')::varchar(254)                         as uuid,
+                  coalesce((c.properties ->> 'INFOREGISTER_API_KEY')::VARCHAR(254)) as inforegister_api_key,
+                  coalesce((c.properties ->> 'INFOREGISTER_HASH')::VARCHAR(254)) as inforegister_parool
+
               FROM
                   ou.config c,
                   ou.userid u
+                      left outer join ou.userid u_palk on u.rekvid = u_palk.rekvid and u_palk.kasutaja = 'palk' and u_palk.status < 3              
               WHERE
                     c.rekvid = $1
                 AND u.id = $2`,
