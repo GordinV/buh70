@@ -204,4 +204,39 @@ describe('POST /task/inforegisterLookup/ (ariregisterStore)', () => {
             data: expect.objectContaining({reason: 'registry_not_loaded'})
         }));
     });
+
+    test('readLocalAsutus запрашивает (properties->>\'kmkr\') as kmkr, а не голую колонку kmkr', async () => {
+        db.queryDb.mockReturnValueOnce(Promise.resolve({data: [{id: 1, regkood: '11735006', kmkr: 'EE101339256'}]}));
+        const row = await service.readLocalAsutus('11735006');
+        expect(row).not.toBeNull();
+        expect(row.kmkr).toBe('EE101339256');
+        const sql = db.queryDb.mock.calls[0][0];
+        expect(sql).toContain("properties->>'kmkr'");
+        expect(sql).not.toMatch(/,\s*kmkr\s*,/);
+    });
+
+    test('(ж) not_found + local (1xxx) с эстонским адресом -> HTTP 200, closed=true, registryStatus=Kustutatud', async () => {
+        db.queryDb
+            .mockReturnValueOnce(Promise.resolve({
+                data: [{tokens: [{token_sha256: validSha, user_id: 11770, rekv_id: 63, scopes: ['lookup'], active: true}]}]
+            }))
+            .mockReturnValueOnce(Promise.resolve({data: [{id: 906}]})) // createLog
+            .mockReturnValueOnce(Promise.resolve({
+                data: [{id: 77, regkood: '10035608', nimetus: 'Kadunud OÜ', aadress: 'Peetri 3, Narva 20308', staatus: 1}]
+            })) // readLocalAsutus
+            .mockReturnValueOnce(Promise.resolve({data: [{file_date: '2026-11-18', rows_total: 381641}]})) // readMeta
+            .mockReturnValueOnce(Promise.resolve({data: []})) // readByRegkood -> not_found
+            .mockReturnValueOnce(Promise.resolve({data: []})); // endLog
+
+        const res = makeRes();
+        await lookup.main({query: {}, body: {hash: validToken, regkood: '10035608'}, params: {}}, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        const body = res.send.mock.calls[0][0];
+        expect(body.data.closed).toBe(true);
+        expect(body.data.source).toBe('ariregister');
+        expect(body.data.fetched_at).toBe('2026-11-18');
+        expect(body.data.registry.registryStatus).toBe('Kustutatud');
+        expect(body.data.company.registryStatus).toBe('Kustutatud');
+        expect(body.data.registry.name).toBe('Kadunud OÜ');
+    });
 });

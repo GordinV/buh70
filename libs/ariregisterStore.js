@@ -180,7 +180,8 @@ function createStoreClient(options) {
                 regCode: clean,
                 reason: 'not_found',
                 error: 'Organisatsiooni ei leitud Äriregistrist',
-                source: 'ariregister'
+                source: 'ariregister',
+                fetchedAt: formatDateOnly(meta.file_date)
             };
         }
 

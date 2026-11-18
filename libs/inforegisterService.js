@@ -204,7 +204,7 @@ async function asutusExists(regkood) {
 
 async function readLocalAsutus(regkood) {
     const r = await db.queryDb(
-        `select id, regkood, nimetus, aadress, kmkr, email, tel, staatus
+        `select id, regkood, nimetus, aadress, (properties->>'kmkr') as kmkr, email, tel, staatus
          from libs.asutus
          where ltrim(rtrim(regkood)) = $1 and staatus < 3
          order by id asc
@@ -261,6 +261,27 @@ async function saveAsutus(payload, userId, rekvId) {
         [JSON.stringify(payload), userId, rekvId], null, null, null, null, config);
     const row = r && Array.isArray(r.data) && r.data[0] ? r.data[0] : null;
     return row && row.id ? Number(row.id) : null;
+}
+
+const FOREIGN_ADDR_RE = /(^|[\s,;.(/-])(latvia|latvija|läti|lati|riga|lithuania|leedu|vilnius|kaunas|finland|soome|helsinki|tampere|turku|espoo|vantaa|russia|venemaa|moskva|moscow|st\.?\s*petersburg|saint\s+petersburg|sankt-peterburg|peterburg|germany|saksamaa|berlin|köln|koln|sweden|rootsi|stockholm|poland|poola|warsaw|united\s+kingdom|london|norway|norra|oslo|denmark|taani|copenhagen|france|prantsusmaa|paris|united\s+states|usa|netherlands|holland|belgium|belgia|austria|switzerland|šveits|spain|hispaania|italy|itaalia|ukraine|ukraina|kyiv|belarus|valgevene|minsk)(?=$|[\s,;.)/-])/i;
+const FOREIGN_POSTCODE_RE = /\b(D|DE|LV|LT|FI|S|SE|PL|DK|N|NO|F|FR)-\d{3,5}\b/i;
+const ESTONIAN_MAAKOND_WORD_RE = /(^|[\s,;.(])maakond(?=$|[\s,;.)])/i;
+const ESTONIAN_WORD_RE = /(^|[\s,;.(])(eesti|estonia|maakond|linn|vald|küla|kula|alevik|alev|tallinn|tartu|narva|pärnu|parnu|jõhvi|johvi|kohtla-järve|kohtla-jarve|sillamäe|sillamae|viljandi|rakvere|maardu|kuressaare|võru|voru|valga|haapsalu|paide|keila|jõgeva|jogeva|rapla|põlva|polva|kärdla|kardla|narva-jõesuu|narva-joesuu|tapa|elva|saue|paldiski|loksa|kiviõli|kivioli|põltsamaa|poltsamaa|türi|turi|otepää|otepaa)(?=$|[\s,;.)])/i;
+const ESTONIAN_MAAKOND_RE = /[a-zäöüõ-]+maa(?=$|[\s,;.)])/i;
+const ESTONIAN_POSTCODE_RE = /(^|\D)\d{5}(?!\d)/;
+
+/**
+ * Определяет, является ли адрес в libs.asutus эстонским.
+ */
+function isEstonianAddress(text) {
+    if (text === null || text === undefined) return false;
+    const normalized = String(text).replace(/\r?\n/g, ' ').trim();
+    if (!normalized) return false;
+    if (ESTONIAN_MAAKOND_WORD_RE.test(normalized)) return true;
+    if (FOREIGN_POSTCODE_RE.test(normalized) || FOREIGN_ADDR_RE.test(normalized)) return false;
+    return ESTONIAN_WORD_RE.test(normalized) ||
+        ESTONIAN_MAAKOND_RE.test(normalized) ||
+        ESTONIAN_POSTCODE_RE.test(normalized);
 }
 
 /** Закрытое предприятие: статус реестра не содержит «kantud» (напр. «Registrisse kantud») */
@@ -388,12 +409,50 @@ async function lookupOne(regkood, client, options) {
     const res = await client.getBundle(regkood, options.year);
 
     if (!res.ok) {
+        const cleanReg = String(regkood === undefined || regkood === null ? '' : regkood).trim();
+        if (
+            res.reason === 'not_found' &&
+            local &&
+            /^[189]/.test(cleanReg) &&
+            isEstonianAddress(local.aadress)
+        ) {
+            const localName = local.nimetus ? String(local.nimetus).trim() : null;
+            const dataYear = options.year !== undefined && options.year !== null
+                ? options.year
+                : inforegister.defaultDataYear();
+            const closedBundle = {
+                name: localName,
+                regCode: cleanReg,
+                registryStatus: 'Kustutatud',
+                businessType: null,
+                vatNumber: null,
+                address: null,
+                contacts: {emails: [], phones: [], webs: []},
+                latestEmployeeCount: null,
+                latestPeriod: null,
+                year: dataYear
+            };
+            return {
+                ok: true,
+                regkood: cleanReg,
+                status: STATUS.CLOSED,
+                reason: 'not_in_registry',
+                error: null,
+                source: 'ariregister',
+                fetched_at: res.fetchedAt || null,
+                closed: true,
+                local: local,
+                registry: closedBundle,
+                diff: []
+            };
+        }
+
         return {
             ok: false,
             regkood: regkood,
             status: mapReasonToStatus(res.reason),
             reason: res.reason,
-            error: res.message,
+            error: res.message || res.error,
             source: null,
             fetched_at: null,
             closed: false,
@@ -532,6 +591,7 @@ exports.readLocalAsutus = readLocalAsutus;
 exports.buildAsutusPayload = buildAsutusPayload;
 exports.saveAsutus = saveAsutus;
 exports.isClosed = isClosed;
+exports.isEstonianAddress = isEstonianAddress;
 exports.mapReasonToStatus = mapReasonToStatus;
 exports.buildDiff = buildDiff;
 exports.processOne = processOne;
