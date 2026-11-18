@@ -25,6 +25,8 @@ const BATCH_SIZE = 1000;
 const DOWNLOAD_TIMEOUT_MS = 120000;
 const MAX_REDIRECTS = 5;
 const ADVISORY_LOCK_KEY = 707001;
+// Cloudflare перед avaandmed.ariregister.rik.ee возвращает 403 клиентам Node 10/11 при дефолтном наборе ECDH-кривых
+const TLS_ECDH_CURVES = 'X25519:prime256v1:secp384r1';
 
 function defaultQueryFn(sqlString, params) {
     return db.queryDb(sqlString, params, null, null, null, null, config);
@@ -179,13 +181,18 @@ function downloadZip(url, destPath, options) {
                 reject(err);
             }
 
-            const req = transport.get(parsedUrl, {
+            const reqOptions = {
                 timeout: timeoutMs,
                 headers: {
                     'User-Agent': 'buh70-ariregister-sync/1.0',
                     'Accept': '*/*'
                 }
-            }, function (res) {
+            };
+            if (parsedUrl.protocol === 'https:') {
+                reqOptions.ecdhCurve = TLS_ECDH_CURVES;
+            }
+
+            const req = transport.get(parsedUrl, reqOptions, function (res) {
                 const status = res.statusCode || 0;
 
                 if ([301, 302, 303, 307, 308].indexOf(status) !== -1 && res.headers && res.headers.location) {
@@ -622,6 +629,7 @@ exports.MIN_ZIP_BYTES = MIN_ZIP_BYTES;
 exports.MIN_ROWS_FLOOR = MIN_ROWS_FLOOR;
 exports.BATCH_SIZE = BATCH_SIZE;
 exports.ADVISORY_LOCK_KEY = ADVISORY_LOCK_KEY;
+exports.TLS_ECDH_CURVES = TLS_ECDH_CURVES;
 exports.config = config;
 exports.createPgClient = createPgClient;
 exports.parseEsmakanneDate = parseEsmakanneDate;

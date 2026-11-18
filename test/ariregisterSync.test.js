@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
+const https = require('https');
 const os = require('os');
 const path = require('path');
 const {EventEmitter} = require('events');
@@ -528,6 +529,65 @@ describe('libs/ariregisterSync & POST /task/syncAriregister/', () => {
             spyLock.mockRestore();
             spyRelease.mockRestore();
             spySync.mockRestore();
+        }
+    });
+
+    test('downloadZip: (а) передаёт ecdhCurve для https и не передаёт для http; (б) передаёт ecdhCurve после redirect', async () => {
+        const seen = [];
+        let callIdx = 0;
+        const httpsSpy = jest.spyOn(https, 'get').mockImplementation((parsedUrl, opts, cb) => {
+            seen.push({url: parsedUrl.toString(), opts: opts});
+            callIdx += 1;
+            const req = new EventEmitter();
+            req.destroy = jest.fn();
+            process.nextTick(() => {
+                if (callIdx === 1) {
+                    const res302 = new Readable({read() { this.push(null); }});
+                    res302.statusCode = 302;
+                    res302.headers = {location: 'https://cdn.example.test/final.zip'};
+                    cb(res302);
+                } else {
+                    const res200 = new Readable({read() { this.push('ZIPDATA'); this.push(null); }});
+                    res200.statusCode = 200;
+                    res200.headers = {'last-modified': 'Tue, 17 Nov 2026 05:00:00 GMT'};
+                    cb(res200);
+                }
+            });
+            return req;
+        });
+
+        const tmpZip = path.join(os.tmpdir(), 'test_ecdh_' + Date.now() + '.zip');
+        try {
+            const dl = await ariregisterSync.downloadZip('https://avaandmed.example.test/data.zip', tmpZip, {minZipBytes: 1});
+            expect(dl.size).toBe(7);
+            expect(seen.length).toBe(2);
+            expect(seen[0].opts.ecdhCurve).toBe('X25519:prime256v1:secp384r1');
+            expect(seen[1].url).toBe('https://cdn.example.test/final.zip');
+            expect(seen[1].opts.ecdhCurve).toBe('X25519:prime256v1:secp384r1');
+        } finally {
+            httpsSpy.mockRestore();
+            if (fs.existsSync(tmpZip)) fs.unlinkSync(tmpZip);
+        }
+
+        // Проверка http (без ecdhCurve)
+        const httpSeen = [];
+        const server = http.createServer((req, res) => {
+            res.writeHead(200, {'Content-Type': 'application/zip'});
+            res.end('OKZIP');
+        });
+        await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+        const httpSpy = jest.spyOn(http, 'get');
+        const tmpHttp = path.join(os.tmpdir(), 'test_http_no_ecdh_' + Date.now() + '.zip');
+        try {
+            await ariregisterSync.downloadZip('http://127.0.0.1:' + server.address().port + '/test.zip', tmpHttp, {minZipBytes: 1});
+            expect(httpSpy).toHaveBeenCalledTimes(1);
+            expect(httpSpy.mock.calls[0][1].ecdhCurve).toBeUndefined();
+            httpSeen.push(httpSpy.mock.calls[0][1]);
+            expect(httpSeen.length).toBe(1);
+        } finally {
+            httpSpy.mockRestore();
+            server.close();
+            if (fs.existsSync(tmpHttp)) fs.unlinkSync(tmpHttp);
         }
     });
 });
