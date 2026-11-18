@@ -213,9 +213,26 @@ async function readLocalAsutus(regkood) {
     return r && Array.isArray(r.data) && r.data[0] ? r.data[0] : null;
 }
 
+function resolveOmvorm(businessType) {
+    if (!businessType) return '';
+    const trimmed = String(businessType).trim();
+    if (!trimmed) return '';
+    const abbrevValues = Object.keys(ariregisterStore.LEGAL_FORM_ABBREV).map(function (k) {
+        return ariregisterStore.LEGAL_FORM_ABBREV[k];
+    });
+    if (abbrevValues.indexOf(trimmed) !== -1 && trimmed.length <= 20) {
+        return trimmed;
+    }
+    const mapped = ariregisterStore.abbreviateLegalForm(trimmed);
+    if (mapped && abbrevValues.indexOf(mapped) !== -1 && mapped.length <= 20) {
+        return mapped;
+    }
+    return '';
+}
+
 /**
  * Формирует JSON для libs.sp_salvesta_asutus из данных реестра.
- * omvorm в libs.asutus char(20) NOT NULL, поэтому передаем пустую строку.
+ * omvorm в libs.asutus char(20) NOT NULL: заполняется сокращением из LEGAL_FORM_ABBREV (если есть и <= 20 символов), иначе ''.
  */
 function buildAsutusPayload(regkood, bundle) {
     const contacts = bundle.contacts || {emails: [], phones: []};
@@ -225,7 +242,7 @@ function buildAsutusPayload(regkood, bundle) {
             id: 0,
             regkood: regkood,
             nimetus: bundle.name,
-            omvorm: '',
+            omvorm: resolveOmvorm(bundle.businessType),
             aadress: bundle.address && bundle.address.fullAddress ? bundle.address.fullAddress : '',
             kontakt: '',
             tel: contacts.phones && contacts.phones.length ? contacts.phones[0] : '',

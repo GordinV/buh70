@@ -134,6 +134,27 @@ describe('getInforegister backend', () => {
         expect(p.data.email).toBe('a@b.ee');
         expect(p.data.kmkr).toBe('EE1');
         expect(p.data.mark).toBe('Äriregister (automaatselt lisatud)');
+
+        // (д) buildAsutusPayload: OÜ -> omvorm 'OÜ', форма без сокращения -> omvorm '', nimetus не изменён
+        const pOu = info.buildAsutusPayload('11735006', {
+            name: 'Register OÜ',
+            businessType: 'OÜ',
+            vatNumber: '',
+            address: {fullAddress: 'Tallinn, 10111'},
+            contacts: {emails: [], phones: []}
+        });
+        expect(pOu.data.omvorm).toBe('OÜ');
+        expect(pOu.data.nimetus).toBe('Register OÜ');
+
+        const pNoAbbrev = info.buildAsutusPayload('12345678', {
+            name: 'Ühistu Tulundus',
+            businessType: 'Tulundusühistu',
+            vatNumber: '',
+            address: {fullAddress: 'Tartu'},
+            contacts: {emails: [], phones: []}
+        });
+        expect(pNoAbbrev.data.omvorm).toBe('');
+        expect(pNoAbbrev.data.nimetus).toBe('Ühistu Tulundus');
     });
 
     test('dry_run: данные получены, процедура сохранения не вызывается', async () => {

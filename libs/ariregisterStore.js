@@ -8,6 +8,20 @@ const db = require('./db');
 const inforegister = require('./inforegister');
 const config = require('./inforegisterConfig');
 
+const LEGAL_FORM_ABBREV = {
+    'osaühing': 'OÜ',
+    'aktsiaselts': 'AS',
+    'füüsilisest isikust ettevõtja': 'FIE',
+    'mittetulundusühing': 'MTÜ',
+    'korteriühistu': 'KÜ',
+    'usaldusühing': 'UÜ',
+    'täisühing': 'TÜ',
+    'sihtasutus': 'SA',
+    'euroopa äriühing (societas europaea)': 'SE',
+    'euroopa ühistu': 'SCE',
+    'kohaliku omavalitsuse asutus': 'KOV'
+};
+
 function defaultQueryFn(sqlString, params) {
     return db.queryDb(sqlString, params, null, null, null, null, config);
 }
@@ -16,6 +30,15 @@ function str(v) {
     if (v === null || v === undefined) return null;
     const s = String(v).trim();
     return s === '' ? null : s;
+}
+
+function abbreviateLegalForm(name) {
+    const clean = str(name);
+    if (!clean) return null;
+    const key = clean.toLowerCase();
+    return Object.prototype.hasOwnProperty.call(LEGAL_FORM_ABBREV, key)
+        ? LEGAL_FORM_ABBREV[key]
+        : clean;
 }
 
 function formatDateOnly(val) {
@@ -37,14 +60,28 @@ function firstCityPart(ehakTekst) {
     return first === '' ? null : first;
 }
 
+function endsWithPostcode(addressText, indeks) {
+    if (!addressText || !indeks) return false;
+    if (addressText === indeks) return true;
+    const suffixComma = ', ' + indeks;
+    const suffixSpace = ' ' + indeks;
+    return addressText.slice(-suffixComma.length) === suffixComma ||
+        addressText.slice(-suffixSpace.length) === suffixSpace;
+}
+
 function buildAddress(row) {
     const full = str(row.taisaadress);
+    const indeks = str(row.indeks);
     const street = str(row.asukoht);
     const city = firstCityPart(row.ehak_tekst);
 
     let fullAddress = full;
-    if (!fullAddress) {
-        const parts = [street, str(row.ehak_tekst), str(row.indeks)].filter(Boolean);
+    if (fullAddress) {
+        if (indeks && !endsWithPostcode(fullAddress, indeks)) {
+            fullAddress = fullAddress + ', ' + indeks;
+        }
+    } else {
+        const parts = [street, str(row.ehak_tekst), indeks].filter(Boolean);
         fullAddress = parts.length ? parts.join(', ') : str(row.aadress);
     }
 
@@ -71,7 +108,7 @@ function toBundle(row, year) {
         name: str(row.nimi),
         regCode: str(row.regkood),
         registryStatus: registryStatus,
-        businessType: str(row.oiguslik_vorm),
+        businessType: abbreviateLegalForm(row.oiguslik_vorm),
         vatNumber: str(row.kmkr_nr),
         address: buildAddress(row),
         contacts: {emails: [], phones: [], webs: []},
@@ -167,6 +204,9 @@ function createStoreClient(options) {
     };
 }
 
+exports.LEGAL_FORM_ABBREV = LEGAL_FORM_ABBREV;
+exports.abbreviateLegalForm = abbreviateLegalForm;
+exports.buildAddress = buildAddress;
 exports.toBundle = toBundle;
 exports.readMeta = readMeta;
 exports.readByRegkood = readByRegkood;
