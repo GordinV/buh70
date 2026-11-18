@@ -133,6 +133,7 @@ describe('getInforegister backend', () => {
         expect(p.data.omvorm).toBe('');
         expect(p.data.email).toBe('a@b.ee');
         expect(p.data.kmkr).toBe('EE1');
+        expect(p.data.mark).toBe('Äriregister (automaatselt lisatud)');
     });
 
     test('dry_run: данные получены, процедура сохранения не вызывается', async () => {
@@ -232,16 +233,16 @@ describe('getInforegister backend', () => {
             expect(await info.getApiKey(11770, 63)).toBe('');
         });
 
-        test('Нет ключа в конфиге: платный вызов не делается, статус registry_unavailable, ключа нет в result', async () => {
-            Doc.mockImplementation(() => ({select: jest.fn().mockReturnValue(Promise.resolve({row: [{inforegister_api_key: ''}]}))}));
+        test('Таблица Äriregister не загружена: getApiKey и платный вызов не делаются, статус registry_unavailable (registry_not_loaded)', async () => {
+            Doc.mockClear();
             db.queryDb
                 .mockReturnValueOnce(Promise.resolve({data: [{id: 710, missing: ['11735006']}]}))
                 .mockReturnValueOnce(Promise.resolve({data: []})) // asutusExists
-                .mockReturnValue(Promise.resolve(null)); // кэш недоступен
+                .mockReturnValueOnce(Promise.resolve({data: []})); // readMeta -> пусто
             const r = await info.processMissingAsutused(11770, 63, 710, {dryRun: false});
-            expect(Doc).toHaveBeenCalledWith('config', 3, 11770, 3, 'lapsed');
+            expect(Doc).not.toHaveBeenCalled();
             expect(r.items[0].status).toBe('registry_unavailable');
-            expect(r.items[0].error).toContain('no_api_key');
+            expect(r.items[0].error).toContain('registry_not_loaded');
             expect(r.calls_spent).toBe(0);
         });
 
@@ -338,6 +339,55 @@ describe('getInforegister backend', () => {
             } finally {
                 warnSpy.mockRestore();
             }
+        });
+    });
+
+    describe('пакетный режим на таблице Äriregister (task_ariregister_batch_from_table)', () => {
+        test('без clientOverride использует ariregisterStore: платный API и getApiKey не вызываются, source=ariregister, calls_spent=0, закрытая не сохраняется, dryRun->would_create', async () => {
+            const https = require('https');
+            const httpsSpy = jest.spyOn(https, 'request');
+            Doc.mockClear();
+
+            // 1) dryRun=true -> would_create
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({data: [{id: 710, missing: ['11735006']}]})) // findMissing
+                .mockReturnValueOnce(Promise.resolve({data: []})) // asutusExists
+                .mockReturnValueOnce(Promise.resolve({data: [{file_date: '2026-11-17', rows_total: 381556}]})) // readMeta
+                .mockReturnValueOnce(Promise.resolve({
+                    data: [{regkood: '11735006', nimi: 'Ari OÜ', oiguslik_vorm: 'OÜ', staatus_tekst: 'Registrisse kantud', taisaadress: 'Tallinn', deleted_at: null}]
+                })); // readByRegkood
+
+            const dryRes = await info.processMissingAsutused(11770, 63, 710, {dryRun: true, maxCalls: 5, insecureTls: true});
+            expect(dryRes.would_create).toBe(1);
+            expect(dryRes.items[0].source).toBe('ariregister');
+            expect(dryRes.calls_spent).toBe(0);
+            expect(dryRes.remaining_year).toBeNull();
+
+            // 2) dryRun=false: одна активная (created), одна закрытая/удалённая (closed, не сохраняется)
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({data: [{id: 711, missing: ['11735006', '22222222']}]})) // findMissing
+                .mockReturnValueOnce(Promise.resolve({data: []})) // asutusExists 11735006
+                .mockReturnValueOnce(Promise.resolve({data: [{file_date: '2026-11-17', rows_total: 381556}]})) // readMeta
+                .mockReturnValueOnce(Promise.resolve({
+                    data: [{regkood: '11735006', nimi: 'Ari OÜ', oiguslik_vorm: 'OÜ', staatus_tekst: 'Registrisse kantud', taisaadress: 'Tallinn', deleted_at: null}]
+                })) // readByRegkood
+                .mockReturnValueOnce(Promise.resolve({data: [{id: 9901}]})) // sp_salvesta_asutus
+                .mockReturnValueOnce(Promise.resolve({data: []})) // asutusExists 22222222
+                .mockReturnValueOnce(Promise.resolve({data: [{file_date: '2026-11-17', rows_total: 381556}]})) // readMeta
+                .mockReturnValueOnce(Promise.resolve({
+                    data: [{regkood: '22222222', nimi: 'Closed OÜ', staatus_tekst: 'Kustutatud', deleted_at: '2026-11-18T00:00:00Z'}]
+                })); // readByRegkood
+
+            const liveRes = await info.processMissingAsutused(11770, 63, 711, {dryRun: false});
+            expect(liveRes.created).toBe(1);
+            expect(liveRes.closed).toBe(1);
+            expect(liveRes.items[0].source).toBe('ariregister');
+            expect(liveRes.items[0].asutus_id).toBe(9901);
+            expect(liveRes.items[1].status).toBe('closed');
+            expect(liveRes.calls_spent).toBe(0);
+            expect(httpsSpy).not.toHaveBeenCalled();
+            expect(Doc).not.toHaveBeenCalled();
+            httpsSpy.mockRestore();
         });
     });
 });

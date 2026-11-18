@@ -1,12 +1,13 @@
 'use strict';
 const inforegister = require('./../../libs/inforegister');
 const service = require('./../../libs/inforegisterService');
+const ariregisterStore = require('./../../libs/ariregisterStore');
 
 function mapReasonToHttpStatus(reason) {
     if (reason === 'invalid_reg_code') return 400;
     if (reason === 'not_found' || reason === 'dry_run_no_spend') return 404;
     if (reason === 'budget_exhausted' || reason === 'year_limit_reserve' || reason === 'rate_limited') return 429;
-    if (reason === 'no_api_key') return 503;
+    if (reason === 'no_api_key' || reason === 'registry_not_loaded') return 503;
     if (reason === 'timeout') return 504;
     if (reason === 'unauthorized' || reason === 'http_error') return 502;
     return 502;
@@ -57,14 +58,11 @@ exports.main = async (req, res) => {
             console.error('[inforegisterLookup] Failed to create log:', logErr.message);
         }
 
-        const apiKey = await service.getApiKey(auth.userId, configRekvId);
-        const client = service.createInforegisterClient({
-            apiKey: apiKey,
-            maxCalls: 1,
-            dryRun: cacheOnly,
-            skipCacheRead: forceRefresh,
-            insecureTls: insecureTls
-        });
+        // cache_only, force_refresh и insecure_tls принимаются для обратной совместимости и игнорируются
+        void cacheOnly;
+        void forceRefresh;
+        void insecureTls;
+        const client = ariregisterStore.createStoreClient();
 
         const lookupRes = await service.lookupOne(regkood, client, {year: year});
         const usage = client.getUsage();

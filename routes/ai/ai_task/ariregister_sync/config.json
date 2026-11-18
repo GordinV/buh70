@@ -1,0 +1,17 @@
+{
+  "name": "ariregister_sync",
+  "flow": "ariregisterSync",
+  "description": "Суточная загрузка открытых данных Äriregister (RIK) в локальную таблицу libs.ariregister через POST /task/syncAriregister/",
+  "prompt": null,
+  "allow_parallel": true,
+  "depends_on": [],
+  "schedule": {
+    "time": "06:00"
+  },
+  "max_attempts": 3,
+  "params": {
+    "userId": 11770,
+    "rekvId": 63,
+    "dryRun": false
+  }
+}

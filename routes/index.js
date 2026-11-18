@@ -51,8 +51,10 @@ module.exports = function (app) {
     app.post('/task/checkAsutusAvailability/', require('./raama/checkAsutusAvailability').main); //checkAuth
     // получит из Inforegister данные отсутствующих организаций (результат check_asutus) и сохранит их через libs.sp_salvesta_asutus (авторизация по hash, scope batch)
     app.post('/task/getInforegister/', require('./raama/getInforegister').main); //hash auth (INFOREGISTER_TOKENS)
-    // синхронный поиск одной организации по regkood через Inforegister (авторизация по hash, scope lookup; кэш 30 дней в libs.registry_cache, без сохранения в libs.asutus)
+    // синхронный поиск одной организации по regkood в локальной копии Äriregister (libs.ariregister; авторизация по hash, scope lookup; лимит Inforegister не расходуется)
     app.post('/task/inforegisterLookup/', require('./raama/inforegisterLookup').main); //hash auth (INFOREGISTER_TOKENS)
+    // скачивает открытые данные Äriregister (ZIP/CSV) и синхронизирует локальную таблицу libs.ariregister (авторизация по hash, scope sync)
+    app.post('/task/syncAriregister/', require('./raama/syncAriregister').main); //hash auth (INFOREGISTER_TOKENS)
     // запустит чтение почты и поиск ошибок доставки счетов (read_mail)
     app.post('/task/readMail/', require('./raama/readMail').main); //checkAuth
 

@@ -2,8 +2,9 @@
 const crypto = require('crypto');
 const db = require('./db');
 const inforegister = require('./inforegister');
+const ariregisterStore = require('./ariregisterStore');
 const Doc = require('./../classes/DocumentTemplate');
-const config = require('./../config/narvalv.json');
+const config = require('./inforegisterConfig');
 
 const DEFAULT_USER_ID = 2477;
 const DEFAULT_REKV_ID = 63;
@@ -28,6 +29,7 @@ const STATUS = {
 
 const UNAVAILABLE_REASONS = [
     'no_api_key',
+    'registry_not_loaded',
     'unauthorized',
     'rate_limited',
     'budget_exhausted',
@@ -229,7 +231,7 @@ function buildAsutusPayload(regkood, bundle) {
             tel: contacts.phones && contacts.phones.length ? contacts.phones[0] : '',
             email: contacts.emails && contacts.emails.length ? contacts.emails[0] : '',
             kmkr: bundle.vatNumber || '',
-            mark: 'Inforegister (automaatselt lisatud)',
+            mark: 'Äriregister (automaatselt lisatud)',
             muud: '',
             pank: '',
             tp: ''
@@ -326,7 +328,7 @@ async function processOne(regkood, client, ctx) {
         const res = await client.getBundle(regkood);
         if (!res.ok) {
             item.status = mapReasonToStatus(res.reason);
-            item.error = res.reason + ': ' + res.message;
+            item.error = res.reason + ': ' + (res.message || res.error || '');
             return item;
         }
 
@@ -336,7 +338,7 @@ async function processOne(regkood, client, ctx) {
 
         if (!bundle.name) {
             item.status = STATUS.NOT_FOUND;
-            item.error = 'Inforegister ei tagastanud nimetust';
+            item.error = 'Äriregister ei tagastanud nimetust';
             return item;
         }
         if (isClosed(bundle)) {
@@ -436,11 +438,8 @@ async function processMissingAsutused(userId, rekvId, sourceLogParam, options, c
         return summary;
     }
 
-    const client = clientOverride || createInforegisterClient({
-        apiKey: await getApiKey(userId, options.configRekvId || CONFIG_REKV_ID),
-        maxCalls: options.maxCalls,
-        insecureTls: options.insecureTls === true
-    });
+    // maxCalls и insecureTls принимаются для обратной совместимости и игнорируются
+    const client = clientOverride || ariregisterStore.createStoreClient();
 
     for (let i = 0; i < found.missing.length; i++) {
         const item = await processOne(found.missing[i], client, {dryRun: dryRun, userId: userId, rekvId: rekvId});
@@ -523,3 +522,4 @@ exports.lookupOne = lookupOne;
 exports.processMissingAsutused = processMissingAsutused;
 exports.createLog = createLog;
 exports.endLog = endLog;
+exports.config = config;

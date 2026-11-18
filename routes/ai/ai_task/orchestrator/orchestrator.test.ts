@@ -5020,6 +5020,7 @@ describe('Главный Оркестратор', () => {
             t.finished_at = '2026-10-09T04:00:00.000Z';
           }
         }
+        afterRearm.cycle_date = '2026-10-09';
         afterRearm.tasks.inforegister.status = 'FAILED';
         afterRearm.tasks.inforegister.error = 'INFOREGISTER_HASH puudub';
         afterRearm.tasks.import_earved.status = 'SUCCESS';

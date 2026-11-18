@@ -26,6 +26,7 @@ getEarved (05:00) ──► check_asutus ──► inforegister - -► import_ea
    (flow getEarved)    контр-агентов     (мягкая зав.)     и сохранение        (по result.imported лога import_earved)
                                                            (flow docs.sp_loe_earved)
 read_mail (06:00)
+ariregister_sync (06:00) ──► libs.ariregister (независимый поток, flow ariregisterSync)
 calc_arv_jaak (07:30)
 reporter (08:00) ждёт sendFinBitReport, calc_arv_jaak, read_mail (не дольше max_wait_time 09:00)
 saldoandmik (20:00) ──► lisa1_lisa5
@@ -120,19 +121,18 @@ Cron запускает тик каждые 30 минут, поэтому каж
   - Поддерживает безопасную потоковую работу с UTF-8 буквами и IMAP literal buffers (`Buffer.byteLength`).
   - Строгая совместимость с версиями Node.js: отсутствие операторов `?.` и `??` в коде бэкенда `readMail.js`.
 
-### 3.2. `inforegister/` — пакетный импорт и синхронный поиск по рег.коду
+### 3.2. `inforegister/` — пакетный импорт и синхронный поиск по рег.коду (на локальной таблице Äriregister)
 
-- **Два режима работы (общее ядро `libs/inforegisterService.js` на бэкенде `buh70`):**
-  1. **Пакетный (`POST /task/getInforegister/`, flow `getInforegister`):** берёт `result.missing` из лога `check_asutus`, сохраняет найденных активных контрагентов через `libs.sp_salvesta_asutus` (при `dry_run=false`). В `config.json` агента: `dryRun: false`, `insecureTls: true`, `params.userId: 11770` (`FINBIT_SERVICE_USER_ID`).
-  2. **Синхронный поиск (`POST /task/inforegisterLookup/`, flow `inforegisterLookup`):** принимает `{ hash, regkood, year?, cache_only?, force_refresh?, insecure_tls?, config_rekv_id? }`. Всегда идёт в кэш/реестр (лимит `maxCalls: 1`), **не сохраняет** данные в `libs.asutus` и возвращает `{ regkood, asutus_id, source ('cache'|'api'), fetched_at, closed, local, registry, company, diff, calls_spent, remaining_year }`. Повторные запросы в пределах **30 дней** берутся из кэша `libs.registry_cache` (`0` платных вызовов); `force_refresh: true` обходит чтение кэша и обновляет его (`skipCacheRead: true`). `cache_only: true` не делает платных вызовов (при пустом кэше возвращает `404 dry_run_no_spend`).
-- **Коды ответов `/task/inforegisterLookup/`:** `200` (данные получены), `400` (`invalid_reg_code`), `401` (`unauthorized_hash`), `403` (`forbidden_scope`), `404` (`not_found` / `dry_run_no_spend`), `429` (`budget_exhausted` / `year_limit_reserve` / `rate_limited`), `502` (`unauthorized` / `http_error`), `503` (`no_api_key`), `504` (`timeout`), `500` (исключение).
-- **Авторизация по `hash` (оба маршрута):**
-  - В `ou.config.properties.INFOREGISTER_TOKENS` (`rekvid = 3`) хранятся только SHA-256 хеши токенов: `[{ token_sha256, user_id, rekv_id, label, scopes: ['batch'|'lookup'], active }]`. Сам токен в БД не хранится и нигде не логируется. Выдача/отзыв — `sql/ou/add_inforegister_token.sql` (`user_id` токена `ai_task` должен совпадать с `11770`, чтобы `logs_watcher` находил логи).
-  - В `ai_task` секрет задаётся единственной переменной `INFOREGISTER_HASH` (`.env`, читается через `getConfig().inforegisterHash`). При её отсутствии пакетный агент в тике получает `SKIP` (`INFOREGISTER_HASH puudub`) до HTTP-вызова; ответы `401`/`403` дают невозобновляемую ошибку (`retryable = false`).
+- **Два режима работы (общее ядро `libs/inforegisterService.js` + `libs/ariregisterStore.js` на бэкенде `buh70`):**
+  1. **Пакетный (`POST /task/getInforegister/`, flow `getInforegister`):** берёт `result.missing` из лога `check_asutus`, читает данные из локальной копии Äriregister (`libs.ariregister`, платный API не вызывается, `calls_spent: 0`), сохраняет найденных активных контрагентов через `libs.sp_salvesta_asutus` (при `dry_run=false`) с пометкой `mark: 'Äriregister (automaatselt lisatud)'` (поля `tel`/`email` не заполняются). Параметры `max_calls`/`maxCalls` и `insecure_tls`/`insecureTls` принимаются для обратной совместимости и игнорируются. В `config.json` агента: `dryRun: false`, `params.userId: 11770`.
+  2. **Синхронный поиск (`POST /task/inforegisterLookup/`, flow `inforegisterLookup`):** принимает `{ hash, regkood, year?, cache_only?, force_refresh?, insecure_tls?, config_rekv_id? }`. Ищет организацию в локальной таблице `libs.ariregister`, **не сохраняет** данные в `libs.asutus` и возвращает `{ regkood, asutus_id, source: 'ariregister', fetched_at, closed, local, registry, company, diff, calls_spent: 0, remaining_year: null }`, где `fetched_at` берётся из `libs.ariregister_meta.file_date`. Параметры `cache_only`, `force_refresh` и `insecure_tls` принимаются для обратной совместимости и игнорируются; `year` используется только в `registry.year`.
+- **Коды ответов `/task/inforegisterLookup/`:** `200` (данные найдены), `400` (`invalid_reg_code`), `401` (`unauthorized_hash`), `403` (`forbidden_scope`), `404` (`not_found`), `503` (`registry_not_loaded` — таблица `libs.ariregister_meta` пуста), `500` (неожиданная ошибка).
+- **Авторизация по `hash` (маршруты `/task/getInforegister/`, `/task/inforegisterLookup/`, `/task/syncAriregister/`):**
+  - В `ou.config.properties.INFOREGISTER_TOKENS` (`rekvid = 3`) хранятся только SHA-256 хеши токенов: `[{ token_sha256, user_id, rekv_id, label, scopes: ['batch'|'lookup'|'sync'], active }]`. Сам токен в БД не хранится и нигде не логируется. Выдача/отзыв — `sql/ou/add_inforegister_token.sql` (`user_id` токена `ai_task` должен совпадать с `11770`, чтобы `logs_watcher` находил логи).
+  - В `ai_task` секрет задаётся единственной переменной `INFOREGISTER_HASH` (`.env`, читается через `getConfig().inforegisterHash`). При её отсутствии пакетный агент и `ariregister_sync` в тике получают `SKIP` (`INFOREGISTER_HASH puudub`) до HTTP-вызова; ответы `401`/`403` дают невозобновляемую ошибку (`retryable = false`).
   - Переходный флаг бэкенда для пакетного маршрута: `INFOREGISTER_REQUIRE_HASH_BATCH` (по умолчанию `true`; при `false` запрос без `hash` пропускается с warning, неверный `hash` отклоняется всегда).
-  - **Порядок выкладки:** (1) сгенерировать токен и выполнить `sql/ou/add_inforegister_token.sql`; (2) добавить `INFOREGISTER_HASH` в `.env` `ai_task`; (3) выкатить `ai_task`; (4) выкатить бэкенд с `INFOREGISTER_REQUIRE_HASH_BATCH=false` и проверить логи; (5) включить `INFOREGISTER_REQUIRE_HASH_BATCH=true`.
-- **Ключ платного API Inforegister:** хранится в `ou.config.properties.INFOREGISTER_API_KEY` (`rekvid = 3`), в ответы API и `ou.logs` не попадает. Защита расходов: формат 8 цифр, кэш `libs.registry_cache` (30 дней), `maxCalls` и резерв `INFOREGISTER_MIN_REMAINING`.
-- **Инструменты в `ai_task`:** `lookupInforegister` (`inforegister/tools.ts`, при 4xx/5xx возвращает `{ ok: false, reason, message }`; клиент `ai_task` не повторяет lookup-запрос — `retries: 1` в `ApiClient.post`, то есть ровно 1 попытка без повторов при 5xx/сетевых сбоях и `timeoutMs: 45000`, чтобы не тратить платный лимит), Genkit flow `inforegisterLookupFlow` (`index.ts`, схема без `hash`) и CLI `npm run inforegister-lookup -- <regkood> [--cache-only] [--force-refresh] [--insecure-tls]`.
+- **Ключ платного API Inforegister:** `inforegisterLookup` и пакетный режим `getInforegister` ключ (`INFOREGISTER_API_KEY`) больше не используют и платный API не вызывают (исходный код клиента Inforegister остаётся в `libs/inforegister.js`).
+- **Инструменты в `ai_task`:** `lookupInforegister` (`inforegister/tools.ts`, при 4xx/5xx возвращает `{ ok: false, reason, message }`; `retries: 1`, `timeoutMs: 45000`), Genkit flow `inforegisterLookupFlow` (`index.ts`, схема без `hash`) и CLI `npm run inforegister-lookup -- <regkood> [--cache-only] [--force-refresh] [--insecure-tls]` (флаги `--cache-only`, `--force-refresh`, `--insecure-tls` принимаются для совместимости и игнорируются).
 
 ### 4. `reporter/` — итоговая отчётность
 
@@ -184,3 +184,14 @@ Cron запускает тик каждые 30 минут, поэтому каж
 - Сообщения в логах и отчётах — на эстонском, комментарии в коде — на русском (так сложилось в проекте).
 - Проверки: `npm run typecheck`, `npm test` (jest, `--runInBand`), `npm run build` (результат в `dist/`, копируется в Docker-образ).
 - `.env` и `state/orchestrator_state.json`, `state/cron_tick.log` — рабочие файлы, не коммитить.
+
+
+---
+
+## Локальная синхронизация Äriregister и lookup (2026-11-18)
+
+- **Источник и лицензия:** открытые данные `Äriregister (RIK), avaandmed, CC BY 4.0` (`ettevotja_rekvisiidid__lihtandmed.csv.zip`, обновляется ~05:00).
+- **Персональные данные (FIE):** хранятся только реквизиты из открытого файла реестра (без личных кодов); цель обработки — проверка контрагентов.
+- **Субагент `ariregister_sync`:** запускается раз в сутки в `06:00` (`Europe/Tallinn`) через `POST /task/syncAriregister/` (`flow: ariregisterSync`, авторизация по `INFOREGISTER_HASH` со scope `'sync'`), не зависит от цепочки FinBit. В отчёте выводит счётчики: `Äriregister: N kirjet, +ins / ~upd / -del`.
+- **`inforegisterLookup` (`POST /task/inforegisterLookup/`) и пакетный `getInforegister` (`POST /task/getInforegister/`):** оба режима ищут организации в локальной таблице `libs.ariregister` (без вызова платного API Inforegister и без расхода годового лимита; при сохранении контрагентов пишется `mark = 'Äriregister (automaatselt lisatud)'`). `fetched_at` берётся из `libs.ariregister_meta.file_date`; поля `contacts` (`emails`/`phones`/`webs`) и `latestEmployeeCount` в открытых данных отсутствуют и возвращаются пустыми/`null`. Таблица `libs.registry_cache` больше не используется ни `lookup`, ни пакетным режимом (таблицу не удалять).
+- **Порядок выкладки:** (1) SQL `sql/libs/create_table_ariregister.sql` и `sql/libs/libs.sp_ariregister_apply.sql`; (2) добавить scope `'sync'` нужному токену в `ou.config.properties.INFOREGISTER_TOKENS` (`rekvid = 3`); (3) выложить бэкенд `buh70` с `libs/ariregisterSync.js` и `POST /task/syncAriregister/`; (4) выполнить ручной первый запуск синка и проверить `SELECT count(*) FROM libs.ariregister;` и `SELECT * FROM libs.ariregister_meta;`; (5) переключить `inforegisterLookup` на локальную таблицу; (6) пересобрать и выложить `ai_task` (`npm run build`).
