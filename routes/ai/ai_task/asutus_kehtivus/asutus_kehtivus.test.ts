@@ -47,7 +47,11 @@ describe('Субагент asutus_kehtivus', () => {
       rekvId: 63,
       dryRun: true,
       maxClose: 100,
-      extraEmails: ['vladislav.gordin@gmail.com'],
+      extraEmails: [
+        'vladislav.gordin@gmail.com',
+        'jelena.tsekanina@narva.ee',
+        'svetlana.tsaikina@narva.ee',
+      ],
     });
   });
 

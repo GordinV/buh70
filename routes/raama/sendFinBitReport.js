@@ -172,6 +172,43 @@ async function getSmtpConfig(userId) {
 }
 
 /**
+ * Получение настроек SMTP из карточки робота ('Earved robot') в ou.userid.
+ * Не использует properties.email — отправитель формируется из properties.user (по умолчанию palk@narva.ee).
+ */
+async function getRobotSmtpConfig(rekvId) {
+    var targetRekvId = (rekvId !== undefined && rekvId !== null) ? Number(rekvId) : DEFAULT_REKV_ID;
+    var sql = 'SELECT ' +
+        "coalesce(u.properties ->> 'smtp', 'smtp.zone.eu') AS smtp, " +
+        "coalesce((u.properties ->> 'port')::integer, 465) AS port, " +
+        "coalesce(nullif(ltrim(rtrim(u.properties ->> 'user')), ''), 'palk') AS user, " +
+        "u.properties ->> 'pass' AS pass " +
+        'FROM ou.userid u ' +
+        "WHERE u.kasutaja = 'Earved robot' AND u.status < 3 AND u.rekvid IN ($1, 63) " +
+        'ORDER BY CASE WHEN u.rekvid = $1 THEN 0 ELSE 1 END, u.id DESC ' +
+        'LIMIT 1';
+
+    var res = await db.queryDb(sql, [targetRekvId], null, null, null, null, config);
+    if (!res || !Array.isArray(res.data) || res.data.length === 0) {
+        throw new Error('smtp_config_not_found');
+    }
+    var row = res.data[0];
+    var rowPort = Number(row.port) || 465;
+    var user = row.user || 'palk';
+    var pass = row.pass;
+    return {
+        host: row.smtp || 'smtp.zone.eu',
+        port: rowPort,
+        secure: rowPort === 465,
+        auth: pass ? {
+            user: user,
+            pass: pass
+        } : undefined,
+        from: getSenderAddress(user),
+        userName: 'Buh70 Robot'
+    };
+}
+
+/**
  * Отправка одного письма получателю
  */
 async function sendNotificationEmail(toEmail, invoices, smtpConfig, customTransporter) {
@@ -821,6 +858,7 @@ exports.DEFAULT_REKV_ID = DEFAULT_REKV_ID;
 exports.executeReport = executeReport;
 exports.getReport = getReport;
 exports.getSmtpConfig = getSmtpConfig;
+exports.getRobotSmtpConfig = getRobotSmtpConfig;
 exports.getSenderAddress = getSenderAddress;
 exports.sendNotificationEmail = sendNotificationEmail;
 exports.sendHtmlEmail = sendHtmlEmail;

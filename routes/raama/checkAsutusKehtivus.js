@@ -5,7 +5,6 @@ const db = require('./../../libs/db');
 const config = require('./../../config/narvalv.json');
 const mailer = require('./sendFinBitReport');
 
-const DRY_RUN_EMAILS = ['vladislav.gordin@gmail.com'];
 const DEFAULT_EMAILS = [
     'vladislav.gordin@gmail.com',
     'jelena.tsekanina@narva.ee',
@@ -97,6 +96,7 @@ exports.main = async (req, res) => {
             dryRun: dryRun,
             maxClose: maxClose,
             userId: auth.userId,
+            rekvId: auth.rekvId,
             extraEmails: extraEmails
         });
 
@@ -282,76 +282,82 @@ function formatKehtivusEmail(result) {
     return {subject: subject, text: lines.join('\n'), html: html, attachments: attachments};
 }
 
-async function notifyKehtivusResult(result, userId, extraEmails, transporter, logId) {
+async function notifyKehtivusResult(result, rekvId, extraEmails, transporter, logId) {
     if (!result) {
         return null;
     }
+
+    let mailInfo;
     if (result.status === 'skipped' || result.reason === 'registry_stale') {
-        return {sent: false, skipped: 'registry_stale', recipients: [], sent_at: null, message_id: null, error: null};
-    }
-    const dryRun = result.dry_run !== false;
-    const candidatesTotal = Number(result.candidates_total) || 0;
-    const totalClosed = Number(result.totalClosed) || 0;
-    const totalErrors = Number(result.totalErrors) || 0;
+        mailInfo = {sent: false, skipped: 'registry_stale', recipients: [], sent_at: null, message_id: null, error: null};
+    } else {
+        const dryRun = result.dry_run !== false;
+        const candidatesTotal = Number(result.candidates_total) || 0;
+        const totalClosed = Number(result.totalClosed) || 0;
+        const totalErrors = Number(result.totalErrors) || 0;
 
-    if ((dryRun && candidatesTotal === 0) || (!dryRun && result.status !== 'failed' && totalClosed === 0 && totalErrors === 0)) {
-        return {sent: false, skipped: 'nothing_to_report', recipients: [], sent_at: null, message_id: null, error: null};
-    }
+        if ((dryRun && candidatesTotal === 0) || (!dryRun && result.status !== 'failed' && totalClosed === 0 && totalErrors === 0)) {
+            mailInfo = {sent: false, skipped: 'nothing_to_report', recipients: [], sent_at: null, message_id: null, error: null};
+        } else {
+            const recipients = extraEmails && extraEmails.length ? extraEmails : DEFAULT_EMAILS;
+            mailInfo = {
+                sent: false,
+                skipped: null,
+                recipients: recipients,
+                sent_at: null,
+                message_id: null,
+                error: null
+            };
 
-    const defaultList = dryRun ? DRY_RUN_EMAILS : DEFAULT_EMAILS;
-    const recipients = extraEmails && extraEmails.length ? extraEmails : defaultList;
-    const mailInfo = {
-        sent: false,
-        skipped: null,
-        recipients: recipients,
-        sent_at: null,
-        message_id: null,
-        error: null
-    };
+            if (recipients.length === 0) {
+                mailInfo.skipped = 'no_recipients';
+            } else {
+                try {
+                    if (logId) {
+                        const prev = await db.queryDb(
+                            "select propertis -> 'mail' as mail from ou.logs where id = $1",
+                            [logId], null, null, null, null, config
+                        );
+                        const prevRow = prev && Array.isArray(prev.data) && prev.data[0] ? prev.data[0] : null;
+                        if (prevRow && prevRow.mail && prevRow.mail.sent) {
+                            mailInfo.skipped = 'duplicate';
+                            return mailInfo;
+                        }
+                    }
 
-    if (recipients.length === 0) {
-        mailInfo.skipped = 'no_recipients';
-        return mailInfo;
-    }
-
-    try {
-        if (logId) {
-            const prev = await db.queryDb(
-                "select propertis -> 'mail' as mail from ou.logs where id = $1",
-                [logId], null, null, null, null, config
-            );
-            const prevRow = prev && Array.isArray(prev.data) && prev.data[0] ? prev.data[0] : null;
-            if (prevRow && prevRow.mail && prevRow.mail.sent) {
-                mailInfo.skipped = 'duplicate';
-                return mailInfo;
+                    const msg = formatKehtivusEmail(result);
+                    const smtpConfig = await mailer.getRobotSmtpConfig(rekvId);
+                    const info = await mailer.sendHtmlEmail(
+                        recipients,
+                        msg.subject,
+                        msg.text,
+                        msg.html,
+                        smtpConfig,
+                        transporter,
+                        msg.attachments
+                    );
+                    mailInfo.sent = true;
+                    mailInfo.sent_at = new Date().toISOString();
+                    mailInfo.message_id = info && info.messageId ? info.messageId : null;
+                } catch (err) {
+                    console.error('[checkAsutusKehtivus] Email notification failed:', err.message);
+                    mailInfo.error = err.message;
+                }
             }
         }
+    }
 
-        const msg = formatKehtivusEmail(result);
-        const smtpConfig = await mailer.getSmtpConfig(userId);
-        const info = await mailer.sendHtmlEmail(
-            recipients,
-            msg.subject,
-            msg.text,
-            msg.html,
-            smtpConfig,
-            transporter,
-            msg.attachments
-        );
-        mailInfo.sent = true;
-        mailInfo.sent_at = new Date().toISOString();
-        mailInfo.message_id = info && info.messageId ? info.messageId : null;
-
-        if (logId) {
+    if (logId) {
+        try {
             await db.queryDb(
                 "update ou.logs set propertis = coalesce(propertis, '{}'::jsonb) || jsonb_build_object('mail', $1::jsonb) where id = $2",
                 [JSON.stringify(mailInfo), logId], null, null, null, null, config
             );
+        } catch (logMailErr) {
+            console.error('[checkAsutusKehtivus] Failed to persist propertis.mail:', logMailErr.message);
         }
-    } catch (err) {
-        console.error('[checkAsutusKehtivus] Email notification failed:', err.message);
-        mailInfo.error = err.message;
     }
+
     return mailInfo;
 }
 
@@ -362,7 +368,7 @@ async function runInBackground(logId, lockHandle, options) {
             maxClose: options.maxClose,
             userId: options.userId
         });
-        const mailInfo = await notifyKehtivusResult(result, options.userId, options.extraEmails, null, logId);
+        const mailInfo = await notifyKehtivusResult(result, options.rekvId, options.extraEmails, null, logId);
         if (mailInfo) {
             result.mail = mailInfo;
         }
@@ -383,7 +389,6 @@ async function runInBackground(logId, lockHandle, options) {
     }
 }
 
-exports.DRY_RUN_EMAILS = DRY_RUN_EMAILS;
 exports.DEFAULT_EMAILS = DEFAULT_EMAILS;
 exports.MAX_CLOSE_LIMIT = MAX_CLOSE_LIMIT;
 exports.parseEmails = parseEmails;

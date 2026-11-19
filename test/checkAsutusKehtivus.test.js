@@ -126,16 +126,17 @@ describe('POST /task/checkAsutusKehtivus/', () => {
         }
     });
 
-    test('(л-с) email: DRY_RUN_EMAILS / DEFAULT_EMAILS, extra_emails, CSV >200, SMTP error, защита от дубля по logId', async () => {
+    test('(л-с) email: DEFAULT_EMAILS для dry_run/live, getRobotSmtpConfig (Earved robot), smtp_config_not_found, propertis.mail', async () => {
         const mailer = require('../routes/raama/sendFinBitReport');
-        const spySmtp = jest.spyOn(mailer, 'getSmtpConfig').mockImplementation(async () => ({host: 'smtp.test'}));
+        const spyUserSmtp = jest.spyOn(mailer, 'getSmtpConfig');
+        const spyRobotSmtp = jest.spyOn(mailer, 'getRobotSmtpConfig');
         const spySend = jest.spyOn(mailer, 'sendHtmlEmail').mockImplementation(async () => ({messageId: 'msg-1'}));
 
         try {
             // (м) 0 кандидатов / registry_stale -> письмо не отправляется
             const mailNone = await route.notifyKehtivusResult(
                 {status: 'success', dry_run: true, candidates_total: 0, totalClosed: 0, totalErrors: 0},
-                11770,
+                63,
                 []
             );
             expect(mailNone.sent).toBe(false);
@@ -143,14 +144,17 @@ describe('POST /task/checkAsutusKehtivus/', () => {
 
             const mailStale = await route.notifyKehtivusResult(
                 {status: 'skipped', reason: 'registry_stale'},
-                11770,
+                63,
                 []
             );
             expect(mailStale.sent).toBe(false);
             expect(mailStale.skipped).toBe('registry_stale');
             expect(spySend).not.toHaveBeenCalled();
 
-            // (л, н) dry_run без extra_emails -> DRY_RUN_EMAILS (1 адрес), >200 строк -> CSV attachment
+            // (л, н) dry_run без extra_emails -> DEFAULT_EMAILS (3 адреса) + getRobotSmtpConfig (из карточки Earved robot), >200 строк -> CSV attachment
+            db.queryDb.mockReturnValueOnce(Promise.resolve({
+                data: [{smtp: 'mail.narva.ee', port: 25, user: 'palk', pass: 'x'}]
+            }));
             const manyCandidates = [];
             for (let i = 0; i < 205; i++) {
                 manyCandidates.push({
@@ -172,17 +176,30 @@ describe('POST /task/checkAsutusKehtivus/', () => {
                     totalClosed: 0,
                     totalErrors: 0
                 },
-                11770,
+                63,
                 []
             );
             expect(mailDry.sent).toBe(true);
-            expect(mailDry.recipients).toEqual(route.DRY_RUN_EMAILS);
+            expect(mailDry.recipients).toEqual(route.DEFAULT_EMAILS);
+            expect(route.DEFAULT_EMAILS.length).toBe(3);
+            expect(spyUserSmtp).not.toHaveBeenCalled();
             expect(spySend).toHaveBeenCalledTimes(1);
             expect(spySend.mock.calls[0][1]).toContain('[DRY RUN]');
+            expect(spySend.mock.calls[0][4]).toMatchObject({
+                host: 'mail.narva.ee',
+                port: 25,
+                secure: false,
+                auth: {user: 'palk', pass: 'x'},
+                from: 'palk@narva.ee',
+                userName: 'Buh70 Robot'
+            });
             expect(spySend.mock.calls[0][6].length).toBe(1);
             expect(spySend.mock.calls[0][6][0].filename).toBe('asutuste_kehtivus.csv');
 
             // (л) реальное закрытие без extra_emails -> DEFAULT_EMAILS (3 адреса)
+            db.queryDb.mockReturnValueOnce(Promise.resolve({
+                data: [{smtp: 'mail.narva.ee', port: 25, user: 'palk', pass: 'x'}]
+            }));
             const mailLive = await route.notifyKehtivusResult(
                 {
                     status: 'success',
@@ -193,7 +210,7 @@ describe('POST /task/checkAsutusKehtivus/', () => {
                     totalClosed: 1,
                     totalErrors: 0
                 },
-                11770,
+                63,
                 []
             );
             expect(mailLive.sent).toBe(true);
@@ -202,6 +219,9 @@ describe('POST /task/checkAsutusKehtivus/', () => {
             expect(spySend.mock.calls[1][3]).toContain('Osaühing H.Uuetalu &lt;Test&gt;');
 
             // (л) extra_emails заменяет список получателей
+            db.queryDb.mockReturnValueOnce(Promise.resolve({
+                data: [{smtp: 'mail.narva.ee', port: 25, user: 'palk', pass: 'x'}]
+            }));
             const mailCustom = await route.notifyKehtivusResult(
                 {
                     status: 'failed',
@@ -212,7 +232,7 @@ describe('POST /task/checkAsutusKehtivus/', () => {
                     totalClosed: 0,
                     totalErrors: 0
                 },
-                11770,
+                63,
                 ['custom@narva.ee']
             );
             expect(mailCustom.sent).toBe(true);
@@ -230,7 +250,7 @@ describe('POST /task/checkAsutusKehtivus/', () => {
                     totalClosed: 1,
                     totalErrors: 0
                 },
-                11770,
+                63,
                 [],
                 null,
                 999
@@ -238,7 +258,38 @@ describe('POST /task/checkAsutusKehtivus/', () => {
             expect(mailDup.sent).toBe(false);
             expect(mailDup.skipped).toBe('duplicate');
 
-            // (о) ошибка SMTP -> mail.error заполнен, исключение не бросается
+            // карточка робота не найдена -> mail.error = 'smtp_config_not_found' и запись в propertis.mail
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({data: []})) // prev check (logId 1001)
+                .mockReturnValueOnce(Promise.resolve({data: []})) // getRobotSmtpConfig -> empty
+                .mockReturnValueOnce(Promise.resolve({data: []})); // update propertis.mail
+            const mailNoCfg = await route.notifyKehtivusResult(
+                {
+                    status: 'success',
+                    dry_run: false,
+                    candidates_total: 1,
+                    closed: [{regkood: '10247291', nimetus: 'Test', kehtivus: '2026-11-19'}],
+                    totalClosed: 1,
+                    totalErrors: 0
+                },
+                63,
+                ['test@narva.ee'],
+                null,
+                1001
+            );
+            expect(mailNoCfg.sent).toBe(false);
+            expect(mailNoCfg.error).toBe('smtp_config_not_found');
+            expect(db.queryDb).toHaveBeenLastCalledWith(
+                expect.stringContaining('propertis'),
+                [expect.stringContaining('smtp_config_not_found'), 1001],
+                null, null, null, null, expect.anything()
+            );
+
+            // (о) ошибка транспорта SMTP -> mail.error заполнен и записан в propertis.mail
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({data: []})) // prev check (logId 1002)
+                .mockReturnValueOnce(Promise.resolve({data: [{smtp: 'mail.narva.ee', port: 25, user: 'palk', pass: 'x'}]}))
+                .mockReturnValueOnce(Promise.resolve({data: []})); // update propertis.mail
             spySend.mockImplementationOnce(async () => {
                 throw new Error('SMTP connection refused');
             });
@@ -251,13 +302,23 @@ describe('POST /task/checkAsutusKehtivus/', () => {
                     totalClosed: 1,
                     totalErrors: 0
                 },
-                11770,
-                ['test@narva.ee']
+                63,
+                ['test@narva.ee'],
+                null,
+                1002
             );
             expect(mailErr.sent).toBe(false);
             expect(mailErr.error).toBe('SMTP connection refused');
+            expect(db.queryDb).toHaveBeenLastCalledWith(
+                expect.stringContaining('propertis'),
+                [expect.stringContaining('SMTP connection refused'), 1002],
+                null, null, null, null, expect.anything()
+            );
+            expect(spyUserSmtp).not.toHaveBeenCalled();
+            expect(spyRobotSmtp).toHaveBeenCalled();
         } finally {
-            spySmtp.mockRestore();
+            spyUserSmtp.mockRestore();
+            spyRobotSmtp.mockRestore();
             spySend.mockRestore();
         }
     });
