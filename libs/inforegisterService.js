@@ -204,13 +204,17 @@ async function asutusExists(regkood) {
 
 async function readLocalAsutus(regkood) {
     const r = await db.queryDb(
-        `select id, regkood, nimetus, aadress, (properties->>'kmkr') as kmkr, email, tel, staatus
+        `select id, regkood, nimetus, aadress, (properties->>'kmkr') as kmkr, (properties->>'kehtivus') as kehtivus, email, tel, staatus
          from libs.asutus
          where ltrim(rtrim(regkood)) = $1 and staatus < 3
          order by id asc
          limit 1`,
         [regkood], null, null, null, null, config);
-    return r && Array.isArray(r.data) && r.data[0] ? r.data[0] : null;
+    const row = r && Array.isArray(r.data) && r.data[0] ? r.data[0] : null;
+    if (!row) return null;
+    const rawKeh = row.kehtivus !== undefined && row.kehtivus !== null ? String(row.kehtivus).trim() : '';
+    row.kehtivus = /^\d{4}-\d{2}-\d{2}/.test(rawKeh) ? rawKeh.slice(0, 10) : null;
+    return row;
 }
 
 function resolveOmvorm(businessType) {
@@ -263,12 +267,66 @@ async function saveAsutus(payload, userId, rekvId) {
     return row && row.id ? Number(row.id) : null;
 }
 
-const FOREIGN_ADDR_RE = /(^|[\s,;.(/-])(latvia|latvija|läti|lati|riga|lithuania|leedu|vilnius|kaunas|finland|soome|helsinki|tampere|turku|espoo|vantaa|russia|venemaa|moskva|moscow|st\.?\s*petersburg|saint\s+petersburg|sankt-peterburg|peterburg|germany|saksamaa|berlin|köln|koln|sweden|rootsi|stockholm|poland|poola|warsaw|united\s+kingdom|london|norway|norra|oslo|denmark|taani|copenhagen|france|prantsusmaa|paris|united\s+states|usa|netherlands|holland|belgium|belgia|austria|switzerland|šveits|spain|hispaania|italy|itaalia|ukraine|ukraina|kyiv|belarus|valgevene|minsk)(?=$|[\s,;.)/-])/i;
+const FOREIGN_ADDR_RE = /(^|[\s,;.(/-])(latvia|latvija|läti|lati|riga|lithuania|leedu|vilnius|kaunas|finland|soome|helsinki|tampere|turku|espoo|vantaa|russia|venemaa|moskva|moscow|st\.?\s*petersburg|saint\s+petersburg|sankt-peterburg|peterburg|germany|saksamaa|berlin|köln|koln|sweden|rootsi|stockholm|poland|poola|warsaw|katowice|united\s+kingdom|england|inglismaa|suurbritannia|suur\s+britaania|london|norway|norra|oslo|denmark|taani|copenhagen|france|prantsusmaa|paris|united\s+states|usa|netherlands|holland|belgium|belgia|austria|switzerland|šveits|spain|hispaania|italy|itaalia|greece|kreeka|malta|czech|tšehhi|tsehhi|praha|prague|ukraine|ukraina|kyiv|belarus|valgevene|minsk)(?=$|[\s,;.)/-])/i;
 const FOREIGN_POSTCODE_RE = /\b(D|DE|LV|LT|FI|S|SE|PL|DK|N|NO|F|FR)-\d{3,5}\b/i;
 const ESTONIAN_MAAKOND_WORD_RE = /(^|[\s,;.(])maakond(?=$|[\s,;.)])/i;
 const ESTONIAN_WORD_RE = /(^|[\s,;.(])(eesti|estonia|maakond|linn|vald|küla|kula|alevik|alev|tallinn|tartu|narva|pärnu|parnu|jõhvi|johvi|kohtla-järve|kohtla-jarve|sillamäe|sillamae|viljandi|rakvere|maardu|kuressaare|võru|voru|valga|haapsalu|paide|keila|jõgeva|jogeva|rapla|põlva|polva|kärdla|kardla|narva-jõesuu|narva-joesuu|tapa|elva|saue|paldiski|loksa|kiviõli|kivioli|põltsamaa|poltsamaa|türi|turi|otepää|otepaa)(?=$|[\s,;.)])/i;
 const ESTONIAN_MAAKOND_RE = /[a-zäöüõ-]+maa(?=$|[\s,;.)])/i;
 const ESTONIAN_POSTCODE_RE = /(^|\D)\d{5}(?!\d)/;
+
+function toTallinnDateStr(val) {
+    const d = val ? (val instanceof Date ? val : new Date(val)) : new Date();
+    if (isNaN(d.getTime())) return null;
+    try {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Europe/Tallinn',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(d);
+    } catch (e) {
+        return d.toISOString().slice(0, 10);
+    }
+}
+
+/**
+ * Проверка контрольной цифры эстонского 8-значного регистрационного кода.
+ */
+function isValidRegCodeChecksum(code) {
+    if (code === null || code === undefined) return false;
+    const s = String(code).trim();
+    if (!/^\d{8}$/.test(s)) return false;
+
+    let sum1 = 0;
+    for (let i = 0; i < 7; i++) {
+        sum1 += Number(s[i]) * (i + 1);
+    }
+    const rem1 = sum1 % 11;
+    let check;
+    if (rem1 < 10) {
+        check = rem1;
+    } else {
+        let sum2 = 0;
+        for (let i = 0; i < 7; i++) {
+            sum2 += Number(s[i]) * (i + 3);
+        }
+        const rem2 = sum2 % 11;
+        check = rem2 < 10 ? rem2 : 0;
+    }
+    return check === Number(s[7]);
+}
+
+/**
+ * Определяет, содержит ли адрес явные признаки иностранного адреса.
+ * Пустой или нераспознанный адрес возвращает false.
+ */
+function isForeignAddress(text) {
+    if (text === null || text === undefined) return false;
+    const normalized = String(text).replace(/\r?\n/g, ' ').trim();
+    if (!normalized) return false;
+    if (ESTONIAN_MAAKOND_WORD_RE.test(normalized)) return false;
+    return FOREIGN_POSTCODE_RE.test(normalized) || FOREIGN_ADDR_RE.test(normalized);
+}
 
 /**
  * Определяет, является ли адрес в libs.asutus эстонским.
@@ -277,11 +335,31 @@ function isEstonianAddress(text) {
     if (text === null || text === undefined) return false;
     const normalized = String(text).replace(/\r?\n/g, ' ').trim();
     if (!normalized) return false;
-    if (ESTONIAN_MAAKOND_WORD_RE.test(normalized)) return true;
-    if (FOREIGN_POSTCODE_RE.test(normalized) || FOREIGN_ADDR_RE.test(normalized)) return false;
+    if (isForeignAddress(normalized)) return false;
     return ESTONIAN_WORD_RE.test(normalized) ||
         ESTONIAN_MAAKOND_RE.test(normalized) ||
         ESTONIAN_POSTCODE_RE.test(normalized);
+}
+
+/**
+ * Единое правило not_in_registry: код на 1/8/9, валидная контрольная цифра и не иностранный адрес.
+ */
+function matchesNotInRegistryRule(regkood, aadress) {
+    if (regkood === null || regkood === undefined) return false;
+    const s = String(regkood).trim();
+    return /^[189]/.test(s) && isValidRegCodeChecksum(s) && !isForeignAddress(aadress);
+}
+
+/**
+ * Проверяет, закрыта ли локальная карточка libs.asutus (kehtivus <= сегодня по Europe/Tallinn).
+ */
+function isLocallyClosed(local, today) {
+    if (!local || !local.kehtivus) return false;
+    const s = String(local.kehtivus).trim();
+    if (!/^\d{4}-\d{2}-\d{2}/.test(s)) return false;
+    const kDate = s.slice(0, 10);
+    const todayStr = today ? String(today).trim().slice(0, 10) : toTallinnDateStr(new Date());
+    return Boolean(todayStr && kDate <= todayStr);
 }
 
 /** Закрытое предприятие: статус реестра не содержит «kantud» (напр. «Registrisse kantud») */
@@ -301,7 +379,7 @@ function normStr(v) {
     return v === undefined || v === null ? '' : String(v).trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-function buildDiff(local, bundle) {
+function buildDiff(local, bundle, options) {
     if (!local || !bundle) return [];
     const diff = [];
 
@@ -345,6 +423,12 @@ function buildDiff(local, bundle) {
 
     if (isClosed(bundle)) {
         diff.push({field: 'closed', local: false, registry: bundle.registryStatus || true});
+    } else if (isLocallyClosed(local, options && options.today)) {
+        diff.push({
+            field: 'kehtivus',
+            local: String(local.kehtivus).trim().slice(0, 10),
+            registry: null
+        });
     }
 
     return diff;
@@ -410,12 +494,9 @@ async function lookupOne(regkood, client, options) {
 
     if (!res.ok) {
         const cleanReg = String(regkood === undefined || regkood === null ? '' : regkood).trim();
-        if (
-            res.reason === 'not_found' &&
-            local &&
-            /^[189]/.test(cleanReg) &&
-            isEstonianAddress(local.aadress)
-        ) {
+        const locallyClosed = isLocallyClosed(local, options.today);
+        const closedSince = locallyClosed ? String(local.kehtivus).trim().slice(0, 10) : null;
+        if (res.reason === 'not_found' && local && matchesNotInRegistryRule(cleanReg, local.aadress)) {
             const localName = local.nimetus ? String(local.nimetus).trim() : null;
             const dataYear = options.year !== undefined && options.year !== null
                 ? options.year
@@ -441,8 +522,42 @@ async function lookupOne(regkood, client, options) {
                 source: 'ariregister',
                 fetched_at: res.fetchedAt || null,
                 closed: true,
+                closed_since: closedSince,
                 local: local,
                 registry: closedBundle,
+                diff: []
+            };
+        }
+
+        if (res.reason === 'not_found' && local && locallyClosed) {
+            const localName = local.nimetus ? String(local.nimetus).trim() : null;
+            const dataYear = options.year !== undefined && options.year !== null
+                ? options.year
+                : inforegister.defaultDataYear();
+            const localClosedBundle = {
+                name: localName,
+                regCode: cleanReg,
+                registryStatus: 'Registrist puudub',
+                businessType: null,
+                vatNumber: null,
+                address: null,
+                contacts: {emails: [], phones: [], webs: []},
+                latestEmployeeCount: null,
+                latestPeriod: null,
+                year: dataYear
+            };
+            return {
+                ok: true,
+                regkood: cleanReg,
+                status: STATUS.CLOSED,
+                reason: 'closed_locally',
+                error: null,
+                source: 'asutus',
+                fetched_at: res.fetchedAt || null,
+                closed: true,
+                closed_since: closedSince,
+                local: local,
+                registry: localClosedBundle,
                 diff: []
             };
         }
@@ -464,6 +579,8 @@ async function lookupOne(regkood, client, options) {
 
     const bundle = res.data;
     const closed = isClosed(bundle);
+    const locallyClosed = isLocallyClosed(local, options.today);
+    const closedSince = locallyClosed ? String(local.kehtivus).trim().slice(0, 10) : null;
     return {
         ok: true,
         regkood: regkood,
@@ -471,9 +588,10 @@ async function lookupOne(regkood, client, options) {
         source: res.source,
         fetched_at: res.fetchedAt || null,
         closed: closed,
+        closed_since: closed ? closedSince : null,
         local: local,
         registry: bundle,
-        diff: buildDiff(local, bundle)
+        diff: buildDiff(local, bundle, options)
     };
 }
 
@@ -591,7 +709,11 @@ exports.readLocalAsutus = readLocalAsutus;
 exports.buildAsutusPayload = buildAsutusPayload;
 exports.saveAsutus = saveAsutus;
 exports.isClosed = isClosed;
+exports.isValidRegCodeChecksum = isValidRegCodeChecksum;
+exports.isForeignAddress = isForeignAddress;
 exports.isEstonianAddress = isEstonianAddress;
+exports.matchesNotInRegistryRule = matchesNotInRegistryRule;
+exports.isLocallyClosed = isLocallyClosed;
 exports.mapReasonToStatus = mapReasonToStatus;
 exports.buildDiff = buildDiff;
 exports.processOne = processOne;

@@ -207,11 +207,14 @@ describe('libs/inforegisterService: isEstonianAddress и lookupOne (not_in_regis
         expect(r7.ok).toBe(false);
         expect(r7.reason).toBe('not_found');
 
-        // (г) пустой и иностранный адрес
+        // (г) пустой адрес (при валидной контрольной цифре -> closed) и иностранный адрес (-> ok: false)
         db.queryDb.mockReturnValueOnce(Promise.resolve({
             data: [{id: 2, regkood: '10035608', nimetus: 'Empty Addr OÜ', aadress: '', staatus: 1}]
         }));
-        expect((await service.lookupOne('10035608', notFoundClient)).ok).toBe(false);
+        const rEmpty = await service.lookupOne('10035608', notFoundClient);
+        expect(rEmpty.ok).toBe(true);
+        expect(rEmpty.closed).toBe(true);
+        expect(rEmpty.reason).toBe('not_in_registry');
 
         db.queryDb.mockReturnValueOnce(Promise.resolve({
             data: [{id: 3, regkood: '10035608', nimetus: 'Latvia SIA', aadress: 'Riga, Brivibas 1, Latvia', staatus: 1}]
@@ -232,5 +235,110 @@ describe('libs/inforegisterService: isEstonianAddress и lookupOne (not_in_regis
         expect(rUnavail.ok).toBe(false);
         expect(rUnavail.reason).toBe('registry_not_loaded');
         expect(rUnavail.status).toBe('registry_unavailable');
+    });
+
+    test('(а, б) isValidRegCodeChecksum, isForeignAddress и matchesNotInRegistryRule', () => {
+        for (const okCode of ['10247291', '11735006', '10137025', '10020162', '80552860', '90003255', '11110007']) {
+            expect(service.isValidRegCodeChecksum(okCode)).toBe(true);
+        }
+        for (const badCode of ['10000000', '88888888', '11111127', '10185632', '1234567', '123456789', '1024729a', null]) {
+            expect(service.isValidRegCodeChecksum(badCode)).toBe(false);
+        }
+
+        expect(service.isForeignAddress('Greece')).toBe(true);
+        expect(service.isForeignAddress('Helsinki,Finland')).toBe(true);
+        expect(service.isForeignAddress('Neumarkt Galerie,D-50667,Koln-Germany')).toBe(true);
+        expect(service.isForeignAddress(null)).toBe(false);
+        expect(service.isForeignAddress('')).toBe(false);
+        expect(service.isForeignAddress('Puskini 2a-34')).toBe(false);
+        expect(service.isForeignAddress('Riia 12 51013 Tartu')).toBe(false);
+        expect(service.isForeignAddress('Peterburi tee 62A')).toBe(false);
+
+        expect(service.matchesNotInRegistryRule('10247291', null)).toBe(true);
+        expect(service.matchesNotInRegistryRule('10185632', 'Tallinn 10111')).toBe(false);
+        expect(service.matchesNotInRegistryRule('10247291', 'Greece')).toBe(false);
+        expect(service.matchesNotInRegistryRule('75026902', 'Narva')).toBe(false);
+    });
+
+    test('(в, г, д, и, к, л, м) lookupOne: 10247291 без адреса -> closed; неверная контрольная/иностранный -> 404; closed_locally; diff kehtivus', async () => {
+        const notFoundClient = {
+            getBundle: async () => ({ok: false, reason: 'not_found', fetchedAt: '2026-11-19', message: 'Not found'})
+        };
+
+        db.queryDb.mockReturnValueOnce(Promise.resolve({
+            data: [{id: 26330, regkood: '10247291', nimetus: 'NARVA BUSSIVEOD AS ', aadress: null, staatus: 1, kehtivus: null}]
+        }));
+        const rV = await service.lookupOne('10247291', notFoundClient, {today: '2026-11-19'});
+        expect(rV.ok).toBe(true);
+        expect(rV.closed).toBe(true);
+        expect(rV.status).toBe('closed');
+        expect(rV.reason).toBe('not_in_registry');
+        expect(rV.closed_since).toBeNull();
+        expect(rV.registry.name).toBe('NARVA BUSSIVEOD AS');
+
+        db.queryDb.mockReturnValueOnce(Promise.resolve({
+            data: [{id: 2, regkood: '10185632', nimetus: 'Orica', aadress: 'Tallinn 10111', staatus: 1, kehtivus: null}]
+        }));
+        const rG = await service.lookupOne('10185632', notFoundClient, {today: '2026-11-19'});
+        expect(rG.ok).toBe(false);
+        expect(rG.reason).toBe('not_found');
+
+        db.queryDb.mockReturnValueOnce(Promise.resolve({
+            data: [{id: 3, regkood: '10247291', nimetus: 'Greek Co', aadress: 'Greece', staatus: 1, kehtivus: null}]
+        }));
+        const rD = await service.lookupOne('10247291', notFoundClient, {today: '2026-11-19'});
+        expect(rD.ok).toBe(false);
+        expect(rD.reason).toBe('not_found');
+
+        db.queryDb.mockReturnValueOnce(Promise.resolve({
+            data: [{id: 26330, regkood: '10247291', nimetus: 'NARVA BUSSIVEOD AS', aadress: null, staatus: 1, kehtivus: '2026-11-17'}]
+        }));
+        const rI = await service.lookupOne('10247291', notFoundClient, {today: '2026-11-19'});
+        expect(rI.ok).toBe(true);
+        expect(rI.closed).toBe(true);
+        expect(rI.reason).toBe('not_in_registry');
+        expect(rI.closed_since).toBe('2026-11-17');
+
+        db.queryDb.mockReturnValueOnce(Promise.resolve({
+            data: [{id: 4, regkood: '75026902', nimetus: 'Kool', aadress: 'Narva', staatus: 1, kehtivus: '2020-12-31'}]
+        }));
+        const rK = await service.lookupOne('75026902', notFoundClient, {today: '2026-11-19'});
+        expect(rK.ok).toBe(true);
+        expect(rK.closed).toBe(true);
+        expect(rK.status).toBe('closed');
+        expect(rK.reason).toBe('closed_locally');
+        expect(rK.closed_since).toBe('2020-12-31');
+        expect(rK.registry.registryStatus).toBe('Registrist puudub');
+
+        db.queryDb.mockReturnValueOnce(Promise.resolve({
+            data: [{id: 5, regkood: '75026902', nimetus: 'Kool', aadress: 'Narva', staatus: 1, kehtivus: '2099-12-31'}]
+        }));
+        const rL = await service.lookupOne('75026902', notFoundClient, {today: '2026-11-19'});
+        expect(rL.ok).toBe(false);
+        expect(rL.reason).toBe('not_found');
+
+        db.queryDb.mockReturnValueOnce(Promise.resolve({
+            data: [{id: 6, regkood: '11735006', nimetus: 'Active OÜ', aadress: 'Narva', staatus: 1, kehtivus: '2017-12-31'}]
+        }));
+        const activeClient = {
+            getBundle: async () => ({
+                ok: true,
+                source: 'ariregister',
+                fetchedAt: '2026-11-19',
+                data: {
+                    name: 'Active OÜ',
+                    regCode: '11735006',
+                    registryStatus: 'Registrisse kantud',
+                    address: {fullAddress: 'Narva'},
+                    contacts: {emails: [], phones: [], webs: []}
+                }
+            })
+        };
+        const rM = await service.lookupOne('11735006', activeClient, {today: '2026-11-19'});
+        expect(rM.ok).toBe(true);
+        expect(rM.closed).toBe(false);
+        expect(rM.diff).toEqual(expect.arrayContaining([
+            {field: 'kehtivus', local: '2017-12-31', registry: null}
+        ]));
     });
 });

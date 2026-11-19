@@ -239,4 +239,26 @@ describe('POST /task/inforegisterLookup/ (ariregisterStore)', () => {
         expect(body.data.company.registryStatus).toBe('Kustutatud');
         expect(body.data.registry.name).toBe('Kadunud OÜ');
     });
+
+    test('(е) inforegisterLookup для 10247291 с aadress=null -> HTTP 200, data.closed=true', async () => {
+        db.queryDb
+            .mockReturnValueOnce(Promise.resolve({
+                data: [{tokens: [{token_sha256: validSha, user_id: 11770, rekv_id: 63, scopes: ['lookup'], active: true}]}]
+            }))
+            .mockReturnValueOnce(Promise.resolve({data: [{id: 907}]})) // createLog
+            .mockReturnValueOnce(Promise.resolve({
+                data: [{id: 26330, regkood: '10247291', nimetus: 'NARVA BUSSIVEOD AS ', aadress: null, staatus: 1, kehtivus: null}]
+            })) // readLocalAsutus
+            .mockReturnValueOnce(Promise.resolve({data: [{file_date: '2026-11-18', rows_total: 381641}]})) // readMeta
+            .mockReturnValueOnce(Promise.resolve({data: []})) // readByRegkood -> not_found
+            .mockReturnValueOnce(Promise.resolve({data: []})); // endLog
+
+        const res = makeRes();
+        await lookup.main({query: {}, body: {hash: validToken, regkood: '10247291'}, params: {}}, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        const body = res.send.mock.calls[0][0];
+        expect(body.data.closed).toBe(true);
+        expect(body.data.registry.registryStatus).toBe('Kustutatud');
+        expect(body.data.registry.name).toBe('NARVA BUSSIVEOD AS');
+    });
 });
