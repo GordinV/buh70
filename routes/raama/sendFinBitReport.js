@@ -218,7 +218,7 @@ async function sendNotificationEmail(toEmail, invoices, smtpConfig, customTransp
  * @param {Object} smtpConfig результат getSmtpConfig
  * @param {Object} [customTransporter]
  */
-async function sendHtmlEmail(toEmails, subject, text, html, smtpConfig, customTransporter) {
+async function sendHtmlEmail(toEmails, subject, text, html, smtpConfig, customTransporter, attachments) {
     if (customTransporter === undefined) customTransporter = null;
     var recipients = Array.isArray(toEmails) ? toEmails.filter(Boolean) : (toEmails ? [toEmails] : []);
 
@@ -236,13 +236,18 @@ async function sendHtmlEmail(toEmails, subject, text, html, smtpConfig, customTr
         }
     });
 
-    var info = await transporter.sendMail({
+    var mailOptions = {
         from: '"' + (smtpConfig.userName || 'Buh70') + '" <' + (smtpConfig.from || 'noreply@narva.ee') + '>',
         to: recipients.join(', '),
         subject: subject,
         text: text,
         html: html
-    });
+    };
+    if (Array.isArray(attachments) && attachments.length > 0) {
+        mailOptions.attachments = attachments;
+    }
+
+    var info = await transporter.sendMail(mailOptions);
     console.log('[sendFinBitReport] Email sent to ' + recipients.join(', ') + ', messageId: ' + (info && info.messageId));
     return info;
 }

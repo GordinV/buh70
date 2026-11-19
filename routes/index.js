@@ -55,6 +55,8 @@ module.exports = function (app) {
     app.post('/task/inforegisterLookup/', require('./raama/inforegisterLookup').main); //hash auth (INFOREGISTER_TOKENS)
     // скачивает открытые данные Äriregister (ZIP/CSV) и синхронизирует локальную таблицу libs.ariregister (авторизация по hash, scope sync)
     app.post('/task/syncAriregister/', require('./raama/syncAriregister').main); //hash auth (INFOREGISTER_TOKENS)
+    // проверяет закрытые/удалённые организации по libs.ariregister и проставляет properties.kehtivus через libs.set_asutuse_kehtivus (авторизация по hash, scope sync)
+    app.post('/task/checkAsutusKehtivus/', require('./raama/checkAsutusKehtivus').main); //hash auth (INFOREGISTER_TOKENS)
     // запустит чтение почты и поиск ошибок доставки счетов (read_mail)
     app.post('/task/readMail/', require('./raama/readMail').main); //checkAuth
 

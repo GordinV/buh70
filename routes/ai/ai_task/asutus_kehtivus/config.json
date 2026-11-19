@@ -1,0 +1,19 @@
+{
+  "name": "asutus_kehtivus",
+  "flow": "checkAsutusKehtivus",
+  "description": "Проверка закрытых/удалённых организаций в libs.asutus по локальной копии Äriregister и установка properties.kehtivus через POST /task/checkAsutusKehtivus/",
+  "prompt": null,
+  "allow_parallel": true,
+  "depends_on": [
+    "ariregister_sync"
+  ],
+  "schedule": null,
+  "max_attempts": 2,
+  "params": {
+    "userId": 11770,
+    "rekvId": 63,
+    "dryRun": true,
+    "maxClose": 100,
+    "extraEmails": ["vladislav.gordin@gmail.com"]
+  }
+}
