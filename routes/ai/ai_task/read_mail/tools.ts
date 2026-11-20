@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 import nodemailer, { Transporter } from 'nodemailer';
 
 function ensureEnvLoaded(): void {
-  if (process.env.IMAP_PASS) return;
+  if (process.env.BUH70_API_BASE_URL) return;
   let dir = __dirname;
   while (dir !== path.dirname(dir)) {
     const candidate = path.join(dir, '.env');
@@ -60,7 +60,7 @@ export function getDefaultMailAccess(custom?: Partial<MailAccessConfig>): MailAc
     : 993;
 
   const envUser = process.env.IMAP_USER || 'oppetasu'; // по аналогии с automailer.js (l_user = 'oppetasu')
-  const envPass = process.env.IMAP_PASS || '';
+  const envPass = '';
 
   const envSecure = process.env.IMAP_SECURE
     ? process.env.IMAP_SECURE === 'true'
@@ -204,12 +204,12 @@ export const defaultImapFetcher: MailFetcherFn = async (access, sinceDate) => {
   const host = access.host || 'mail.narva.ee';
   const port = access.port || 993;
   const user = access.user || 'oppetasu';
-  const pass = access.pass || process.env.IMAP_PASS || '';
+  const pass = access.pass || '';
 
   console.log(`[read_mail] Подключение к почтовому серверу IMAP ${host}:${port} (SSL: ${access.secure !== false}) под пользователем "${user}"...`);
 
   if (!pass) {
-    console.warn(`[read_mail] Внимание: Пароль для ящика ${user}@${host} не задан в .env (IMAP_PASS пустой).`);
+    throw new Error('mail_password_missing: direct IMAP mode requires explicit mailAccess.pass');
   }
 
   // Динамический импорт imapflow
@@ -1184,24 +1184,7 @@ export async function sendOtherErrorsAlertEmail(
       return { messageId: '<test-alert-id@buh70.ee>', response: '250 Test OK' };
     }
 
-    const smtpHost = process.env.SMTP_HOST || 'mail.narva.ee';
-    const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 25;
-    const smtpUser = process.env.SMTP_USER || 'oppetasu';
-    const smtpPass = process.env.SMTP_PASS || '***REMOVED***';
-    const isSecure = smtpPort === 465;
-
-    transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: isSecure,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    throw new Error('Direct SMTP transport is not configured; use backend POST /task/readMail/');
   }
 
   try {

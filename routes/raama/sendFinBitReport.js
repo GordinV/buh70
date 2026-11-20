@@ -209,6 +209,66 @@ async function getRobotSmtpConfig(rekvId) {
 }
 
 /**
+ * Получение настроек почтовой учетной записи (SMTP + IMAP) строго из карточки ou.userid по id (без process.env).
+ */
+async function getUserMailAccount(userId) {
+    if (userId === undefined || userId === null) {
+        throw new Error('mail_account_not_found');
+    }
+
+    var sql = 'SELECT ' +
+        "u.properties ->> 'smtp' AS smtp, " +
+        "(u.properties ->> 'port')::integer AS port, " +
+        "ltrim(rtrim(u.properties ->> 'user')) AS user, " +
+        "u.properties ->> 'pass' AS pass, " +
+        "coalesce(nullif(ltrim(rtrim(u.properties ->> 'imap')), ''), 'mail.narva.ee') AS imap, " +
+        "coalesce((u.properties ->> 'imap_port')::integer, 993) AS imap_port, " +
+        "coalesce(nullif(ltrim(rtrim(u.properties ->> 'imap_mailbox')), ''), 'INBOX') AS imap_mailbox " +
+        'FROM ou.userid u ' +
+        'WHERE u.id = $1 ' +
+        'LIMIT 1';
+
+    var res = await db.queryDb(sql, [Number(userId)], null, null, null, null, config);
+    if (!res || !Array.isArray(res.data) || res.data.length === 0) {
+        throw new Error('mail_account_not_found');
+    }
+
+    var row = res.data[0];
+    var user = row.user ? String(row.user).trim() : '';
+    var pass = row.pass ? String(row.pass) : '';
+    if (!user || !pass) {
+        throw new Error('mail_password_missing');
+    }
+
+    var smtpHost = row.smtp ? String(row.smtp).trim() : 'mail.narva.ee';
+    var smtpPort = Number(row.port) || 465;
+    var imapHost = row.imap ? String(row.imap).trim() : 'mail.narva.ee';
+    var imapPort = Number(row.imap_port) || 993;
+    var imapMailbox = row.imap_mailbox ? String(row.imap_mailbox).trim() : 'INBOX';
+
+    return {
+        smtp: {
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: {
+                user: user,
+                pass: pass
+            },
+            from: getSenderAddress(user)
+        },
+        imap: {
+            host: imapHost,
+            port: imapPort,
+            secure: true,
+            user: user,
+            pass: pass,
+            mailbox: imapMailbox
+        }
+    };
+}
+
+/**
  * Отправка одного письма получателю
  */
 async function sendNotificationEmail(toEmail, invoices, smtpConfig, customTransporter) {
@@ -859,6 +919,7 @@ exports.executeReport = executeReport;
 exports.getReport = getReport;
 exports.getSmtpConfig = getSmtpConfig;
 exports.getRobotSmtpConfig = getRobotSmtpConfig;
+exports.getUserMailAccount = getUserMailAccount;
 exports.getSenderAddress = getSenderAddress;
 exports.sendNotificationEmail = sendNotificationEmail;
 exports.sendHtmlEmail = sendHtmlEmail;

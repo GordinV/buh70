@@ -168,6 +168,19 @@ describe('Субагент read_mail (Анализ входящей почты �
       expect(access.secure).toBe(true);
       // Проверяем tls.rejectUnauthorized: false из automailer.js
       expect(access.rejectUnauthorized).toBe(false);
+      expect(access.pass).toBe('');
+    });
+
+    it('не должен читать пароль из process.env.IMAP_PASS', () => {
+      const prev = process.env.IMAP_PASS;
+      process.env.IMAP_PASS = 'should-be-ignored';
+      try {
+        const access = getDefaultMailAccess();
+        expect(access.pass).toBe('');
+      } finally {
+        if (prev === undefined) delete process.env.IMAP_PASS;
+        else process.env.IMAP_PASS = prev;
+      }
     });
   });
 

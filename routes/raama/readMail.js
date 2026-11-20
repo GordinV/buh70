@@ -6,9 +6,11 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const db = require('./../../libs/db');
 const config = require('./../../config/narvalv.json');
+const mailer = require('./sendFinBitReport');
 
 const DEFAULT_USER_ID = 2477;
 const DEFAULT_REKV_ID = 63;
+const MAIL_ACCOUNT_USER_ID = 11558;
 const FLOW_NAME = 'mail.read_mail_errors';
 const DEFAULT_INITIAL_SINCE_DATE = '2026-10-01T00:00:00.000Z';
 const ALERT_EMAILS = ['vladislav.gordin@gmail.com', 'andrei.vargunin@narva.ee'];
@@ -91,9 +93,16 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
     try {
         console.log('[readMail] Background execution started. log_id: ' + logId + ', userId: ' + userId);
 
+        var mailAccount = null;
+        if (!params.emailContent && !(params.emails && params.emails.length > 0)) {
+            mailAccount = await getMailCredentials(rekvId, userId, params.mailUserId);
+        }
+
         var deliveryErrors = await executeReadMailProcess({
             userId: userId,
             rekvId: rekvId,
+            mailUserId: params.mailUserId,
+            mailAccount: mailAccount,
             emailContent: params.emailContent,
             emails: params.emails,
             stateFilePath: params.stateFilePath,
@@ -130,7 +139,7 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
                 }
 
                 // Отправляем персональные отчеты каждому ответственному бухгалтеру
-                await notifyAccountantsAboutFailedInvoices(cancelItems, deliveryErrors, logId);
+                await notifyAccountantsAboutFailedInvoices(cancelItems, deliveryErrors, logId, null, mailAccount ? mailAccount.smtp : null);
             } catch (tuhistaErr) {
                 console.error('[readMail] Error calling docs.tuhista_arve_saatmise_staatus for log_id ' + logId + ':', tuhistaErr);
             }
@@ -141,7 +150,7 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
         });
         if (otherErrors.length > 0) {
             try {
-                await sendOtherErrorsAlertEmail(otherErrors, logId);
+                await sendOtherErrorsAlertEmail(otherErrors, logId, null, mailAccount ? mailAccount.smtp : null);
             } catch (alertErr) {
                 console.error('[readMail] Failed to send "Muud vead" alert email:', alertErr.message);
             }
@@ -273,24 +282,25 @@ function escapeHtml(str) {
 }
 
 /**
- * Получение SMTP-транспортера nodemailer
+ * Получение SMTP-транспортера nodemailer строго из account.smtp (карточка ou.userid)
  */
-function getMailTransporter(customTransporter) {
+function getMailTransporter(customTransporter, smtpConfig) {
     if (customTransporter) return customTransporter;
 
-    var smtpHost = process.env.SMTP_HOST || 'mail.narva.ee';
-    var smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 25;
-    var smtpUser = process.env.SMTP_USER || 'oppetasu';
-    var smtpPass = process.env.SMTP_PASS || '***REMOVED***';
-    var isSecure = smtpPort === 465;
+    if (!smtpConfig || !smtpConfig.auth || !smtpConfig.auth.user || !smtpConfig.auth.pass) {
+        throw new Error('mail_password_missing');
+    }
+
+    var smtpPort = Number(smtpConfig.port) || 465;
+    var isSecure = typeof smtpConfig.secure === 'boolean' ? smtpConfig.secure : (smtpPort === 465);
 
     return nodemailer.createTransport({
-        host: smtpHost,
+        host: smtpConfig.host || 'mail.narva.ee',
         port: smtpPort,
         secure: isSecure,
         auth: {
-            user: smtpUser,
-            pass: smtpPass
+            user: smtpConfig.auth.user,
+            pass: smtpConfig.auth.pass
         },
         tls: {
             rejectUnauthorized: false
@@ -301,7 +311,7 @@ function getMailTransporter(customTransporter) {
 /**
  * Отправка персонализированного отчета ответственному бухгалтеру о недоставленных счетах
  */
-async function sendAccountantNotificationEmail(accountantEmail, invoices, logId, customTransporter) {
+async function sendAccountantNotificationEmail(accountantEmail, invoices, logId, customTransporter, smtpConfig) {
     if (!accountantEmail || !invoices || invoices.length === 0) return null;
 
     // Исключаем счета со статусом "Muud vead"
@@ -314,7 +324,7 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
         return null;
     }
 
-    var transporter = getMailTransporter(customTransporter);
+    var transporter = getMailTransporter(customTransporter, smtpConfig);
 
     var rowsText = '';
     var rowsHtml = '';
@@ -366,7 +376,7 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
         '</div>';
 
     var mailOptions = {
-        from: process.env.REPORT_EMAIL_FROM || 'oppetasu@narva.ee',
+        from: (smtpConfig && smtpConfig.from) ? smtpConfig.from : 'oppetasu@narva.ee',
         to: accountantEmail,
         subject: 'buh70: Kättetoimetamata arved (' + validInvoices.length + ' tk)',
         text: textContent,
@@ -387,7 +397,7 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
 /**
  * Группирует возвращенные счета по email ответственного бухгалтера и отправляет персональные отчеты
  */
-async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryErrors, logId, customTransporter) {
+async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryErrors, logId, customTransporter, smtpConfig) {
     if (!cancelResults) return { groupedCount: 0, missingEmailCount: 0, results: {} };
     var items = Array.isArray(cancelResults) ? cancelResults : [];
     if (typeof cancelResults === 'string') {
@@ -477,7 +487,7 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
         console.warn('[readMail] Arved ilma vastutava raamatupidaja e-postita (' + missingEmailInvoices.length + ' tk): ' + unassignedDocNums);
     }
 
-    var sharedTransporter = getMailTransporter(customTransporter);
+    var sharedTransporter = getMailTransporter(customTransporter, smtpConfig);
     var sentResults = {};
     var emailKeys = Object.keys(groupsByEmail);
     for (var k = 0; k < emailKeys.length; k++) {
@@ -523,7 +533,7 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
  * Отчет включает номер счета/извещения, адрес получателя, причину ошибки, тему и тело исходного письма.
  * Письма со счетами и извещениями (automailerTeatis) разделены в отдельные таблицы.
  */
-async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) {
+async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter, smtpConfig) {
     var validErrors = (otherErrors || []).filter(function (e) {
         return e && hasValidDocNumber(e.doc_number || e.invoice_number);
     });
@@ -606,11 +616,11 @@ async function sendOtherErrorsAlertEmail(otherErrors, logId, customTransporter) 
     htmlContent += (logId ? '<p style="margin-top: 18px; font-size: 13px; color: #666;">Logi ID süsteemis: ' + logId + '</p>' : '') +
         '</div>';
 
-    var transporter = getMailTransporter(customTransporter);
+    var transporter = getMailTransporter(customTransporter, smtpConfig);
 
     try {
         var mailOptions = {
-            from: process.env.REPORT_EMAIL_FROM || 'oppetasu@narva.ee',
+            from: (smtpConfig && smtpConfig.from) ? smtpConfig.from : 'oppetasu@narva.ee',
             to: ALERT_EMAILS.join(', '),
             subject: 'buh70: E-posti saatmise vead (Muud vead)',
             text: textContent,
@@ -653,8 +663,9 @@ async function executeReadMailProcess(params) {
         return parsedDirect;
     }
 
-    // 2. Получение учетных данных почты (из .env или ou.userid)
-    var mailCreds = await getMailCredentials(params.rekvId, params.userId);
+    // 2. Получение учетных данных почты строго из карточки ou.userid через mailer
+    var mailAccount = params.mailAccount || await getMailCredentials(params.rekvId, params.userId, params.mailUserId);
+    var mailCreds = mailAccount && mailAccount.imap ? mailAccount.imap : mailAccount;
 
     // 3. Загрузка сохраненного состояния (read_mail_state.json)
     var state = loadReadMailState(params.stateFilePath);
@@ -711,44 +722,11 @@ async function executeReadMailProcess(params) {
 }
 
 /**
- * Получение параметров подключения к почте (аналогично automailer.js)
+ * Получение параметров подключения к почте строго из карточки ou.userid через mailer.getUserMailAccount
  */
-async function getMailCredentials(rekvId, userId) {
-    var host = process.env.IMAP_HOST || 'mail.narva.ee';
-    var port = process.env.IMAP_PORT ? parseInt(process.env.IMAP_PORT, 10) : 993;
-    var user = process.env.IMAP_USER || 'oppetasu';
-    var pass = process.env.IMAP_PASS || '';
-    var mailbox = process.env.IMAP_MAILBOX || 'INBOX';
-
-    // Если пароль не задан в process.env, пробуем извлечь из ou.userid (как в automailer.js)
-    if (!pass) {
-        try {
-            var sql = "SELECT u.properties ->> 'pass' as pass, u.properties ->> 'user' as user " +
-                      "FROM ou.userid u " +
-                      "WHERE u.id = 11558 OR (u.properties ->> 'user') = $1 " +
-                      "LIMIT 1;";
-            var res = await db.queryDb(sql, [user], null, null, null, null, config);
-            if (res && res.data && res.data[0] && res.data[0].pass) {
-                pass = res.data[0].pass;
-                if (res.data[0].user) user = res.data[0].user;
-            }
-        } catch (dbErr) {
-            console.warn('[readMail] Failed to load imap pass from ou.userid:', dbErr.message);
-        }
-    }
-
-    // Резервный пароль по умолчанию из automailer
-    if (!pass && user === 'oppetasu') {
-        pass = '***REMOVED***';
-    }
-
-    return {
-        host: host,
-        port: port,
-        user: user,
-        pass: pass,
-        mailbox: mailbox
-    };
+async function getMailCredentials(rekvId, userId, mailUserId) {
+    var targetMailUserId = mailUserId || MAIL_ACCOUNT_USER_ID;
+    return await mailer.getUserMailAccount(targetMailUserId);
 }
 
 const IMAP_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1393,7 +1371,12 @@ async function executeCalculation(userId, rekvId, params) {
         logId = logData && logData.data && logData.data[0] ? logData.data[0].id : null;
         console.log('Created log id:', logId);
 
-        var deliveryErrors = await executeReadMailProcess(Object.assign({ userId: userId, rekvId: rekvId }, params));
+        var mailAccount = null;
+        if (!params.emailContent && !(params.emails && params.emails.length > 0)) {
+            mailAccount = params.mailAccount || await getMailCredentials(rekvId, userId, params.mailUserId);
+        }
+
+        var deliveryErrors = await executeReadMailProcess(Object.assign({ userId: userId, rekvId: rekvId, mailAccount: mailAccount }, params));
         console.log('Read mail result count:', deliveryErrors.length);
 
         await endLog(logId, 'success', null, deliveryErrors);
@@ -1412,7 +1395,7 @@ async function executeCalculation(userId, rekvId, params) {
                 }
 
                 // Отправляем персональные отчеты каждому ответственному бухгалтеру
-                await notifyAccountantsAboutFailedInvoices(cancelItems, deliveryErrors, logId, params.transporter);
+                await notifyAccountantsAboutFailedInvoices(cancelItems, deliveryErrors, logId, params.transporter, mailAccount ? mailAccount.smtp : null);
             } catch (tuhistaErr) {
                 console.error('[readMail] Error calling docs.tuhista_arve_saatmise_staatus for log_id ' + logId + ':', tuhistaErr);
             }
@@ -1423,7 +1406,7 @@ async function executeCalculation(userId, rekvId, params) {
         });
         if (otherErrors.length > 0) {
             try {
-                await sendOtherErrorsAlertEmail(otherErrors, logId);
+                await sendOtherErrorsAlertEmail(otherErrors, logId, params.transporter, mailAccount ? mailAccount.smtp : null);
             } catch (alertErr) {
                 console.error('[readMail] Failed to send "Muud vead" alert email in executeCalculation:', alertErr.message);
             }
@@ -1473,6 +1456,8 @@ exports.loadReadMailState = loadReadMailState;
 exports.saveReadMailState = saveReadMailState;
 exports.sendOtherErrorsAlertEmail = sendOtherErrorsAlertEmail;
 exports.getMailTransporter = getMailTransporter;
+exports.getMailCredentials = getMailCredentials;
+exports.MAIL_ACCOUNT_USER_ID = MAIL_ACCOUNT_USER_ID;
 exports.escapeHtml = escapeHtml;
 exports.sendAccountantNotificationEmail = sendAccountantNotificationEmail;
 exports.notifyAccountantsAboutFailedInvoices = notifyAccountantsAboutFailedInvoices;

@@ -451,4 +451,70 @@ describe('sendFinBitReport unit tests', () => {
             );
         });
     });
+
+    describe('getUserMailAccount', () => {
+        test('reads smtp and imap settings from ou.userid ignoring process.env', async () => {
+            const prevPass = process.env.SMTP_PASS;
+            process.env.SMTP_PASS = 'env-secret-should-be-ignored';
+            try {
+                db.queryDb.mockReturnValueOnce(Promise.resolve({
+                    data: [{
+                        smtp: 'mail.narva.ee',
+                        port: 465,
+                        user: 'oppetasu',
+                        pass: 'db-pass-value',
+                        imap: 'mail.narva.ee',
+                        imap_port: 993,
+                        imap_mailbox: 'INBOX'
+                    }]
+                }));
+
+                const account = await sendFinBitReport.getUserMailAccount(11558);
+                expect(account.smtp).toEqual({
+                    host: 'mail.narva.ee',
+                    port: 465,
+                    secure: true,
+                    auth: { user: 'oppetasu', pass: 'db-pass-value' },
+                    from: 'oppetasu@narva.ee'
+                });
+                expect(account.imap).toEqual({
+                    host: 'mail.narva.ee',
+                    port: 993,
+                    secure: true,
+                    user: 'oppetasu',
+                    pass: 'db-pass-value',
+                    mailbox: 'INBOX'
+                });
+            } finally {
+                if (prevPass === undefined) delete process.env.SMTP_PASS;
+                else process.env.SMTP_PASS = prevPass;
+            }
+        });
+
+        test('throws mail_account_not_found when user card is missing', async () => {
+            db.queryDb.mockReturnValueOnce(Promise.resolve({ data: [] }));
+            let caught = null;
+            try {
+                await sendFinBitReport.getUserMailAccount(11558);
+            } catch (e) {
+                caught = e;
+            }
+            expect(caught).toBeDefined();
+            expect(caught.message).toBe('mail_account_not_found');
+        });
+
+        test('throws mail_password_missing when user or pass is empty', async () => {
+            db.queryDb.mockReturnValueOnce(Promise.resolve({
+                data: [{ smtp: 'mail.narva.ee', port: 465, user: 'oppetasu', pass: '' }]
+            }));
+            let caught = null;
+            try {
+                await sendFinBitReport.getUserMailAccount(11558);
+            } catch (e) {
+                caught = e;
+            }
+            expect(caught).toBeDefined();
+            expect(caught.message).toBe('mail_password_missing');
+        });
+    });
 });

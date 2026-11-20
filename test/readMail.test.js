@@ -560,3 +560,46 @@ describe('fetchEmailsViaImapTls', () => {
         expect(res.map((m) => m.uid)).toEqual([1, 2, 3]);
     });
 });
+
+describe('getMailCredentials & getMailTransporter (no hardcoded credentials)', () => {
+    const db = require('../libs/db');
+
+    test('getMailCredentials loads account from ou.userid via mailer and ignores IMAP_PASS env', async () => {
+        const origQueryDb = db.queryDb;
+        const prevImapPass = process.env.IMAP_PASS;
+        process.env.IMAP_PASS = 'ignored-env-imap-pass';
+        db.queryDb = jest.fn(() => Promise.resolve({
+            data: [{
+                smtp: 'mail.narva.ee',
+                port: 465,
+                user: 'oppetasu',
+                pass: 'card-pass',
+                imap: 'mail.narva.ee',
+                imap_port: 993,
+                imap_mailbox: 'INBOX'
+            }]
+        }));
+
+        try {
+            const account = await readMail.getMailCredentials(63, 11770);
+            expect(account.imap.user).toBe('oppetasu');
+            expect(account.imap.pass).toBe('card-pass');
+            expect(account.smtp.auth.pass).toBe('card-pass');
+        } finally {
+            db.queryDb = origQueryDb;
+            if (prevImapPass === undefined) delete process.env.IMAP_PASS;
+            else process.env.IMAP_PASS = prevImapPass;
+        }
+    });
+
+    test('getMailTransporter throws mail_password_missing without smtpConfig even if SMTP_PASS is set', () => {
+        const prevSmtpPass = process.env.SMTP_PASS;
+        process.env.SMTP_PASS = 'ignored-env-smtp-pass';
+        try {
+            expect(() => readMail.getMailTransporter(null, null)).toThrow('mail_password_missing');
+        } finally {
+            if (prevSmtpPass === undefined) delete process.env.SMTP_PASS;
+            else process.env.SMTP_PASS = prevSmtpPass;
+        }
+    });
+});
