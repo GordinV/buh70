@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { buildAgentRegistry } from './agent_registry';
 import { ApiClient } from './api_client';
-import { AI_TASK_SERVICE_USER_ID, FINBIT_AGENT_KEYS, FINBIT_SERVICE_USER_ID } from './constants';
+import { AI_TASK_SERVICE_USER_ID, FINBIT_AGENT_KEYS, FINBIT_SERVICE_USER_ID, SALDOANDMIK_USER_ID } from './constants';
 import { getDefaultTaskGraph, loadAgentConfig, loadOrchestratorConfig } from '../orchestrator/state.manager';
 
 describe('Agent Registry (shared/agent_registry.ts)', () => {
@@ -176,14 +176,15 @@ describe('Agent Registry (shared/agent_registry.ts)', () => {
     }
   });
 
-  it('все субагенты в config.json и orchestrator/config.json используют AI_TASK_SERVICE_USER_ID (11770), а description getEarved не содержит userId', () => {
+  it('все субагенты в config.json и orchestrator/config.json используют AI_TASK_SERVICE_USER_ID (11770), кроме saldoandmik (2477), а description getEarved не содержит userId', () => {
     const registryKeys = Object.keys(buildAgentRegistry());
     expect(registryKeys.length).toBeGreaterThanOrEqual(FINBIT_AGENT_KEYS.length);
 
     for (const agentKey of registryKeys) {
       const cfg = loadAgentConfig(agentKey);
       if (cfg?.params?.userId !== undefined) {
-        expect(cfg.params.userId).toBe(AI_TASK_SERVICE_USER_ID);
+        const expectedUid = agentKey === 'saldoandmik' ? SALDOANDMIK_USER_ID : AI_TASK_SERVICE_USER_ID;
+        expect(cfg.params.userId).toBe(expectedUid);
       }
     }
 
@@ -191,7 +192,8 @@ describe('Agent Registry (shared/agent_registry.ts)', () => {
       const cfg = loadAgentConfig(agentKey);
       expect(cfg).not.toBeNull();
       if (cfg?.params?.userId !== undefined) {
-        expect(cfg.params.userId).toBe(AI_TASK_SERVICE_USER_ID);
+        const expectedUid = agentKey === 'saldoandmik' ? SALDOANDMIK_USER_ID : AI_TASK_SERVICE_USER_ID;
+        expect(cfg.params.userId).toBe(expectedUid);
       }
     }
 

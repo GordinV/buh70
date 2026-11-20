@@ -5262,8 +5262,9 @@ describe('Главный Оркестратор', () => {
         );
         const savedAfter = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
         expect(savedAfter.params.userId).toBe(11770);
-        const explicitUrl = seenUrls.find((u) => u.includes('/task/read_log/9999/'));
-        expect(explicitUrl).toBeDefined();
+        // Задача с params.userId=11770 проверяется под тем же userId=11770, а не под разовым userId=9999
+        expect(seenUrls.some((u) => u.includes('/task/read_log/11770/'))).toBe(true);
+        expect(seenUrls.some((u) => u.includes('/task/read_log/9999/') && u.includes('eelarve.sp_koosta_saldoandmik'))).toBe(false);
       } finally {
         fs.rmSync(tmpDir, { recursive: true, force: true });
       }
@@ -5510,6 +5511,132 @@ describe('Главный Оркестратор', () => {
         reconcileTasksWithConfigs(state.tasks, loadAllAgentConfigs(), true);
         expect(state.tasks.read_mail.max_attempts).toBe(5);
         expect(state.tasks.read_mail.retry_delay_minutes).toBe(15);
+      } finally {
+        if (fs.existsSync(file)) {
+          try { fs.unlinkSync(file); } catch {}
+        }
+      }
+    });
+  });
+
+  describe('Единый источник userId при явном CLI --user (task_cli_user_override_mismatch)', () => {
+    it('(а, б) при явном userId=2477 задача с params.userId=11770 запускается и проверяет логи под 11770, а schedule_monitor использует 2477', async () => {
+      const file = testStatePath('test_cli_user_override_mismatch.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 11770, rekvId: 63, kond: 1 }, '2026-11-20');
+        state.cycle_date = '2026-11-20';
+        state.status = 'IN_PROGRESS';
+
+        for (const k of Object.keys(state.tasks)) {
+          if (k !== 'saldoandmik') state.tasks[k].status = 'SUCCESS';
+        }
+        state.tasks.saldoandmik.status = 'PENDING';
+        state.tasks.saldoandmik.params = { userId: 11770, rekvId: 63, kond: 1 };
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const seenUrls: string[] = [];
+        let dispatchedUserId: number | undefined;
+        const mockClient = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server', apiRetryBaseDelayMs: 0 },
+          jest.fn().mockImplementation(async (url: string) => {
+            seenUrls.push(String(url));
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        const registry = {
+          saldoandmik: {
+            name: 'saldoandmik',
+            dispatch: async (ctx: { userId: number; params: Record<string, unknown> }) => {
+              dispatchedUserId = typeof ctx.params.userId === 'number' ? ctx.params.userId : ctx.userId;
+              return 77702;
+            },
+          },
+        };
+
+        // Тик 1: запуск с явным userId=2477 — dupGuard и dispatch должны использовать 11770
+        await runOrchestratorTick(
+          { stateFilePath: file, userId: 2477 },
+          {
+            apiClient: mockClient,
+            registry: registry as any,
+            currentDate: new Date('2026-11-20T18:05:00.000Z'), // 20:05 Tallinn
+            targetDateStr: '2026-11-20',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        expect(dispatchedUserId).toBe(11770);
+        expect(seenUrls.some((u) => u.includes('/task/read_log/11770/'))).toBe(true);
+        expect(seenUrls.some((u) => u.includes('/task/read_log/2477/') && u.includes('eelarve.sp_koosta_saldoandmik'))).toBe(false);
+
+        // Тик 2: проверка RUNNING задачи с явным userId=2477 — checkTaskStatus тоже должен использовать 11770
+        seenUrls.length = 0;
+        await runOrchestratorTick(
+          { stateFilePath: file, userId: 2477 },
+          {
+            apiClient: mockClient,
+            registry: registry as any,
+            currentDate: new Date('2026-11-20T18:06:00.000Z'),
+            targetDateStr: '2026-11-20',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        expect(seenUrls.some((u) => u.includes('/task/read_log/11770/'))).toBe(true);
+        expect(seenUrls.some((u) => u.includes('/task/read_log/2477/') && u.includes('eelarve.sp_koosta_saldoandmik'))).toBe(false);
+      } finally {
+        if (fs.existsSync(file)) {
+          try { fs.unlinkSync(file); } catch {}
+        }
+      }
+    });
+
+    it('dispatch saldoandmik через оркестратор уходит с user_id 2477, rekv_id 63, kond 1 (task_saldoandmik_user_2477)', async () => {
+      const file = testStatePath('test_saldoandmik_user_2477.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState(undefined, '2026-11-20');
+        state.cycle_date = '2026-11-20';
+        state.status = 'IN_PROGRESS';
+
+        for (const k of Object.keys(state.tasks)) {
+          if (k !== 'saldoandmik') state.tasks[k].status = 'SUCCESS';
+        }
+        state.tasks.saldoandmik.status = 'PENDING';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        let capturedSaldoBody: Record<string, unknown> | null = null;
+        const seenReadLogUrls: string[] = [];
+        const mockClient = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server', apiRetryBaseDelayMs: 0 },
+          jest.fn().mockImplementation(async (url: string, init?: { body?: string }) => {
+            const urlStr = String(url);
+            if (urlStr.includes('/task/read_log/')) {
+              seenReadLogUrls.push(urlStr);
+              return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, data: [] }) };
+            }
+            if (urlStr.includes('/task/calcKondSaldoandmik/')) {
+              capturedSaldoBody = init?.body ? JSON.parse(init.body) : null;
+              return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, log_id: 91234 }) };
+            }
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: mockClient,
+            currentDate: new Date('2026-11-20T18:05:00.000Z'), // 20:05 Tallinn
+            targetDateStr: '2026-11-20',
+            timezone: 'Europe/Tallinn',
+          }
+        );
+
+        expect(capturedSaldoBody).toEqual({ user_id: 2477, rekv_id: 63, kond: 1 });
+        expect(seenReadLogUrls.some((u) => u.includes('/task/read_log/2477/eelarve.sp_koosta_saldoandmik'))).toBe(true);
       } finally {
         if (fs.existsSync(file)) {
           try { fs.unlinkSync(file); } catch {}

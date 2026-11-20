@@ -11,6 +11,11 @@ export const AI_TASK_SERVICE_USER_ID = 11770;
 export const FINBIT_SERVICE_USER_ID = AI_TASK_SERVICE_USER_ID;
 
 /**
+ * Выделенный userId для агента saldoandmik (eelarve.sp_koosta_saldoandmik).
+ */
+export const SALDOANDMIK_USER_ID = 2477;
+
+/**
  * Список ключей субагентов цепочки FinBit.
  */
 export const FINBIT_AGENT_KEYS = [

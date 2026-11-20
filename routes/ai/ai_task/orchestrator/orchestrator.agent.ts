@@ -71,12 +71,8 @@ async function guardAgainstDuplicate(
 
 function resolveTaskUserId(
   task: TaskState,
-  defaultUserId: number,
-  explicitUserId?: number
+  defaultUserId: number
 ): number {
-  if (typeof explicitUserId === 'number') {
-    return explicitUserId;
-  }
   return typeof task.params?.userId === 'number' ? task.params.userId : defaultUserId;
 }
 import {
@@ -1072,7 +1068,7 @@ export async function runOrchestratorTick(
       if (!isAlreadySuccessToday) {
         const minStartTime = task.schedule?.time || undefined;
         const logCheck = await checkTaskAlreadyRunToday(
-          resolveTaskUserId(task, effectiveCycleUserId, explicitUserId),
+          resolveTaskUserId(task, effectiveCycleUserId),
           task.flow,
           apiClient,
           targetDateStr,
@@ -1236,7 +1232,7 @@ export async function runOrchestratorTick(
         const task = state.tasks[key];
         // статус читается по log_id запуска этой задачи; без log_id - последняя запись flow
         const statusResult = await checkTaskStatus(
-          resolveTaskUserId(task, effectiveCycleUserId, explicitUserId),
+          resolveTaskUserId(task, effectiveCycleUserId),
           task.flow,
           apiClient,
           task.log_id
@@ -1276,7 +1272,7 @@ export async function runOrchestratorTick(
           // (например, ручной перезапуск), принимаем его и не запускаем задачу повторно
           if (task.log_id) {
             const laterRun = await checkTaskAlreadyRunToday(
-              resolveTaskUserId(task, effectiveCycleUserId, explicitUserId),
+              resolveTaskUserId(task, effectiveCycleUserId),
               task.flow,
               apiClient,
               targetDateStr,
@@ -1343,7 +1339,7 @@ export async function runOrchestratorTick(
                 ...parentParams,
               };
 
-              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId, explicitUserId), apiClient, currentDate);
+              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId), apiClient, currentDate);
               if (dupGuard.state !== 'none') {
                 console.warn(
                   `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
@@ -1479,7 +1475,7 @@ export async function runOrchestratorTick(
                 ...parentParams,
               };
 
-              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId, explicitUserId), apiClient, currentDate);
+              const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId), apiClient, currentDate);
               if (dupGuard.state !== 'none') {
                 console.warn(
                   `[orchestrator-tick] Ülesande ${key} korduskäivitus blokeeritud (${dupGuard.state}): ${dupGuard.reason}`
@@ -1764,7 +1760,7 @@ export async function runOrchestratorTick(
       readyToStartKeys.map(async (key) => {
         const task = state.tasks[key];
         try {
-          const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId, explicitUserId), apiClient, currentDate);
+          const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId), apiClient, currentDate);
           if (dupGuard.state !== 'none') {
             if (dupGuard.state === 'running') {
               // Запуск уже идёт (например, state был потерян): берём его под наблюдение вместо дубля
@@ -1926,7 +1922,7 @@ export async function runOrchestratorTick(
         const effectiveLogId = t?.log_id || recentLastRun?.log_id;
         if (apiClient && t?.flow && (!notStartedYet || recentLastRun?.log_id)) {
           try {
-            const taskUserId = resolveTaskUserId(t, effectiveCycleUserId, explicitUserId);
+            const taskUserId = resolveTaskUserId(t, effectiveCycleUserId);
             // Приоритет - запись запуска (по log_id текущего цикла или last_run.log_id)
             if (effectiveLogId) {
               const byId = await readTaskLog(
