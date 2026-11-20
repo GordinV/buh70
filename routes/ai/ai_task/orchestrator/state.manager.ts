@@ -159,6 +159,7 @@ export function buildTaskGraphFromConfigs(
       status: 'PENDING',
       attempts: 0,
       max_attempts: cfg.max_attempts ?? 3,
+      retry_delay_minutes: cfg.retry_delay_minutes ?? 0,
       timeout_hours: cfg.timeout_hours,
       max_wait_time: cfg.max_wait_time,
       log_id: null,
@@ -199,6 +200,7 @@ export function reconcileTasksWithConfigs(
       existing.schedule = cfg.schedule ?? null;
       existing.prompt = cfg.prompt ?? null;
       existing.max_attempts = cfg.max_attempts ?? 3;
+      existing.retry_delay_minutes = cfg.retry_delay_minutes ?? 0;
       if (cfg.timeout_hours !== undefined) {
         existing.timeout_hours = cfg.timeout_hours;
       }
@@ -221,6 +223,7 @@ export function reconcileTasksWithConfigs(
         status: 'PENDING',
         attempts: 0,
         max_attempts: cfg.max_attempts ?? 3,
+      retry_delay_minutes: cfg.retry_delay_minutes ?? 0,
         timeout_hours: cfg.timeout_hours,
         max_wait_time: cfg.max_wait_time,
         log_id: null,

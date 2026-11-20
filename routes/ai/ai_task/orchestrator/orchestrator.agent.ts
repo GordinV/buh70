@@ -441,6 +441,56 @@ function getLatestResetTimestampByTask(history: OrchestratorState['history']): M
  * передавая параметры задачи, расписание, статусы зависимостей и контекст в LLM (aiGenerateFn).
  * При отсутствии prompt или сбое LLM используется строгая детерминированная логика графа.
  */
+function getRetryDelayWaitInfo(
+  task: TaskState,
+  currentDate: Date
+): { wait: boolean; remainingMinutes: number } {
+  const delayMinutes = task.retry_delay_minutes ?? 0;
+  if (delayMinutes <= 0 || (task.attempts || 0) <= 0 || !task.finished_at) {
+    return { wait: false, remainingMinutes: 0 };
+  }
+  const finishedMs = new Date(task.finished_at).getTime();
+  if (Number.isNaN(finishedMs)) {
+    return { wait: false, remainingMinutes: 0 };
+  }
+  const elapsedMs = currentDate.getTime() - finishedMs;
+  const delayMs = delayMinutes * 60 * 1000;
+  if (elapsedMs < delayMs) {
+    return {
+      wait: true,
+      remainingMinutes: Math.max(1, Math.ceil((delayMs - elapsedMs) / 60000)),
+    };
+  }
+  return { wait: false, remainingMinutes: 0 };
+}
+
+function recordRetryWaitIfNeeded(
+  state: OrchestratorState,
+  key: string,
+  task: TaskState,
+  nowIso: string,
+  reason: string
+): void {
+  const maxAttempts = task.max_attempts || 3;
+  const attemptLabel = `attempt: ${task.attempts}/${maxAttempts}`;
+  const minTs = task.finished_at || '';
+  const alreadyLogged = state.history.some(
+    (h) =>
+      h.event === 'TASK_RETRY_WAIT' &&
+      h.task === key &&
+      h.timestamp >= minTs &&
+      (h.details || '').includes(attemptLabel)
+  );
+  if (!alreadyLogged) {
+    state.history.push({
+      timestamp: nowIso,
+      event: 'TASK_RETRY_WAIT',
+      task: key,
+      details: `${attemptLabel}, delay: ${task.retry_delay_minutes ?? 0} min, reason: ${reason}`,
+    });
+  }
+}
+
 export async function evaluateTaskLaunchDecision(
   key: string,
   task: TaskState,
@@ -528,6 +578,16 @@ export async function evaluateTaskLaunchDecision(
       should_run: false,
       action: 'WAIT',
       reason: `Ootel: sellest ülesandest sõltuv ülesanne (${runningDependents.join(', ')}) on veel teostamisel (RUNNING)`,
+    };
+  }
+
+  // 0.1. Задержка перед повторной попыткой (retry_delay_minutes)
+  const retryWait = getRetryDelayWaitInfo(task, currentDate);
+  if (retryWait.wait) {
+    return {
+      should_run: false,
+      action: 'WAIT',
+      reason: `Ootel korduskäivituse viivituse tõttu (~${retryWait.remainingMinutes} min jäänud)`,
     };
   }
 
@@ -1249,6 +1309,19 @@ export async function runOrchestratorTick(
             const nextAttempt = currentAttempts + 1;
             const reason = evaluation.error || statusResult.error || 'Täitmisel ilmnesid vead';
 
+            if ((task.retry_delay_minutes ?? 0) > 0) {
+              task.status = 'PENDING';
+              task.finished_at = statusResult.execEnd || nowIso;
+              task.duration_ms = statusResult.durationMs ?? null;
+              task.error = reason;
+              task.result_summary = evaluation.summary;
+              recordRetryWaitIfNeeded(state, key, task, nowIso, reason);
+              console.warn(
+                `[orchestrator-tick] Ülesanne ${key} ootab korduskäivitust (${task.retry_delay_minutes} min viivitus). Põhjus: ${reason}`
+              );
+              return;
+            }
+
             console.warn(
               `[orchestrator-tick] Ülesande ${key} korduskäivitus (${nextAttempt}/${maxAttempts}). Põhjus: ${reason}`
             );
@@ -1374,6 +1447,17 @@ export async function runOrchestratorTick(
             const nextAttempt = currentAttempts + 1;
             const reason = 'Algusaeg (exec_start) puudub logides';
 
+            if ((task.retry_delay_minutes ?? 0) > 0) {
+              task.status = 'PENDING';
+              task.finished_at = statusResult.execEnd || nowIso;
+              task.error = reason;
+              recordRetryWaitIfNeeded(state, key, task, nowIso, reason);
+              console.warn(
+                `[orchestrator-tick] Ülesanne ${key} ootab korduskäivitust (${task.retry_delay_minutes} min viivitus). Põhjus: ${reason}`
+              );
+              return;
+            }
+
             console.warn(
               `[orchestrator-tick] Ülesande ${key} korduskäivitus (${nextAttempt}/${maxAttempts}). Põhjus: ${reason}`
             );
@@ -1491,6 +1575,17 @@ export async function runOrchestratorTick(
             if (currentAttempts < maxAttempts) {
               const nextAttempt = currentAttempts + 1;
               const timeoutReason = `TASK_TIMEOUT: ületatud ${timeoutHours} h täitmise limiit`;
+
+              if ((task.retry_delay_minutes ?? 0) > 0) {
+                task.status = 'PENDING';
+                task.finished_at = nowIso;
+                task.error = timeoutReason;
+                recordRetryWaitIfNeeded(state, key, task, nowIso, timeoutReason);
+                console.warn(
+                  `[orchestrator-tick] Ülesanne ${key} ootab korduskäivitust (${task.retry_delay_minutes} min viivitus). Põhjus: ${timeoutReason}`
+                );
+                return;
+              }
 
               try {
                 let parentParams: Record<string, unknown> = {};
@@ -1656,6 +1751,9 @@ export async function runOrchestratorTick(
       readyToStartKeys.push(key);
     } else {
       console.log(`[orchestrator-tick] Ülesanne ${key} ootel: ${decision.reason}`);
+      if (getRetryDelayWaitInfo(task, currentDate).wait) {
+        recordRetryWaitIfNeeded(state, key, task, nowIso, task.error || decision.reason);
+      }
     }
   }
 
@@ -1710,6 +1808,8 @@ export async function runOrchestratorTick(
           task.max_attempts = task.max_attempts || config.maxTaskAttempts || 3;
           task.log_id = logId;
           task.started_at = nowIso;
+          task.finished_at = null;
+          task.error = null;
           state.history.push({
             timestamp: nowIso,
             event: 'TASK_STARTED',
@@ -1731,6 +1831,10 @@ export async function runOrchestratorTick(
 
           if (!nonRetryable && nextAttempt < maxAttempts) {
             task.status = 'PENDING';
+            if ((task.retry_delay_minutes ?? 0) > 0) {
+              task.finished_at = nowIso;
+              recordRetryWaitIfNeeded(state, key, task, nowIso, message);
+            }
             console.warn(
               `[orchestrator-tick] Ülesanne ${key} ebaõnnestus käivitamisel (${nextAttempt}/${maxAttempts}). Jääb olekusse PENDING järgmise tiku korduskäivituseks.`
             );

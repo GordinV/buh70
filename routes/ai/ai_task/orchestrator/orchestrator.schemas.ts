@@ -41,6 +41,11 @@ export const AgentConfigSchema = z
     schedule: TaskScheduleSchema.default(null).describe('Индивидуальное расписание запуска'),
     prompt: z.string().nullable().optional().default(null).describe('Инструкция для LLM при принятии решений'),
     max_attempts: z.number().default(3).describe('Максимальное число попыток запуска при сбое'),
+    retry_delay_minutes: z
+      .number()
+      .min(0)
+      .optional()
+      .describe('Задержка в минутах перед повторной попыткой при сбое (0 или не задано = немедленно)'),
     timeout_hours: z.number().positive().optional().describe('Порог таймаута выполнения задачи в часах (по умолчанию 12)'),
     max_wait_time: z
       .string()
@@ -230,6 +235,11 @@ export const TaskStateSchema = z.object({
   status: TaskStatusEnum.default('PENDING').describe('Текущий статус выполнения'),
   attempts: z.number().default(0).describe('Число выполненных попыток запуска'),
   max_attempts: z.number().default(3).describe('Максимальное допустимое число попыток запуска'),
+  retry_delay_minutes: z
+    .number()
+    .min(0)
+    .optional()
+    .describe('Задержка в минутах перед повторной попыткой при сбое (0 или не задано = немедленно)'),
   timeout_hours: z.number().positive().optional().describe('Порог таймаута выполнения задачи в часах (по умолчанию 12)'),
   max_wait_time: z.string().optional().describe('Предельное время (HH:mm) ожидания зависимостей (reporter)'),
   log_id: z.number().nullable().default(null).describe('ID записи в ou.logs'),

@@ -8,7 +8,8 @@
     "time": "06:00"
   },
   "prompt": null,
-  "max_attempts": 3,
+  "max_attempts": 5,
+  "retry_delay_minutes": 15,
   "params": {
     "userId": 11770,
     "rekvId": 63

@@ -5328,4 +5328,193 @@ describe('Главный Оркестратор', () => {
       }
     });
   });
+
+  describe('Задержка перед повторной попыткой (task_read_mail_retry_backoff)', () => {
+    it('не запускает повтор раньше retry_delay_minutes, не дублирует TASK_RETRY_WAIT и запускает после задержки', async () => {
+      const file = testStatePath('test_retry_backoff_delay.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 11770, rekvId: 63, kond: 1 }, '2026-11-20');
+        state.cycle_date = '2026-11-20';
+        state.status = 'IN_PROGRESS';
+
+        // Изолируем тест от остальных задач
+        for (const k of Object.keys(state.tasks)) {
+          if (k !== 'read_mail') state.tasks[k].status = 'SUCCESS';
+        }
+        state.tasks.read_mail.status = 'RUNNING';
+        state.tasks.read_mail.attempts = 1;
+        state.tasks.read_mail.max_attempts = 5;
+        state.tasks.read_mail.retry_delay_minutes = 15;
+        state.tasks.read_mail.log_id = 9001;
+        state.tasks.read_mail.started_at = '2026-11-20T04:00:00.000Z';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        let dispatchCount = 0;
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (url: string) => {
+            if (url.includes('/task/read_log') || url.includes('read_log')) {
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                  status: 200,
+                  result: 1,
+                  data: [
+                    {
+                      id: 9001,
+                      flow: 'mail.read_mail_errors',
+                      status: 'failed',
+                      exec_start: '2026-11-20T04:00:00.000Z',
+                      exec_end: '2026-11-20T04:00:30.000Z',
+                      error: 'IMAP connection timed out',
+                    },
+                  ],
+                }),
+              };
+            }
+            if (url.includes('/task/readMail')) {
+              dispatchCount++;
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 200, result: 1, log_id: 9002 }),
+              };
+            }
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({ status: 200, result: 1, data: [] }),
+            };
+          }) as unknown as typeof fetch
+        );
+
+        // Тик 1: 06:01 EET (04:01 UTC) — фиксируем сбой, переводим в PENDING с ожиданием 15 мин
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date('2026-11-20T04:01:00.000Z'), timezone: 'Europe/Tallinn' }
+        );
+
+        let reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.read_mail.status).toBe('PENDING');
+        expect(reloaded.tasks.read_mail.attempts).toBe(1);
+        expect(dispatchCount).toBe(0);
+        expect(reloaded.history.filter((h) => h.event === 'TASK_RETRY_WAIT' && h.task === 'read_mail')).toHaveLength(1);
+
+        // Тик 2: 06:10 EET (04:10 UTC) — прошло < 15 мин, повтор не запускается, TASK_RETRY_WAIT не дублируется
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date('2026-11-20T04:10:00.000Z'), timezone: 'Europe/Tallinn' }
+        );
+
+        reloaded = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.read_mail.status).toBe('PENDING');
+        expect(reloaded.tasks.read_mail.attempts).toBe(1);
+        expect(dispatchCount).toBe(0);
+        expect(reloaded.history.filter((h) => h.event === 'TASK_RETRY_WAIT' && h.task === 'read_mail')).toHaveLength(1);
+
+        // Тик 3: 06:16 EET (04:16 UTC) — прошло > 15 мин с exec_end (04:00:30), повтор запускается
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date('2026-11-20T04:16:00.000Z'), timezone: 'Europe/Tallinn' }
+        );
+
+        reloaded = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.read_mail.status).toBe('RUNNING');
+        expect(reloaded.tasks.read_mail.attempts).toBe(2);
+        expect(reloaded.tasks.read_mail.log_id).toBe(9002);
+        expect(dispatchCount).toBe(1);
+      } finally {
+        if (fs.existsSync(file)) {
+          try { fs.unlinkSync(file); } catch {}
+        }
+      }
+    });
+
+    it('при retry_delay_minutes = 0 (default) повторяет немедленно на том же тике', async () => {
+      const file = testStatePath('test_retry_backoff_zero.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 11770, rekvId: 63, kond: 1 }, '2026-11-20');
+        state.cycle_date = '2026-11-20';
+        state.status = 'IN_PROGRESS';
+
+        for (const k of Object.keys(state.tasks)) {
+          if (k !== 'read_mail') state.tasks[k].status = 'SUCCESS';
+        }
+        state.tasks.read_mail.status = 'RUNNING';
+        state.tasks.read_mail.attempts = 1;
+        state.tasks.read_mail.max_attempts = 3;
+        state.tasks.read_mail.retry_delay_minutes = 0;
+        state.tasks.read_mail.log_id = 9011;
+        state.tasks.read_mail.started_at = '2026-11-20T04:00:00.000Z';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        let dispatchCount = 0;
+        const client = new ApiClient(
+          { buh70ApiBaseUrl: 'http://test-server' },
+          jest.fn().mockImplementation(async (url: string) => {
+            if (url.includes('read_log')) {
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                  status: 200,
+                  result: 1,
+                  data: [{ id: 9011, flow: 'mail.read_mail_errors', status: 'failed', exec_start: '2026-11-20T04:00:00.000Z', exec_end: '2026-11-20T04:00:10.000Z', error: 'err' }],
+                }),
+              };
+            }
+            if (url.includes('/task/readMail')) {
+              dispatchCount++;
+              return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, log_id: 9012 }) };
+            }
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, data: [] }) };
+          }) as unknown as typeof fetch
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          { apiClient: client, currentDate: new Date('2026-11-20T04:01:00.000Z'), timezone: 'Europe/Tallinn' }
+        );
+
+        const reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(reloaded.tasks.read_mail.status).toBe('RUNNING');
+        expect(reloaded.tasks.read_mail.attempts).toBe(2);
+        expect(dispatchCount).toBe(1);
+      } finally {
+        if (fs.existsSync(file)) {
+          try { fs.unlinkSync(file); } catch {}
+        }
+      }
+    });
+
+    it('resetCycleForNewDay обнуляет attempts, а reconcileTasksWithConfigs переносит retry_delay_minutes и max_attempts', async () => {
+      const file = testStatePath('test_retry_backoff_reset.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 11770, rekvId: 63, kond: 1 }, '2026-11-20');
+        state.tasks.read_mail.status = 'FAILED';
+        state.tasks.read_mail.attempts = 5;
+        state.tasks.read_mail.max_attempts = 3;
+        state.tasks.read_mail.retry_delay_minutes = 0;
+
+        const reset = resetCycleForNewDay(state, '2026-11-21', undefined, 'Europe/Tallinn', new Date('2026-11-21T00:05:00.000Z'));
+        expect(reset.tasks.read_mail.attempts).toBe(0);
+        expect(reset.tasks.read_mail.status).toBe('PENDING');
+        expect(reset.tasks.read_mail.max_attempts).toBe(5);
+        expect(reset.tasks.read_mail.retry_delay_minutes).toBe(15);
+
+        // Проверка reconcileTasksWithConfigs на существующей задаче
+        reconcileTasksWithConfigs(state.tasks, loadAllAgentConfigs(), true);
+        expect(state.tasks.read_mail.max_attempts).toBe(5);
+        expect(state.tasks.read_mail.retry_delay_minutes).toBe(15);
+      } finally {
+        if (fs.existsSync(file)) {
+          try { fs.unlinkSync(file); } catch {}
+        }
+      }
+    });
+  });
 });

@@ -330,3 +330,233 @@ describe('readMail - accountant notification filtering for "Muud vead"', () => {
         });
     });
 });
+
+const { EventEmitter } = require('events');
+
+describe('fetchEmailsViaImapTls', () => {
+    function createMockTlsConnect(onWrite) {
+        const socket = new EventEmitter();
+        socket.sent = [];
+        socket.timeoutMs = 0;
+        socket.ended = false;
+        socket.setTimeout = jest.fn((ms) => {
+            socket.timeoutMs = ms;
+        });
+        socket.end = jest.fn(() => {
+            socket.ended = true;
+        });
+        socket.write = jest.fn((data) => {
+            const text = String(data);
+            socket.sent.push(text);
+            if (onWrite) onWrite(text, socket);
+            return true;
+        });
+        const tlsConnect = jest.fn(() => {
+            process.nextTick(() => {
+                socket.emit('data', Buffer.from('* OK IMAP4rev1 ready\r\n', 'latin1'));
+            });
+            return socket;
+        });
+        return { socket, tlsConnect };
+    }
+
+    function buildFetchLiteral(uid, rawEmail) {
+        const len = Buffer.byteLength(rawEmail, 'utf8');
+        return `* 1 FETCH (UID ${uid} BODY[] {${len}}\r\n${rawEmail})\r\n`;
+    }
+
+    test('sends UID SEARCH SINCE in <d-Mon-yyyy> format and parses email', async () => {
+        const rawEmail = 'Date: Sun, 15 Nov 2026 08:00:00 +0000\r\nSubject: Bounce\r\n\r\nArve nr: 101\r\n';
+        const { socket, tlsConnect } = createMockTlsConnect((cmd, sock) => {
+            if (cmd.startsWith('A01 LOGIN')) {
+                sock.emit('data', Buffer.from('A01 OK LOGIN completed\r\n'));
+            } else if (cmd.startsWith('A02 SELECT')) {
+                sock.emit('data', Buffer.from('A02 OK [READ-ONLY] SELECT completed\r\n'));
+            } else if (cmd.startsWith('A03 UID SEARCH')) {
+                sock.emit('data', Buffer.from('* SEARCH 42\r\nA03 OK SEARCH completed\r\n'));
+            } else if (cmd.startsWith('A04 UID FETCH')) {
+                sock.emit('data', Buffer.from(buildFetchLiteral(42, rawEmail) + 'A04 OK FETCH completed\r\n'));
+            }
+        });
+
+        const res = await readMail.fetchEmailsViaImapTls(
+            { host: 'mail.test', port: 993, user: 'u', pass: 'p' },
+            new Date('2026-11-15T10:30:00.000Z'),
+            { tlsConnect }
+        );
+
+        expect(socket.sent.some((c) => c.trim() === 'A03 UID SEARCH SINCE 15-Nov-2026')).toBe(true);
+        expect(res).toHaveLength(1);
+        expect(res[0].uid).toBe(42);
+        expect(res[0].rawText).toContain('Arve nr: 101');
+    });
+
+    test('does not terminate FETCH early when "A04 OK" appears inside email body', async () => {
+        const rawEmail = 'Date: Sun, 15 Nov 2026 08:00:00 +0000\r\nSubject: Status A04 OK inside line\r\n\r\nBody text A04 OK here\r\n';
+        const { tlsConnect } = createMockTlsConnect((cmd, sock) => {
+            if (cmd.startsWith('A01 LOGIN')) {
+                sock.emit('data', Buffer.from('A01 OK\r\n'));
+            } else if (cmd.startsWith('A02 SELECT')) {
+                sock.emit('data', Buffer.from('A02 OK\r\n'));
+            } else if (cmd.startsWith('A03 UID SEARCH')) {
+                sock.emit('data', Buffer.from('* SEARCH 7\r\nA03 OK\r\n'));
+            } else if (cmd.startsWith('A04 UID FETCH')) {
+                const payload = buildFetchLiteral(7, rawEmail);
+                sock.emit('data', Buffer.from(payload));
+                process.nextTick(() => {
+                    sock.emit('data', Buffer.from('A04 OK FETCH completed\r\n'));
+                });
+            }
+        });
+
+        const res = await readMail.fetchEmailsViaImapTls(
+            { host: 'mail.test', port: 993, user: 'u', pass: 'p' },
+            new Date('2026-11-15T00:00:00.000Z'),
+            { tlsConnect }
+        );
+
+        expect(res).toHaveLength(1);
+        expect(res[0].rawText).toContain('Body text A04 OK here');
+    });
+
+    test('handles 1-byte chunks identically to single chunk', async () => {
+        const rawEmail = 'Date: Sun, 15 Nov 2026 08:00:00 +0000\r\nSubject: Chunked\r\n\r\nArve nr: 202\r\n';
+        const { tlsConnect } = createMockTlsConnect((cmd, sock) => {
+            if (cmd.startsWith('A01 LOGIN')) {
+                sock.emit('data', Buffer.from('A01 OK\r\n'));
+            } else if (cmd.startsWith('A02 SELECT')) {
+                sock.emit('data', Buffer.from('A02 OK\r\n'));
+            } else if (cmd.startsWith('A03 UID SEARCH')) {
+                sock.emit('data', Buffer.from('* SEARCH 11\r\nA03 OK\r\n'));
+            } else if (cmd.startsWith('A04 UID FETCH')) {
+                const full = Buffer.from(buildFetchLiteral(11, rawEmail) + 'A04 OK\r\n', 'utf8');
+                for (let i = 0; i < full.length; i++) {
+                    sock.emit('data', full.slice(i, i + 1));
+                }
+            }
+        });
+
+        const res = await readMail.fetchEmailsViaImapTls(
+            { host: 'mail.test', port: 993, user: 'u', pass: 'p' },
+            new Date('2026-11-15T00:00:00.000Z'),
+            { tlsConnect }
+        );
+
+        expect(res).toHaveLength(1);
+        expect(res[0].uid).toBe(11);
+        expect(res[0].rawText).toContain('Arve nr: 202');
+    });
+
+    test('switches to Archive with SINCE when INBOX search returns empty', async () => {
+        const rawEmail = 'Date: Mon, 16 Nov 2026 08:00:00 +0000\r\nSubject: Archived\r\n\r\nArve nr: 303\r\n';
+        let selectedFolder = 'INBOX';
+        const { socket, tlsConnect } = createMockTlsConnect((cmd, sock) => {
+            if (cmd.startsWith('A01 LOGIN')) {
+                sock.emit('data', Buffer.from('A01 OK\r\n'));
+            } else if (cmd.startsWith('A02 SELECT')) {
+                selectedFolder = cmd.indexOf('Archive') !== -1 ? 'Archive' : 'INBOX';
+                sock.emit('data', Buffer.from('A02 OK\r\n'));
+            } else if (cmd.startsWith('A03 UID SEARCH')) {
+                if (selectedFolder === 'INBOX') {
+                    sock.emit('data', Buffer.from('* SEARCH\r\nA03 OK\r\n'));
+                } else {
+                    sock.emit('data', Buffer.from('* SEARCH 99\r\nA03 OK\r\n'));
+                }
+            } else if (cmd.startsWith('A04 UID FETCH')) {
+                sock.emit('data', Buffer.from(buildFetchLiteral(99, rawEmail) + 'A04 OK\r\n'));
+            }
+        });
+
+        const res = await readMail.fetchEmailsViaImapTls(
+            { host: 'mail.test', port: 993, user: 'u', pass: 'p' },
+            new Date('2026-11-16T00:00:00.000Z'),
+            { tlsConnect }
+        );
+
+        expect(socket.sent.some((c) => c.trim() === 'A02 SELECT "Archive"')).toBe(true);
+        expect(socket.sent.filter((c) => c.trim() === 'A03 UID SEARCH SINCE 16-Nov-2026')).toHaveLength(2);
+        expect(res).toHaveLength(1);
+        expect(res[0].uid).toBe(99);
+    });
+
+    test('rejects with step and folder on idle timeout', async () => {
+        const { socket, tlsConnect } = createMockTlsConnect((cmd, sock) => {
+            if (cmd.startsWith('A01 LOGIN')) {
+                sock.emit('data', Buffer.from('A01 OK\r\n'));
+            } else if (cmd.startsWith('A02 SELECT')) {
+                sock.emit('data', Buffer.from('A02 OK\r\n'));
+            } else if (cmd.startsWith('A03 UID SEARCH')) {
+                sock.emit('data', Buffer.from('* SEARCH 1\r\nA03 OK\r\n'));
+            } else if (cmd.startsWith('A04 UID FETCH')) {
+                sock.emit('data', Buffer.from('* 1 FETCH (UID 1 BODY[] {100}\r\npartial'));
+                process.nextTick(() => {
+                    sock.emit('timeout');
+                });
+            }
+        });
+
+        let caughtErr = null;
+        try {
+            await readMail.fetchEmailsViaImapTls(
+                { host: 'mail.test', port: 993, user: 'u', pass: 'p' },
+                new Date('2026-11-15T00:00:00.000Z'),
+                { tlsConnect, idleTimeoutMs: 5000 }
+            );
+        } catch (err) {
+            caughtErr = err;
+        }
+        expect(caughtErr).toBeDefined();
+        expect(caughtErr.message).toMatch(/IMAP idle timeout at step FETCH \(INBOX\), received \d+\.\d+ MB after 5 s/);
+        expect(socket.timeoutMs).toBe(0);
+        expect(socket.ended).toBe(true);
+    });
+
+    test('rejects with step and folder on total timeout', async () => {
+        const { tlsConnect } = createMockTlsConnect(() => {
+            // Do not respond to LOGIN -> triggers total timeout
+        });
+
+        let caughtErr = null;
+        try {
+            await readMail.fetchEmailsViaImapTls(
+                { host: 'mail.test', port: 993, user: 'u', pass: 'p' },
+                new Date('2026-11-15T00:00:00.000Z'),
+                { tlsConnect, idleTimeoutMs: 5000, totalTimeoutMs: 30 }
+            );
+        } catch (err) {
+            caughtErr = err;
+        }
+        expect(caughtErr).toBeDefined();
+        expect(caughtErr.message).toMatch(/IMAP total timeout at step LOGIN \(INBOX\), received \d+\.\d+ MB after 0 s/);
+    });
+
+    test('fetches UIDs in batches with sequential tags when exceeding batchThreshold', async () => {
+        const raw1 = 'Date: Sun, 15 Nov 2026 08:00:00 +0000\r\nSubject: E1\r\n\r\nBody1\r\n';
+        const raw2 = 'Date: Sun, 15 Nov 2026 08:01:00 +0000\r\nSubject: E2\r\n\r\nBody2\r\n';
+        const raw3 = 'Date: Sun, 15 Nov 2026 08:02:00 +0000\r\nSubject: E3\r\n\r\nBody3\r\n';
+        const { socket, tlsConnect } = createMockTlsConnect((cmd, sock) => {
+            if (cmd.startsWith('A01 LOGIN')) {
+                sock.emit('data', Buffer.from('A01 OK\r\n'));
+            } else if (cmd.startsWith('A02 SELECT')) {
+                sock.emit('data', Buffer.from('A02 OK\r\n'));
+            } else if (cmd.startsWith('A03 UID SEARCH')) {
+                sock.emit('data', Buffer.from('* SEARCH 1 2 3\r\nA03 OK\r\n'));
+            } else if (cmd.startsWith('A04 UID FETCH')) {
+                sock.emit('data', Buffer.from(buildFetchLiteral(1, raw1) + buildFetchLiteral(2, raw2) + 'A04 OK\r\n'));
+            } else if (cmd.startsWith('A05 UID FETCH')) {
+                sock.emit('data', Buffer.from(buildFetchLiteral(3, raw3) + 'A05 OK\r\n'));
+            }
+        });
+
+        const res = await readMail.fetchEmailsViaImapTls(
+            { host: 'mail.test', port: 993, user: 'u', pass: 'p' },
+            new Date('2026-11-15T00:00:00.000Z'),
+            { tlsConnect, batchThreshold: 2, batchSize: 2 }
+        );
+
+        expect(socket.sent.some((c) => c.trim() === 'A04 UID FETCH 1,2 (UID BODY.PEEK[])')).toBe(true);
+        expect(socket.sent.some((c) => c.trim() === 'A05 UID FETCH 3 (UID BODY.PEEK[])')).toBe(true);
+        expect(socket.sent.some((c) => c.trim() === 'A06 LOGOUT')).toBe(true);
+        expect(res.map((m) => m.uid)).toEqual([1, 2, 3]);
+    });
+});

@@ -751,113 +751,257 @@ async function getMailCredentials(rekvId, userId) {
     };
 }
 
+const IMAP_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DEFAULT_IMAP_IDLE_TIMEOUT_MS = 60000;
+const DEFAULT_IMAP_TOTAL_TIMEOUT_MS = 300000;
+const IMAP_FETCH_BATCH_SIZE = 100;
+const IMAP_BATCH_THRESHOLD = 200;
+
+/**
+ * Форматирует дату для IMAP команды SINCE (<d-Mon-yyyy> в английской локали, по UTC-дню)
+ */
+function formatImapSinceDate(sinceDate) {
+    if (!sinceDate) return null;
+    var d = (sinceDate instanceof Date) ? sinceDate : new Date(sinceDate);
+    if (isNaN(d.getTime())) return null;
+    return d.getUTCDate() + '-' + IMAP_MONTHS[d.getUTCMonth()] + '-' + d.getUTCFullYear();
+}
+
+/**
+ * Проверяет наличие завершающей строки ответа IMAP с заданным тегом в начале строки
+ */
+function hasImapTaggedResponse(tailStr, tag) {
+    var re = new RegExp('(?:^|\\r?\\n)' + tag + '\\s+(OK|NO|BAD)\\b', 'i');
+    var m = tailStr.match(re);
+    return m ? m[1].toUpperCase() : null;
+}
+
 /**
  * Подключение к IMAP серверу по TLS и выборка писем через встроенный модуль tls Node.js
  */
-function fetchEmailsViaImapTls(mailConfig, sinceDate) {
+function fetchEmailsViaImapTls(mailConfig, sinceDate, options) {
+    options = options || {};
     return new Promise(function (resolve, reject) {
         var host = mailConfig.host || 'mail.narva.ee';
         var port = mailConfig.port || 993;
         var user = mailConfig.user || 'oppetasu';
         var pass = mailConfig.pass;
 
+        var idleTimeoutMs = Number(options.idleTimeoutMs || process.env.IMAP_IDLE_TIMEOUT_MS || DEFAULT_IMAP_IDLE_TIMEOUT_MS);
+        if (!idleTimeoutMs || idleTimeoutMs <= 0) idleTimeoutMs = DEFAULT_IMAP_IDLE_TIMEOUT_MS;
+
+        var totalTimeoutMs = Number(options.totalTimeoutMs || process.env.IMAP_TOTAL_TIMEOUT_MS || DEFAULT_IMAP_TOTAL_TIMEOUT_MS);
+        if (!totalTimeoutMs || totalTimeoutMs <= 0) totalTimeoutMs = DEFAULT_IMAP_TOTAL_TIMEOUT_MS;
+
+        var connectFn = options.tlsConnect || tls.connect;
+        var batchSize = Number(options.batchSize || IMAP_FETCH_BATCH_SIZE);
+        var batchThreshold = Number(options.batchThreshold || IMAP_BATCH_THRESHOLD);
+
         console.log('[readMail:IMAP] Connecting to ' + host + ':' + port + ' (TLS) as user "' + user + '"...');
 
-        var socket = tls.connect({
+        var socket = connectFn({
             host: host,
             port: port,
             rejectUnauthorized: false
         });
 
         var chunks = [];
+        var totalLength = 0;
+        var tailStr = '';
+        var totalBytesReceived = 0;
         var step = 0;
+        var stepNames = ['CONNECT', 'LOGIN', 'SELECT', 'SEARCH', 'FETCH', 'LOGOUT'];
         var currentFolder = mailConfig.mailbox || 'INBOX';
         var isCheckedArchive = false;
         var allFetchedEmails = [];
-        var timeoutTimer = null;
+        var uidBatches = [];
+        var batchIndex = 0;
+        var currentFetchTag = 'A04';
+        var nextTagNum = 4;
+        var sinceFormatted = formatImapSinceDate(sinceDate);
+        var searchCmd = sinceFormatted ? ('A03 UID SEARCH SINCE ' + sinceFormatted) : 'A03 UID SEARCH ALL';
+        var settled = false;
+        var totalTimer = null;
 
-        function cleanup() {
-            if (timeoutTimer) clearTimeout(timeoutTimer);
-            try { socket.end(); } catch (e) {}
+        function resetBuffer() {
+            chunks = [];
+            totalLength = 0;
+            tailStr = '';
         }
 
-        timeoutTimer = setTimeout(function () {
+        function formatTimeoutError(kind, elapsedMs) {
+            var mb = (totalBytesReceived / (1024 * 1024)).toFixed(1);
+            var sec = Math.round(elapsedMs / 1000);
+            var stepName = stepNames[step] || 'UNKNOWN';
+            return new Error('IMAP ' + kind + ' timeout at step ' + stepName + ' (' + currentFolder + '), received ' + mb + ' MB after ' + sec + ' s');
+        }
+
+        function cleanup() {
+            if (totalTimer) {
+                clearTimeout(totalTimer);
+                totalTimer = null;
+            }
+            try {
+                if (typeof socket.setTimeout === 'function') socket.setTimeout(0);
+            } catch (e) {}
+            try {
+                if (typeof socket.end === 'function') socket.end();
+            } catch (e) {}
+        }
+
+        if (typeof socket.setTimeout === 'function') {
+            socket.setTimeout(idleTimeoutMs);
+        }
+
+        socket.on('timeout', function () {
+            if (settled) return;
+            settled = true;
             cleanup();
-            reject(new Error('IMAP connection timed out after 30 seconds'));
-        }, 30000);
+            reject(formatTimeoutError('idle', idleTimeoutMs));
+        });
+
+        totalTimer = setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            reject(formatTimeoutError('total', totalTimeoutMs));
+        }, totalTimeoutMs);
 
         socket.on('error', function (err) {
+            if (settled) return;
+            settled = true;
             cleanup();
             reject(err);
         });
 
         socket.on('data', function (chunk) {
-            chunks.push(chunk);
-            var totalBuf = Buffer.concat(chunks);
-            var str = totalBuf.toString('latin1');
+            if (settled) return;
+            var buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            chunks.push(buf);
+            totalLength += buf.length;
+            totalBytesReceived += buf.length;
+
+            var chunkStr = buf.toString('latin1');
+            var scanStr = tailStr + chunkStr;
+            tailStr = scanStr.length > 512 ? scanStr.slice(-512) : scanStr;
 
             // Шаг 0: Ожидание приветствия сервера (* OK)
-            if (step === 0 && str.indexOf('* OK') !== -1) {
+            if (step === 0 && /(?:^|\r?\n)\*\s+OK\b/i.test(scanStr)) {
                 step = 1;
-                chunks = [];
+                resetBuffer();
                 socket.write('A01 LOGIN ' + user + ' ' + pass + '\r\n');
             }
             // Шаг 1: Ответ на LOGIN
-            else if (step === 1 && (str.indexOf('A01 OK') !== -1 || str.indexOf('A01 NO') !== -1)) {
-                if (str.indexOf('A01 NO') !== -1) {
+            else if (step === 1) {
+                var loginStatus = hasImapTaggedResponse(scanStr, 'A01');
+                if (loginStatus === 'NO' || loginStatus === 'BAD') {
+                    settled = true;
                     cleanup();
                     return reject(new Error('IMAP LOGIN failed for user: ' + user));
                 }
-                step = 2;
-                chunks = [];
-                socket.write('A02 SELECT "' + currentFolder + '"\r\n');
+                if (loginStatus === 'OK') {
+                    step = 2;
+                    resetBuffer();
+                    socket.write('A02 SELECT "' + currentFolder + '"\r\n');
+                }
             }
             // Шаг 2: Ответ на SELECT (INBOX или Archive)
-            else if (step === 2 && (str.indexOf('A02 OK') !== -1 || str.indexOf('A02 NO') !== -1)) {
-                if (str.indexOf('A02 NO') !== -1 && !isCheckedArchive) {
-                    // Если папка не открылась, пробуем Archive
-                    isCheckedArchive = true;
-                    currentFolder = 'Archive';
-                    chunks = [];
-                    return socket.write('A02 SELECT "' + currentFolder + '"\r\n');
-                }
-                step = 3;
-                chunks = [];
-                socket.write('A03 UID SEARCH ALL\r\n');
-            }
-            // Шаг 3: Ответ на UID SEARCH
-            else if (step === 3 && str.indexOf('A03 OK') !== -1) {
-                var searchMatch = str.match(/\* SEARCH ([\d\s]+)/);
-                var uids = searchMatch ? searchMatch[1].trim().split(/\s+/).filter(Boolean) : [];
-
-                // Если в INBOX пусто (0 сообщений), а мы еще не проверяли Archive - переключаемся на Archive
-                if (uids.length === 0 && !isCheckedArchive && currentFolder.toUpperCase() === 'INBOX') {
-                    isCheckedArchive = true;
-                    currentFolder = 'Archive';
-                    step = 2;
-                    chunks = [];
-                    return socket.write('A02 SELECT "' + currentFolder + '"\r\n');
-                }
-
-                if (uids.length === 0) {
+            else if (step === 2) {
+                var selectStatus = hasImapTaggedResponse(scanStr, 'A02');
+                if (selectStatus === 'NO' || selectStatus === 'BAD') {
+                    if (!isCheckedArchive) {
+                        isCheckedArchive = true;
+                        currentFolder = 'Archive';
+                        resetBuffer();
+                        return socket.write('A02 SELECT "' + currentFolder + '"\r\n');
+                    }
+                    settled = true;
                     cleanup();
                     return resolve([]);
                 }
-
-                step = 4;
-                chunks = [];
-                socket.write('A04 UID FETCH ' + uids.join(',') + ' (UID BODY.PEEK[])\r\n');
+                if (selectStatus === 'OK') {
+                    step = 3;
+                    resetBuffer();
+                    socket.write(searchCmd + '\r\n');
+                }
             }
-            // Шаг 4: Ответ на UID FETCH (все сообщения загружены)
-            else if (step === 4 && str.indexOf('A04 OK') !== -1) {
-                step = 5;
-                try {
-                    socket.write('A05 LOGOUT\r\n');
-                } catch (e) {}
+            // Шаг 3: Ответ на UID SEARCH
+            else if (step === 3) {
+                var searchStatus = hasImapTaggedResponse(scanStr, 'A03');
+                if (searchStatus === 'NO' || searchStatus === 'BAD') {
+                    settled = true;
+                    cleanup();
+                    return reject(new Error('IMAP SEARCH failed in ' + currentFolder));
+                }
+                if (searchStatus === 'OK') {
+                    var searchBufStr = Buffer.concat(chunks, totalLength).toString('latin1');
+                    var searchMatch = searchBufStr.match(/\* SEARCH ([\d\s]+)/);
+                    var uids = searchMatch ? searchMatch[1].trim().split(/\s+/).filter(Boolean) : [];
 
-                var parsedMessages = parseImapFetchBuffers(totalBuf);
-                cleanup();
-                resolve(parsedMessages);
+                    // Если в INBOX пусто (0 сообщений), а мы еще не проверяли Archive - переключаемся на Archive
+                    if (uids.length === 0 && !isCheckedArchive && currentFolder.toUpperCase() === 'INBOX') {
+                        isCheckedArchive = true;
+                        currentFolder = 'Archive';
+                        step = 2;
+                        resetBuffer();
+                        return socket.write('A02 SELECT "' + currentFolder + '"\r\n');
+                    }
+
+                    if (uids.length === 0) {
+                        settled = true;
+                        cleanup();
+                        return resolve([]);
+                    }
+
+                    uidBatches = [];
+                    if (uids.length > batchThreshold) {
+                        for (var b = 0; b < uids.length; b += batchSize) {
+                            uidBatches.push(uids.slice(b, b + batchSize));
+                        }
+                    } else {
+                        uidBatches.push(uids);
+                    }
+
+                    batchIndex = 0;
+                    nextTagNum = 4;
+                    currentFetchTag = 'A04';
+                    step = 4;
+                    resetBuffer();
+                    socket.write(currentFetchTag + ' UID FETCH ' + uidBatches[0].join(',') + ' (UID BODY.PEEK[])\r\n');
+                }
+            }
+            // Шаг 4: Ответ на UID FETCH (пакет за пакетом)
+            else if (step === 4) {
+                var fetchStatus = hasImapTaggedResponse(scanStr, currentFetchTag);
+                if (fetchStatus === 'NO' || fetchStatus === 'BAD') {
+                    settled = true;
+                    cleanup();
+                    return reject(new Error('IMAP FETCH failed in ' + currentFolder + ' (' + currentFetchTag + ')'));
+                }
+                if (fetchStatus === 'OK') {
+                    var fullBuf = Buffer.concat(chunks, totalLength);
+                    var parsedMessages = parseImapFetchBuffers(fullBuf);
+                    allFetchedEmails = allFetchedEmails.concat(parsedMessages);
+                    batchIndex++;
+
+                    if (batchIndex < uidBatches.length) {
+                        nextTagNum++;
+                        currentFetchTag = 'A' + (nextTagNum < 10 ? '0' + nextTagNum : String(nextTagNum));
+                        resetBuffer();
+                        socket.write(currentFetchTag + ' UID FETCH ' + uidBatches[batchIndex].join(',') + ' (UID BODY.PEEK[])\r\n');
+                    } else {
+                        step = 5;
+                        nextTagNum++;
+                        var logoutTag = 'A' + (nextTagNum < 10 ? '0' + nextTagNum : String(nextTagNum));
+                        try {
+                            socket.write(logoutTag + ' LOGOUT\r\n');
+                        } catch (e) {}
+
+                        settled = true;
+                        cleanup();
+                        resolve(allFetchedEmails);
+                    }
+                }
             }
         });
     });
@@ -1314,6 +1458,7 @@ exports.executeCalculation = executeCalculation;
 exports.runReadMailInBackground = runReadMailInBackground;
 exports.executeReadMailProcess = executeReadMailProcess;
 exports.fetchEmailsViaImapTls = fetchEmailsViaImapTls;
+exports.formatImapSinceDate = formatImapSinceDate;
 exports.parseImapFetchBuffers = parseImapFetchBuffers;
 exports.decodeMimeWords = decodeMimeWords;
 exports.decodeQuotedPrintable = decodeQuotedPrintable;
