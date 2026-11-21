@@ -2545,7 +2545,7 @@ describe('Главный Оркестратор', () => {
 
         fs.writeFileSync(testStateFile, JSON.stringify(state, null, 2), 'utf-8');
 
-        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, jest.fn().mockImplementation(async (url: string) => {
+        const fetchFn = jest.fn().mockImplementation(async (url: string) => {
           if (url.includes('/task/read_log/')) {
             return {
               ok: true,
@@ -2570,7 +2570,8 @@ describe('Главный Оркестратор', () => {
             };
           }
           return { ok: true, status: 200, json: async () => ({ status: 200 }) };
-        }) as unknown as typeof fetch);
+        });
+        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, fetchFn as unknown as typeof fetch);
 
         // Проверяем в момент времени через 13 часов (23:00)
         const tickTime = new Date('2026-10-08T23:00:00.000Z');
@@ -2585,7 +2586,12 @@ describe('Главный Оркестратор', () => {
         );
 
         const updated: OrchestratorState = JSON.parse(fs.readFileSync(testStateFile, 'utf-8'));
-        expect(updated.tasks.lisa1_lisa5.attempts).toBe(2);
+        // Запись ou.logs ещё открыта: повторный запуск не делается (иначе параллельный дубль), задача FAILED
+        expect(updated.tasks.lisa1_lisa5.attempts).toBe(1);
+        expect(updated.tasks.lisa1_lisa5.status).toBe('FAILED');
+        expect(updated.tasks.lisa1_lisa5.log_id).toBe(991122);
+        expect(updated.tasks.lisa1_lisa5.error).toContain('TASK_TIMEOUT');
+        expect(fetchFn.mock.calls.some(([url]) => String(url).includes('/task/calcLisa1Lisa5/'))).toBe(false);
         expect(
           updated.history.some((h) => h.event === 'TASK_TIMEOUT' && h.details?.includes('ületatud 12 h'))
         ).toBe(true);
@@ -4079,11 +4085,12 @@ describe('Главный Оркестратор', () => {
           })) as unknown as typeof fetch
         );
 
+        // 04:30 по Таллину: время getEarved (05:00) ещё не наступило — блокировка держится
         await runOrchestratorTick(
           { stateFilePath: file },
           {
             apiClient: client,
-            currentDate: new Date('2026-10-09T03:00:00.000Z'),
+            currentDate: new Date('2026-10-09T01:30:00.000Z'),
             targetDateStr: '2026-10-09',
             timezone: 'Europe/Tallinn',
           }
@@ -4091,6 +4098,7 @@ describe('Главный Оркестратор', () => {
 
         const reloaded: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
         expect(reloaded.tasks.getEarved.status).toBe('SUCCESS');
+        expect(reloaded.tasks.sendFinBitReport.status).toBe('RUNNING');
         expect(reloaded.history.some((h) => h.event === 'TASK_REARMED' && h.task === 'getEarved')).toBe(false);
       } finally {
         if (fs.existsSync(file)) {
@@ -5641,6 +5649,250 @@ describe('Главный Оркестратор', () => {
         if (fs.existsSync(file)) {
           try { fs.unlinkSync(file); } catch {}
         }
+      }
+    });
+  });
+  describe('Долгий потомок не блокирует суточный запуск родителя (saldoandmik / lisa1_lisa5)', () => {
+    const LISA_FLOW = 'eelarve.salvesta_lisa_1_5_kontrol';
+    const SALDO_FLOW = 'eelarve.sp_koosta_saldoandmik';
+
+    function makeClient(lisaEntries: Record<string, unknown>[], dispatched: string[]) {
+      const fetchFn = jest.fn().mockImplementation(async (url: string) => {
+        if (url.includes('/task/read_log/')) {
+          const data = url.includes(encodeURIComponent(LISA_FLOW)) ? lisaEntries : [];
+          return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, data }) };
+        }
+        if (url.includes('/task/')) dispatched.push(url);
+        return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+      });
+      return new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, fetchFn as unknown as typeof fetch);
+    }
+
+    function makeRegistry(dispatched: string[]) {
+      return {
+        saldoandmik: {
+          flow: SALDO_FLOW,
+          dispatch: async () => {
+            dispatched.push('saldoandmik');
+            return 200001;
+          },
+        },
+        lisa1_lisa5: {
+          flow: LISA_FLOW,
+          dispatch: async () => {
+            dispatched.push('lisa1_lisa5');
+            return 200002;
+          },
+        },
+      } as any;
+    }
+
+    it('в 20:00 saldoandmik перевооружается и запускается, RUNNING-потомок прошлого прогона помечается SUPERSEDED', async () => {
+      const file = testStatePath('test_supersede_running_child.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-11-19');
+        state.cycle_date = '2026-11-19';
+        state.status = 'IN_PROGRESS';
+        state.tasks.saldoandmik.status = 'SUCCESS';
+        state.tasks.saldoandmik.schedule = { time: '20:00' };
+        state.tasks.saldoandmik.started_at = '2026-11-19T18:00:03.410Z';
+        state.tasks.saldoandmik.finished_at = '2026-11-19T18:25:26.297Z';
+        state.tasks.lisa1_lisa5.status = 'RUNNING';
+        state.tasks.lisa1_lisa5.attempts = 2;
+        state.tasks.lisa1_lisa5.started_at = '2026-11-20T07:00:03.317Z';
+        state.tasks.lisa1_lisa5.log_id = 8565815;
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const dispatched: string[] = [];
+        // открытая запись lisa1_lisa5 стартовала 11 ч назад — guard считает её живой
+        const client = makeClient(
+          [{ id: 8565815, flow: LISA_FLOW, status: null, exec_start: '2026-11-20T07:00:03.317Z' }],
+          dispatched
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-11-20T18:00:30.000Z'),
+            targetDateStr: '2026-11-20',
+            timezone: 'Europe/Tallinn',
+            registry: makeRegistry(dispatched),
+          }
+        );
+
+        const updated: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(updated.history.some((h) => h.event === 'TASK_SUPERSEDED' && h.task === 'lisa1_lisa5')).toBe(true);
+        expect(updated.history.some((h) => h.event === 'TASK_REARMED' && h.task === 'saldoandmik')).toBe(true);
+        expect(dispatched).toContain('saldoandmik');
+        expect(updated.tasks.saldoandmik.status).toBe('RUNNING');
+        // потомок перевооружён каскадом, снимок прошлого прогона сохранён
+        expect(updated.tasks.lisa1_lisa5.status).toBe('PENDING');
+        expect(updated.tasks.lisa1_lisa5.last_run?.error).toContain('SUPERSEDED');
+        expect(dispatched).not.toContain('lisa1_lisa5');
+      } finally {
+        if (fs.existsSync(file)) fs.unlinkSync(file);
+      }
+    });
+
+    it('lisa1_lisa5 не берёт под наблюдение и не дублирует открытый прогон, начатый до завершения saldoandmik', async () => {
+      const file = testStatePath('test_stale_open_run_wait.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-11-21');
+        state.cycle_date = '2026-11-21';
+        state.status = 'IN_PROGRESS';
+        state.tasks.saldoandmik.status = 'SUCCESS';
+        state.tasks.saldoandmik.schedule = { time: '20:00' };
+        state.tasks.saldoandmik.started_at = '2026-11-21T18:00:03.000Z';
+        state.tasks.saldoandmik.finished_at = '2026-11-21T18:25:00.000Z';
+        state.tasks.lisa1_lisa5.status = 'PENDING';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const dispatched: string[] = [];
+        const client = makeClient(
+          [{ id: 8565815, flow: LISA_FLOW, status: null, exec_start: '2026-11-21T07:00:00.000Z' }],
+          dispatched
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-11-21T18:30:00.000Z'),
+            targetDateStr: '2026-11-21',
+            timezone: 'Europe/Tallinn',
+            registry: makeRegistry(dispatched),
+          }
+        );
+
+        const updated: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(dispatched).not.toContain('lisa1_lisa5');
+        expect(updated.tasks.lisa1_lisa5.status).toBe('PENDING');
+        expect(updated.tasks.lisa1_lisa5.log_id ?? null).toBeNull();
+        expect(updated.history.some((h) => h.event === 'TASK_DUP_BLOCKED' && h.task === 'lisa1_lisa5')).toBe(false);
+      } finally {
+        if (fs.existsSync(file)) fs.unlinkSync(file);
+      }
+    });
+
+    it('задача, снятая по TASK_TIMEOUT, становится SUCCESS, когда её прогон позже завершается успешно', async () => {
+      const file = testStatePath('test_timeout_late_success.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-11-21');
+        state.cycle_date = '2026-11-21';
+        state.status = 'IN_PROGRESS';
+        state.tasks.saldoandmik.status = 'SUCCESS';
+        state.tasks.saldoandmik.schedule = { time: '20:00' };
+        state.tasks.saldoandmik.started_at = '2026-11-20T18:00:00.000Z';
+        state.tasks.saldoandmik.finished_at = '2026-11-20T18:25:00.000Z';
+        state.tasks.lisa1_lisa5.status = 'FAILED';
+        state.tasks.lisa1_lisa5.started_at = '2026-11-20T18:30:00.000Z';
+        state.tasks.lisa1_lisa5.finished_at = '2026-11-21T06:31:00.000Z';
+        state.tasks.lisa1_lisa5.log_id = 8565928;
+        state.tasks.lisa1_lisa5.error = 'TASK_TIMEOUT: ületatud 12 h täitmise limiit';
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const dispatched: string[] = [];
+        const client = makeClient(
+          [
+            {
+              id: 8565928,
+              flow: LISA_FLOW,
+              status: 'success',
+              exec_start: '2026-11-20T18:30:10.000Z',
+              exec_end: '2026-11-21T07:03:33.000Z',
+            },
+          ],
+          dispatched
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-11-21T08:00:00.000Z'),
+            targetDateStr: '2026-11-21',
+            timezone: 'Europe/Tallinn',
+            registry: makeRegistry(dispatched),
+          }
+        );
+
+        const updated: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        // saldoandmik (вчерашний) в этом же тике перевооружается, lisa1_lisa5 сбрасывается каскадом —
+        // принятый успех сохраняется в снимке last_run для отчёта
+        const lastRun = updated.tasks.lisa1_lisa5.last_run;
+        expect(lastRun?.status).toBe('SUCCESS');
+        expect(lastRun?.error).toBeNull();
+        expect(lastRun?.log_id).toBe(8565928);
+        expect(lastRun?.finished_at).toBe('2026-11-21T07:03:33.000Z');
+        expect(
+          updated.history.some((h) => h.event === 'TASK_RECONCILED_LOGS' && h.task === 'lisa1_lisa5')
+        ).toBe(true);
+        expect(dispatched).not.toContain('lisa1_lisa5');
+      } finally {
+        if (fs.existsSync(file)) fs.unlinkSync(file);
+      }
+    });
+      it('снимок last_run с TASK_TIMEOUT исправляется на SUCCESS, если прогон завершился после перевооружения', async () => {
+      const file = testStatePath('test_timeout_late_success_last_run.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 2477, rekvId: 63, kond: 1 }, '2026-11-21');
+        state.cycle_date = '2026-11-21';
+        state.status = 'IN_PROGRESS';
+        state.tasks.saldoandmik.status = 'PENDING';
+        state.tasks.saldoandmik.schedule = { time: '20:00' };
+        state.tasks.lisa1_lisa5.status = 'PENDING';
+        state.tasks.lisa1_lisa5.last_run = {
+          log_id: 8565928,
+          status: 'FAILED',
+          started_at: '2026-11-20T18:30:00.000Z',
+          finished_at: '2026-11-21T06:31:00.000Z',
+          duration_ms: null,
+          error: 'TASK_TIMEOUT: ületatud 12 h täitmise limiit',
+          result_summary: null,
+          cycle_date: '2026-11-20',
+          reset_at: '2026-11-21T06:35:00.000Z',
+          reset_reason: 'TASK_REARMED',
+        };
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const dispatched: string[] = [];
+        const client = makeClient(
+          [
+            {
+              id: 8565928,
+              flow: LISA_FLOW,
+              status: 'success',
+              exec_start: '2026-11-20T18:30:10.000Z',
+              exec_end: '2026-11-21T07:03:33.000Z',
+            },
+          ],
+          dispatched
+        );
+
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-11-21T08:00:00.000Z'),
+            targetDateStr: '2026-11-21',
+            timezone: 'Europe/Tallinn',
+            registry: makeRegistry(dispatched),
+          }
+        );
+
+        const updated: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(updated.tasks.lisa1_lisa5.status).toBe('PENDING');
+        expect(updated.tasks.lisa1_lisa5.last_run?.status).toBe('SUCCESS');
+        expect(updated.tasks.lisa1_lisa5.last_run?.error).toBeNull();
+        expect(updated.tasks.lisa1_lisa5.last_run?.finished_at).toBe('2026-11-21T07:03:33.000Z');
+        expect(dispatched).not.toContain('lisa1_lisa5');
+      } finally {
+        if (fs.existsSync(file)) fs.unlinkSync(file);
       }
     });
   });

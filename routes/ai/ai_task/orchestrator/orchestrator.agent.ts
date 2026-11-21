@@ -416,6 +416,69 @@ function resetTaskToPending(
 }
 
 /**
+ * Возвращает ключ родителя (depends_on), завершившегося позже execStart открытого прогона задачи, либо null.
+ * Такой прогон стартовал на данных предыдущего запуска родителя и не может считаться запуском текущего цикла.
+ */
+function findParentFinishedAfter(
+  state: OrchestratorState,
+  task: TaskState,
+  execStart: string | undefined
+): string | null {
+  if (!execStart) return null;
+  const startMs = new Date(execStart).getTime();
+  if (Number.isNaN(startMs)) return null;
+  for (const parentKey of task.depends_on || []) {
+    const finishedAt = state.tasks[parentKey]?.finished_at;
+    if (!finishedAt) continue;
+    const finishedMs = new Date(finishedAt).getTime();
+    if (!Number.isNaN(finishedMs) && finishedMs > startMs) return parentKey;
+  }
+  return null;
+}
+
+/** Прогон снят оркестратором без перезапуска, хотя запись ou.logs могла остаться открытой */
+function isAbandonedOpenRun(run: { status: TaskStatus; log_id?: number | null; error?: string | null } | null | undefined): boolean {
+  if (!run || run.status !== 'FAILED') return false;
+  if (typeof run.log_id !== 'number' || run.log_id <= 0) return false;
+  const error = run.error || '';
+  return error.startsWith('TASK_TIMEOUT') || error.startsWith('SUPERSEDED');
+}
+
+/**
+ * Поздняя сверка прогонов, снятых по TASK_TIMEOUT / SUPERSEDED без перезапуска: если их запись ou.logs (log_id)
+ * всё-таки закрылась успешно, принимаем результат (FAILED -> SUCCESS). Проверяется и текущее состояние задачи,
+ * и снимок last_run (задачу могли уже перевооружить на новые сутки — тогда исправляется отчётная история).
+ */
+async function reconcileTimedOutTasks(
+  state: OrchestratorState,
+  apiClient: ApiClient,
+  defaultUserId: number,
+  nowIso: string
+): Promise<void> {
+  for (const [key, task] of Object.entries(state.tasks)) {
+    const target = isAbandonedOpenRun(task) ? task : isAbandonedOpenRun(task.last_run) ? task.last_run! : null;
+    if (!target) continue;
+    const statusResult = await checkTaskStatus(resolveTaskUserId(task, defaultUserId), task.flow, apiClient, target.log_id);
+    if (statusResult.status !== 'success') continue;
+    console.log(
+      `[orchestrator-tick] Ülesanne ${key}: pooleli jäetuks märgitud käivitus (log_id: ${target.log_id}) lõppes hiljem edukalt, tulemus aktsepteeritud`
+    );
+    const previousError = target.error;
+    target.status = 'SUCCESS';
+    target.finished_at = statusResult.execEnd || nowIso;
+    target.duration_ms = statusResult.durationMs ?? null;
+    target.result_summary = statusResult.resultSummary ?? target.result_summary;
+    target.error = null;
+    state.history.push({
+      timestamp: nowIso,
+      event: 'TASK_RECONCILED_LOGS',
+      task: key,
+      details: `${target === task ? 'Run' : 'last_run'} marked as "${(previousError || '').split(':')[0]}" finished later with success (log_id: ${target.log_id}, execEnd: ${target.finished_at})`,
+    });
+  }
+}
+
+/**
  * Возвращает время последнего сброса/перевооружения (TASK_REARMED / TASK_RESET_MANUAL) для каждой задачи.
  */
 function getLatestResetTimestampByTask(history: OrchestratorState['history']): Map<string, string> {
@@ -911,17 +974,11 @@ export async function runOrchestratorTick(
       details: `Unknown taskKey: manual reset skipped, no tasks are launched in this tick. Known task keys: ${knownTaskKeys}`,
     });
   }
+  // Поздняя сверка задач, снятых по TASK_TIMEOUT: их прогон в бэкенде мог завершиться после таймаута
+  await reconcileTimedOutTasks(state, apiClient, effectiveCycleUserId, nowIso);
+
   for (const [sKey, sTask] of Object.entries(state.tasks)) {
     if (sTask.schedule && sTask.status !== 'RUNNING') {
-      // Защита Downstream Lock: не перевооружаем задачу, если любая транзитивно зависимая от нее задача прямо сейчас исполняется (RUNNING)
-      const runningDependents = findRunningDownstreamDependents(state.tasks, sKey);
-      if (runningDependents.length > 0) {
-        console.log(
-          `[orchestrator-tick] Skipped re-arming scheduled task ${sKey}: dependent task(s) still RUNNING (${runningDependents.join(', ')})`
-        );
-        continue;
-      }
-
       const taskFinishDateStr = sTask.finished_at ? toLocalDateStr(sTask.finished_at, timezone) : null;
       const taskStartDateStr = sTask.started_at ? toLocalDateStr(sTask.started_at, timezone) : null;
       const isAlreadyRunToday =
@@ -933,6 +990,38 @@ export async function runOrchestratorTick(
         ((taskFinishDateStr && taskFinishDateStr < targetDateStr) ||
           (taskStartDateStr && taskStartDateStr < targetDateStr) ||
           (state.cycle_date < targetDateStr && sTask.status !== 'PENDING'));
+
+      // Защита Downstream Lock: не перевооружаем задачу, если любая транзитивно зависимая от нее задача прямо сейчас исполняется (RUNNING).
+      // Исключение: родитель с расписанием, который сегодня ещё не запускался и чьё время уже наступило.
+      // Тогда RUNNING-потомок заведомо остался от прошлого прогона родителя, и ждать его нельзя — иначе
+      // один долгий/зависший шаг съедает суточный запуск родителя. Такой потомок помечается FAILED (SUPERSEDED)
+      // и затем перевооружается каскадом; параллельного дубля не будет — перед его запуском сработает
+      // guardAgainstDuplicate (ожидание закрытия прежней записи ou.logs).
+      const runningDependents = findRunningDownstreamDependents(state.tasks, sKey);
+      if (runningDependents.length > 0) {
+        const schedCheck = isTaskScheduleReady(sTask.schedule, currentDate, timezone);
+        const parentDueNow = Boolean(wasRunOnPreviousDay) && schedCheck.ready && !schedCheck.shouldSkip;
+        if (!parentDueNow) {
+          console.log(
+            `[orchestrator-tick] Skipped re-arming scheduled task ${sKey}: dependent task(s) still RUNNING (${runningDependents.join(', ')})`
+          );
+          continue;
+        }
+        for (const depKey of runningDependents) {
+          const depTask = state.tasks[depKey];
+          const reason = `SUPERSEDED: ülemülesanne ${sKey} käivitub graafiku järgi (${sTask.schedule.time ?? '-'}) uuesti; eelmise tsükli käivitus (log_id: ${depTask.log_id ?? 'n/a'}, algus: ${depTask.started_at ?? 'n/a'}) jäeti pooleli`;
+          console.warn(`[orchestrator-tick] Ülesanne ${depKey}: ${reason}`);
+          depTask.status = 'FAILED';
+          depTask.finished_at = nowIso;
+          depTask.error = reason;
+          state.history.push({
+            timestamp: nowIso,
+            event: 'TASK_SUPERSEDED',
+            task: depKey,
+            details: reason,
+          });
+        }
+      }
 
       if (wasRunOnPreviousDay) {
         console.log(`[orchestrator-tick] Re-arming scheduled task ${sKey} for new day: ${targetDateStr}`);
@@ -1559,105 +1648,31 @@ export async function runOrchestratorTick(
           const executionDurationMs = startTimestamp > 0 ? currentDate.getTime() - startTimestamp : 0;
 
           if (startTimestamp > 0 && executionDurationMs > taskTimeoutLimitMs) {
+            // Запись в ou.logs по-прежнему открыта (exec_start есть, exec_end/status нет): фоновый расчёт
+            // бэкенда может быть ещё жив. Повторный запуск создал бы параллельный дубль того же расчёта,
+            // который конкурирует с первым за те же таблицы. Поэтому задача помечается FAILED без
+            // перезапуска; log_id сохраняется, и если прогон позже завершится успешно, результат будет
+            // принят (см. reconcileTimedOutTasks).
+            const durationMin = Math.round(executionDurationMs / 1000 / 60);
             console.warn(
-              `[orchestrator-tick] Ülesande ${key} täitmise aeg (${Math.round(
-                executionDurationMs / 1000 / 60
-              )} min) ületab lubatud limiiti (${timeoutHours} h). Käivitub TASK_TIMEOUT.`
+              `[orchestrator-tick] Ülesande ${key} täitmise aeg (${durationMin} min) ületab lubatud limiiti (${timeoutHours} h). Käivitub TASK_TIMEOUT, korduskäivitust ei tehta (ou.logs kirje log_id: ${task.log_id ?? 'n/a'} on veel avatud).`
             );
-
-            const currentAttempts = task.attempts || 1;
-            const maxAttempts = task.max_attempts || config.maxTaskAttempts || 3;
-
-            if (currentAttempts < maxAttempts) {
-              const nextAttempt = currentAttempts + 1;
-              const timeoutReason = `TASK_TIMEOUT: ületatud ${timeoutHours} h täitmise limiit`;
-
-              if ((task.retry_delay_minutes ?? 0) > 0) {
-                task.status = 'PENDING';
-                task.finished_at = nowIso;
-                task.error = timeoutReason;
-                recordRetryWaitIfNeeded(state, key, task, nowIso, timeoutReason);
-                console.warn(
-                  `[orchestrator-tick] Ülesanne ${key} ootab korduskäivitust (${task.retry_delay_minutes} min viivitus). Põhjus: ${timeoutReason}`
-                );
-                return;
-              }
-
-              try {
-                let parentParams: Record<string, unknown> = {};
-                try {
-                  parentParams = registry[key]?.resolveParentParams?.(state) ?? {};
-                } catch {
-                  parentParams = {};
-                }
-
-                if (Object.keys(parentParams).length > 0) {
-                  console.log(`[orchestrator-tick] Parent params for ${key}:`, JSON.stringify(parentParams));
-                }
-
-                task.params = {
-                  ...(task.params || {}),
-                  ...parentParams,
-                };
-
-                const logId = await dispatchTaskByKey(
-                  key,
-                  effectiveCycleUserId,
-                  effectiveCycleRekvId,
-                  state.params.kond,
-                  apiClient,
-                  task.params as Record<string, unknown>,
-                  registry
-                );
-
-                task.status = 'RUNNING';
-                task.attempts = nextAttempt;
-                task.log_id = logId;
-                task.started_at = nowIso;
-                task.error = null;
-
-                state.history.push({
-                  timestamp: nowIso,
-                  event: 'TASK_TIMEOUT',
-                  task: key,
-                  details: `attempt: ${nextAttempt}/${maxAttempts}, reason: ${timeoutReason}, log_id: ${logId}`,
-                });
-              } catch (timeoutRetryErr: unknown) {
-                const message =
-                  timeoutRetryErr instanceof Error ? timeoutRetryErr.message : String(timeoutRetryErr);
-                console.error(`[orchestrator-tick] Viga ülesande ${key} korduskäivitusel pärast aegumist: ${message}`);
-                task.attempts = nextAttempt;
-                if (nextAttempt >= maxAttempts) {
-                  task.status = 'FAILED';
-                  task.finished_at = nowIso;
-                  task.error = `Katsed (${maxAttempts}) ammendatud. Viimane viga: ${message}`;
-                  state.history.push({
-                    timestamp: nowIso,
-                    event: 'TASK_FAILED',
-                    task: key,
-                    details: task.error,
-                  });
-                }
-              }
-            } else {
-              // Лимит попыток исчерпан
-              const finalError = `TASK_TIMEOUT: täitmise aeg ületas ${timeoutHours} h pärast ${currentAttempts} katset`;
-              task.status = 'FAILED';
-              task.finished_at = nowIso;
-              task.error = finalError;
-              state.history.push({
-                timestamp: nowIso,
-                event: 'TASK_TIMEOUT',
-                task: key,
-                details: finalError,
-              });
-              state.history.push({
-                timestamp: nowIso,
-                event: 'TASK_FAILED',
-                task: key,
-                details: finalError,
-              });
-            }
+            const finalError = `TASK_TIMEOUT: ületatud ${timeoutHours} h täitmise limiit; ou.logs kirje (log_id: ${task.log_id ?? 'n/a'}) on veel avatud, dubleerivat käivitust ei tehta`;
+            task.status = 'FAILED';
+            task.finished_at = nowIso;
+            task.error = finalError;
+            state.history.push({
+              timestamp: nowIso,
+              event: 'TASK_TIMEOUT',
+              task: key,
+              details: `attempt: ${task.attempts || 1}/${task.max_attempts || config.maxTaskAttempts || 3}, ${finalError}`,
+            });
+            state.history.push({
+              timestamp: nowIso,
+              event: 'TASK_FAILED',
+              task: key,
+              details: finalError,
+            });
           } else {
             console.log(
               `[orchestrator-tick] Ülesanne ${key} on teostamisel (algusaeg: ${statusResult.execStart || task.started_at})`
@@ -1762,6 +1777,15 @@ export async function runOrchestratorTick(
         try {
           const dupGuard = await guardAgainstDuplicate(task, resolveTaskUserId(task, effectiveCycleUserId), apiClient, currentDate);
           if (dupGuard.state !== 'none') {
+            const staleParent = dupGuard.state === 'running' ? findParentFinishedAfter(state, task, dupGuard.execStart) : null;
+            if (staleParent) {
+              // Открытый прогон стартовал раньше, чем завершился родитель: он считает по старым данным.
+              // Брать его под наблюдение нельзя, запускать дубль параллельно тоже — ждём закрытия записи ou.logs.
+              console.warn(
+                `[orchestrator-tick] Ülesanne ${key}: ou.logs-is on eelmise tsükli käimasolev käivitus (log_id: ${dupGuard.logId ?? 'n/a'}, algus: ${dupGuard.execStart}), mis algas enne ülemülesande ${staleParent} lõppu. Ootame selle lõppu.`
+              );
+              return;
+            }
             if (dupGuard.state === 'running') {
               // Запуск уже идёт (например, state был потерян): берём его под наблюдение вместо дубля
               console.warn(`[orchestrator-tick] Ülesanne ${key}: ou.logs-is on juba käimasolev käivitus (log_id: ${dupGuard.logId ?? 'n/a'}). Duplikaati ei looda.`);

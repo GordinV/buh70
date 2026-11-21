@@ -45,7 +45,7 @@ describe('Субагент asutus_kehtivus', () => {
     expect(graph['asutus_kehtivus'].params).toMatchObject({
       userId: 11770,
       rekvId: 63,
-      dryRun: true,
+      dryRun: false,
       maxClose: 100,
       extraEmails: [
         'vladislav.gordin@gmail.com',

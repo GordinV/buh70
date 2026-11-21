@@ -12,7 +12,7 @@
   "params": {
     "userId": 11770,
     "rekvId": 63,
-    "dryRun": true,
+    "dryRun": false,
     "maxClose": 100,
     "extraEmails": [
       "vladislav.gordin@gmail.com",

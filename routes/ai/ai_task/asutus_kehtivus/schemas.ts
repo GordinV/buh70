@@ -6,7 +6,7 @@ export const TASK_FLOW_CHECK_ASUTUS_KEHTIVUS = 'checkAsutusKehtivus';
 export const StartAsutusKehtivusInputSchema = z.object({
   userId: z.number().int().positive().default(AI_TASK_SERVICE_USER_ID),
   rekvId: z.number().int().positive().default(63),
-  dryRun: z.boolean().default(true),
+  dryRun: z.boolean().default(false),
   maxClose: z.number().int().nonnegative().default(100),
   extraEmails: z.array(z.string()).optional(),
   hash: z.string().optional(),

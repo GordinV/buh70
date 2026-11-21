@@ -209,7 +209,7 @@ export const manifest = {
   }): Promise<number | null> => {
     const finalUserId = (ctx.params?.userId as number) ?? ctx.userId;
     const finalRekvId = (ctx.params?.rekvId as number) ?? ctx.rekvId;
-    const dryRun = typeof ctx.params?.dryRun === 'boolean' ? (ctx.params.dryRun as boolean) : true;
+    const dryRun = typeof ctx.params?.dryRun === 'boolean' ? (ctx.params.dryRun as boolean) : false;
     const maxClose = typeof ctx.params?.maxClose === 'number' ? (ctx.params.maxClose as number) : 100;
     const rawEmails = ctx.params?.extraEmails ?? ctx.params?.notifyEmails;
     const extraEmails = Array.isArray(rawEmails)
