@@ -22,3 +22,7 @@ CREATE INDEX avans1_idx1
   ON docs.avans1 (rekvid, userid, asutusid, dokpropid, kpv, journalid);
 CREATE INDEX avans1_idx2
   ON docs.avans1 (number);
+
+ALTER TABLE docs.avans1
+    ADD COLUMN if not exists properties jsonb;
+

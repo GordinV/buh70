@@ -43,3 +43,5 @@ CREATE INDEX avans2_idx2
   (nomid, konto, kood1, kood2, kood3, kood4, tunnus);
 
 
+alter table docs.avans2
+    add column if not exists objekt character varying(20) null;
