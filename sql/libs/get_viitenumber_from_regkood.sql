@@ -93,7 +93,173 @@ BEGIN
                                         ', arve kpv:' || v_dok_record.kpv ||
                                         ', asutus: ' || ltrim(rtrim(v_dok_record.asutus)) ||
                                         ', arve jääk:' || ltrim(rtrim(v_dok_record.jaak::text));
+        when l_tyyp = '41' then -- get asutus for reklmaks
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus              a
+                inner join rekl.luba l on a.id = l.asutusid
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by l.id desc
+        limit 1;
 
+        if v_dok_record is null then
+            raise exception 'Viga, reklami luba puudub';
+        end if;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 6, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '42' then -- get asutus for parkimistasu
+        -- muud asutused, regkood = 9999990
+            select
+                a.id,
+                a.regkood,
+                a.nimetus
+            into v_dok_record
+            from
+                libs.asutus a
+            where
+                  a.regkood = '9999990'
+              and a.staatus < 3
+            order by a.id desc
+            limit 1;
+
+            l_dok_id_osa = lpad(v_dok_record.id::TEXT, 6, '0');
+            l_selg = 'Reg.kood / Isikukood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus (isikunimi):' ||
+                     ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '43' then -- get asutus for Teede ja tänavate sulgemise maks
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus a
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by a.id desc
+        limit 1;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 6, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '51' then -- get asutus for Riigilõiv
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus a
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by a.id desc
+        limit 1;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 6, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '52' then -- get asutus for Ehitusloa taotluse läbivaatamise eest riigilõiv
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus a
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by a.id desc
+        limit 1;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 6, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '53' then -- get asutus for Kasutusloa taotluse labivaatamise eest riigilõiv
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus a
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by a.id desc
+        limit 1;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 6, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '50' then -- get asutus for Sunniraha
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus a
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by a.id desc
+        limit 1;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 6, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '6' then -- get asutus for Trahvid
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus a
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by a.id desc
+        limit 1;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 5, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
+
+        when l_tyyp = '7' then -- get asutus for Enampakkumise osalemise eest (Oksjonid)
+        select
+            a.id,
+            a.regkood,
+            a.nimetus
+        into v_dok_record
+        from
+            libs.asutus a
+        where
+              a.regkood = l_objekt_number
+          and a.staatus < 3
+        order by a.id desc
+        limit 1;
+
+        l_dok_id_osa = lpad(v_dok_record.id::TEXT, 5, '0');
+        l_selg = 'Reg.kood:' || ltrim(rtrim(v_dok_record.regkood)) || ', Nimetus:' ||
+                 ltrim(rtrim(v_dok_record.nimetus));
         else v_dok_record = null;
 
         end case;
@@ -122,7 +288,9 @@ BEGIN
     end if;
     -- response
     -- ошибка, вернем ответ
-    data = jsonb_build_object('error', (l_viitenumber is null),'error_description',(case when l_viitenumber is null then 'Puuduvad andmed' else null end),  'asutus', l_rekv_nimetus, 'viitenumber', l_viitenumber,
+    data = jsonb_build_object('error', (l_viitenumber is null), 'error_description',
+                              (case when l_viitenumber is null then 'Puuduvad andmed' else null end), 'asutus',
+                              l_rekv_nimetus, 'viitenumber', l_viitenumber,
                               'selgitus', l_selg)::json;
     return;
 END;

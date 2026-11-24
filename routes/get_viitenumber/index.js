@@ -7,7 +7,18 @@ const VALID_HASH = '2f2b7890e7951a55d589c2bb5df2d0f59cd10877';
 const TYYP_LIST = [
     { id: '1', name: 'Vanemate tasu' },
     { id: '2', name: 'Kontraagent' },
-    { id: '3', name: 'Arve number' }
+    { id: '3', name: 'Arve number' },
+    { id: '41', name: 'Reklaamimaks' },
+    { id: '42', name: 'Parkimistasu' },
+    { id: '43', name: 'Teede ja tänavate sulgemise maks' },
+    { id: '50', name: 'Sunniraha' },
+    { id: '51', name: 'Riigilõiv' },
+    { id: '52', name: 'Ehitusloa taotluse läbivaatamise eest riigilõiv' },
+    { id: '53', name: 'Kasutusloa taotluse labivaatamise eest riigilõiv' },
+    { id: '6', name: 'Trahvid' },
+    { id: '7', name: 'Enampakkumise osalemise eest (Oksjonid)' },
+
+
 ];
 
 /**
