@@ -5,10 +5,20 @@ CREATE FUNCTION palk.get_taabel2(IN params JSONB, OUT result NUMERIC, OUT tahtpa
 AS
 $$
 DECLARE
-    l_kuu              INTEGER = coalesce((params ->> 'kuu')::INTEGER, month(current_date));
-    l_aasta            INTEGER = coalesce((params ->> 'aasta')::INTEGER, year(current_date));
-    l_kpv_alg          DATE    = coalesce((params ->> 'alg_kpv')::DATE, make_date(l_aasta, l_kuu, 1));
-    l_kpv_lopp         DATE    = coalesce((params ->> 'lopp_kpv')::DATE, gomonth(l_kpv_alg, 1) - 1);
+    l_kuu              INTEGER = case
+                                     when (params ->> 'kuu')::INTEGER is null or (params ->> 'kuu')::INTEGER = 0
+                                         then month(current_date)
+                                     else (params ->> 'kuu')::INTEGER end;
+    l_aasta            INTEGER = case
+                                     when (params ->> 'aasta')::INTEGER is null or (params ->> 'aasta')::INTEGER = 0
+                                         then year(current_date)
+                                     else (params ->> 'aasta')::INTEGER end;
+    l_kpv_alg          DATE    = case
+                                     when trim((params ->> 'alg_kpv')) = '' then make_date(l_aasta, l_kuu, 1)::date
+                                     else (params ->> 'alg_kpv')::DATE end;
+    l_kpv_lopp         DATE    = case
+                                     when trim((params ->> 'lopp_kpv')) = '' then (gomonth(l_kpv_alg, 1) - 1)::date
+                                     else (params ->> 'lopp_kpv')::DATE end;
     l_toograf          INTEGER = params ->> 'toograf';
     i                  INTEGER = 1;
     l_json             JSONB;
@@ -32,12 +42,19 @@ BEGIN
                                         'alg_paev', (CASE WHEN MONTH(l_kpv_alg) = i THEN DAY(l_kpv_alg) ELSE 1 END),
                                         'lopp_paev', day(l_arv_lopp_kpv),
                                         'lepingid', params ->> 'lepingid',
-                                        'toograf', coalesce(l_toograf, 0)
-                );
+                                        'toograf', coalesce(l_toograf, 0),
+                                        'kas_puudumine', coalesce((params ->> 'kas_puudumine')::boolean, false)
+                     );
 
-            SELECT coalesce(t.result, 0), coalesce(t.tahtpaeva_tunnid, 0)
+            SELECT
+                coalesce(t.result, 0),
+                coalesce(t.tahtpaeva_tunnid, 0)
             INTO l_tunnid, l_tahtpaeva_tunnid
-            FROM palk.sp_calc_taabel2(l_json::JSONB) t;
+            FROM
+                palk.sp_calc_taabel2(l_json::JSONB) t;
+
+            raise notice 'l_tunnid %, l_tahtpaeva_tunnid %, l_json %', l_tunnid, l_tahtpaeva_tunnid, l_json;
+
             result = result + l_tunnid;
             tahtpaeva_tunnid = tahtpaeva_tunnid + l_tahtpaeva_tunnid;
 
