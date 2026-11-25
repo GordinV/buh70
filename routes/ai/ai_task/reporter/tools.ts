@@ -136,10 +136,11 @@ export function formatReportMarkdown(input: GenerateReportInput): string {
       md += `\n  - *Tuvastatud vigased e-posti aadressid (${step.mailErrors.length} tk):*\n`;
       for (const me of step.mailErrors) {
         const nr = me.doc_number || me.invoice_number || 'N/A';
+        const docLabel = me.doc_type === 'TEATIS' ? 'Teatis' : 'Arve';
         const em = me.recipient_email || '—';
         const st = me.status || 'Muud vead';
         const rsn = me.reason || '—';
-        md += `    - Arve: \`${nr}\` | Saaja: \`${em}\` | Staatus: \`${st}\` | Põhjus: ${rsn}\n`;
+        md += `    - ${docLabel}: \`${nr}\` | Saaja: \`${em}\` | Staatus: \`${st}\` | Põhjus: ${rsn}\n`;
       }
     }
     md += `\n`;
@@ -215,7 +216,7 @@ export function formatReportHtml(input: GenerateReportInput): string {
           <table style="width: 100%; border-collapse: collapse; font-size: 12px; background: #fff;">
             <thead>
               <tr style="background: #f0f0f0; text-align: left;">
-                <th style="padding: 4px 8px; border: 1px solid #ddd;">Arve nr</th>
+                <th style="padding: 4px 8px; border: 1px solid #ddd;">Dok nr</th>
                 <th style="padding: 4px 8px; border: 1px solid #ddd;">Saaja e-post</th>
                 <th style="padding: 4px 8px; border: 1px solid #ddd;">Staatus</th>
                 <th style="padding: 4px 8px; border: 1px solid #ddd;">Veateade / Põhjus</th>
@@ -226,7 +227,7 @@ export function formatReportHtml(input: GenerateReportInput): string {
                 .map(
                   (me) => `
                 <tr>
-                  <td style="padding: 4px 8px; border: 1px solid #ddd; font-weight: bold;">${me.doc_number || me.invoice_number || 'N/A'}</td>
+                  <td style="padding: 4px 8px; border: 1px solid #ddd; font-weight: bold;">${me.doc_type === 'TEATIS' ? 'Teatis ' : ''}${me.doc_number || me.invoice_number || 'N/A'}</td>
                   <td style="padding: 4px 8px; border: 1px solid #ddd;">${me.recipient_email || '—'}</td>
                   <td style="padding: 4px 8px; border: 1px solid #ddd; color: #d32f2f; font-weight: bold;">${me.status || 'Muud vead'}</td>
                   <td style="padding: 4px 8px; border: 1px solid #ddd; color: #555;">${me.reason || '—'}</td>

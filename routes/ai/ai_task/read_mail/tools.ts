@@ -419,6 +419,26 @@ export function cleanEmailText(text: string): string {
 }
 
 /**
+ * Определение, относится ли входящее письмо к рассылке извещений о задолженности (automailerTeatis)
+ */
+export function isTeatisEmail(text?: string | null, subject?: string | null): boolean {
+  const combined = `${text || ''} ${subject || ''}`;
+  if (/maksevõla|maksevola/i.test(combined)) return true;
+  if (/\bteatis(?:e|ed|t)?\b/i.test(combined)) return true;
+  if (/automailerTeatis/i.test(combined)) return true;
+
+  const subjStr = subject || combined;
+  const docSubjMatch = subjStr.match(/Saadan\s+dokument\s+nr\.\s*([^\r\n,]+)/i);
+  if (docSubjMatch && !/Saadan\s+dokument\s+nr\.[^,\r\n]+,/i.test(subjStr)) {
+    const candidate = docSubjMatch[1].trim();
+    if (candidate && !/^\d{3}-\d{4,6}$/.test(candidate)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Классифицирует ошибки доставки по четырем регламентным статусам:
  * 1. Aadressi viga - несуществующий или неверный адрес получателя (User unknown, Mailbox unavailable, 550 5.1.1 и т.д.)
  * 2. Domeeni viga - ошибка поиска или недоступность домена/DNS/MX записи (Domain lookup error, Host not found и т.д.)
@@ -614,25 +634,45 @@ export function parseDeliveryFailureText(rawText: string): MailDeliveryError | n
   // 4. Определение статуса (status) по 4 регламентным категориям
   const status: MailDeliveryStatus = categorizeMailError(text, reason);
 
-  // 5. Извлечение номера счета / документа (doc_number / invoice_number)
+  // 5. Извлечение номера счета / документа (doc_number / invoice_number) и типа (ARV | TEATIS)
   let docNumber = '';
   let referenceNumber: string | undefined = undefined;
 
-  // Ищем формат buh70 automailer: "Saadan dokument nr. 101-10772, 1010177139"
-  const docNrPattern =
-    /(?:Saadan\s+dokument\s+nr[.:]?|Arve\s+nr[.:]?|Dokument\s+nr[.:]?|Invoice\s+nr[.:]?)\s*([0-9a-zA-Z\-_/]+)(?:,\s*([0-9a-zA-Z\-_/]+))?/i;
+  let sourceSubject: string | undefined = undefined;
+  const subjectMatch = text.match(/(?:Subject|Teema):\s*([^\r\n]+)/i);
+  if (subjectMatch) {
+    sourceSubject = decodeMimeWords(subjectMatch[1].trim());
+  }
 
-  const docNrMatch = text.match(docNrPattern) || rawText.match(docNrPattern);
+  const isTeatis = isTeatisEmail(text, sourceSubject);
+  const docType: 'ARV' | 'TEATIS' = isTeatis ? 'TEATIS' : 'ARV';
 
-  if (docNrMatch) {
-    docNumber = docNrMatch[1].trim();
-    if (docNrMatch[2]) {
-      referenceNumber = docNrMatch[2].trim();
+  if (isTeatis) {
+    const teatisDocMatch =
+      text.match(/(?:Saadan\s+dokument\s+nr\.?|MAKSEVÕLA\s+TEATIS\s+NR-?|Teatis\s*(?:nr\.?)?|Number:\s*NR-?)\s*([0-9a-zA-Z\-_/]+)/i) ||
+      rawText.match(/(?:Saadan\s+dokument\s+nr\.?|MAKSEVÕLA\s+TEATIS\s+NR-?|Teatis\s*(?:nr\.?)?|Number:\s*NR-?)\s*([0-9a-zA-Z\-_/]+)/i);
+    if (teatisDocMatch) {
+      docNumber = teatisDocMatch[1].replace(/^NR-/i, '').trim();
+    } else {
+      docNumber = 'TEATIS';
     }
   } else {
-    const genericDocMatch = text.match(/(?:nr[.:]?\s*)([0-9]{2,4}-[0-9]{3,7})/i);
-    if (genericDocMatch) {
-      docNumber = genericDocMatch[1].trim();
+    // Ищем формат buh70 automailer: "Saadan dokument nr. 101-10772, 1010177139"
+    const docNrPattern =
+      /(?:Saadan\s+dokument\s+nr[.:]?|Arve\s+nr[.:]?|Dokument\s+nr[.:]?|Invoice\s+nr[.:]?)\s*([0-9a-zA-Z\-_/]+)(?:,\s*([0-9a-zA-Z\-_/]+))?/i;
+
+    const docNrMatch = text.match(docNrPattern) || rawText.match(docNrPattern);
+
+    if (docNrMatch) {
+      docNumber = docNrMatch[1].trim();
+      if (docNrMatch[2]) {
+        referenceNumber = docNrMatch[2].trim();
+      }
+    } else {
+      const genericDocMatch = text.match(/(?:nr[.:]?\s*)([0-9]{2,4}-[0-9]{3,7})/i);
+      if (genericDocMatch) {
+        docNumber = genericDocMatch[1].trim();
+      }
     }
   }
 
@@ -647,16 +687,10 @@ export function parseDeliveryFailureText(rawText: string): MailDeliveryError | n
     failedAt = dateMatch[1].trim();
   }
 
-  // 7. Исходная тема
-  let sourceSubject: string | undefined = undefined;
-  const subjectMatch = text.match(/(?:Subject|Teema):\s*([^\r\n]+)/i);
-  if (subjectMatch) {
-    sourceSubject = decodeMimeWords(subjectMatch[1].trim());
-  }
-
   const result: MailDeliveryError = {
     status,
     reason,
+    doc_type: docType,
     doc_number: docNumber,
     invoice_number: docNumber,
     recipient_email: recipientEmail,
@@ -722,23 +756,37 @@ export function parseIncomingEmail(
     }
   }
 
-  // 2. Не bounce: ответ клиента / запрос смены email / вопрос по счету
+  // 2. Не bounce: ответ клиента / запрос смены email / вопрос по счету или извещению
+  const isTeatis = isTeatisEmail(combinedSearchText, subject);
+  const docType: 'ARV' | 'TEATIS' = isTeatis ? 'TEATIS' : 'ARV';
+
   let docNumber = '';
   let referenceNumber: string | undefined = undefined;
 
-  const docNrPattern =
-    /(?:Saadan\s+dokument\s+nr[.:]?|Arve\s+nr[.:]?|Dokument\s+nr[.:]?|Invoice\s+nr[.:]?)\s*([0-9a-zA-Z\-_/]+)(?:,\s*([0-9a-zA-Z\-_/]+))?/i;
-  const docNrMatch = combinedSearchText.match(docNrPattern);
-
-  if (docNrMatch) {
-    docNumber = docNrMatch[1].trim();
-    if (docNrMatch[2]) {
-      referenceNumber = docNrMatch[2].trim();
+  if (isTeatis) {
+    const teatisDocMatch = combinedSearchText.match(
+      /(?:Saadan\s+dokument\s+nr\.?|MAKSEVÕLA\s+TEATIS\s+NR-?|Teatis\s*(?:nr\.?)?|Number:\s*NR-?)\s*([0-9a-zA-Z\-_/]+)/i
+    );
+    if (teatisDocMatch) {
+      docNumber = teatisDocMatch[1].replace(/^NR-/i, '').trim();
+    } else {
+      docNumber = 'TEATIS';
     }
   } else {
-    const genericDocMatch = combinedSearchText.match(/(?:nr[.:]?\s*)([0-9]{2,4}-[0-9]{3,7})/i);
-    if (genericDocMatch) {
-      docNumber = genericDocMatch[1].trim();
+    const docNrPattern =
+      /(?:Saadan\s+dokument\s+nr[.:]?|Arve\s+nr[.:]?|Dokument\s+nr[.:]?|Invoice\s+nr[.:]?)\s*([0-9a-zA-Z\-_/]+)(?:,\s*([0-9a-zA-Z\-_/]+))?/i;
+    const docNrMatch = combinedSearchText.match(docNrPattern);
+
+    if (docNrMatch) {
+      docNumber = docNrMatch[1].trim();
+      if (docNrMatch[2]) {
+        referenceNumber = docNrMatch[2].trim();
+      }
+    } else {
+      const genericDocMatch = combinedSearchText.match(/(?:nr[.:]?\s*)([0-9]{2,4}-[0-9]{3,7})/i);
+      if (genericDocMatch) {
+        docNumber = genericDocMatch[1].trim();
+      }
     }
   }
 
@@ -814,6 +862,7 @@ export function parseIncomingEmail(
   const result: MailDeliveryError = {
     status,
     reason: reason || 'Kiri töödeldud',
+    doc_type: docType,
     doc_number: docNumber,
     invoice_number: docNumber,
     recipient_email: recipientEmail || 'unknown@client.ee',

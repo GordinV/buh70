@@ -1016,6 +1016,37 @@ Remote host said: 550 User unknown`;
       expect(resNull.groupedCount).toBe(0);
       expect(mockTransporter.sendMail).not.toHaveBeenCalled();
     });
+
+    it('должен распознавать TEATIS извещение о задолженности с таблицей счетов и сохранять doc_type', async () => {
+      const teatisEmail = {
+        uid: 201,
+        date: new Date('2026-10-16T12:00:00.000Z'),
+        text: `From: MAILER-DAEMON@narva.ee
+Subject: Undelivered Mail Returned to Sender
+
+<debtor@example.ee>: 550 5.1.1 User unknown
+Subject: Saadan dokument nr. 104
+MAKSEVÕLA TEATIS NR-104
+Arve number | Viitenumber | Summa
+073-1234 | 0730123456 | 25.00
+`,
+      };
+
+      const results = await runReadMailSubagent({
+        stateFilePath: testStateFile,
+        rawEmails: [teatisEmail],
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toEqual(
+        expect.objectContaining({
+          doc_type: 'TEATIS',
+          doc_number: '104',
+          status: 'Aadressi viga',
+          recipient_email: 'debtor@example.ee',
+        })
+      );
+    });
   });
 });
 

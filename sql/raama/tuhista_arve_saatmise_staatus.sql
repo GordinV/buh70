@@ -8,6 +8,7 @@ DECLARE
     l_jsonb_arved JSONB;
     l_rekv_id     INTEGER;
     l_doc_id      INTEGER;
+    l_doc_type    TEXT;
     l_response    JSONB = '[]'::JSONB; -- результат
     l_email       TEXT;
 BEGIN
@@ -38,6 +39,7 @@ BEGIN
         FROM
             jsonb_to_recordset(l_jsonb_arved) AS x(
                                                    doc_number TEXT,
+                                                   doc_type TEXT,
                                                    status TEXT,
                                                    reason TEXT,
                                                    recipient_email TEXT,
@@ -47,44 +49,83 @@ BEGIN
 
             l_doc_id := NULL;
             l_email := NULL;
+            l_doc_type := upper(coalesce(nullif(trim(v_arv_rida.doc_type), ''), 'ARV'));
 
-            raise notice 'v_arv_rida.doc_number %, l_rekv_id %, v_arv_rida.recipient_email %', v_arv_rida.doc_number, l_rekv_id, v_arv_rida.recipient_email;
+            raise notice 'v_arv_rida.doc_number %, doc_type %, l_rekv_id %, v_arv_rida.recipient_email %',
+                v_arv_rida.doc_number, l_doc_type, l_rekv_id, v_arv_rida.recipient_email;
 
-            -- 3. Ищем документ счета с фильтрацией по номеру, учреждению и адресу получателя
-            -- Используем LEFT JOIN ou.userid, чтобы счет аннулировался даже если автор не найден или удален
-            SELECT
-                d.id,
-                d.rekvid,
-                (u.properties::jsonb ->> 'email')::TEXT AS email
-            INTO l_doc_id, l_rekv_id, l_email
-            FROM
-                docs.arv                 a
-                    INNER JOIN docs.doc  d ON d.id = a.parentid
-                    LEFT JOIN ou.userid  u ON u.id = a.userid
-            WHERE
-                  trim(a.number) = trim(v_arv_rida.doc_number)
-              AND EXISTS
-                  (
-                      SELECT
-                          1
-                      FROM
-                          jsonb_array_elements(coalesce(d.history, '[]'::JSONB)) AS e
-                      WHERE
-                            e ? 'email'
-                        AND (
-                                v_arv_rida.recipient_email IS NULL
-                                    OR empty(v_arv_rida.recipient_email)
-                                    OR lower(trim(e ->> 'aadress')) = lower(trim(v_arv_rida.recipient_email))
-                                )
-                  )
-            ORDER BY d.id DESC
-            LIMIT 1;
+            -- 3. Ищем документ (ARV в docs.arv или TEATIS в docs.teatis)
+            IF l_doc_type = 'TEATIS' THEN
+                SELECT
+                    d.id,
+                    d.rekvid,
+                    coalesce(
+                        nullif(trim((u.properties::jsonb ->> 'email')::TEXT), ''),
+                        nullif(trim(r.email::TEXT), '')
+                    ) AS email
+                INTO l_doc_id, l_rekv_id, l_email
+                FROM
+                    docs.teatis              t
+                        INNER JOIN docs.doc  d ON d.id = t.parentid
+                        LEFT JOIN ou.rekv    r ON r.id = d.rekvid
+                        LEFT JOIN ou.userid  u ON u.kasutaja = (d.history -> 0 ->> 'user')
+                                              AND u.rekvid = d.rekvid
+                                              AND u.status <> 3
+                WHERE
+                      d.status <> 3
+                  AND trim(t.number) = trim(v_arv_rida.doc_number)
+                  AND EXISTS
+                      (
+                          SELECT
+                              1
+                          FROM
+                              jsonb_array_elements(coalesce(d.history, '[]'::JSONB)) AS e
+                          WHERE
+                                e ? 'email'
+                            AND (
+                                    v_arv_rida.recipient_email IS NULL
+                                        OR empty(v_arv_rida.recipient_email)
+                                        OR lower(trim(e ->> 'aadress')) = lower(trim(v_arv_rida.recipient_email))
+                                    )
+                      )
+                ORDER BY d.id DESC
+                LIMIT 1;
+            ELSE
+                -- Используем LEFT JOIN ou.userid, чтобы счет аннулировался даже если автор не найден или удален
+                SELECT
+                    d.id,
+                    d.rekvid,
+                    (u.properties::jsonb ->> 'email')::TEXT AS email
+                INTO l_doc_id, l_rekv_id, l_email
+                FROM
+                    docs.arv                 a
+                        INNER JOIN docs.doc  d ON d.id = a.parentid
+                        LEFT JOIN ou.userid  u ON u.id = a.userid
+                WHERE
+                      trim(a.number) = trim(v_arv_rida.doc_number)
+                  AND EXISTS
+                      (
+                          SELECT
+                              1
+                          FROM
+                              jsonb_array_elements(coalesce(d.history, '[]'::JSONB)) AS e
+                          WHERE
+                                e ? 'email'
+                            AND (
+                                    v_arv_rida.recipient_email IS NULL
+                                        OR empty(v_arv_rida.recipient_email)
+                                        OR lower(trim(e ->> 'aadress')) = lower(trim(v_arv_rida.recipient_email))
+                                    )
+                      )
+                ORDER BY d.id DESC
+                LIMIT 1;
+            END IF;
 
             raise notice 'l_doc_id %, l_email %', l_doc_id, l_email;
 
-            -- 4. Если счет найден, аннулируем статус успешной отправки
+            -- 4. Если документ найден, аннулируем статус успешной отправки
             IF l_doc_id IS NOT NULL THEN
-                -- Обновляем историю в docs.doc: заменяем email на email_error с сохранением статуса и причины
+                -- Обновляем историю в docs.doc: фиксируем email_error_3 с сохранением статуса и причины
                 UPDATE docs.doc
                 SET
                     history = coalesce(history, '[]'::JSONB) || jsonb_build_object(
@@ -97,7 +138,7 @@ BEGIN
 
                 raise notice 'update l_doc_id %', l_doc_id;
 
-                -- 5. Обновляем детализацию ошибки в ou.logs по событию отправки счета (включая subject)
+                -- 5. Обновляем детализацию ошибки в ou.logs по событию отправки (arv или teatis)
                 UPDATE ou.logs
                 SET
                     changes = jsonb_build_object(
@@ -109,13 +150,14 @@ BEGIN
                               ) || coalesce(changes, '{}'::JSONB)
                 WHERE
                       doc_id = l_doc_id
-                  AND propertis ->> 'table' = 'arv'
+                  AND propertis ->> 'table' = CASE WHEN l_doc_type = 'TEATIS' THEN 'teatis' ELSE 'arv' END
                   AND propertis ->> 'event' = 'email';
 
                 raise notice 'update ou.logs l_log_id %', l_log_id;
 
                 -- Добавляем успешный результат в ответ
                 l_response := l_response || jsonb_build_object(
+                        'doc_type', l_doc_type,
                         'doc_number', v_arv_rida.doc_number,
                         'doc_id', l_doc_id,
                         'recipient_email', v_arv_rida.recipient_email,
@@ -123,8 +165,9 @@ BEGIN
                         'email', l_email,
                         'subject', v_arv_rida.subject);
             ELSE
-                -- Счет не найден
+                -- Документ не найден
                 l_response := l_response || jsonb_build_object(
+                        'doc_type', l_doc_type,
                         'doc_number', v_arv_rida.doc_number,
                         'recipient_email', v_arv_rida.recipient_email,
                         'status', 'error_not_found'

@@ -323,10 +323,70 @@ describe('readMail - accountant notification filtering for "Muud vead"', () => {
             expect(readMail.isTeatisEmail('automailerTeatis delivery', '')).toBe(true);
             expect(readMail.isTeatisEmail('', 'Saadan dokument nr. 12')).toBe(true);
             expect(readMail.isTeatisEmail('', 'Saadan dokument nr. 073-1234, 0730123456')).toBe(false);
+            expect(readMail.isTeatisEmail('', 'Saadan dokument nr. 073-1234')).toBe(false);
 
             expect(readMail.isTeatisError({ doc_type: 'TEATIS' })).toBe(true);
             expect(readMail.isTeatisError({ subject: 'Saadan dokument nr. 55', body: 'maksevõla teatis' })).toBe(true);
             expect(readMail.isTeatisError({ doc_type: 'ARV', subject: 'Saadan dokument nr. 073-1234, 0730123456' })).toBe(false);
+        });
+
+        test('extracts teatis number instead of embedded invoice numbers from debt table', () => {
+            const raw = 'Subject: Undelivered Mail Returned to Sender\r\n' +
+                'From: Mail Delivery System <MAILER-DAEMON@narva.ee>\r\n\r\n' +
+                '<debtor@example.ee>: 550 5.1.1 User unknown\n' +
+                'Subject: Saadan dokument nr. 104\n' +
+                'MAKSEVÕLA TEATIS NR-104\n' +
+                'Arve number | Viitenumber | Summa\n' +
+                '073-1234 | 0730123456 | 25.00\n' +
+                '095-5678 | 0950567890 | 30.00\n';
+
+            const parsed = readMail.parseIncomingEmail(raw);
+            expect(parsed).toBeDefined();
+            expect(parsed.doc_type).toBe('TEATIS');
+            expect(parsed.doc_number).toBe('104');
+            expect(parsed.status).toBe('Aadressi viga');
+        });
+
+        test('notifyAccountantsAboutFailedInvoices notifies responsible person for TEATIS Aadressi viga', async () => {
+            const mockSendMail = jest.fn().mockResolvedValue({ messageId: 'teatis-notify-1' });
+            const mockTransporter = { sendMail: mockSendMail };
+
+            const cancelResults = [
+                {
+                    doc_type: 'TEATIS',
+                    doc_number: '104',
+                    doc_id: 55501,
+                    recipient_email: 'debtor@example.ee',
+                    status: 'success',
+                    email: 'vastutav@narva.ee',
+                    subject: 'Saadan dokument nr. 104'
+                }
+            ];
+            const deliveryErrors = [
+                {
+                    doc_type: 'TEATIS',
+                    doc_number: '104',
+                    recipient_email: 'debtor@example.ee',
+                    status: 'Aadressi viga',
+                    reason: '550 5.1.1 User unknown',
+                    subject: 'Saadan dokument nr. 104'
+                }
+            ];
+
+            const res = await readMail.notifyAccountantsAboutFailedInvoices(
+                cancelResults,
+                deliveryErrors,
+                77701,
+                mockTransporter
+            );
+
+            expect(res.groupedCount).toBe(1);
+            expect(mockSendMail).toHaveBeenCalledTimes(1);
+            const mail = mockSendMail.mock.calls[0][0];
+            expect(mail.to).toBe('vastutav@narva.ee');
+            expect(mail.subject).toContain('Kättetoimetamata maksevõla teatised (1 tk)');
+            expect(mail.text).toContain('Maksevõla teatis nr: 104');
+            expect(mail.html).toContain('Teatis 104');
         });
     });
 });

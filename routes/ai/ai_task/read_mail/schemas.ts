@@ -23,6 +23,7 @@ export type MailDeliveryStatus = z.infer<typeof MailDeliveryStatusEnum>;
 export const MailDeliveryErrorSchema = z.object({
   status: MailDeliveryStatusEnum.describe('Статус ошибки: Aadressi viga, Domeeni viga, Postkast täis, Muud vead'),
   reason: z.string().describe('Причина ошибки доставки (например, "Domain lookup error")'),
+  doc_type: z.enum(['ARV', 'TEATIS']).optional().describe('Тип документа: ARV (счет) или TEATIS (извещение о задолженности)'),
   doc_number: z.string().describe('Номер счета / документа (например, "101-10772")'),
   invoice_number: z.string().describe('Синоним поля doc_number для обратной совместимости'),
   recipient_email: z.string().describe('Электронный адрес получателя счета'),

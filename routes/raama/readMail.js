@@ -184,10 +184,14 @@ function isTeatisEmail(text, subject) {
     if (/\bteatis(?:e|ed|t)?\b/i.test(combined)) return true;
     if (/automailerTeatis/i.test(combined)) return true;
 
-    // В automailerTeatis subject: "Saadan dokument nr. <number>" (без запятой и без viitenr)
+    // В automailerTeatis subject: "Saadan dokument nr. <number>" (без запятой и без viitenr, номер не формата счета XXX-XXXX)
     // В automailer subject: "Saadan dokument nr. <number>, <viitenr>"
-    if (/Saadan\s+dokument\s+nr\./i.test(combined)) {
-        if (!/Saadan\s+dokument\s+nr\.[^,\r\n]+,/i.test(combined)) {
+    // В routes/email.js (ручная отправка счета): "Saadan dokument nr. <XXX-XXXX>"
+    var subjStr = subject || combined;
+    var docSubjMatch = subjStr.match(/Saadan\s+dokument\s+nr\.\s*([^\r\n,]+)/i);
+    if (docSubjMatch && !/Saadan\s+dokument\s+nr\.[^,\r\n]+,/i.test(subjStr)) {
+        var candidate = docSubjMatch[1].trim();
+        if (candidate && !/^\d{3}-\d{4,6}$/.test(candidate)) {
             return true;
         }
     }
@@ -328,40 +332,59 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
 
     var rowsText = '';
     var rowsHtml = '';
+    var hasArv = false;
+    var hasTeatis = false;
 
     for (var i = 0; i < validInvoices.length; i++) {
         var inv = validInvoices[i];
+        var isTeatis = isTeatisError(inv);
+        if (isTeatis) hasTeatis = true;
+        else hasArv = true;
+
+        var docTypeLabel = isTeatis ? 'Maksevõla teatis' : 'Arve';
         var docNum = inv.doc_number || inv.invoice_number || 'N/A';
         var recip = inv.recipient_email || 'teadmata';
         var rsn = inv.reason || 'Kättetoimetamise tõrge';
         var subj = inv.subject || inv.source_subject || '-';
 
-        rowsText += '- Arve nr: ' + docNum + ' | Kliendi e-post: ' + recip + ' | Põhjus: ' + rsn + ' | Teema: ' + subj + '\n';
+        rowsText += '- ' + docTypeLabel + ' nr: ' + docNum + ' | Kliendi e-post: ' + recip + ' | Põhjus: ' + rsn + ' | Teema: ' + subj + '\n';
         rowsHtml += '<tr>' +
-            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + escapeHtml(docNum) + '</td>' +
+            '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">' + escapeHtml((isTeatis ? 'Teatis ' : '') + docNum) + '</td>' +
             '<td style="padding: 8px; border: 1px solid #ddd;">' + escapeHtml(recip) + '</td>' +
             '<td style="padding: 8px; border: 1px solid #ddd; color: #d32f2f;">' + escapeHtml(rsn) + '</td>' +
             '<td style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #555;">' + escapeHtml(subj) + '</td>' +
             '</tr>';
     }
 
+    var subjectPrefix = (hasTeatis && !hasArv)
+        ? 'Kättetoimetamata maksevõla teatised'
+        : (hasTeatis && hasArv)
+        ? 'Kättetoimetamata arved ja teatised'
+        : 'Kättetoimetamata arved';
+
+    var introDocsLabel = (hasTeatis && !hasArv)
+        ? 'Teie koostatud maksevõla teatiseid'
+        : (hasTeatis && hasArv)
+        ? 'Teie koostatud arveid ja maksevõla teatiseid'
+        : 'Teie koostatud arveid';
+
     var textContent = 'Tere!\n\n' +
-        'Teavitame, et järgmisi Teie koostatud arveid ei õnnestunud e-posti teel kliendile kätte toimetada ' +
+        'Teavitame, et järgmisi ' + introDocsLabel + ' ei õnnestunud e-posti teel kliendile kätte toimetada ' +
         'ja nende saatmise staatus süsteemis buh70 on tühistatud:\n\n' +
         rowsText + '\n' +
         (logId ? 'Süsteemi logi ID: ' + logId + '\n' : '') +
-        'Palun kontrollige klientide e-posti aadresse ja vajadusel saatke arved uuesti.\n';
+        'Palun kontrollige klientide e-posti aadresse ja vajadusel saatke dokumendid uuesti.\n';
 
     var htmlContent = '<div style="font-family: Arial, sans-serif; color: #333; max-width: 750px;">' +
         '<h3 style="color: #c62828; border-bottom: 2px solid #c62828; padding-bottom: 6px;">' +
-        'buh70: Kättetoimetamata arvete teavitus (' + validInvoices.length + ' tk)' +
+        'buh70: ' + subjectPrefix + ' (' + validInvoices.length + ' tk)' +
         '</h3>' +
         '<p>Tere!</p>' +
-        '<p>Teavitame, et järgmisi Teie koostatud arveid ei õnnestunud e-posti teel kohale toimetada ja nende saatmise staatus on süsteemis <strong>tühistatud</strong>:</p>' +
+        '<p>Teavitame, et järgmisi ' + introDocsLabel + ' ei õnnestunud e-posti teel kohale toimetada ja nende saatmise staatus on süsteemis <strong>tühistatud</strong>:</p>' +
         '<table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;">' +
         '<thead>' +
         '<tr style="background-color: #f5f5f5; text-align: left;">' +
-        '<th style="padding: 8px; border: 1px solid #ddd;">Arve number</th>' +
+        '<th style="padding: 8px; border: 1px solid #ddd;">Dokumendi nr</th>' +
         '<th style="padding: 8px; border: 1px solid #ddd;">Kliendi e-post</th>' +
         '<th style="padding: 8px; border: 1px solid #ddd;">Tagastamise põhjus</th>' +
         '<th style="padding: 8px; border: 1px solid #ddd;">Kirja teema</th>' +
@@ -371,14 +394,14 @@ async function sendAccountantNotificationEmail(accountantEmail, invoices, logId,
         rowsHtml +
         '</tbody>' +
         '</table>' +
-        '<p style="margin-top: 14px;">Palun kontrollige kontaktandmeid ja saatke arved vajadusel uuesti.</p>' +
+        '<p style="margin-top: 14px;">Palun kontrollige kontaktandmeid ja saatke dokumendid vajadusel uuesti.</p>' +
         (logId ? '<p style="font-size: 12px; color: #888;">Logi ID: ' + logId + '</p>' : '') +
         '</div>';
 
     var mailOptions = {
         from: (smtpConfig && smtpConfig.from) ? smtpConfig.from : 'oppetasu@narva.ee',
         to: accountantEmail,
-        subject: 'buh70: Kättetoimetamata arved (' + validInvoices.length + ' tk)',
+        subject: 'buh70: ' + subjectPrefix + ' (' + validInvoices.length + ' tk)',
         text: textContent,
         html: htmlContent
     };
@@ -444,13 +467,11 @@ async function notifyAccountantsAboutFailedInvoices(cancelResults, deliveryError
             continue;
         }
 
-        // Исключаем извещения (TEATIS), так как бухгалтерам рассылаются только их счета
-        if (isTeatisError(origErr) || (origErr.doc_type && origErr.doc_type === 'TEATIS')) {
-            console.log('[readMail] Skipping teatis ' + (row.doc_number || origErr.doc_number) + ' from accountant notification');
-            continue;
-        }
+        var docType = (row.doc_type && String(row.doc_type).trim().toUpperCase()) ||
+            (isTeatisError(origErr) ? 'TEATIS' : 'ARV');
 
         var invoiceEntry = {
+            doc_type: docType,
             doc_number: row.doc_number || origErr.doc_number || 'N/A',
             doc_id: row.doc_id || null,
             recipient_email: row.recipient_email || origErr.recipient_email || 'teadmata',
@@ -1151,18 +1172,18 @@ function parseIncomingEmail(rawEmail, meta) {
     var isTeatis = isTeatisEmail(combinedText, subject);
     var docType = isTeatis ? 'TEATIS' : 'ARV';
 
-    // 1. Поиск номера счета (напр. 073-7745, 095-9641, 098-10566)
-    var docMatch = combinedText.match(/\b(\d{3}-\d{4,6})\b/);
-    var docNumber = docMatch ? docMatch[1] : null;
-
-    // Если это извещение и номер в формате счета не найден, извлекаем номер извещения
-    if (!docNumber && isTeatis) {
-        var teatisDocMatch = combinedText.match(/(?:Saadan\s+dokument\s+nr\.?|Teatis\s*(?:nr\.?)?|Number:\s*NR-?)\s*([a-zA-Z0-9\-_/]+)/i);
+    // 1. Поиск номера документа: для TEATIS сначала ищем номер извещения, чтобы не схватить номера счетов из таблицы долгов
+    var docNumber = null;
+    if (isTeatis) {
+        var teatisDocMatch = combinedText.match(/(?:Saadan\s+dokument\s+nr\.?|MAKSEVÕLA\s+TEATIS\s+NR-?|Teatis\s*(?:nr\.?)?|Number:\s*NR-?)\s*([a-zA-Z0-9\-_/]+)/i);
         if (teatisDocMatch) {
-            docNumber = teatisDocMatch[1].trim();
+            docNumber = teatisDocMatch[1].replace(/^NR-/i, '').trim();
         } else {
             docNumber = 'TEATIS';
         }
+    } else {
+        var docMatch = combinedText.match(/\b(\d{3}-\d{4,6})\b/);
+        docNumber = docMatch ? docMatch[1] : null;
     }
 
     // 2. Поиск viitenumber

@@ -15,6 +15,7 @@ export const ReportStepDetailSchema = z.object({
       z.object({
         status: z.string().optional(),
         reason: z.string().optional(),
+        doc_type: z.string().optional(),
         doc_number: z.string().optional(),
         invoice_number: z.string().optional(),
         recipient_email: z.string().optional(),
