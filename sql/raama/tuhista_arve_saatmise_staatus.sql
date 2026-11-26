@@ -54,8 +54,41 @@ BEGIN
             raise notice 'v_arv_rida.doc_number %, doc_type %, l_rekv_id %, v_arv_rida.recipient_email %',
                 v_arv_rida.doc_number, l_doc_type, l_rekv_id, v_arv_rida.recipient_email;
 
-            -- 3. Ищем документ (ARV в docs.arv или TEATIS в docs.teatis)
-            IF l_doc_type = 'TEATIS' THEN
+            -- 3. Ищем документ: если тип не TEATIS, сначала ищем в docs.arv;
+            -- если в docs.arv не найден (например, у извещения формат номера XXX-XXXX и в теме bounce нет слова teatis),
+            -- выполняем fallback-поиск в docs.teatis
+            IF l_doc_type <> 'TEATIS' THEN
+                -- Используем LEFT JOIN ou.userid, чтобы счет аннулировался даже если автор не найден или удален
+                SELECT
+                    d.id,
+                    d.rekvid,
+                    (u.properties::jsonb ->> 'email')::TEXT AS email
+                INTO l_doc_id, l_rekv_id, l_email
+                FROM
+                    docs.arv                 a
+                        INNER JOIN docs.doc  d ON d.id = a.parentid
+                        LEFT JOIN ou.userid  u ON u.id = a.userid
+                WHERE
+                      trim(a.number) = trim(v_arv_rida.doc_number)
+                  AND EXISTS
+                      (
+                          SELECT
+                              1
+                          FROM
+                              jsonb_array_elements(coalesce(d.history, '[]'::JSONB)) AS e
+                          WHERE
+                                e ? 'email'
+                            AND (
+                                    v_arv_rida.recipient_email IS NULL
+                                        OR empty(v_arv_rida.recipient_email)
+                                        OR lower(trim(e ->> 'aadress')) = lower(trim(v_arv_rida.recipient_email))
+                                    )
+                      )
+                ORDER BY d.id DESC
+                LIMIT 1;
+            END IF;
+
+            IF l_doc_type = 'TEATIS' OR l_doc_id IS NULL THEN
                 SELECT
                     d.id,
                     d.rekvid,
@@ -90,35 +123,10 @@ BEGIN
                       )
                 ORDER BY d.id DESC
                 LIMIT 1;
-            ELSE
-                -- Используем LEFT JOIN ou.userid, чтобы счет аннулировался даже если автор не найден или удален
-                SELECT
-                    d.id,
-                    d.rekvid,
-                    (u.properties::jsonb ->> 'email')::TEXT AS email
-                INTO l_doc_id, l_rekv_id, l_email
-                FROM
-                    docs.arv                 a
-                        INNER JOIN docs.doc  d ON d.id = a.parentid
-                        LEFT JOIN ou.userid  u ON u.id = a.userid
-                WHERE
-                      trim(a.number) = trim(v_arv_rida.doc_number)
-                  AND EXISTS
-                      (
-                          SELECT
-                              1
-                          FROM
-                              jsonb_array_elements(coalesce(d.history, '[]'::JSONB)) AS e
-                          WHERE
-                                e ? 'email'
-                            AND (
-                                    v_arv_rida.recipient_email IS NULL
-                                        OR empty(v_arv_rida.recipient_email)
-                                        OR lower(trim(e ->> 'aadress')) = lower(trim(v_arv_rida.recipient_email))
-                                    )
-                      )
-                ORDER BY d.id DESC
-                LIMIT 1;
+
+                IF l_doc_id IS NOT NULL THEN
+                    l_doc_type := 'TEATIS';
+                END IF;
             END IF;
 
             raise notice 'l_doc_id %, l_email %', l_doc_id, l_email;

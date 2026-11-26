@@ -1047,6 +1047,69 @@ Arve number | Viitenumber | Summa
         })
       );
     });
+
+    it('должен корректно парсить bounce извещения 072-1240 от 27.10.2026 и группировать как TEATIS после ответа БД', async () => {
+      const teatis072Bounce = `From: MAILER-DAEMON@narva.ee
+Subject: Permanent failure notice
+Date: Tue, 27 Oct 2026 04:00:48 +0200
+
+I am deeply sorry, but I was not able to deliver your mail to the following addresses:
+ksenia_maksimova@inbox.ru : Message was not accepted -- invalid mailbox.  Local mailbox ksenia_maksimova@inbox.ru is unavailable: user is terminated
+This is a permanent delivery failure. The delivery has been tried 0 times and will not be rescheduled again.
+
+From: =?UTF-8?Q?=C3=95ppetasu?= <oppetasu@narva.ee>
+To: ksenia_maksimova@inbox.ru
+Subject: Saadan dokument nr. 072-1240
+Date: Tue, 27 Oct 2026 02:00:15 +0000
+`;
+
+      const parsedBackend = readMailBackend.parseIncomingEmail(teatis072Bounce, {
+        uid: 3476,
+        date: new Date('2026-10-27T02:00:48.000Z'),
+      });
+
+      expect(parsedBackend).toEqual(
+        expect.objectContaining({
+          doc_number: '072-1240',
+          recipient_email: 'ksenia_maksimova@inbox.ru',
+          status: 'Aadressi viga',
+        })
+      );
+
+      // Когда SQL-процедура docs.tuhista_arve_saatmise_staatus находит 072-1240 в docs.teatis (fallback),
+      // она возвращает doc_type: 'TEATIS', и бухгалтеру уходит уведомление в секции TEATIS.
+      const mockTransporter = {
+        sendMail: jest.fn().mockResolvedValue({ messageId: 'msg-teatis-072' }),
+      } as any;
+
+      const cancelResults = [
+        {
+          doc_type: 'TEATIS',
+          doc_number: '072-1240',
+          doc_id: 99072,
+          recipient_email: 'ksenia_maksimova@inbox.ru',
+          status: 'success',
+          email: 'accountant@narva.ee',
+          subject: 'Permanent failure notice',
+        },
+      ];
+
+      const notifyRes = await readMailBackend.notifyAccountantsAboutFailedInvoices(
+        cancelResults,
+        [parsedBackend],
+        8566000,
+        mockTransporter
+      );
+
+      expect(notifyRes.groupedCount).toBe(1);
+      expect(mockTransporter.sendMail).toHaveBeenCalledTimes(1);
+      const sentMail = mockTransporter.sendMail.mock.calls[0][0];
+      expect(sentMail.to).toBe('accountant@narva.ee');
+      expect(sentMail.text).toContain('072-1240');
+      expect(sentMail.html).toContain('072-1240');
+      expect(sentMail.html).toContain('ksenia_maksimova@inbox.ru');
+      expect(sentMail.html).toMatch(/teatis/i);
+    });
   });
 });
 
