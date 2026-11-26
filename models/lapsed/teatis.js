@@ -263,8 +263,9 @@ const Teatis = {
             {id: "id", name: "id", width: "0%", show: false},
             {id: "number", name: "Number", width: "10%"},
             {id: "kpv", name: "Kuupaev", width: "15%", type: "date", interval: true},
-            {id: "asutus", name: "Saaja", width: "30%"},
-            {id: "saadetud", name: "Saadetud", width: "15%", type: "date", interval: true},
+            {id: "asutus", name: "Saaja", width: "25%"},
+            {id: "saadetud", name: "Saadetud", width: "10%", type: "date", interval: true},
+            {id: "status", name: "Saatmise staatus", width: "10%", type: "date", interval: true},
             {id: "email_aadress", name: "E-post", width: "25%"},
             {id: "print", name: "Trükitud", width: "15%", type: "date", interval: true},
             {id: "select", name: "Valitud", width: "10%", show: false}
@@ -278,29 +279,37 @@ const Teatis = {
                         )
                     SELECT
                         t.id,
-                        t.number :: TEXT,
+                        t.number::TEXT                                AS number,
                         t.rekvid,
-                        to_char(t.kpv, 'DD.MM.YYYY HH24:MI:SS') :: TEXT AS kpv,
-                        params.user_id::INTEGER                         AS userId,
-                        t.asutus :: TEXT                                AS asutus,
-                        to_char(t.saadetud, 'DD.MM.YYYY')               AS saadetud,
+                        to_char(t.kpv, 'DD.MM.YYYY HH24:MI:SS')::TEXT AS kpv,
+                        p.user_id::INTEGER                            AS userId,
+                        t.asutus::TEXT                                AS asutus,
+                        to_char(t.saadetud, 'DD.MM.YYYY')             AS saadetud,
                         t.email_aadress,
-                        to_char(t.print, 'DD.MM.YYYY HH24:MI:SS')       AS print,
-                        r.muud                                          as tais_nimetus,
-                        r.tel                                           as rekv_tel,
-                        r.email                                         as rekv_email,
-                        r.aadress                                       as rekv_aadress,
-                        r.regkood                                       as rekv_regkood,
-                        TRUE                                            AS select
+                        to_char(t.print, 'DD.MM.YYYY HH24:MI:SS')     AS print,
+                        r.muud                                        AS tais_nimetus,
+                        r.tel                                         AS rekv_tel,
+                        r.email                                       AS rekv_email,
+                        r.aadress                                     AS rekv_aadress,
+                        r.regkood                                     AS rekv_regkood,
+                        TRUE                                          AS select,
+                        COALESCE(l.status, '')                        AS status
                     FROM
-                        cur_teatised t,
-                                     params,
-                        ou.rekv      r
-                    WHERE
-                          r.id = t.rekvId
-                      and t.rekvId = params.rekv_id::INTEGER
-                    order by
-                        t.kpv desc`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                        params                     p
+                            JOIN      cur_teatised t ON t.rekvid = p.rekv_id
+                            JOIN      ou.rekv      r ON r.id = t.rekvid
+                            LEFT JOIN LATERAL (
+                                          SELECT
+                                              string_agg(DISTINCT (l.changes ->> 'status'), ', ') AS status
+                                          FROM
+                                              ou.logs l
+                                          WHERE
+                                                l.doc_id = t.id
+                                            AND l.propertis ->> 'table' = 'teatis'
+                                            AND l.changes ->> 'status' IS NOT NULL
+                                          )        l ON TRUE
+                    ORDER BY
+                        t.kpv DESC`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTeatised'
     },
