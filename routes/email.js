@@ -102,6 +102,8 @@ exports.post = async (req, res) => {
         const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
         template = templateObject.view;
 
+        console.log(UserConfig['email']);
+
         // create reusable transporter object using the default SMTP transport
         let transporter = nodemailer.createTransport({
             host: UserConfig['email'].smtp,
@@ -234,6 +236,15 @@ exports.post = async (req, res) => {
 
                                 if (sql) {
                                     db.queryDb(sql, params);
+                                }
+                            }
+                            // логгирование ответа почты
+                            if (emailTemplateObject.log) {
+                                let sql = emailTemplateObject.log,
+                                    params = [arve.id, user.userId, JSON.stringify(info)];
+
+                                if (sql) {
+                                    await db.queryDb(sql, params);
                                 }
                             }
 
@@ -438,7 +449,7 @@ exports.sendTeatis = async (req, res) => {
                         if (emailTemplateObject.register) {
                             // если есть метод регистрации, отметим email
                             let sql = emailTemplateObject.register,
-                                params = [doc.id, user.userId];
+                                params = [doc.id, user.userId, receiverEmail];
 
                             if (sql) {
                                 await db.queryDb(sql, params);

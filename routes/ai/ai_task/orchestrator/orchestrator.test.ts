@@ -5512,12 +5512,13 @@ describe('Главный Оркестратор', () => {
         const reset = resetCycleForNewDay(state, '2026-11-21', undefined, 'Europe/Tallinn', new Date('2026-11-21T00:05:00.000Z'));
         expect(reset.tasks.read_mail.attempts).toBe(0);
         expect(reset.tasks.read_mail.status).toBe('PENDING');
-        expect(reset.tasks.read_mail.max_attempts).toBe(5);
+        expect(reset.tasks.read_mail.max_attempts).toBe(3);
         expect(reset.tasks.read_mail.retry_delay_minutes).toBe(15);
 
         // Проверка reconcileTasksWithConfigs на существующей задаче
+        state.tasks.read_mail.max_attempts = 5;
         reconcileTasksWithConfigs(state.tasks, loadAllAgentConfigs(), true);
-        expect(state.tasks.read_mail.max_attempts).toBe(5);
+        expect(state.tasks.read_mail.max_attempts).toBe(3);
         expect(state.tasks.read_mail.retry_delay_minutes).toBe(15);
       } finally {
         if (fs.existsSync(file)) {
@@ -5891,6 +5892,184 @@ describe('Главный Оркестратор', () => {
         expect(updated.tasks.lisa1_lisa5.last_run?.error).toBeNull();
         expect(updated.tasks.lisa1_lisa5.last_run?.finished_at).toBe('2026-11-21T07:03:33.000Z');
         expect(dispatched).not.toContain('lisa1_lisa5');
+      } finally {
+        if (fs.existsSync(file)) fs.unlinkSync(file);
+      }
+    });
+  });
+
+  describe('Регрессия read_mail (timeout_hours=0.25, max_attempts=3) и своевременный запуск reporter в 08:00', () => {
+    const READ_MAIL_FLOW = 'mail.read_mail_errors';
+
+    function prepareMorningTasks(state: OrchestratorState, startedDateIso: string) {
+      for (const [key, t] of Object.entries(state.tasks)) {
+        if (key !== 'read_mail' && key !== 'reporter') {
+          t.status = 'SUCCESS';
+          t.started_at = startedDateIso;
+          t.finished_at = startedDateIso;
+          t.error = null;
+        }
+      }
+      state.cycle_date = '2026-11-27';
+      state.status = 'IN_PROGRESS';
+      state.tasks.reporter.status = 'PENDING';
+      state.tasks.reporter.log_id = null;
+      state.tasks.reporter.attempts = 0;
+    }
+
+    it('зависший в 06:00 read_mail при timeout_hours=0.25 переходит в FAILED (TASK_TIMEOUT) в 06:30, и reporter уходит ровно в 08:00', async () => {
+      const file = testStatePath('test_read_mail_timeout_025_reporter_0800.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 11770, rekvId: 63, kond: 1 }, '2026-11-27');
+        prepareMorningTasks(state, '2026-11-27T03:00:00.000Z');
+
+        expect(state.tasks.read_mail.timeout_hours).toBe(0.25);
+        expect(state.tasks.read_mail.max_attempts).toBe(3);
+
+        state.tasks.read_mail.status = 'RUNNING';
+        state.tasks.read_mail.attempts = 1;
+        state.tasks.read_mail.log_id = 8568121;
+        state.tasks.read_mail.started_at = '2026-11-27T04:00:15.000Z'; // 06:00:15 Europe/Tallinn
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const dispatched: string[] = [];
+        const fetchFn = jest.fn().mockImplementation(async (url: string) => {
+          if (url.includes('/task/read_log/')) {
+            const data = url.includes(encodeURIComponent(READ_MAIL_FLOW))
+              ? [{ id: 8568121, flow: READ_MAIL_FLOW, status: null, exec_start: '2026-11-27T04:00:15.000Z', exec_end: null }]
+              : [];
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, data }) };
+          }
+          return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+        });
+        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, fetchFn as unknown as typeof fetch);
+
+        const registry = {
+          read_mail: {
+            flow: READ_MAIL_FLOW,
+            dispatch: async () => {
+              dispatched.push('read_mail');
+              return 8568122;
+            },
+          },
+        } as any;
+
+        // Тик 06:30 Europe/Tallinn (04:30Z): прошло 30 мин > 0.25 ч (15 мин) -> TASK_TIMEOUT
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-11-27T04:30:00.000Z'),
+            targetDateStr: '2026-11-27',
+            timezone: 'Europe/Tallinn',
+            registry,
+          }
+        );
+
+        const after0630: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(after0630.tasks.read_mail.status).toBe('FAILED');
+        expect(after0630.tasks.read_mail.error).toContain('TASK_TIMEOUT');
+        expect(after0630.history.some((h) => h.event === 'TASK_TIMEOUT' && h.task === 'read_mail')).toBe(true);
+        expect(after0630.tasks.reporter.status).toBe('PENDING');
+
+        // Тик 08:00 Europe/Tallinn (06:00Z): reporter стартует немедленно, не ожидая max_wait_time (09:00)
+        await runOrchestratorTick(
+          { stateFilePath: file },
+          {
+            apiClient: client,
+            currentDate: new Date('2026-11-27T06:00:00.000Z'),
+            targetDateStr: '2026-11-27',
+            timezone: 'Europe/Tallinn',
+            registry,
+          }
+        );
+
+        const after0800: OrchestratorState = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        expect(after0800.tasks.read_mail.status).toBe('FAILED');
+        expect(after0800.tasks.read_mail.error).toContain('TASK_TIMEOUT');
+        expect(after0800.tasks.reporter.status).toBe('SUCCESS');
+      } finally {
+        if (fs.existsSync(file)) fs.unlinkSync(file);
+      }
+    });
+
+    it('при 30-минутных тиках и падении всех 3 попыток read_mail к 08:00 уже в FAILED и reporter уходит ровно в 08:00', async () => {
+      const file = testStatePath('test_read_mail_3_attempts_fail_before_0800.json');
+      try {
+        const stateManager = new StateManager(file);
+        const state = await stateManager.loadState({ userId: 11770, rekvId: 63, kond: 1 }, '2026-11-27');
+        prepareMorningTasks(state, '2026-11-27T03:00:00.000Z');
+        state.tasks.read_mail.status = 'PENDING';
+        state.tasks.read_mail.attempts = 0;
+        state.tasks.read_mail.log_id = null;
+        fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf-8');
+
+        const dispatched: string[] = [];
+        let nextLogId = 9001;
+        const dbLogs: Record<string, unknown>[] = [];
+
+        const fetchFn = jest.fn().mockImplementation(async (url: string) => {
+          if (url.includes('/task/read_log/')) {
+            const data = url.includes(encodeURIComponent(READ_MAIL_FLOW)) ? dbLogs.slice().reverse() : [];
+            return { ok: true, status: 200, json: async () => ({ status: 200, result: 1, data }) };
+          }
+          return { ok: true, status: 200, json: async () => ({ status: 200, result: 1 }) };
+        });
+        const client = new ApiClient({ buh70ApiBaseUrl: 'http://test-server' }, fetchFn as unknown as typeof fetch);
+
+        const registry = {
+          read_mail: {
+            flow: READ_MAIL_FLOW,
+            dispatch: async () => {
+              dispatched.push('read_mail');
+              return nextLogId++;
+            },
+          },
+        } as any;
+
+        const runTickAt = async (utcIso: string) => {
+          await runOrchestratorTick(
+            { stateFilePath: file },
+            {
+              apiClient: client,
+              currentDate: new Date(utcIso),
+              targetDateStr: '2026-11-27',
+              timezone: 'Europe/Tallinn',
+              registry,
+            }
+          );
+          return JSON.parse(fs.readFileSync(file, 'utf-8')) as OrchestratorState;
+        };
+
+        // 06:00 Tallinn (04:00Z) -> попытка 1
+        let st = await runTickAt('2026-11-27T04:00:00.000Z');
+        expect(st.tasks.read_mail.status).toBe('RUNNING');
+        expect(st.tasks.read_mail.attempts).toBe(1);
+        dbLogs.push({ id: 9001, flow: READ_MAIL_FLOW, status: 'failed', exec_start: '2026-11-27T04:00:05.000Z', exec_end: '2026-11-27T04:01:00.000Z', error: 'IMAP error 1' });
+
+        // 06:30 Tallinn (04:30Z) -> попытка 2
+        st = await runTickAt('2026-11-27T04:30:00.000Z');
+        expect(st.tasks.read_mail.status).toBe('RUNNING');
+        expect(st.tasks.read_mail.attempts).toBe(2);
+        dbLogs.push({ id: 9002, flow: READ_MAIL_FLOW, status: 'failed', exec_start: '2026-11-27T04:30:05.000Z', exec_end: '2026-11-27T04:31:00.000Z', error: 'IMAP error 2' });
+
+        // 07:00 Tallinn (05:00Z) -> попытка 3
+        st = await runTickAt('2026-11-27T05:00:00.000Z');
+        expect(st.tasks.read_mail.status).toBe('RUNNING');
+        expect(st.tasks.read_mail.attempts).toBe(3);
+        dbLogs.push({ id: 9003, flow: READ_MAIL_FLOW, status: 'failed', exec_start: '2026-11-27T05:00:05.000Z', exec_end: '2026-11-27T05:01:00.000Z', error: 'IMAP error 3' });
+
+        // 07:30 Tallinn (05:30Z) -> 3 попытки исчерпаны -> финальный FAILED
+        st = await runTickAt('2026-11-27T05:30:00.000Z');
+        expect(st.tasks.read_mail.status).toBe('FAILED');
+        expect(dispatched.filter((d) => d === 'read_mail').length).toBe(3);
+        expect(st.tasks.reporter.status).toBe('PENDING');
+
+        // 08:00 Tallinn (06:00Z) -> reporter уходит ровно в 08:00
+        st = await runTickAt('2026-11-27T06:00:00.000Z');
+        expect(st.tasks.read_mail.status).toBe('FAILED');
+        expect(st.tasks.reporter.status).toBe('SUCCESS');
       } finally {
         if (fs.existsSync(file)) fs.unlinkSync(file);
       }

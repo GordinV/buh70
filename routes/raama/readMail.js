@@ -98,6 +98,7 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
             mailAccount = await getMailCredentials(rekvId, userId, params.mailUserId);
         }
 
+        var stateOutput = {};
         var deliveryErrors = await executeReadMailProcess({
             userId: userId,
             rekvId: rekvId,
@@ -107,7 +108,9 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
             emails: params.emails,
             stateFilePath: params.stateFilePath,
             sinceDate: params.sinceDate,
-            forceSinceDate: params.forceSinceDate
+            forceSinceDate: params.forceSinceDate,
+            deferStateSave: true,
+            stateOutput: stateOutput
         });
 
         console.log('[readMail] Background execution finished successfully. log_id: ' + logId + ', errors found: ' + deliveryErrors.length);
@@ -121,14 +124,31 @@ async function runReadMailInBackground(logId, userId, rekvId, params) {
             }
         }
 
-        // Фиксируем успешное завершение в ou.logs с деталями результата
+        // Фиксируем успешное завершение в ou.logs с деталями результата (без body/body_text и с санитизацией JSONB)
         await endLog(logId, 'success', null, deliveryErrors);
+
+        // Сохраняем курсор state только ПОСЛЕ успешной записи в ou.logs
+        if (stateOutput.nextState) {
+            saveReadMailState(stateOutput.nextState, params.stateFilePath);
+        }
+
+        // Если переданы emailContent/emails и есть ошибки, догружаем креды почты для рассылки уведомлений
+        if (deliveryErrors && deliveryErrors.length > 0 && !mailAccount && !params.transporter) {
+            try {
+                mailAccount = await getMailCredentials(rekvId, userId, params.mailUserId);
+            } catch (credErr) {
+                console.warn('[readMail] Failed to load mail credentials for notifications:', credErr.message);
+            }
+        }
 
         // Аннулируем статус успешной отправки счетов в БД (docs.tuhista_arve_saatmise_staatus)
         if (deliveryErrors && deliveryErrors.length > 0) {
             try {
                 var cancelSql = 'SELECT docs.tuhista_arve_saatmise_staatus($1::INTEGER) AS result;';
                 var cancelRes = await db.queryDb(cancelSql, [logId], null, null, null, null, config);
+                if (!cancelRes || cancelRes.error_code || cancelRes.error_message) {
+                    throw new Error('DB Query failed in docs.tuhista_arve_saatmise_staatus: ' + (cancelRes && cancelRes.error_message ? cancelRes.error_message : 'error_code=' + (cancelRes ? cancelRes.error_code : 'unknown')));
+                }
                 console.log('[readMail] Successfully called docs.tuhista_arve_saatmise_staatus for log_id: ' + logId);
 
                 var cancelItems = (cancelRes && cancelRes.data && cancelRes.data[0] && cancelRes.data[0].result)
@@ -736,7 +756,13 @@ async function executeReadMailProcess(params) {
         state.lastRunAt = new Date().toISOString();
         state.totalProcessedCount = (state.totalProcessedCount || 0) + newEmails.length;
 
-        saveReadMailState(state, params.stateFilePath);
+        if (params.deferStateSave) {
+            if (params.stateOutput && typeof params.stateOutput === 'object') {
+                params.stateOutput.nextState = state;
+            }
+        } else {
+            saveReadMailState(state, params.stateFilePath);
+        }
     }
 
     return deliveryErrors;
@@ -871,6 +897,22 @@ function fetchEmailsViaImapTls(mailConfig, sinceDate, options) {
             settled = true;
             cleanup();
             reject(err);
+        });
+
+        socket.on('end', function () {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            var stepName = stepNames[step] || 'UNKNOWN';
+            reject(new Error('IMAP socket ended prematurely at step ' + stepName + ' (' + currentFolder + ')'));
+        });
+
+        socket.on('close', function () {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            var stepName = stepNames[step] || 'UNKNOWN';
+            reject(new Error('IMAP socket closed prematurely at step ' + stepName + ' (' + currentFolder + ')'));
         });
 
         socket.on('data', function (chunk) {
@@ -1084,6 +1126,112 @@ function decodeQuotedPrintable(str) {
 }
 
 /**
+ * Удаление NUL-байтов и непарных UTF-16 суррогатов для безопасной записи в JSONB PostgreSQL (Node 10+)
+ */
+function sanitizeJsonString(str) {
+    if (typeof str !== 'string') return str;
+    var out = '';
+    for (var i = 0; i < str.length; i++) {
+        var code = str.charCodeAt(i);
+        if (code === 0) {
+            continue;
+        }
+        if (code >= 0xD800 && code <= 0xDBFF) {
+            if (i + 1 < str.length) {
+                var next = str.charCodeAt(i + 1);
+                if (next >= 0xDC00 && next <= 0xDFFF) {
+                    out += str.charAt(i) + str.charAt(i + 1);
+                    i++;
+                    continue;
+                }
+            }
+            out += '\uFFFD';
+        } else if (code >= 0xDC00 && code <= 0xDFFF) {
+            out += '\uFFFD';
+        } else {
+            out += str.charAt(i);
+        }
+    }
+    return out;
+}
+
+function sanitizeForJson(val) {
+    if (typeof val === 'string') {
+        return sanitizeJsonString(val);
+    }
+    if (Array.isArray(val)) {
+        var arr = [];
+        for (var i = 0; i < val.length; i++) {
+            arr.push(sanitizeForJson(val[i]));
+        }
+        return arr;
+    }
+    if (val && typeof val === 'object') {
+        var res = {};
+        var keys = Object.keys(val);
+        for (var j = 0; j < keys.length; j++) {
+            var k = keys[j];
+            if (val[k] !== undefined) {
+                res[k] = sanitizeForJson(val[k]);
+            }
+        }
+        return res;
+    }
+    return val;
+}
+
+function isBinaryOrAttachmentMimePart(partHeaders) {
+    if (!partHeaders) return false;
+    var dispMatch = partHeaders.match(/Content-Disposition:\s*([^\r\n;]+)/i);
+    if (dispMatch && /^\s*attachment\b/i.test(dispMatch[1])) {
+        return true;
+    }
+    var ctMatch = partHeaders.match(/Content-Type:\s*([^\r\n;]+)/i);
+    if (ctMatch) {
+        var ct = ctMatch[1].trim().toLowerCase();
+        if (ct.indexOf('application/') === 0 ||
+            ct.indexOf('image/') === 0 ||
+            ct.indexOf('audio/') === 0 ||
+            ct.indexOf('video/') === 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function isAllowedTextMimePart(partHeaders) {
+    if (!partHeaders) return true;
+    var ctMatch = partHeaders.match(/Content-Type:\s*([^\r\n;]+)/i);
+    if (!ctMatch) return true;
+    var ct = ctMatch[1].trim().toLowerCase();
+    return ct === 'text/plain' ||
+        ct === 'text/html' ||
+        ct === 'text/rfc822-headers' ||
+        ct === 'message/delivery-status' ||
+        ct === 'message/rfc822' ||
+        ct === 'message/rfc822-headers' ||
+        ct === 'message/global-headers' ||
+        ct === 'message/global-delivery-status' ||
+        ct === 'message/global' ||
+        ct.indexOf('multipart/') === 0;
+}
+
+function formatDecodedHeadersBlock(rawHeaderText) {
+    if (!rawHeaderText) return '';
+    var unfolded = rawHeaderText.replace(/\r?\n[ \t]+/g, ' ');
+    var lines = unfolded.split(/\r?\n/);
+    var kept = [];
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        if (/^(?:Subject|To|From|Cc|Date|Original-Recipient|Final-Recipient):/i.test(line)) {
+            kept.push(decodeMimeWords(line));
+        }
+    }
+    return sanitizeJsonString(kept.join('\n'));
+}
+
+/**
  * Распаковка multipart MIME структуры и base64/quoted-printable содержимого
  */
 function decodeEmailBody(rawEmail) {
@@ -1109,6 +1257,37 @@ function decodeEmailBody(rawEmail) {
             var partHeaders = partHeaderEnd !== -1 ? part.substring(0, partHeaderEnd) : '';
             var partBody = partHeaderEnd !== -1 ? part.substring(partHeaderEnd).trim() : part;
 
+            if (isBinaryOrAttachmentMimePart(partHeaders)) {
+                continue;
+            }
+
+            if (/Content-Type:\s*multipart\//i.test(partHeaders) || /boundary=/i.test(partHeaders)) {
+                var nestedDecoded = decodeEmailBody(part);
+                if (nestedDecoded) textParts.push(nestedDecoded);
+                continue;
+            }
+
+            if (/Content-Type:\s*message\/(?:rfc822|global)(?:\s|;|$)/i.test(partHeaders)) {
+                var innerHeaderEnd = partBody.indexOf('\r\n\r\n');
+                if (innerHeaderEnd === -1) innerHeaderEnd = partBody.indexOf('\n\n');
+                var innerHeadersRaw = innerHeaderEnd !== -1 ? partBody.substring(0, innerHeaderEnd) : partBody;
+                var embeddedHeaders = formatDecodedHeadersBlock(innerHeadersRaw);
+                var rfcDecoded = decodeEmailBody(partBody);
+                var combinedEmbedded = [embeddedHeaders, rfcDecoded].filter(Boolean).join('\n\n');
+                if (combinedEmbedded) textParts.push(sanitizeJsonString(combinedEmbedded));
+                continue;
+            }
+
+            if (/Content-Type:\s*(?:text\/rfc822-headers|message\/rfc822-headers|message\/global-headers)(?:\s|;|$)/i.test(partHeaders)) {
+                var decodedHeaderPart = formatDecodedHeadersBlock(partBody);
+                if (decodedHeaderPart) textParts.push(decodedHeaderPart);
+                continue;
+            }
+
+            if (!isAllowedTextMimePart(partHeaders)) {
+                continue;
+            }
+
             var transferEncoding = (partHeaders.match(/Content-Transfer-Encoding:\s*([^\r\n;]+)/i) || [])[1] || '';
             var decodedPart = partBody;
             if (/base64/i.test(transferEncoding)) {
@@ -1119,28 +1298,36 @@ function decodeEmailBody(rawEmail) {
                 decodedPart = decodeQuotedPrintable(partBody);
             }
 
-            if (/nested|multipart/i.test(partHeaders) || /boundary=/i.test(partHeaders)) {
-                var nestedDecoded = decodeEmailBody(part);
-                if (nestedDecoded) textParts.push(nestedDecoded);
-            } else {
-                textParts.push(decodedPart);
-            }
+            decodedPart = sanitizeJsonString(decodedPart);
+            if (decodedPart) textParts.push(decodedPart);
         }
-        if (textParts.length > 0) {
-            return textParts.join('\n\n');
-        }
+        return textParts.join('\n\n');
+    }
+
+    if (isBinaryOrAttachmentMimePart(headers) || !isAllowedTextMimePart(headers)) {
+        return '';
+    }
+
+    if (/Content-Type:\s*(?:text\/rfc822-headers|message\/rfc822-headers|message\/global-headers)(?:\s|;|$)/i.test(headers)) {
+        return formatDecodedHeadersBlock(body);
     }
 
     var mainTransferEncoding = (headers.match(/Content-Transfer-Encoding:\s*([^\r\n;]+)/i) || [])[1] || '';
+    var resultBody = body;
     if (/base64/i.test(mainTransferEncoding)) {
         try {
-            return Buffer.from(body.replace(/\s+/g, ''), 'base64').toString('utf8');
+            resultBody = Buffer.from(body.replace(/\s+/g, ''), 'base64').toString('utf8');
         } catch (e) {}
     } else if (/quoted-printable/i.test(mainTransferEncoding)) {
-        return decodeQuotedPrintable(body);
+        resultBody = decodeQuotedPrintable(body);
     }
 
-    return body;
+    return sanitizeJsonString(resultBody);
+}
+
+function isServiceEmailAddress(email) {
+    if (!email) return true;
+    return /^(?:mailer-daemon|postmaster|noreply|no-reply)@/i.test(email) || /^oppetasu@narva\.ee$/i.test(email);
 }
 
 /**
@@ -1168,18 +1355,20 @@ function parseIncomingEmail(rawEmail, meta) {
                        (from ? 'From: ' + from + '\n' : '') +
                        decodedBody;
 
+    var isBounce = /permanent\s+failure\s+notice|mailer-daemon|postmaster|delivery\s+(?:status\s+notification|failure|status)|undelivered\s+mail|not\s+able\s+to\s+deliver\s+your\s+mail|domain\s+lookup\s+error|user\s+unknown|invalid\s+mailbox|account\s+does\s+not\s+exist|5\.1\.1|550\s+|quota|mailbox\s+full|postkast\s+täis|failed\s+recipient|Final-Recipient:|Reporting-MTA:|Action:\s*failed|could\s+not\s+be\s+delivered/i.test(combinedText);
+
     // Определение типа документа: извещение (automailerTeatis) или счет
     var isTeatis = isTeatisEmail(combinedText, subject);
     var docType = isTeatis ? 'TEATIS' : 'ARV';
 
-    // 1. Поиск номера документа: для TEATIS сначала ищем номер извещения, чтобы не схватить номера счетов из таблицы долгов
+    // 1. Поиск номера документа: для TEATIS требуем явное 'nr' после Teatis или формат Saadan dokument nr. / MAKSEVÕLA TEATIS NR
     var docNumber = null;
     if (isTeatis) {
-        var teatisDocMatch = combinedText.match(/(?:Saadan\s+dokument\s+nr\.?|MAKSEVÕLA\s+TEATIS\s+NR-?|Teatis\s*(?:nr\.?)?|Number:\s*NR-?)\s*([a-zA-Z0-9\-_/]+)/i);
+        var teatisDocMatch = combinedText.match(/(?:Saadan\s+dokument\s+nr\.?|MAKSEVÕLA\s+TEATIS\s+NR-?|Teatis\s+nr\.?|Number:\s*NR-?)\s*([a-zA-Z0-9\-_/]+)/i);
         if (teatisDocMatch) {
             docNumber = teatisDocMatch[1].replace(/^NR-/i, '').trim();
-        } else {
-            docNumber = 'TEATIS';
+        } else if (isBounce) {
+            docNumber = null;
         }
     } else {
         var docMatch = combinedText.match(/\b(\d{3}-\d{4,6})\b/);
@@ -1190,7 +1379,7 @@ function parseIncomingEmail(rawEmail, meta) {
     var refMatch = combinedText.match(/\b(0\d{2}0\d{6,7})\b/);
     var refNumber = refMatch ? refMatch[1] : undefined;
 
-    // 3. Поиск электронного адреса получателя
+    // 3. Поиск электронного адреса получателя (строго в decodedBody, чтобы не схватить внешний From bounce-письма)
     var recipientEmail = 'unknown@client.ee';
     if (from && /emoldova@yandex\.ru/i.test(from)) {
         recipientEmail = 'emoldova@yandex.ru';
@@ -1199,9 +1388,65 @@ function parseIncomingEmail(rawEmail, meta) {
     } else if (/tleera651@gmail\.com/i.test(combinedText)) {
         recipientEmail = 'tleera651@gmail.com';
     } else {
-        var recipientMatch = combinedText.match(/(?:to:\s*<([^>]+)>|deliver(?:y)?\s+to\s+([^\s,;]+)|failed\s+recipient:\s*([^\s,;]+)|<([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})>|([a-zA-Z0-9._%+-]+@(?!narva\.ee)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}))/i);
-        if (recipientMatch) {
-            recipientEmail = recipientMatch[1] || recipientMatch[2] || recipientMatch[3] || recipientMatch[4] || recipientMatch[5] || recipientEmail;
+        var searchBody = decodedBody || '';
+        var extracted = null;
+
+        // 3.1 Final-Recipient: rfc822;email
+        var finalRecMatch = searchBody.match(/Final-Recipient:\s*rfc822;\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+        if (finalRecMatch && !isServiceEmailAddress(finalRecMatch[1].trim())) {
+            extracted = finalRecMatch[1].trim();
+        }
+
+        // 3.2 Строка вида "email@domain.com : Reason"
+        if (!extracted) {
+            var daemonLineMatch = searchBody.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*:\s*[^\r\n]+/i);
+            if (daemonLineMatch && !isServiceEmailAddress(daemonLineMatch[1].trim())) {
+                extracted = daemonLineMatch[1].trim();
+            }
+        }
+
+        // 3.3 Блок "not able to deliver your mail to ..." / "failed recipient(s)" / "delivery to ..."
+        if (!extracted) {
+            var deliverBlockMatch = searchBody.match(/(?:not\s+able\s+to\s+deliver\s+your\s+mail\s+to|failed\s+recipients?|failed\s+addresses?|deliver(?:y)?\s+to)\s*:?[\s\S]*?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+            if (deliverBlockMatch && !isServiceEmailAddress(deliverBlockMatch[1].trim())) {
+                extracted = deliverBlockMatch[1].trim();
+            }
+        }
+
+        // 3.4 To: / Saaja: / Recipient: во вложенном исходном письме (в decodedBody)
+        if (!extracted) {
+            var toMatch = searchBody.match(/(?:^|\r?\n)\s*(?:To|Saaja|Recipient):\s*(?:[^\r\n<]*<)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+            if (toMatch && !isServiceEmailAddress(toMatch[1].trim())) {
+                extracted = toMatch[1].trim();
+            }
+        }
+
+        // 3.5 Общий fallback по decodedBody (исключая служебные и narva.ee)
+        if (!extracted) {
+            var fallbackMatches = searchBody.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+            for (var fi = 0; fi < fallbackMatches.length; fi++) {
+                var cand = fallbackMatches[fi].trim();
+                if (!isServiceEmailAddress(cand) && !/@narva\.ee$/i.test(cand)) {
+                    extracted = cand;
+                    break;
+                }
+            }
+        }
+
+        // 3.6 Fallback на внешний From для не-bounce писем (ответы клиентов)
+        if (!extracted && !isBounce && from) {
+            var fromEmails = from.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+            for (var fri = 0; fri < fromEmails.length; fri++) {
+                var fromCand = fromEmails[fri].trim();
+                if (!isServiceEmailAddress(fromCand) && !/@narva\.ee$/i.test(fromCand)) {
+                    extracted = fromCand;
+                    break;
+                }
+            }
+        }
+
+        if (extracted) {
+            recipientEmail = extracted;
         }
     }
 
@@ -1341,11 +1586,33 @@ async function createLog(rekvId, userId, flowName) {
     try {
         console.log('start create log for flow:', flowName);
         var l_result = await db.queryDb(sql, [rekvId, userId, flowName], null, null, null, null, config);
+        if (!l_result || l_result.error_code || l_result.error_message) {
+            throw new Error('DB Query failed: ' + (l_result && l_result.error_message ? l_result.error_message : 'error_code=' + (l_result ? l_result.error_code : 'unknown')));
+        }
         console.log('finish create log', flowName, l_result);
         return l_result;
     } catch (error) {
         throw new Error('DB Query failed: ' + error.message);
     }
+}
+
+function buildCompactResultForDb(resultDetails) {
+    if (!Array.isArray(resultDetails)) {
+        return sanitizeForJson(resultDetails);
+    }
+    var compact = [];
+    for (var i = 0; i < resultDetails.length; i++) {
+        var item = resultDetails[i];
+        if (item && typeof item === 'object') {
+            var copy = Object.assign({}, item);
+            delete copy.body;
+            delete copy.body_text;
+            compact.push(sanitizeForJson(copy));
+        } else {
+            compact.push(sanitizeForJson(item));
+        }
+    }
+    return compact;
 }
 
 /**
@@ -1354,7 +1621,7 @@ async function createLog(rekvId, userId, flowName) {
 async function endLog(logId, status, errorMessage, resultDetails) {
     if (!logId) return;
     status = status || 'success';
-    errorMessage = errorMessage || null;
+    errorMessage = errorMessage ? sanitizeJsonString(String(errorMessage)) : null;
 
     var hasResult = resultDetails !== null && resultDetails !== undefined;
     var sql = hasResult
@@ -1367,11 +1634,15 @@ async function endLog(logId, status, errorMessage, resultDetails) {
 
     try {
         console.log('start endLog for id:', logId, 'status:', status);
+        var sanitizedResult = hasResult ? buildCompactResultForDb(resultDetails) : null;
         var queryParams = hasResult
-            ? [status, errorMessage, logId, JSON.stringify(resultDetails)]
+            ? [status, errorMessage, logId, JSON.stringify(sanitizedResult)]
             : [status, errorMessage, logId];
 
-        await db.queryDb(sql, queryParams, null, null, null, null, config);
+        var res = await db.queryDb(sql, queryParams, null, null, null, null, config);
+        if (!res || res.error_code || res.error_message) {
+            throw new Error('DB Query failed: ' + (res && res.error_message ? res.error_message : 'error_code=' + (res ? res.error_code : 'unknown')));
+        }
         console.log('finish endLog');
     } catch (error) {
         throw new Error('DB Query failed: ' + error.message);
@@ -1397,15 +1668,39 @@ async function executeCalculation(userId, rekvId, params) {
             mailAccount = params.mailAccount || await getMailCredentials(rekvId, userId, params.mailUserId);
         }
 
-        var deliveryErrors = await executeReadMailProcess(Object.assign({ userId: userId, rekvId: rekvId, mailAccount: mailAccount }, params));
+        var stateOutput = {};
+        var deliveryErrors = await executeReadMailProcess(Object.assign({
+            userId: userId,
+            rekvId: rekvId,
+            mailAccount: mailAccount,
+            deferStateSave: true,
+            stateOutput: stateOutput
+        }, params));
         console.log('Read mail result count:', deliveryErrors.length);
 
         await endLog(logId, 'success', null, deliveryErrors);
+
+        // Сохраняем курсор state только ПОСЛЕ успешной записи в ou.logs
+        if (stateOutput.nextState) {
+            saveReadMailState(stateOutput.nextState, params.stateFilePath);
+        }
+
+        // Если переданы emailContent/emails и есть ошибки, догружаем креды почты для рассылки уведомлений
+        if (deliveryErrors && deliveryErrors.length > 0 && !mailAccount && !params.transporter) {
+            try {
+                mailAccount = await getMailCredentials(rekvId, userId, params.mailUserId);
+            } catch (credErr) {
+                console.warn('[readMail] Failed to load mail credentials for notifications:', credErr.message);
+            }
+        }
 
         if (deliveryErrors && deliveryErrors.length > 0) {
             try {
                 var cancelSql = 'SELECT docs.tuhista_arve_saatmise_staatus($1::INTEGER) AS result;';
                 var cancelRes = await db.queryDb(cancelSql, [logId], null, null, null, null, config);
+                if (!cancelRes || cancelRes.error_code || cancelRes.error_message) {
+                    throw new Error('DB Query failed in docs.tuhista_arve_saatmise_staatus: ' + (cancelRes && cancelRes.error_message ? cancelRes.error_message : 'error_code=' + (cancelRes ? cancelRes.error_code : 'unknown')));
+                }
                 console.log('[readMail] Successfully called docs.tuhista_arve_saatmise_staatus for log_id: ' + logId);
 
                 var cancelItems = (cancelRes && cancelRes.data && cancelRes.data[0] && cancelRes.data[0].result)
@@ -1437,7 +1732,11 @@ async function executeCalculation(userId, rekvId, params) {
         return deliveryErrors;
     } catch (error) {
         if (logId) {
-            await endLog(logId, 'failed', error.message);
+            try {
+                await endLog(logId, 'failed', error && error.message ? error.message : String(error));
+            } catch (logErr) {
+                console.error('[readMail] Failed to update error log in executeCalculation for log_id ' + logId + ':', logErr);
+            }
         }
         throw error;
     }
@@ -1485,6 +1784,7 @@ exports.notifyAccountantsAboutFailedInvoices = notifyAccountantsAboutFailedInvoi
 exports.ALERT_EMAILS = ALERT_EMAILS;
 exports.createLog = createLog;
 exports.endLog = endLog;
+exports.sanitizeJsonString = sanitizeJsonString;
 exports.FLOW_NAME = FLOW_NAME;
 exports.DEFAULT_USER_ID = DEFAULT_USER_ID;
 exports.DEFAULT_REKV_ID = DEFAULT_REKV_ID;
