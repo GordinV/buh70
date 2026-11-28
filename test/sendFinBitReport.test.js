@@ -139,6 +139,25 @@ describe('sendFinBitReport unit tests', () => {
             expect(mockTransporter.sendMail).toHaveBeenCalledTimes(2);
         });
 
+        test('sendFinBitReportNotifications: адрес-заглушка vigane@narva.ee пропускается без отправки и без ошибки рассылки', async () => {
+            const reportData = {
+                data: [
+                    { email: ' Vigane@narva.ee ', arved: [{ asutus: 'KOOL', number: 'Z-1', kontr_agent: 'P' }] },
+                    { email: 'user1@narva.ee', arved: [{ asutus: 'KOOL', number: 'A-1', kontr_agent: 'P' }] }
+                ]
+            };
+
+            const results = await sendFinBitReport.sendFinBitReportNotifications(reportData, 2477, {
+                transporter: mockTransporter,
+                smtpConfig: { host: 'smtp.zone.eu', port: 465, secure: true, from: 'noreply@narva.ee' }
+            });
+
+            expect(mockTransporter.sendMail).toHaveBeenCalledTimes(1);
+            expect(mockTransporter.sendMail.mock.calls[0][0].to).toBe('user1@narva.ee');
+            expect(results[0]).toEqual(expect.objectContaining({ success: true, skipped: true }));
+            expect(sendFinBitReport.evaluateSendResults(results).status).toBe('success');
+        });
+
         test('getSenderAddress correctly formats sender email', () => {
             expect(sendFinBitReport.getSenderAddress('palk')).toBe('palk@narva.ee');
             expect(sendFinBitReport.getSenderAddress('custom@test.ee')).toBe('custom@test.ee');

@@ -55,27 +55,14 @@ BEGIN
 
             IF l_batch_user_id IS NULL THEN
                 l_failed_batches = l_failed_batches + 1;
-                IF nullif(btrim(coalesce(v_batch ->> 'error', '')), '') IS NOT NULL THEN
-                    -- Предварительно выявленная ошибка маршрутизации (например, 'Asutust regkoodiga <X> ei leitud')
-                    l_last_error_code = coalesce(nullif(l_last_error_code, 0), 1);
-                    errors = errors || jsonb_build_array(
-                        jsonb_build_object(
-                            'number', v_batch ->> 'number',
-                            'rekv_regkood', v_batch ->> 'rekv_regkood',
-                            'user_id', NULL,
-                            'error', v_batch ->> 'error'
-                        )
-                    );
-                ELSE
-                    l_last_error_code = coalesce(nullif(l_last_error_code, 0), 4);
-                    errors = errors || jsonb_build_array(
-                        jsonb_build_object(
-                            'number', NULL,
-                            'user_id', NULL,
-                            'error', 'Puudub user_id'
-                        )
-                    );
-                END IF;
+                l_last_error_code = coalesce(nullif(l_last_error_code, 0), 4);
+                errors = errors || jsonb_build_array(
+                    jsonb_build_object(
+                        'number', NULL,
+                        'user_id', NULL,
+                        'error', 'Puudub user_id'
+                    )
+                );
                 CONTINUE;
             END IF;
 

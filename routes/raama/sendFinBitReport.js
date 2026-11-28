@@ -349,6 +349,13 @@ async function sendHtmlEmail(toEmails, subject, text, html, smtpConfig, customTr
     return info;
 }
 
+// Адреса-заглушки в карточках пользователей: на них письма не отправляются (решение пользователя 2026-11-28)
+var BLOCKED_EMAILS = ['vigane@narva.ee'];
+
+function isBlockedEmail(email) {
+    return !!email && BLOCKED_EMAILS.indexOf(String(email).trim().toLowerCase()) !== -1;
+}
+
 /**
  * Обработка массива отчета и отправка писем получателям.
  * Параметры SMTP (smtp, smtp_port, smtp_pass, smtp_user) берутся непосредственно из строки отчета.
@@ -395,6 +402,19 @@ async function sendFinBitReportNotifications(reportResult, userId, options) {
                 invoicesCount: invoices.length,
                 success: false,
                 error: 'Recipient email is missing'
+            });
+            continue;
+        }
+
+        if (isBlockedEmail(recipientEmail)) {
+            // адрес-заглушка: письмо не отправляем; это не сбой рассылки, повтор не нужен
+            console.warn('[sendFinBitReport] Blocked recipient address, skipping: ' + recipientEmail);
+            sendResults.push({
+                email: recipientEmail,
+                invoicesCount: invoices.length,
+                success: true,
+                skipped: true,
+                response: 'Aadress on blokeeritud, kirja ei saadetud'
             });
             continue;
         }
@@ -936,6 +956,8 @@ exports.getImportInfo = getImportInfo;
 exports.getAlreadySentEmails = getAlreadySentEmails;
 exports.evaluateSendResults = evaluateSendResults;
 exports.IMPORT_FLOW_NAME = IMPORT_FLOW_NAME;
+exports.BLOCKED_EMAILS = BLOCKED_EMAILS;
+exports.isBlockedEmail = isBlockedEmail;
 
 // Запуск при прямом вызове из командной строки (CLI)
 if (require.main === module) {

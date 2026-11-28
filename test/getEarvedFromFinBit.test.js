@@ -574,6 +574,139 @@ describe('getEarvedFromFinBit unit tests', () => {
             expect(mockSendFinBitReport.executeReport).not.toHaveBeenCalled();
         });
 
+        describe('Копия письма об ошибке бухгалтеру из BPM счета', () => {
+            const taskRowWith = (errors, userEmail) => ({
+                data: [{
+                    id: 710,
+                    user_id: 5429,
+                    rekv_id: 106,
+                    status: 2,
+                    tulemused: 'Imporditud 0 arvet, vigu ' + errors.length,
+                    properties: { imported: [], errors: errors },
+                    user_email: userEmail,
+                    rekv_email: 'kool@narva.ee'
+                }]
+            });
+
+            test('у счета с ошибкой есть BPM -> то же письмо уходит копией бухгалтеру', async () => {
+                const errors = [
+                    { number: '82020126240', asutusid: '10137319', rekv_id: 106, raamatupidaja: 'Mari Maasikas', error: 'TP kood ei ole kehtiv' },
+                    { number: 'INV-2', asutusid: '10000001', rekv_id: 106, raamatupidaja: ' mari maasikas ', error: 'Viga 2' }
+                ];
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ id: 511 }] }))   // createLog
+                    .mockReturnValueOnce(Promise.resolve(taskRowWith(errors, 'vlad@narva.ee'))) // ou.task
+                    .mockReturnValueOnce(Promise.resolve({ data: [] }))              // endLog
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ email: 'mari@narva.ee' }] })); // бухгалтеры
+                executePostTask.executeTask.mockReturnValueOnce(Promise.resolve({ data: [] }));
+                mockSendFinBitReport.getUserMailAccount.mockReturnValueOnce(Promise.resolve({ smtp: smtpStub }));
+                mockSendFinBitReport.sendHtmlEmail
+                    .mockReturnValueOnce(Promise.resolve({ messageId: 'main' }))
+                    .mockReturnValueOnce(Promise.resolve({ messageId: 'copy' }));
+
+                await getEarvedFromFinBit.runPostTaskInBackground(710, 106, 5429);
+
+                // поиск бухгалтера по ametnik с приоритетом учреждения счета; один и тот же isik — один раз
+                const accSql = db.queryDb.mock.calls[3][0];
+                expect(accSql).toContain("translate(upper(btrim(u.ametnik)), 'ŠŽÕÄÖÜšžõäöü', 'SZOAOUSZOAOU') = translate(upper(btrim(x.isik)), 'ŠŽÕÄÖÜšžõäöü', 'SZOAOUSZOAOU')");
+                expect(accSql).toContain('u.status < 3');
+                expect(JSON.parse(db.queryDb.mock.calls[3][1][0])).toEqual([{ isik: 'Mari Maasikas', rekv_id: 106 }]);
+
+                expect(mockSendFinBitReport.sendHtmlEmail).toHaveBeenCalledTimes(2);
+                const main = mockSendFinBitReport.sendHtmlEmail.mock.calls[0];
+                const copy = mockSendFinBitReport.sendHtmlEmail.mock.calls[1];
+                expect(main[0]).toBe('vlad@narva.ee');
+                expect(copy[0]).toEqual(['mari@narva.ee']);
+                // копия — то же самое письмо
+                expect(copy[1]).toBe(main[1]);
+                expect(copy[2]).toBe(main[2]);
+                expect(copy[3]).toBe(main[3]);
+                expect(copy[4]).toBe(smtpStub);
+            });
+
+            test('BPM у счетов нет -> письмо только инициатору, поиск бухгалтера не выполняется', async () => {
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ id: 512 }] }))
+                    .mockReturnValueOnce(Promise.resolve(taskRowWith([{ number: 'INV-X', asutusid: '1', error: 'Viga' }], 'vlad@narva.ee')))
+                    .mockReturnValueOnce(Promise.resolve({ data: [] }));
+                executePostTask.executeTask.mockReturnValueOnce(Promise.resolve({ data: [] }));
+                mockSendFinBitReport.getUserMailAccount.mockReturnValueOnce(Promise.resolve({ smtp: smtpStub }));
+                mockSendFinBitReport.sendHtmlEmail.mockReturnValueOnce(Promise.resolve({ messageId: 'main' }));
+
+                await getEarvedFromFinBit.runPostTaskInBackground(710, 106, 5429);
+
+                expect(db.queryDb).toHaveBeenCalledTimes(3);
+                expect(mockSendFinBitReport.sendHtmlEmail).toHaveBeenCalledTimes(1);
+                expect(mockSendFinBitReport.sendHtmlEmail.mock.calls[0][0]).toBe('vlad@narva.ee');
+            });
+
+            test('email бухгалтера совпадает с email инициатора -> второй копии нет', async () => {
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ id: 513 }] }))
+                    .mockReturnValueOnce(Promise.resolve(taskRowWith([{ number: 'INV-X', rekv_id: 106, raamatupidaja: 'Vlad', error: 'Viga' }], 'vlad@narva.ee')))
+                    .mockReturnValueOnce(Promise.resolve({ data: [] }))
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ email: 'VLAD@narva.ee ' }] }));
+                executePostTask.executeTask.mockReturnValueOnce(Promise.resolve({ data: [] }));
+                mockSendFinBitReport.getUserMailAccount.mockReturnValueOnce(Promise.resolve({ smtp: smtpStub }));
+                mockSendFinBitReport.sendHtmlEmail.mockReturnValueOnce(Promise.resolve({ messageId: 'main' }));
+
+                await getEarvedFromFinBit.runPostTaskInBackground(710, 106, 5429);
+
+                expect(mockSendFinBitReport.sendHtmlEmail).toHaveBeenCalledTimes(1);
+                expect(mockSendFinBitReport.sendHtmlEmail.mock.calls[0][0]).toBe('vlad@narva.ee');
+            });
+
+            test('email бухгалтера не найден -> письмо только инициатору', async () => {
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ id: 514 }] }))
+                    .mockReturnValueOnce(Promise.resolve(taskRowWith([{ number: 'INV-X', rekv_id: 106, raamatupidaja: 'Tundmatu Isik', error: 'Viga' }], 'vlad@narva.ee')))
+                    .mockReturnValueOnce(Promise.resolve({ data: [] }))
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ email: null }] }));
+                executePostTask.executeTask.mockReturnValueOnce(Promise.resolve({ data: [] }));
+                mockSendFinBitReport.getUserMailAccount.mockReturnValueOnce(Promise.resolve({ smtp: smtpStub }));
+                mockSendFinBitReport.sendHtmlEmail.mockReturnValueOnce(Promise.resolve({ messageId: 'main' }));
+
+                await getEarvedFromFinBit.runPostTaskInBackground(710, 106, 5429);
+
+                expect(db.queryDb).toHaveBeenCalledTimes(4);
+                expect(mockSendFinBitReport.sendHtmlEmail).toHaveBeenCalledTimes(1);
+                expect(mockSendFinBitReport.sendHtmlEmail.mock.calls[0][0]).toBe('vlad@narva.ee');
+            });
+
+            test('адрес-заглушка vigane@narva.ee: исключается в SQL поиска бухгалтера и не получает копию', async () => {
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ id: 515 }] }))
+                    .mockReturnValueOnce(Promise.resolve(taskRowWith([{ number: 'INV-X', rekv_id: 106, raamatupidaja: 'Anna Zubova', error: 'Viga' }], 'vlad@narva.ee')))
+                    .mockReturnValueOnce(Promise.resolve({ data: [] }))
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ email: 'Vigane@narva.ee' }] }));
+                executePostTask.executeTask.mockReturnValueOnce(Promise.resolve({ data: [] }));
+                mockSendFinBitReport.getUserMailAccount.mockReturnValueOnce(Promise.resolve({ smtp: smtpStub }));
+                mockSendFinBitReport.sendHtmlEmail.mockReturnValueOnce(Promise.resolve({ messageId: 'main' }));
+
+                await getEarvedFromFinBit.runPostTaskInBackground(710, 106, 5429);
+
+                expect(db.queryDb.mock.calls[3][0]).toContain('<> all ($2::text[])');
+                expect(db.queryDb.mock.calls[3][1][1]).toEqual(['vigane@narva.ee']);
+                expect(mockSendFinBitReport.sendHtmlEmail).toHaveBeenCalledTimes(1);
+                expect(mockSendFinBitReport.sendHtmlEmail.mock.calls[0][0]).toBe('vlad@narva.ee');
+            });
+
+            test('у инициатора адрес vigane@narva.ee -> письмо уходит на email учреждения', async () => {
+                db.queryDb
+                    .mockReturnValueOnce(Promise.resolve({ data: [{ id: 516 }] }))
+                    .mockReturnValueOnce(Promise.resolve(taskRowWith([{ number: 'INV-X', error: 'Viga' }], 'vigane@narva.ee')))
+                    .mockReturnValueOnce(Promise.resolve({ data: [] }));
+                executePostTask.executeTask.mockReturnValueOnce(Promise.resolve({ data: [] }));
+                mockSendFinBitReport.getUserMailAccount.mockReturnValueOnce(Promise.resolve({ smtp: smtpStub }));
+                mockSendFinBitReport.sendHtmlEmail.mockReturnValueOnce(Promise.resolve({ messageId: 'main' }));
+
+                await getEarvedFromFinBit.runPostTaskInBackground(710, 106, 5429);
+
+                expect(mockSendFinBitReport.sendHtmlEmail).toHaveBeenCalledTimes(1);
+                expect(mockSendFinBitReport.sendHtmlEmail.mock.calls[0][0]).toBe('kool@narva.ee');
+            });
+        });
+
         test('Частичный успех (status = 1 + errors): шлет письмо osaliselt imporditud И вызывает executeReport с записью send_log_id', async () => {
             db.queryDb
                 // 1. createLog

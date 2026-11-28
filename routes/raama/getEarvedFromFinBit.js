@@ -399,6 +399,70 @@ function formatTaskErrorEmail(taskId, taskStatus, tulemused, errors) {
     return { subject: subject, text: text, html: html };
 }
 
+// Адреса-заглушки: общий список из sendFinBitReport.js (на них письма не отправляются)
+const BLOCKED_EMAILS = sendFinBitReport.BLOCKED_EMAILS;
+const isBlockedEmail = sendFinBitReport.isBlockedEmail;
+
+/**
+ * Находит email бухгалтеров из BPM счетов с ошибкой (поле raamatupidaja в errors от docs.sp_loe_earved).
+ * Правило как в docs.get_arve_kinnitaja: ou.userid.ametnik = isik (без учета регистра, пробелов и диакритики Š Ž Õ Ä Ö Ü), status < 3,
+ * непустой email; сначала пользователь учреждения счета.
+ * @returns {Promise<string[]>} уникальные адреса (без учета регистра), без адресов из excludeEmails
+ */
+async function getAccountantEmails(errors, defaultRekvId, excludeEmails) {
+    const seen = {};
+    const persons = [];
+    toArray(errors).forEach(function (item) {
+        const isik = (item && item.raamatupidaja) ? String(item.raamatupidaja).trim() : '';
+        if (!isik) {
+            return;
+        }
+        const rekv = (item && item.rekv_id) ? Number(item.rekv_id) : (defaultRekvId ? Number(defaultRekvId) : null);
+        const key = isik.toUpperCase() + '|' + rekv;
+        if (!seen[key]) {
+            seen[key] = true;
+            persons.push({ isik: isik, rekv_id: rekv });
+        }
+    });
+    if (!persons.length) {
+        return [];
+    }
+
+    // В BPM имя приходит с эстонскими буквами (VEREŠTŠAGINA), в ou.userid.ametnik — часто транслитом (Verestsagina):
+    // сравниваем без учета регистра и с заменой Š Ž Õ Ä Ö Ü на S Z O A O U
+    const norm = function (expr) {
+        return 'translate(upper(btrim(' + expr + ')), \'ŠŽÕÄÖÜšžõäöü\', \'SZOAOUSZOAOU\')';
+    };
+    // Адреса-заглушки (BLOCKED_EMAILS) не выбираются: берется следующая карточка с рабочим адресом
+    const sql = 'select (select nullif(btrim(u.properties ->> \'email\'), \'\') ' +
+        'from ou.userid u ' +
+        'where ' + norm('u.ametnik') + ' = ' + norm('x.isik') + ' ' +
+        'and u.status < 3 ' +
+        'and coalesce(btrim(u.properties ->> \'email\'), \'\') <> \'\' ' +
+        'and lower(btrim(u.properties ->> \'email\')) <> all ($2::text[]) ' +
+        'order by (case when u.rekvid = x.rekv_id then 1 else 2 end), u.id desc ' +
+        'limit 1) as email ' +
+        'from jsonb_to_recordset($1::jsonb) as x(isik text, rekv_id integer)';
+    const res = await db.queryDb(sql, [JSON.stringify(persons), BLOCKED_EMAILS], null, null, null, null, config);
+
+    const excluded = {};
+    toArray(excludeEmails).forEach(function (e) {
+        if (e) {
+            excluded[String(e).trim().toLowerCase()] = true;
+        }
+    });
+    const result = [];
+    toArray(res && res.data).forEach(function (row) {
+        const email = (row && row.email) ? String(row.email).trim() : '';
+        const key = email.toLowerCase();
+        if (email && !excluded[key] && !isBlockedEmail(email)) {
+            excluded[key] = true;
+            result.push(email);
+        }
+    });
+    return result;
+}
+
 /**
  * Фоновое выполнение задачи ou.task (путь из UI, !isAgent):
  * 1. Создает лог импорта в ou.logs (flow = docs.sp_loe_earved)
@@ -492,15 +556,30 @@ async function runPostTaskInBackground(taskId, rekvId, userId) {
         // Отправка письма об ошибке или частичном успехе инициатору / на email учреждения
         if (taskStatus === 2 || errors.length > 0) {
             try {
-                const recipientEmail = (taskRow.user_email && String(taskRow.user_email).trim())
-                    || (taskRow.rekv_email && String(taskRow.rekv_email).trim())
-                    || null;
+                // адрес-заглушка (vigane@narva.ee) пропускается: берется email учреждения
+                const userEmail = (taskRow.user_email && !isBlockedEmail(taskRow.user_email)) ? String(taskRow.user_email).trim() : '';
+                const rekvEmail = (taskRow.rekv_email && !isBlockedEmail(taskRow.rekv_email)) ? String(taskRow.rekv_email).trim() : '';
+                const recipientEmail = userEmail || rekvEmail || null;
+                let smtpConfig = null;
+                const mail = formatTaskErrorEmail(taskId, taskStatus, taskRow.tulemused, errors);
                 if (recipientEmail) {
-                    const smtpConfig = await getTaskSmtpConfig(taskUserId, taskRekvId);
-                    const mail = formatTaskErrorEmail(taskId, taskStatus, taskRow.tulemused, errors);
+                    smtpConfig = await getTaskSmtpConfig(taskUserId, taskRekvId);
                     await deps.sendFinBitReport.sendHtmlEmail(recipientEmail, mail.subject, mail.text, mail.html, smtpConfig);
                 } else {
                     console.warn('[getEarvedFromFinBit] Cannot send error mail for task ' + taskId + ': recipient email missing');
+                }
+
+                // Копия того же письма бухгалтерам из BPM счетов с ошибкой (если BPM есть и email найден)
+                try {
+                    const accountantEmails = await getAccountantEmails(errors, taskRekvId, [recipientEmail]);
+                    if (accountantEmails.length > 0) {
+                        if (!smtpConfig) {
+                            smtpConfig = await getTaskSmtpConfig(taskUserId, taskRekvId);
+                        }
+                        await deps.sendFinBitReport.sendHtmlEmail(accountantEmails, mail.subject, mail.text, mail.html, smtpConfig);
+                    }
+                } catch (copyErr) {
+                    console.error('[getEarvedFromFinBit] Error sending error mail copy to BPM accountants for task ' + taskId + ':', copyErr);
                 }
             } catch (mailErr) {
                 console.error('[getEarvedFromFinBit] Error sending task error mail for task ' + taskId + ':', mailErr);
@@ -958,4 +1037,7 @@ exports.buildBatchesTaskSql = buildBatchesTaskSql;
 exports.runPostTaskInBackground = runPostTaskInBackground;
 exports.formatTaskErrorEmail = formatTaskErrorEmail;
 exports.getTaskSmtpConfig = getTaskSmtpConfig;
+exports.getAccountantEmails = getAccountantEmails;
+exports.isBlockedEmail = isBlockedEmail;
+exports.BLOCKED_EMAILS = BLOCKED_EMAILS;
 exports.deps = deps;

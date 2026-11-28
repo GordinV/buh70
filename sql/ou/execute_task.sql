@@ -42,6 +42,9 @@ BEGIN
                   )
         loop
             l_task_id = v_task.id;
+
+            -- Подтранзакция на каждую задачу: ошибка одной задачи не откатывает уже выполненные задачи пачки
+            BEGIN
             l_start = clock_timestamp();
 
             EXECUTE v_task.sql into l_tulemused;
@@ -61,14 +64,14 @@ BEGIN
             l_has_error_code = (l_res_json ? 'error_code')
                 AND jsonb_typeof(l_res_json -> 'error_code') = 'number';
             l_error_code = CASE
-                WHEN l_has_error_code THEN (l_res_json ->> 'error_code')::integer
+                WHEN l_has_error_code THEN (l_res_json ->> 'error_code')::numeric::integer
                 ELSE NULL
             END;
 
             l_has_result = (l_res_json ? 'result')
                 AND jsonb_typeof(l_res_json -> 'result') = 'number';
             l_result_val = CASE
-                WHEN l_has_result THEN (l_res_json ->> 'result')::integer
+                WHEN l_has_result THEN (l_res_json ->> 'result')::numeric::integer
                 ELSE NULL
             END;
 
@@ -164,10 +167,23 @@ BEGIN
                 id = l_task_id;
 
             l_count = l_count + 1;
+
+            EXCEPTION
+                WHEN OTHERS THEN
+                    -- работа упавшей задачи откатана; отмечаем ошибку и переходим к следующей задаче
+                    update ou.task
+                    set
+                        status    = 2,
+                        finished  = clock_timestamp(),
+                        tulemused = left(coalesce(SQLERRM, '') || ',' || coalesce(SQLSTATE, ''), 2000)
+                    where
+                        id = l_task_id;
+            END;
         end loop;
 
     return l_count;
 EXCEPTION
+    -- ошибки вне выполнения задач (например, при выборке задач); ошибки самих задач ловятся в цикле
     WHEN OTHERS
         THEN
 --            RAISE 'error % %', SQLERRM, SQLSTATE;
@@ -201,4 +217,6 @@ GRANT EXECUTE ON FUNCTION ou.execute_task(JSONB) TO dbpeakasutaja;
 -- 4. Всё успешно (errors=[], imported!=[]): status=1, tulemused IS NULL, properties.imported_count=M, properties.errors=[]
 -- 5. Исключение (например SELECT 1/0): status=2, finished IS NOT NULL, tulemused содержит SQLERRM
 -- 6. Посторонняя задача без error_code/result/errors (например SELECT docs.refresh_kaibed_public()): status=1, tulemused IS NULL
+-- 7. Пачка (doc_id = null) из трех задач status=0, вторая SELECT 1/0: первая и третья status=1, вторая status=2 с SQLERRM;
+--    результат функции = 2 (число успешно обработанных задач)
 */
