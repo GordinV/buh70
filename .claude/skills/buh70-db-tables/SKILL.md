@@ -7,16 +7,18 @@ description: Где в БД buh70 лежат покупатели/контраг
 
 ## Покупатели (контрагенты) — `libs.asutus`
 
-Покупатели лежат в таблице `libs.asutus`. Активные записи — **`status < 3`** (3 = удалена/скрыта).
+Покупатели лежат в таблице `libs.asutus`. Активные записи — **`staatus < 3`** (3 = удалена/скрыта). Колонка называется именно `staatus` — колонки `status` в `libs.asutus` нет (в `ou.userid`, `ou.task`, `libs.library` — `status`).
 
-Поиск покупателя по регкоду:
+Поиск покупателя (контрагента) по регкоду:
 
 ```sql
 select id, regkood, nimetus
 from libs.asutus
 where btrim(regkood) = $1
-  and status < 3;
+  and staatus < 3;
 ```
+
+`regkood` и `nimetus` — `char` с хвостовыми пробелами: сравнивать через `btrim`.
 
 Не искать покупателя в `ou.rekv` — там учреждения (организации-пользователи системы), а не покупатели.
 
