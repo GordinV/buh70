@@ -119,11 +119,7 @@ describe('getEarvedFromFinBit unit tests', () => {
             .mockReturnValueOnce(Promise.resolve({
                 data: [{ hash: 'test-hash', earved_host: 'http://test-host', rekv_id: 63, user_id: 2477 }]
             }))
-            // 2. карта всех ou.rekv (parentid < 999) + Earved robot
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 }]
-            }))
-            // 3. insert ou.logs (flow = getEarved) с массивом счетов, закрытый success
+            // 2. insert ou.logs (flow = getEarved) с массивом счетов, закрытый success
             .mockReturnValueOnce(Promise.resolve({ data: [{ id: 8888 }] }));
 
         getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>test</xml>'));
@@ -153,18 +149,18 @@ describe('getEarvedFromFinBit unit tests', () => {
         );
 
         // Массив счетов сохранен в лог flow = getEarved
-        expect(db.queryDb.mock.calls[2][0]).toContain('insert into ou.logs');
-        expect(db.queryDb.mock.calls[2][1][0]).toBe(63);
-        expect(db.queryDb.mock.calls[2][1][1]).toBe(2477);
-        expect(db.queryDb.mock.calls[2][1][2]).toBe('getEarved');
-        expect(db.queryDb.mock.calls[2][1][3]).toContain('INV-2');
-        expect(db.queryDb.mock.calls[2][1][4]).toBe(1);
-        expect(JSON.parse(db.queryDb.mock.calls[2][1][5]).totalFetched).toBe(1);
+        expect(db.queryDb.mock.calls[1][0]).toContain('insert into ou.logs');
+        expect(db.queryDb.mock.calls[1][1][0]).toBe(63);
+        expect(db.queryDb.mock.calls[1][1][1]).toBe(2477);
+        expect(db.queryDb.mock.calls[1][1][2]).toBe('getEarved');
+        expect(db.queryDb.mock.calls[1][1][3]).toContain('INV-2');
+        expect(db.queryDb.mock.calls[1][1][4]).toBe(1);
+        expect(JSON.parse(db.queryDb.mock.calls[1][1][5]).totalFetched).toBe(1);
 
         await new Promise((resolve) => setTimeout(resolve, 50));
 
         // Больше обращений к БД нет: разбор (docs.sp_loe_earved) выполняет агент import_earved
-        expect(db.queryDb).toHaveBeenCalledTimes(3);
+        expect(db.queryDb).toHaveBeenCalledTimes(2);
     });
 
     test('Агентский режим без явного userId: находит пользователя robot и использует его user_id в логе getEarved', async () => {
@@ -184,11 +180,7 @@ describe('getEarvedFromFinBit unit tests', () => {
             .mockReturnValueOnce(Promise.resolve({
                 data: [{ hash: 'test-hash', earved_host: 'http://test-host', rekv_id: 63, user_id: 777 }]
             }))
-            // 2. Карта всех ou.rekv
-            .mockReturnValueOnce(Promise.resolve({
-                data: [{ rekv_id: 63, rekv_regkood: '75008427', user_id: 777 }]
-            }))
-            // 3. insert лога getEarved
+            // 2. insert лога getEarved
             .mockReturnValueOnce(Promise.resolve({ data: [{ id: 9999 }] }));
 
         getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>test</xml>'));
@@ -209,9 +201,9 @@ describe('getEarvedFromFinBit unit tests', () => {
         );
 
         // лог getEarved создан под пользователем-роботом (l_userId = 777)
-        expect(db.queryDb.mock.calls[2][1][0]).toBe(63);
-        expect(db.queryDb.mock.calls[2][1][1]).toBe(777);
-        expect(db.queryDb.mock.calls[2][1][2]).toBe('getEarved');
+        expect(db.queryDb.mock.calls[1][1][0]).toBe(63);
+        expect(db.queryDb.mock.calls[1][1][1]).toBe(777);
+        expect(db.queryDb.mock.calls[1][1][2]).toBe('getEarved');
     });
 
     test('Множественные учреждения (агентский режим): опрашивает все учреждения и сохраняет ВСЕ батчи в одном логе getEarved', async () => {
@@ -234,14 +226,7 @@ describe('getEarvedFromFinBit unit tests', () => {
                     { hash: 'hash-rekv-119', earved_host: 'http://host-119', rekv_id: 119, user_id: 777 }
                 ]
             }))
-            // 2. Карта всех ou.rekv
-            .mockReturnValueOnce(Promise.resolve({
-                data: [
-                    { rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 },
-                    { rekv_id: 119, rekv_regkood: '75009999', user_id: 777 }
-                ]
-            }))
-            // 3. insert лога getEarved
+            // 2. insert лога getEarved
             .mockReturnValueOnce(Promise.resolve({ data: [{ id: 5555 }] }));
 
         // Мокаем получение XML и преобразование в JSON для обоих учреждений
@@ -270,13 +255,13 @@ describe('getEarvedFromFinBit unit tests', () => {
         expect(getXMLFile.mock.calls[1]).toEqual(['hash-rekv-119', 'http://host-119', '2026-09-15']);
 
         // Один лог с двумя батчами, всего 2 счета
-        expect(db.queryDb).toHaveBeenCalledTimes(3);
-        const payload = JSON.parse(db.queryDb.mock.calls[2][1][3]);
+        expect(db.queryDb).toHaveBeenCalledTimes(2);
+        const payload = JSON.parse(db.queryDb.mock.calls[1][1][3]);
         expect(payload).toHaveLength(2);
         expect(payload[0]).toEqual(expect.objectContaining({ rekvId: 63, userId: 2477, count: 1 }));
         expect(payload[1]).toEqual(expect.objectContaining({ rekvId: 119, userId: 777, count: 1 }));
-        expect(db.queryDb.mock.calls[2][1][4]).toBe(2);
-        const resultJson = JSON.parse(db.queryDb.mock.calls[2][1][5]);
+        expect(db.queryDb.mock.calls[1][1][4]).toBe(2);
+        const resultJson = JSON.parse(db.queryDb.mock.calls[1][1][5]);
         expect(resultJson.totalFetched).toBe(2);
         expect(resultJson.invoiceNumbers).toEqual(['INV-63-1', 'INV-119-1']);
     });
@@ -410,320 +395,11 @@ describe('getEarvedFromFinBit unit tests', () => {
         expect(executePostTask.executeTask).toHaveBeenCalledWith(4321);
     });
 
-    test('Неагентский вызов с rekv_id=77: счет чужого regkood не импортируется, но попадает в unmatched и error_message ответа', async () => {
-        const mockReq = {
-            query: {},
-            body: { user_id: 5077, rekv_id: 77, date_query_from: '2026-11-28' },
-            params: {}
-        };
-
-        const mockRes = {
-            send: jest.fn().mockReturnThis(),
-            status: jest.fn().mockReturnThis()
-        };
-
-        db.queryDb.mockReturnValueOnce(Promise.resolve({
-            data: [
-                { hash: 'hash-77', earved_host: 'http://host-77', rekv_id: 77, rekv_regkood: '75008427', user_id: 5077 }
-            ]
-        }));
-
-        getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>77</xml>'));
-        XMLtoJson.mockReturnValueOnce(Promise.resolve([
-            { id: 0, data: { number: '82020126240', rekv_regkood: '75024260', rekvid: 77, userid: 5077 } }
-        ]));
-
-        await getEarvedFromFinBit.post(mockReq, mockRes);
-
-        expect(executePostTask.executeTask).not.toHaveBeenCalled();
-        expect(mockRes.send).toHaveBeenCalledWith(
-            expect.objectContaining({
-                status: 500,
-                result: null,
-                error_message: expect.stringContaining('Asutust regkoodiga 75024260 ei leitud'),
-                totalUnmatched: 1,
-                unmatched: [
-                    expect.objectContaining({
-                        number: '82020126240',
-                        rekv_regkood: '75024260',
-                        source_rekv_id: 77,
-                        error: 'Asutust regkoodiga 75024260 ei leitud'
-                    })
-                ]
-            })
-        );
-    });
-
-    describe('Маршрутизация счетов по rekv_regkood (task_finbit_route_invoices_by_regkood)', () => {
-        test('Агентский режим: одна выкачка со счетами двух учреждений -> два batch с правильными rekvId/userId и переписанными data.rekvid/userid', async () => {
+    describe('Покупатель = учреждение выкачки (BuyerRegNumber не используется для маршрутизации)', () => {
+        test('Неагентский вызов rekv_id=106: счет на регкод вышестоящего (75024260) импортируется в 106, unmatched нет', async () => {
             const mockReq = {
                 query: {},
-                body: { is_agent: true },
-                params: { userid_id: 2477, date_query_from: '2026-11-28' }
-            };
-            const mockRes = {
-                send: jest.fn().mockReturnThis(),
-                status: jest.fn().mockReturnThis()
-            };
-
-            db.queryDb
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { hash: 'shared-hash', earved_host: 'http://host', rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 },
-                        { hash: 'shared-hash', earved_host: 'http://host', rekv_id: 106, rekv_regkood: '75024260', user_id: 5106 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 },
-                        { rekv_id: 106, rekv_regkood: '75024260', user_id: 5106 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({ data: [{ id: 6001 }] }));
-
-            // Два учреждения с одним hash+host -> getXMLFile вызывается ровно один раз!
-            getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>combined</xml>'));
-            XMLtoJson.mockReturnValueOnce(Promise.resolve([
-                { id: 0, data: { number: 'INV-63', asutusid: '10000001', rekv_regkood: '75008427', rekvid: 63, userid: 2477 } },
-                { id: 0, data: { number: 'INV-106', asutusid: '10000002', rekv_regkood: '75024260', rekvid: 63, userid: 2477 } },
-                // Дубликат INV-106 от того же продавца должен быть отброшен
-                { id: 0, data: { number: 'INV-106', asutusid: '10000002', rekv_regkood: '75024260', rekvid: 63, userid: 2477 } }
-            ]));
-
-            await getEarvedFromFinBit.post(mockReq, mockRes);
-
-            expect(getXMLFile).toHaveBeenCalledTimes(1);
-            expect(XMLtoJson).toHaveBeenCalledTimes(1);
-
-            const payload = JSON.parse(db.queryDb.mock.calls[2][1][3]);
-            expect(payload).toHaveLength(2);
-            expect(payload[0]).toEqual(expect.objectContaining({ rekvId: 63, userId: 2477, count: 1 }));
-            expect(payload[0].arved[0].data).toEqual(expect.objectContaining({ number: 'INV-63', rekvid: 63, userid: 2477 }));
-
-            expect(payload[1]).toEqual(expect.objectContaining({ rekvId: 106, userId: 5106, count: 1 }));
-            expect(payload[1].arved[0].data).toEqual(expect.objectContaining({ number: 'INV-106', rekvid: 106, userid: 5106 }));
-
-            const resultJson = JSON.parse(db.queryDb.mock.calls[2][1][5]);
-            expect(resultJson.totalFetched).toBe(2);
-            expect(resultJson.totalUnmatched).toBe(0);
-            expect(resultJson.unmatched).toEqual([]);
-        });
-
-        test('Дедупликация по (rekv_regkood, asutusid, number): два счета с одним number от разных продавцов -> оба в batch; один и тот же счет из двух источников -> один', async () => {
-            const mockReq = {
-                query: {},
-                body: { is_agent: true },
-                params: { userid_id: 2477, date_query_from: '2026-11-28' }
-            };
-            const mockRes = {
-                send: jest.fn().mockReturnThis(),
-                status: jest.fn().mockReturnThis()
-            };
-
-            db.queryDb
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { hash: 'hash-A', earved_host: 'http://host', rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 },
-                        { hash: 'hash-B', earved_host: 'http://host', rekv_id: 106, rekv_regkood: '75024260', user_id: 5106 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 },
-                        { rekv_id: 106, rekv_regkood: '75024260', user_id: 5106 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({ data: [{ id: 6010 }] }));
-
-            getXMLFile
-                .mockReturnValueOnce(Promise.resolve('<xml>A</xml>'))
-                .mockReturnValueOnce(Promise.resolve('<xml>B</xml>'));
-            XMLtoJson
-                .mockReturnValueOnce(Promise.resolve([
-                    // Одинаковый number '261' от двух разных продавцов + счёт без asutusid
-                    { id: 0, data: { number: '261', asutusid: '11111111', rekv_regkood: '75008427', rekvid: 63, userid: 2477 } },
-                    { id: 0, data: { number: '261', asutusid: '22222222', rekv_regkood: '75008427', rekvid: 63, userid: 2477 } },
-                    { id: 0, data: { number: 'NO-SELLER', rekv_regkood: '75008427', rekvid: 63, userid: 2477 } }
-                ]))
-                .mockReturnValueOnce(Promise.resolve([
-                    // Тот же счёт (75008427, 11111111, 261) из второго источника -> дубль, должен быть отброшен
-                    { id: 0, data: { number: '261', asutusid: '11111111', rekv_regkood: '75008427', rekvid: 106, userid: 5106 } },
-                    // Без asutusid -> не дедуплицируется
-                    { id: 0, data: { number: 'NO-SELLER', rekv_regkood: '75008427', rekvid: 106, userid: 5106 } }
-                ]));
-
-            await getEarvedFromFinBit.post(mockReq, mockRes);
-
-            const payload = JSON.parse(db.queryDb.mock.calls[2][1][3]);
-            expect(payload).toHaveLength(1);
-            expect(payload[0].rekvId).toBe(63);
-            expect(payload[0].count).toBe(4); // 2 разных продавца '261' + 2 счёта без asutusid
-            const sellers261 = payload[0].arved
-                .filter((x) => x.data.number === '261')
-                .map((x) => x.data.asutusid);
-            expect(sellers261).toEqual(['11111111', '22222222']);
-        });
-
-        test('Агентский режим: учреждение БЕЗ своего hash получает batch со своим роботом; учреждение БЕЗ робота уходит в unmatched', async () => {
-            const mockReq = {
-                query: {},
-                body: { is_agent: true },
-                params: { userid_id: 2477, date_query_from: '2026-11-28' }
-            };
-            const mockRes = {
-                send: jest.fn().mockReturnThis(),
-                status: jest.fn().mockReturnThis()
-            };
-
-            db.queryDb
-                // 1. Только учреждение 63 имеет hash
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { hash: 'hash-63', earved_host: 'http://host', rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 }
-                    ]
-                }))
-                // 2. Все ou.rekv (parentid < 999): у 201 есть робот 9201, у 202 робота нет (null)
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 },
-                        { rekv_id: 201, rekv_regkood: '75020100', user_id: 9201 },
-                        { rekv_id: 202, rekv_regkood: '75020200', user_id: null }
-                    ]
-                }))
-                // 3. saveFetchedArvedLog
-                .mockReturnValueOnce(Promise.resolve({ data: [{ id: 6020 }] }));
-
-            getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>all</xml>'));
-            XMLtoJson.mockReturnValueOnce(Promise.resolve([
-                { id: 0, data: { number: 'INV-201', asutusid: '10000001', rekv_regkood: '75020100', rekvid: 63, userid: 2477 } },
-                { id: 0, data: { number: 'INV-202', asutusid: '10000001', rekv_regkood: '75020200', rekvid: 63, userid: 2477 } }
-            ]));
-
-            await getEarvedFromFinBit.post(mockReq, mockRes);
-
-            // Запрос allRekvSql проверяет ou.rekv и строго r.parentid < 999 (без coalesce)
-            expect(db.queryDb.mock.calls[1][0]).toContain('ou.rekv');
-            expect(db.queryDb.mock.calls[1][0]).toContain('and r.parentid < 999');
-            expect(db.queryDb.mock.calls[1][0]).not.toContain('coalesce(r.parentid');
-
-            const payload = JSON.parse(db.queryDb.mock.calls[2][1][3]);
-            expect(payload).toHaveLength(1);
-            expect(payload[0]).toEqual(expect.objectContaining({ rekvId: 201, userId: 9201, count: 1 }));
-            expect(payload[0].arved[0].data).toEqual(expect.objectContaining({ number: 'INV-201', rekvid: 201, userid: 9201 }));
-
-            const resultJson = JSON.parse(db.queryDb.mock.calls[2][1][5]);
-            expect(resultJson.totalFetched).toBe(1);
-            expect(resultJson.totalUnmatched).toBe(1);
-            expect(resultJson.unmatched).toEqual([
-                {
-                    number: 'INV-202',
-                    rekv_regkood: '75020200',
-                    source_rekv_id: 63,
-                    error: 'Asutusel 75020200 puudub kasutaja Earved robot'
-                }
-            ]);
-        });
-
-        test('Агентский режим: счет чужого regkood без конфига попадает в unmatched лога getEarved, а счет без rekv_regkood остается в batch источника', async () => {
-            const mockReq = {
-                query: {},
-                body: { is_agent: true },
-                params: { userid_id: 2477, date_query_from: '2026-11-28' }
-            };
-            const mockRes = {
-                send: jest.fn().mockReturnThis(),
-                status: jest.fn().mockReturnThis()
-            };
-
-            db.queryDb
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { hash: 'hash-63', earved_host: 'http://host', rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({ data: [{ id: 6002 }] }));
-
-            getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>mixed</xml>'));
-            XMLtoJson.mockReturnValueOnce(Promise.resolve([
-                { id: 0, data: { number: 'INV-NO-REG', rekvid: 63, userid: 2477 } },
-                { id: 0, data: { number: 'INV-UNKNOWN', rekv_regkood: '99999999', rekvid: 63, userid: 2477 } }
-            ]));
-
-            await getEarvedFromFinBit.post(mockReq, mockRes);
-
-            const payload = JSON.parse(db.queryDb.mock.calls[2][1][3]);
-            expect(payload).toHaveLength(1);
-            expect(payload[0]).toEqual(expect.objectContaining({ rekvId: 63, userId: 2477, count: 1 }));
-            expect(payload[0].arved[0].data.number).toBe('INV-NO-REG');
-
-            const resultJson = JSON.parse(db.queryDb.mock.calls[2][1][5]);
-            expect(resultJson.totalFetched).toBe(1);
-            expect(resultJson.totalUnmatched).toBe(1);
-            expect(resultJson.unmatched).toEqual([
-                {
-                    number: 'INV-UNKNOWN',
-                    rekv_regkood: '99999999',
-                    source_rekv_id: 63,
-                    error: 'Asutust regkoodiga 99999999 ei leitud'
-                }
-            ]);
-        });
-
-        test('Агентский режим: при одинаковом regkood у двух организаций выбирается та, у которой есть активный робот', async () => {
-            const mockReq = {
-                query: {},
-                body: { is_agent: true },
-                params: { userid_id: 2477, date_query_from: '2026-11-28' }
-            };
-            const mockRes = {
-                send: jest.fn().mockReturnThis(),
-                status: jest.fn().mockReturnThis()
-            };
-
-            db.queryDb
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { hash: 'hash-63', earved_host: 'http://host', rekv_id: 63, rekv_regkood: '75008427', user_id: 2477 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({
-                    data: [
-                        { rekv_id: 10, rekv_regkood: '75030000', user_id: null },
-                        { rekv_id: 20, rekv_regkood: '75030000', user_id: 9020 }
-                    ]
-                }))
-                .mockReturnValueOnce(Promise.resolve({ data: [{ id: 6030 }] }));
-
-            getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>dup-regkood</xml>'));
-            XMLtoJson.mockReturnValueOnce(Promise.resolve([
-                { id: 0, data: { number: 'INV-DUP-RK', asutusid: '10000001', rekv_regkood: '75030000', rekvid: 63, userid: 2477 } }
-            ]));
-
-            await getEarvedFromFinBit.post(mockReq, mockRes);
-
-            const payload = JSON.parse(db.queryDb.mock.calls[2][1][3]);
-            expect(payload).toHaveLength(1);
-            expect(payload[0]).toEqual(expect.objectContaining({ rekvId: 20, userId: 9020, count: 1 }));
-            expect(payload[0].arved[0].data).toEqual(expect.objectContaining({ number: 'INV-DUP-RK', rekvid: 20, userid: 9020 }));
-        });
-
-        test('formatTaskErrorEmail: берет колонку Asutus из rekv_regkood для ошибок маршрутизации', () => {
-            const mail = getEarvedFromFinBit.formatTaskErrorEmail(777, 1, 'Imporditud 1 arvet, vigu 1', [
-                { number: 'INV-X', rekv_regkood: '75024260', error: 'Asutust regkoodiga 75024260 ei leitud' }
-            ]);
-            expect(mail.text).toContain('Asutus: 75024260');
-            expect(mail.html).toContain('75024260');
-        });
-
-        test('Неагентский режим с частично ненайденным regkood: unmatched передается в sp_loe_earved_batches и в ответ post', async () => {
-            const mockReq = {
-                query: {},
-                body: { user_id: 5077, rekv_id: 77, date_query_from: '2026-11-28' },
+                body: { user_id: 5106, rekv_id: 106, date_query_from: '2026-11-28' },
                 params: {}
             };
             const mockRes = {
@@ -734,22 +410,22 @@ describe('getEarvedFromFinBit unit tests', () => {
             db.queryDb
                 .mockReturnValueOnce(Promise.resolve({
                     data: [
-                        { hash: 'hash-77', earved_host: 'http://host-77', rekv_id: 77, rekv_regkood: '75008427', user_id: 5077 }
+                        { hash: 'hash-106', earved_host: 'http://host-106', rekv_id: 106, user_id: 5106 }
                     ]
                 }))
                 .mockReturnValueOnce(Promise.resolve({ data: [{ sp_salvesta_task: 8888 }] }))
                 .mockReturnValueOnce(Promise.resolve({ data: [{ id: 130 }] }))
                 .mockReturnValueOnce(Promise.resolve({
-                    data: [{ id: 8888, user_id: 5077, rekv_id: 77, status: 1, tulemused: null, properties: { imported: [], errors: [] } }]
+                    data: [{ id: 8888, user_id: 5106, rekv_id: 106, status: 1, tulemused: null, properties: { imported: [], errors: [] } }]
                 }))
                 .mockReturnValueOnce(Promise.resolve({ data: [] }));
             executePostTask.executeTask.mockReturnValueOnce(Promise.resolve({ data: [] }));
             mockSendFinBitReport.executeReport.mockReturnValueOnce(Promise.resolve({ logId: null }));
 
-            getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>77</xml>'));
+            getXMLFile.mockReturnValueOnce(Promise.resolve('<xml>106</xml>'));
             XMLtoJson.mockReturnValueOnce(Promise.resolve([
-                { id: 0, data: { number: 'INV-77', rekv_regkood: '75008427', rekvid: 77, userid: 5077 } },
-                { id: 0, data: { number: 'INV-106', rekv_regkood: '75024260', rekvid: 77, userid: 5077 } }
+                { id: 0, data: { number: 'INV-OWN', rekv_regkood: '75008611', rekvid: 106, userid: 5106 } },
+                { id: 0, data: { number: 'INV-PARENT', rekv_regkood: '75024260', rekvid: 106, userid: 5106 } }
             ]));
 
             await getEarvedFromFinBit.post(mockReq, mockRes);
@@ -759,28 +435,70 @@ describe('getEarvedFromFinBit unit tests', () => {
             const match = taskSqlText.match(/\$\$(.*)\$\$/);
             expect(match).not.toBeNull();
             const parsedBatches = JSON.parse(match[1]);
-            expect(parsedBatches).toHaveLength(2);
-            expect(parsedBatches[0]).toEqual(expect.objectContaining({ user_id: 5077 }));
-            expect(parsedBatches[1]).toEqual({
-                user_id: null,
-                number: 'INV-106',
-                rekv_regkood: '75024260',
-                error: 'Asutust regkoodiga 75024260 ei leitud'
-            });
+            expect(parsedBatches).toHaveLength(1);
+            expect(parsedBatches[0].user_id).toBe(5106);
+            expect(parsedBatches[0].data.map((x) => x.data.number)).toEqual(['INV-OWN', 'INV-PARENT']);
+            expect(parsedBatches[0].data.every((x) => x.data.rekvid === 106)).toBe(true);
 
-            expect(mockRes.send).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    status: 200,
-                    totalUnmatched: 1,
-                    unmatched: [
-                        expect.objectContaining({
-                            number: 'INV-106',
-                            rekv_regkood: '75024260',
-                            error: 'Asutust regkoodiga 75024260 ei leitud'
-                        })
+            const sent = mockRes.send.mock.calls[0][0];
+            expect(sent.status).toBe(200);
+            expect(sent.unmatched).toBeUndefined();
+        });
+
+        test('Агентский режим: каждое учреждение получает свой batch со всеми счетами своей выкачки, ou.rekv по regkood не запрашивается', async () => {
+            const mockReq = {
+                query: {},
+                body: { is_agent: true },
+                params: { userid_id: 2477, date_query_from: '2026-11-28' }
+            };
+            const mockRes = {
+                send: jest.fn().mockReturnThis(),
+                status: jest.fn().mockReturnThis()
+            };
+
+            db.queryDb
+                .mockReturnValueOnce(Promise.resolve({
+                    data: [
+                        { hash: 'hash-3', earved_host: 'http://host', rekv_id: 3, user_id: 11769 },
+                        { hash: 'hash-63', earved_host: 'http://host', rekv_id: 63, user_id: 2477 }
                     ]
-                })
-            );
+                }))
+                .mockReturnValueOnce(Promise.resolve({ data: [{ id: 6001 }] }));
+
+            getXMLFile
+                .mockReturnValueOnce(Promise.resolve('<xml>3</xml>'))
+                .mockReturnValueOnce(Promise.resolve('<xml>63</xml>'));
+            XMLtoJson
+                .mockReturnValueOnce(Promise.resolve([
+                    { id: 0, data: { number: 'INV-3', rekv_regkood: '75024260', rekvid: 3, userid: 11769 } }
+                ]))
+                .mockReturnValueOnce(Promise.resolve([
+                    { id: 0, data: { number: 'INV-63', rekv_regkood: '75008427', rekvid: 63, userid: 2477 } },
+                    { id: 0, data: { number: 'INV-63-OTHER', rekv_regkood: '99999999', rekvid: 63, userid: 2477 } }
+                ]));
+
+            await getEarvedFromFinBit.post(mockReq, mockRes);
+
+            expect(getXMLFile).toHaveBeenCalledTimes(2);
+            expect(db.queryDb).toHaveBeenCalledTimes(2);
+
+            const payload = JSON.parse(db.queryDb.mock.calls[1][1][3]);
+            expect(payload).toHaveLength(2);
+            expect(payload[0]).toEqual(expect.objectContaining({ rekvId: 3, userId: 11769, count: 1 }));
+            expect(payload[0].arved[0].data).toEqual(expect.objectContaining({ number: 'INV-3', rekvid: 3, userid: 11769 }));
+            expect(payload[1]).toEqual(expect.objectContaining({ rekvId: 63, userId: 2477, count: 2 }));
+
+            const resultJson = JSON.parse(db.queryDb.mock.calls[1][1][5]);
+            expect(resultJson.totalFetched).toBe(3);
+            expect(resultJson.unmatched).toBeUndefined();
+        });
+
+        test('formatTaskErrorEmail: колонка Asutus берется из asutusid ошибки импорта', () => {
+            const mail = getEarvedFromFinBit.formatTaskErrorEmail(777, 2, 'Imporditud 0 arvet, vigu 1', [
+                { number: 'INV-X', asutusid: '12345678', error: 'Viga' }
+            ]);
+            expect(mail.text).toContain('Asutus: 12345678');
+            expect(mail.html).toContain('12345678');
         });
     });
 

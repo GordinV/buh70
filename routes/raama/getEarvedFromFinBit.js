@@ -65,7 +65,7 @@ const post = async (req, res) => {
 
         // получаем конфигурацию учреждений (массив учреждений)
         let sql = `select distinct on (r.id)
-                       r.properties ->>'earved' as hash, c.properties->>'earved' as earved_host, r.id as rekv_id, r.regkood as rekv_regkood, u.id as user_id
+                       r.properties ->>'earved' as hash, c.properties->>'earved' as earved_host, r.id as rekv_id, u.id as user_id
                    from
                        ou.config c
                        inner join ou.rekv r
@@ -93,103 +93,23 @@ const post = async (req, res) => {
             return res.send({status: 500, result: null, error_message: 'User ID is missing'});
         }
 
-        // Строим список активных источников (с hash) и карту учреждений по regkood для маршрутизации счетов
-        const regkoodMap = {};
-        const activeConfigs = [];
+        // Проходим по учреждениям с hash, запрашиваем e-счета и формируем пакеты для сохранения.
+        // Покупатель = учреждение, по чьему hash сделана выкачка: счёт импортируется в него,
+        // BuyerRegNumber из XML не используется (счета часто выставлены на регкод вышестоящего).
+        const batches = [];
         for (const conf of eArveConfig.data) {
             if (!isAgent && rekvId && Number(conf.rekv_id) !== rekvId) {
                 continue;
             }
-            const targetRekvId = (!isAgent && rekvId) ? rekvId : conf.rekv_id;
-            const targetUserId = (!isAgent && rekvId && userId) ? Number(userId) : (conf.user_id || l_userId);
-            const targetRegkood = conf.rekv_regkood ? String(conf.rekv_regkood).trim() : '';
-            const entry = {
-                rekvId: targetRekvId,
-                userId: targetUserId,
-                regkood: targetRegkood,
-                hash: conf.hash,
-                earvedHost: conf.earved_host
-            };
-            activeConfigs.push(entry);
-            if (!isAgent && targetRegkood && !regkoodMap[targetRegkood]) {
-                regkoodMap[targetRegkood] = entry;
-            }
-        }
-
-        // Для агентского пути карту regkoodMap строим по ВСЕМ учреждениям ou.rekv (r.parentid < 999)
-        // с активным пользователем 'Earved robot' — включая учреждения без собственного hash
-        if (isAgent) {
-            const allRekvSql = `select distinct on (r.id)
-                                    r.id as rekv_id,
-                                    r.regkood as rekv_regkood,
-                                    u.id as user_id
-                                from
-                                    ou.rekv r
-                                    left join ou.userid u
-                                        on u.rekvid = r.id
-                                       and u.kasutaja = '${ROBOT_USER}'
-                                       and u.status < 3
-                                where
-                                    coalesce(btrim(r.regkood), '') <> ''
-                                    and r.parentid < 999
-                                order by r.id, u.id desc`;
-            const allRekvRes = await db.queryDb(allRekvSql, null, null, null, null, null, config);
-            if (allRekvRes && Array.isArray(allRekvRes.data)) {
-                for (let k = 0; k < allRekvRes.data.length; k++) {
-                    const row = allRekvRes.data[k];
-                    const rk = row && row.rekv_regkood ? String(row.rekv_regkood).trim() : '';
-                    if (rk) {
-                        const existing = regkoodMap[rk];
-                        // При совпадении regkood у нескольких организаций предпочитаем ту, у которой есть активный робот
-                        if (!existing || (!existing.userId && row.user_id)) {
-                            regkoodMap[rk] = {
-                                rekvId: row.rekv_id,
-                                userId: row.user_id || null,
-                                regkood: rk
-                            };
-                        }
-                    }
-                }
-            }
-            // Если учреждение из eArveConfig отсутствует в allRekvRes (например, в упрощённых моках), дополним из activeConfigs
-            for (let k = 0; k < activeConfigs.length; k++) {
-                const entry = activeConfigs[k];
-                if (entry.regkood && !regkoodMap[entry.regkood]) {
-                    regkoodMap[entry.regkood] = {
-                        rekvId: entry.rekvId,
-                        userId: entry.userId,
-                        regkood: entry.regkood
-                    };
-                }
-            }
-        }
-
-        // Проходим по уникальным парам (hash, earved_host), запрашиваем e-счета и маршрутизируем по rekv_regkood
-        const batches = [];
-        const batchesByRekv = {};
-        const unmatched = [];
-        const fetchedSources = {};
-        const seenInvoices = {};
-
-        for (const conf of activeConfigs) {
-            const itemRekvId = conf.rekvId;
-            const itemUserId = conf.userId;
+            const itemRekvId = conf.rekv_id;
+            const itemUserId = conf.user_id || l_userId;
             const hash = conf.hash;
-            const earvedHost = conf.earvedHost;
+            const earvedHost = conf.earved_host;
 
             if (!hash) {
                 console.warn(`[getEarvedFromFinBit] Puudub hash asutusele rekvid: ${itemRekvId}`);
                 continue;
             }
-
-            // Выкачиваем один раз на уникальную пару (hash, earved_host)
-            const sourceKey = String(hash).trim() + '||' + String(earvedHost || '').trim();
-            if (fetchedSources[sourceKey]) {
-                console.log(`[getEarvedFromFinBit] Allikas (hash+host) juba päritud, jätan vahele rekvid: ${itemRekvId}`);
-                continue;
-            }
-            fetchedSources[sourceKey] = true;
-
             console.log('hash', hash);
             console.log('itemRekvId, itemUserId', itemRekvId, itemUserId);
 
@@ -200,80 +120,12 @@ const post = async (req, res) => {
                 console.log('json', json);
 
                 if (json && Array.isArray(json) && json.length > 0) {
-                    for (let i = 0; i < json.length; i++) {
-                        const inv = json[i];
-                        if (!inv || typeof inv !== 'object') {
-                            continue;
-                        }
-                        const hasNestedData = !!(inv.data && typeof inv.data === 'object');
-                        const data = hasNestedData ? inv.data : inv;
-                        const invRegkood = data.rekv_regkood ? String(data.rekv_regkood).trim() : '';
-                        const invSellerRegkood = data.asutusid ? String(data.asutusid).trim() : '';
-                        const invNumber = data.number ? String(data.number).trim() : '';
-
-                        // Дедупликация по (rekv_regkood покупателя, asutusid продавца, number); если asutusid пуст — не дедуплицируем
-                        if (invNumber && invSellerRegkood) {
-                            const dedupScope = invRegkood || ('_src_' + itemRekvId);
-                            const dedupKey = dedupScope + '||' + invSellerRegkood + '||' + invNumber;
-                            if (seenInvoices[dedupKey]) {
-                                console.log(`[getEarvedFromFinBit] Duplikaat arve jäetud vahele: ${invNumber} (seller=${invSellerRegkood}, regkood=${invRegkood || 'puudub'})`);
-                                continue;
-                            }
-                            seenInvoices[dedupKey] = true;
-                        }
-
-                        let targetRekvId = itemRekvId;
-                        let targetUserId = itemUserId;
-
-                        if (invRegkood) {
-                            const targetConf = regkoodMap[invRegkood];
-                            if (!targetConf) {
-                                const errText = 'Asutust regkoodiga ' + invRegkood + ' ei leitud';
-                                console.warn(`[getEarvedFromFinBit] Arve ${invNumber || ''}: ${errText} (source_rekv_id=${itemRekvId})`);
-                                unmatched.push({
-                                    number: invNumber || null,
-                                    rekv_regkood: invRegkood,
-                                    source_rekv_id: itemRekvId,
-                                    error: errText
-                                });
-                                continue;
-                            }
-                            if (!targetConf.userId) {
-                                const noRobotErr = 'Asutusel ' + invRegkood + ' puudub kasutaja ' + ROBOT_USER;
-                                console.warn(`[getEarvedFromFinBit] Arve ${invNumber || ''}: ${noRobotErr} (source_rekv_id=${itemRekvId})`);
-                                unmatched.push({
-                                    number: invNumber || null,
-                                    rekv_regkood: invRegkood,
-                                    source_rekv_id: itemRekvId,
-                                    error: noRobotErr
-                                });
-                                continue;
-                            }
-                            targetRekvId = targetConf.rekvId;
-                            targetUserId = targetConf.userId;
-                            // Перезаписываем rekvid и userid на целевое учреждение
-                            if (hasNestedData) {
-                                inv.data = Object.assign({}, inv.data, {
-                                    rekvid: targetRekvId,
-                                    userid: targetUserId
-                                });
-                            } else {
-                                inv.rekvid = targetRekvId;
-                                inv.userid = targetUserId;
-                            }
-                        }
-
-                        if (!batchesByRekv[targetRekvId]) {
-                            batchesByRekv[targetRekvId] = {
-                                rekvId: targetRekvId,
-                                userId: targetUserId,
-                                json: []
-                            };
-                            batches.push(batchesByRekv[targetRekvId]);
-                        }
-                        batchesByRekv[targetRekvId].json.push(inv);
-                    }
-                    console.log(`[getEarvedFromFinBit] Töödeldud ${json.length} arvet allikast rekvid: ${itemRekvId}`);
+                    batches.push({
+                        rekvId: itemRekvId,
+                        userId: itemUserId,
+                        json: json
+                    });
+                    console.log(`[getEarvedFromFinBit] Leitud ${json.length} arvet asutusele rekvid: ${itemRekvId}`);
                 } else {
                     console.log(`[getEarvedFromFinBit] Arveid ei leitud asutusele rekvid: ${itemRekvId}`);
                 }
@@ -281,15 +133,6 @@ const post = async (req, res) => {
                 console.error(`[getEarvedFromFinBit] Viga asutuse rekvid: ${itemRekvId} arvete pärimisel:`, fetchErr.message || fetchErr);
             }
         }
-
-        const unmatchedForLog = unmatched.map(function (u) {
-            return {
-                number: u.number,
-                rekv_regkood: u.rekv_regkood,
-                source_rekv_id: u.source_rekv_id,
-                error: u.error
-            };
-        });
 
         // проверка количества найденных счетов по всем учреждениям
         if (!batches.length) {
@@ -304,15 +147,10 @@ const post = async (req, res) => {
                         emptyLogId = logResult.data[0].id;
                     }
                     if (emptyLogId) {
-                        const emptyMsg = unmatched.length > 0
-                            ? ('Arveid ei leitud (0 arvet, sobimatuid: ' + unmatched.length + ')')
-                            : 'Arveid ei leitud (0 arvet)';
                         await endLog(emptyLogId, 'success', null, {
                             totalFetched: 0,
                             totalImported: 0,
-                            totalUnmatched: unmatchedForLog.length,
-                            unmatched: unmatchedForLog,
-                            error_message: emptyMsg,
+                            error_message: 'Arveid ei leitud (0 arvet)',
                             batches: []
                         });
                     }
@@ -332,24 +170,17 @@ const post = async (req, res) => {
                             doc_id: emptyLogId,
                             error_code: 0,
                             error_message: null,
-                            tulemused: 'Arveid ei leitud (0 arvet)',
-                            unmatched: unmatchedForLog,
-                            totalUnmatched: unmatchedForLog.length
+                            tulemused: 'Arveid ei leitud (0 arvet)'
                         }
                     },
                     error_message: null
                 });
             }
 
-            const noMatchErrorMsg = unmatched.length > 0
-                ? ('Arveid ei leitud: ' + unmatched.map(function (u) { return u.error; }).join('; '))
-                : 'Arveid ei leitud';
             return res.send({
                 status: 500,
                 result: null,
-                error_message: noMatchErrorMsg,
-                unmatched: unmatched,
-                totalUnmatched: unmatched.length
+                error_message: 'Arveid ei leitud'
             });
         }
 
@@ -359,7 +190,7 @@ const post = async (req, res) => {
             // готовим параметры, сохраняем таску (один вызов docs.sp_loe_earved_batches с параметризацией $1)
             let saveResult;
             try {
-                const saveParams = buildBatchesTaskSql(batches, unmatched);
+                const saveParams = buildBatchesTaskSql(batches);
                 saveResult = await db.queryDb(
                     'select ou.sp_salvesta_task($1::text, $2::text, $3::integer)',
                     [saveParams, 'Loe FinBit arved', l_userId],
@@ -386,14 +217,10 @@ const post = async (req, res) => {
                         doc_id: taskId || 1,
                         error_code: 0,
                         error_message: null,
-                        tulemused: saveResult,
-                        unmatched: unmatched,
-                        totalUnmatched: unmatched.length
+                        tulemused: saveResult
                     },
                     data: saveResult
-                },
-                unmatched: unmatched,
-                totalUnmatched: unmatched.length
+                }
             });
         } else {
             // === АГЕНТСКАЯ ЛОГИКА: только выкачка счетов (flow = getEarved) ===
@@ -404,7 +231,7 @@ const post = async (req, res) => {
             try {
                 // Сохраняем полученный из FinBit массив счетов в ou.logs (flow = getEarved) и получаем log_id,
                 // который передается дальше (check_asutus, import_earved)
-                logId = await saveFetchedArvedLog(l_rekvId, l_userId, batches, unmatchedForLog);
+                logId = await saveFetchedArvedLog(l_rekvId, l_userId, batches);
 
                 if (!logId) {
                     throw new Error('Лог-запись не создана (не удалось получить log_id)');
@@ -461,25 +288,13 @@ const post = async (req, res) => {
  * @param {Array<{userId: number, json: Array}>} batches
  * @returns {string}
  */
-function buildBatchesTaskSql(batches, unmatched) {
+function buildBatchesTaskSql(batches) {
     const payload = (batches || []).map(function (b) {
         return {
             user_id: b.userId,
             data: b.json
         };
     });
-    if (Array.isArray(unmatched) && unmatched.length > 0) {
-        for (let i = 0; i < unmatched.length; i++) {
-            const u = unmatched[i];
-            if (!u) continue;
-            payload.push({
-                user_id: null,
-                number: u.number || null,
-                rekv_regkood: u.rekv_regkood || null,
-                error: u.error || ('Asutust regkoodiga ' + (u.rekv_regkood || '') + ' ei leitud')
-            });
-        }
-    }
     const jsonText = JSON.stringify(payload);
     let tag = '$$';
     if (jsonText.indexOf('$$') !== -1) {
@@ -935,7 +750,7 @@ async function createLog(rekvId, userId, flowName = FLOW_NAME) {
  * Формат propertis.arved: [{rekvId, userId, count, arved: [...]}]
  * @returns {Promise<number|null>} id записи; при ошибке записи пробрасывает исключение
  */
-async function saveFetchedArvedLog(rekvId, userId, batches, unmatched) {
+async function saveFetchedArvedLog(rekvId, userId, batches) {
     const payload = (batches || []).map(b => ({
         rekvId: b.rekvId,
         userId: b.userId,
@@ -943,11 +758,8 @@ async function saveFetchedArvedLog(rekvId, userId, batches, unmatched) {
         arved: b.json
     }));
     const total = payload.reduce((s, b) => s + b.count, 0);
-    const unmatchedList = Array.isArray(unmatched) ? unmatched : [];
     const resultData = {
         totalFetched: total,
-        totalUnmatched: unmatchedList.length,
-        unmatched: unmatchedList,
         invoiceNumbers: (batches || []).reduce((acc, b) => acc.concat(extractInvoiceNumbers(b.json)), []),
         batches: (batches || []).map(b => ({
             rekvId: b.rekvId,
